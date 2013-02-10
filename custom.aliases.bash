@@ -162,6 +162,25 @@ alias du='du -h -c'
 # Use hub as a wrapper for git.
 alias git=hub
 
+# Shortcuts
+alias dl="cd ~/Downloads"
+alias dt="cd ~/Desktop"
+alias p="cd ~/Projects"
+alias g="git"
+alias h="history"
+alias j="jobs"
+alias s="subl ."
+alias o="open"
+alias oo="open ."
+
+# IP addresses
+alias ip="dig +short myip.opendns.com @resolver1.opendns.com"
+alias localip="ipconfig getifaddr en1"
+alias ips="ifconfig -a | grep -o 'inet6\? \(\([0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+\)\|[a-fA-F0-9:]\+\)' | sed -e 's/inet6* //'"
+
+# Enhanced WHOIS lookups
+alias whois="whois -h whois-servers.net"
+
 # Python aliases
 # Show the current python path
 alias pypath='python -c "import sys; print sys.path" | tr "," "\n" | grep -v "egg"'
