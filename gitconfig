@@ -1,0 +1,128 @@
+[core]
+	excludesfile = ~/.gitignore
+	attributesfile = ~/.gitattributes
+	editor = subl -w
+	whitespace = space-before-tab,indent-with-non-tab,trailing-space
+[alias]
+	ci = commit
+	co = checkout
+	br = branch
+	bra = branch -a
+	brr = branch -r
+	remotes = remote -v
+	merged = branch -a --merged
+	unmerged = branch -a --no-merged
+	st = status -sb
+	sts = status -sb --untracked-files=no
+	sta = status -sb --untracked-files=all
+	who = shortlog -s --
+	track = checkout -t
+	diffstat = diff --stat -r
+	# TODO: how to get cwd url (instead of repo root url)
+	svnurl = !git svn info | grep URL | sed 's/URL: \\(.*\\)/\\1/'
+	svnroot = !git svn info | grep Root | sed 's/Repository Root: \\(.*\\)/\\1/'
+	whois = "!sh -c 'git log -i -1 --pretty=\"format:%an <%ae>\n\" --author=\"$1\"' -"
+	edit-unmerged = "!f() { git ls-files --unmerged | cut -f2 | sort -u ; }; vim `f`"
+	add-unmerged = "!f() { git ls-files --unmerged | cut -f2 | sort -u ; }; git add `f`"
+	l = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an>%Creset'
+	logme = !git l --author=\"`git config --get user.name`\"
+	incoming = !git l ..@{u}
+	outgoing = !git l @{u}..
+	stash-unstaged = stash -k
+	# TODO: Find the git root and search from there.
+	cleanup = !sh -c 'find . -name *.orig -delete'
+	amend = !git log -n 1 --pretty=tformat:%s%n%n%b | git commit -F - --amend
+	# Remove files which have been deleted.
+	r = !git ls-files -z --deleted | xargs -0 git rm
+	staged = diff --staged --name-status
+	unstaged = diff --name-status
+	update = pull --rebase
+	up = !git update
+	fast-forward = merge --ff-only
+	ff = !git fast-forward
+
+	# Shows changes made by a branch since the last common commit with another branch.
+	# Usage:
+	#   `git changes`
+	#      compares the current branch to master
+	#   `git changes <branch_name>`
+	#      compares the current branch to branch_name
+	#   `git changes <branch_name> <branch_name>`
+	#      compares the first branch name to the second branch name
+	# TODO: Allow arguments to log to be passed through
+	changes = "!f() { git l `git merge-base ${1:-master} ${2:-@\\{u\\}}`..${2:-@\\{u\\}} ; }; f"
+	show-changes = "!f() { git log -p `git merge-base ${1:-master} ${2:-@\\{u\\}}`..${2:-@\\{u\\}} ; }; f"
+	ksreview = "!f() { local SHA=${1:-HEAD}; local BRANCH=${2:-master}; if [ $SHA == $BRANCH ]; then SHA=HEAD; fi; git difftool -y -t Kaleidoscope $BRANCH...$SHA; }; f"
+	ksshow = "!sh -c 'SHA=${1:-HEAD}; git difftool -y -t Kaleidoscope $SHA^..$SHA;' -"
+	ksdiff = difftool -y -t Kaleidoscope
+	review = !git ksreview
+	reviewtool = !git review
+	showtool = !git ksshow
+
+	# Show the diff between the latest commit and the current state
+	d = !"git diff-index --quiet HEAD -- || clear; git diff --patch-with-stat"
+
+	# `git di $number` shows the diff between the state `$number` revisions ago and the current state
+	di = !"d() { git diff --patch-with-stat HEAD~$1; }; git diff-index --quiet HEAD -- || clear; d"
+
+	# Pull in remote changes for the current repository and all its submodules
+	pull-all = !"git pull; git submodule foreach git pull origin master"
+
+	# Clone a repository including all submodules
+	clone-all = clone --recursive
+
+	# Show verbose output about tags, branches or remotes
+	tags = tag -l
+
+
+[color]
+	branch = auto
+	diff = auto
+	interactive = auto
+	status = auto
+	pager = true
+	ui = auto
+[color "diff"]
+	meta = black bold
+	frag = magenta
+	old = red bold
+	new = green bold
+	whitespace = red reverse
+[color "status"]
+	untracked = yellow
+[branch]
+	autosetupmerge = true
+[push]
+	default = tracking
+[rerere]
+	enabled = false
+[help]
+	autocorrect = 1
+[difftool "Kaleidoscope"]
+	cmd = ksdiff --partial-changeset --relative-path \"$MERGED\" -- \"$LOCAL\" \"$REMOTE\"
+[mergetool "Kaleidoscope"]
+	cmd = ksdiff --merge --output \"$MERGED\" --base \"$BASE\" -- \"$LOCAL\" --snapshot \"$REMOTE\" --snapshot
+	trustExitCode = true
+[diff]
+	tool = Kaleidoscope
+[difftool]
+	prompt = false
+[mergetool]
+	prompt = false
+[merge]
+	tool = Kaleidoscope
+	log = true
+
+# URL shorthands
+[url "git@github.com:"]
+	insteadOf = "gh:"
+	pushInsteadOf = "github:"
+	pushInsteadOf = "git://github.com/"
+[url "git://github.com/"]
+	insteadOf = "github:"
+[url "git@gist.github.com:"]
+	insteadOf = "gst:"
+	pushInsteadOf = "gist:"
+	pushInsteadOf = "git://gist.github.com/"
+[url "git://gist.github.com/"]
+	insteadOf = "gist:"
