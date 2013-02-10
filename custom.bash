@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 export PATH="/usr/local/bin:/usr/local/sbin:./node_modules/.bin:$PATH"
-export CDPATH=.:~:~/Code/projects/:~/Library/Application\ Support/
+export CDPATH=.:~:~/Projects/:~/Library/Application\ Support/
 
 # Ignore duplicate entries in history
 export HISTCONTROL=erasedups
@@ -73,7 +73,7 @@ export PIP_RESPECT_VIRTUALENV=true
 export PIP_VIRTUALENV_BASE=$WORKON_HOME
 
 # virtualenvwrapper project home
-export PROJECT_HOME="${HOME}/Code/projects"
+export PROJECT_HOME="${HOME}/Projects"
 
 # disable virtualenv prompt display
 export VIRTUAL_ENV_DISABLE_PROMPT=True
