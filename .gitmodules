@@ -1,3 +1,4 @@
 [submodule "bash_it"]
 	path = bash_it
 	url = git://github.com/revans/bash-it.git
+	ignore = dirty
