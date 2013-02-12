@@ -8,7 +8,7 @@ export HISTCONTROL=erasedups
 export HISTSIZE=1000000
 export HISTFILESIZE=1000000000
 # Ignore matching commands in history
-export HISTIGNORE="&:ls:ll:la:l.:pwd:exit:clear:clr:[bf]g"
+export HISTIGNORE="&:ls:ll:la:l.:pwd:exit:clear:clr:[bf]g:history"
 
 # ctrl-D twice to exit shell (no more accidental exits?)
 export IGNOREEOF=1
@@ -100,8 +100,8 @@ _django_completion()
 complete -F _django_completion -o default django-admin.py manage.py django-admin manage startproject startapp
 
 # Intelligent command completion
-complete -d cd pushd rmdir
-complete -u finger mail
+# complete -d cd pushd rmdir
+# complete -u finger mail
 complete -v set unset
 
 # Make less the default pager, and specify some useful defaults.

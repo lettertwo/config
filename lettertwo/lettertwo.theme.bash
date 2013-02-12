@@ -16,7 +16,8 @@ function prompt_command() {
 	history -a
 	history -c
 	history -r
-	PS1="$(title_prompt)\n${red}\h ${reset_color}in ${blue}\w\n${cyan}${PROMPT_CHAR}$(virtualenv_prompt)$(scm_prompt_info)${PROMPT_ARROW}${normal}"
+	# PS1="$(title_prompt)\n${red}\h ${reset_color}in ${blue}\w\n${cyan}${PROMPT_CHAR}$(virtualenv_prompt)$(scm_prompt_info)${PROMPT_ARROW}${normal}"
+	PS1="\n${red}\h ${reset_color}in ${blue}\w\n${cyan}${PROMPT_CHAR}$(virtualenv_prompt)$(scm_prompt_info)${PROMPT_ARROW}${normal}"
 }
 
 PROMPT_COMMAND=prompt_command;
