@@ -6,6 +6,7 @@
 title() {
 	if [ $1 ]; then
 		export TITLE=$@
+		echo -e "\033]0;$TITLE\007"
 	fi
 }
 
