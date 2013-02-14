@@ -40,6 +40,7 @@
 	up = !git update
 	fast-forward = merge --ff-only
 	ff = !git fast-forward
+	start = !git init && git commit --allow-empty -m 'Initial commit'
 
 	# Shows changes made by a branch since the last common commit with another branch.
 	# Usage:
