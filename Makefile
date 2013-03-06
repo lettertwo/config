@@ -1,16 +1,17 @@
 LINK=ln -sf
+SRC=$(CURDIR)/src
 
 .%:
-	$(LINK) $(CURDIR)/$(subst .,,$@) $(HOME)/$@
+	$(LINK) $(SRC)/$(subst .,,$@) $(HOME)/$@
 
 custom.aliases:
-	$(LINK) $(CURDIR)/$@.bash $(CURDIR)/bash_it/aliases/$@.bash
+	$(LINK) $(SRC)/$@.bash $(CURDIR)/bash_it/aliases/$@.bash
 
 custom:
-	$(LINK) $(CURDIR)/$@.bash $(CURDIR)/bash_it/custom/$@.bash
+	$(LINK) $(SRC)/$@.bash $(CURDIR)/bash_it/custom/$@.bash
 
 theme.lettertwo:
-	$(LINK) $(CURDIR)/lettertwo $(CURDIR)/bash_it/themes/lettertwo
+	$(LINK) $(SRC)/lettertwo $(CURDIR)/bash_it/themes/lettertwo
 
 link.dotfiles: .bash_profile .gitattributes .gitconfig .gitignore .inputrc .tm_properties
 
