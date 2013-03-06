@@ -70,7 +70,7 @@ export PYTHONSTARTUP=~/.pythonrc
 export PIP_RESPECT_VIRTUALENV=true
 
 # pip virtualenv base (via virtualenvwrapper)
-export PIP_VIRTUALENV_BASE=$WORKON_HOME
+# export PIP_VIRTUALENV_BASE=$WORKON_HOME
 
 # virtualenvwrapper project home
 export PROJECT_HOME="${HOME}/Projects"
@@ -78,8 +78,14 @@ export PROJECT_HOME="${HOME}/Projects"
 # disable virtualenv prompt display
 export VIRTUAL_ENV_DISABLE_PROMPT=True
 
+# autoenv
+source /usr/local/opt/autoenv/activate.sh
+
 # virtualenvwrapper scripts.
-source virtualenvwrapper.sh
+# source virtualenvwrapper.sh
+
+# node version manager (nvm)
+[[ -s ~/.nvm/nvm.sh ]] && . ~/.nvm/nvm.sh
 
 # pip completion
 _pip_completion()

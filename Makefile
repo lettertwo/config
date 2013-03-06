@@ -14,7 +14,7 @@ theme.lettertwo:
 
 link.dotfiles: .bash_profile .gitattributes .gitconfig .gitignore .inputrc .tm_properties
 
-link.bash_it: .bash_it custom custom.aliases theme.lettertwo 
+link.bash_it: .bash_it custom custom.aliases theme.lettertwo
 
 install: link.dotfiles link.bash_it
 
