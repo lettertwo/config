@@ -22,7 +22,11 @@ link.bash_it: custom custom.aliases theme.lettertwo
 
 install: link.dotfiles link.bash_it
 
+bootstrap:
+	./bin/bootstrap
+
 .PHONY:
 	link.dotfiles
 	link.bash_it
+	bootstrap
 	install
