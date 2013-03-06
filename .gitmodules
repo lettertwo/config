@@ -2,3 +2,6 @@
 	path = vendor/bash_it
 	url = git://github.com/revans/bash-it.git
 	ignore = dirty
+[submodule "vendor/antigen"]
+	path = vendor/antigen
+	url = https://github.com/zsh-users/antigen.git
