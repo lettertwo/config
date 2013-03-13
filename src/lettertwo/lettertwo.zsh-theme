@@ -1,9 +1,9 @@
-#!/usr/bin/env bash
+#!/usr/bin/env zsh
 
-# export VIRTUAL_ENV_DISABLE_PROMPT=true
+export VIRTUAL_ENV_DISABLE_PROMPT=true
 
-local prompt_arrow=" %{$fg_bold[white]%}→%{$reset_color%} "
-local prompt_char="%{$fg[cyan]%}♥%{$reset_color%}"
+prompt_arrow=" %{$fg_bold[white]%}→%{$reset_color%} "
+prompt_char="%{$fg[cyan]%}♥%{$reset_color%}"
 
 ZSH_THEME_GIT_PROMPT_PREFIX="${prompt_arrow}%{$fg[blue]%}"
 ZSH_THEME_GIT_PROMPT_SUFFIX="%{$reset_color%}"
@@ -17,9 +17,13 @@ function virtualenv_prompt_info {
     [ $VIRTUAL_ENV ] && echo $VIRTUALENV_PROMPT_PREFIX`basename $VIRTUAL_ENV`$VIRTUALENV_PROMPT_SUFFIX
 }
 
-PROMPT="%{$fg[black]%}${PWD/#$HOME/~}%{$reset_color%}$(virtualenv_prompt_info)$(git_prompt_info)
-${prompt_char}${prompt_arrow}"
-RPROMPT="%{$fg[black]%}%n@%m%{$reset_color%}"
+function cwd_prompt_info {
+	echo "${PWD/#$HOME/~}"
+}
+
+PROMPT='%{$fg[black]%}$(cwd_prompt_info)%{$reset_color%}$(virtualenv_prompt_info)$(git_prompt_info)
+${prompt_char}${prompt_arrow}'
+RPROMPT='%{$fg[black]%}%n@%m%{$reset_color%}'
 
 # LSCOLORS describes what color to use for which attribute when colors are enabled for ls.
 # This string is a concatenation of pairs of the format fb, where f is the foreground color and b is the background color.
