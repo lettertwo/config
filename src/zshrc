@@ -80,3 +80,38 @@ set_title() {
 		print -Pn "\e]1;$1:q\a"
 	fi
 }
+
+# Default top to organize by cpu usage
+alias top='top -o cpu'
+
+# Use trash instead of rm
+alias rm='trash-put'
+
+# Pings with 5 packets, not unlimited
+alias ping='ping -c 5'
+# Disk free, in gigabytes, not bytes
+alias df='df -h'
+# Calculate total disk usage for a folder
+alias du='du -h -c'
+# Use hub as a wrapper for git.
+alias git=hub
+
+# IP addresses
+alias ip="dig +short myip.opendns.com @resolver1.opendns.com"
+alias localip="ipconfig getifaddr en1"
+alias ips="ifconfig -a | grep -o 'inet6\? \(\([0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+\)\|[a-fA-F0-9:]\+\)' | sed -e 's/inet6* //'"
+
+# Enhanced WHOIS lookups
+# alias whois="whois -h whois-servers.net"
+
+# Python aliases
+# Show the current python path
+alias pypath='python -c "import sys; print sys.path" | tr "," "\n" | grep -v "egg"'
+
+# Virtualenv/Virtualenvwrapper aliases
+alias setproject="setvirtualenvproject $VIRTUAL_ENV `pwd`"
+
+# Django aliases
+alias manage="python ./manage.py"
+alias dumpauth="manage dumpdata --indent=2 auth sessions"
+alias syncall="manage syncdb --noinput --all && manage migrate --fake"
