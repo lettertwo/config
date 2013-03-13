@@ -17,10 +17,6 @@ function virtualenv_prompt_info {
     [ $VIRTUAL_ENV ] && echo $VIRTUALENV_PROMPT_PREFIX`basename $VIRTUAL_ENV`$VIRTUALENV_PROMPT_SUFFIX
 }
 
-function cwd_prompt_info {
-	echo "${PWD/#$HOME/~}"
-}
-
 PROMPT='%{$fg[black]%}$(cwd_prompt_info)%{$reset_color%}$(virtualenv_prompt_info)$(git_prompt_info)
 ${prompt_char}${prompt_arrow}'
 RPROMPT='%{$fg[black]%}%n@%m%{$reset_color%}'

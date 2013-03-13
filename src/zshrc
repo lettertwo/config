@@ -44,8 +44,19 @@ source /usr/local/opt/autoenv/activate.sh
 # node version manager (nvm)
 [[ -s ~/.nvm/nvm.sh ]] && source ~/.nvm/nvm.sh
 
+export EDITOR=/usr/local/bin/subl
+export CLICOLOR=1
+
 #
 # PATH CONFIG
 #
 export PATH="./node_modules/.bin:~/bin:~/sbin:/usr/local/bin:/usr/local/sbin:$PATH"
 cdpath=(~ ~/Projects/ ~/Library/Application\ Support/)
+
+#
+# aliases and functions
+#
+
+function cwd_prompt_info {
+	echo "${PWD/#$HOME/~}"
+}
