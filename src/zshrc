@@ -1,0 +1,51 @@
+#!/usr/bin/env zsh
+
+# Red dots to be displayed while waiting for completion
+COMPLETION_WAITING_DOTS=true
+
+#
+# ANTIGEN
+#
+
+# export ANTIGEN_DEFAULT_REPO_URL=https://github.com/sharat87/oh-my-zsh.git
+source ~/.antigen/antigen.zsh
+
+# Load the oh-my-zsh's library.
+antigen-lib
+
+# Bundles from the default repo declared above.
+antigen-bundles <<EOBUNDLES
+
+osx
+extract
+cake
+npm
+django
+svn
+git
+
+# Completions.
+zsh-users/zsh-completions src
+
+# Syntax highlighting bundle.
+zsh-users/zsh-syntax-highlighting
+
+EOBUNDLES
+
+# Load the theme.
+antigen-theme ~/Dotfiles/src/lettertwo/lettertwo.zsh-theme
+
+# Tell Antigen that we're done.
+antigen-apply
+
+# kennethreitz/autoenv
+source /usr/local/opt/autoenv/activate.sh
+
+# node version manager (nvm)
+[[ -s ~/.nvm/nvm.sh ]] && source ~/.nvm/nvm.sh
+
+#
+# PATH CONFIG
+#
+export PATH="./node_modules/.bin:~/bin:~/sbin:/usr/local/bin:/usr/local/sbin:$PATH"
+cdpath=(~ ~/Projects/ ~/Library/Application\ Support/)
