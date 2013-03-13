@@ -3,6 +3,8 @@
 # Red dots to be displayed while waiting for completion
 COMPLETION_WAITING_DOTS=true
 
+DISABLE_AUTO_TITLE=true
+
 #
 # ANTIGEN
 #
@@ -48,15 +50,33 @@ export EDITOR=/usr/local/bin/subl
 export CLICOLOR=1
 
 #
+# directory stack
+#
+export DIRSTACKSIZE=8
+unsetopt autocd autopushd pushdminus pushdsilent pushdtohome
+
+#
 # PATH CONFIG
 #
 export PATH="./node_modules/.bin:~/bin:~/sbin:/usr/local/bin:/usr/local/sbin:$PATH"
 cdpath=(~ ~/Projects/ ~/Library/Application\ Support/)
 
+
 #
 # aliases and functions
 #
 
-function cwd_prompt_info {
+cwd_prompt_info () {
 	echo "${PWD/#$HOME/~}"
+}
+
+set_title() {
+	if [[ "$TERM" = screen* ]]
+	then
+		print -Pn "\ek$1:q\e\\"
+	elif [[ "$TERM" = xterm* ]] || [[ $TERM = rxvt* ]] || [[ "$TERM_PROGRAM" = "iTerm.app" ]]
+	then
+		print -Pn "\e]2;$2:q\a"
+		print -Pn "\e]1;$1:q\a"
+	fi
 }
