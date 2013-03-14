@@ -1,10 +1,5 @@
 #!/usr/bin/env zsh
 
-# Red dots to be displayed while waiting for completion
-COMPLETION_WAITING_DOTS=true
-
-DISABLE_AUTO_TITLE=true
-
 #
 # ANTIGEN
 #
@@ -23,6 +18,7 @@ extract
 cake
 npm
 django
+python
 svn
 git
 
@@ -34,11 +30,42 @@ zsh-users/zsh-syntax-highlighting
 
 EOBUNDLES
 
+# This plugin must follow the others to work correctly!
+antigen-bundle history-substring-search
+
 # Load the theme.
 antigen-theme ~/Dotfiles/src/lettertwo/lettertwo.zsh-theme
 
 # Tell Antigen that we're done.
 antigen-apply
+
+#
+# ZSH CONFIG
+#
+
+# Red dots to be displayed while waiting for completion
+COMPLETION_WAITING_DOTS=true
+
+# Don't automatically change the terminal title on chpwd
+DISABLE_AUTO_TITLE=true
+
+# Style history substring search matches
+HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_FOUND='bg=black,fg=cyan,bold'
+
+export EDITOR=/usr/local/bin/subl
+export CLICOLOR=1
+
+# directory stack
+export DIRSTACKSIZE=8
+unsetopt autocd autopushd pushdminus pushdsilent pushdtohome
+
+# path config
+export PATH="./node_modules/.bin:~/bin:~/sbin:/usr/local/bin:/usr/local/sbin:$PATH"
+cdpath=(~ ~/Projects/ ~/Library/Application\ Support/)
+
+#
+# ADDITIONAL UTILS
+#
 
 # kennethreitz/autoenv
 source /usr/local/opt/autoenv/activate.sh
@@ -46,24 +73,8 @@ source /usr/local/opt/autoenv/activate.sh
 # node version manager (nvm)
 [[ -s ~/.nvm/nvm.sh ]] && source ~/.nvm/nvm.sh
 
-export EDITOR=/usr/local/bin/subl
-export CLICOLOR=1
-
 #
-# directory stack
-#
-export DIRSTACKSIZE=8
-unsetopt autocd autopushd pushdminus pushdsilent pushdtohome
-
-#
-# PATH CONFIG
-#
-export PATH="./node_modules/.bin:~/bin:~/sbin:/usr/local/bin:/usr/local/sbin:$PATH"
-cdpath=(~ ~/Projects/ ~/Library/Application\ Support/)
-
-
-#
-# aliases and functions
+# ALIASES AND FUNCTIONS
 #
 
 cwd_prompt_info () {
