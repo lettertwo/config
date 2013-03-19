@@ -63,6 +63,9 @@ unsetopt autocd autopushd pushdminus pushdsilent pushdtohome
 export PATH="./node_modules/.bin:~/bin:~/sbin:/usr/local/bin:/usr/local/sbin:$PATH"
 cdpath=(~ ~/Projects/ ~/Library/Application\ Support/)
 
+# theoretically helpful correction is too frequently just annoying :(
+unsetopt correct_all
+
 #
 # ADDITIONAL UTILS
 #
