@@ -16,7 +16,7 @@ custom:
 theme.lettertwo:
 	$(LINK) $(SRC)/lettertwo $(VENDOR)/bash_it/themes/lettertwo
 
-link.dotfiles: .bash_profile .gitattributes .gitconfig .gitignore .inputrc .tm_properties .zshrc
+link.dotfiles: .bash_profile .gitattributes .gitconfig .gitignore .inputrc .tm_properties .zshrc .zsh_nocorrect
 
 link.bash_it: custom custom.aliases theme.lettertwo
 	$(LINK) $(VENDOR)/bash_it $(HOME)/.bash_it
