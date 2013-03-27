@@ -51,6 +51,10 @@ DISABLE_AUTO_TITLE=true
 
 # Style history substring search matches
 HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_FOUND='bg=black,fg=cyan,bold'
+# Don't store any commands in history that begin with whitespace
+HIST_IGNORE_SPACE=true
+# Don't store function definitions in history
+HIST_NO_FUNCTIONS=true
 
 export EDITOR=/usr/local/bin/subl
 export CLICOLOR=1
