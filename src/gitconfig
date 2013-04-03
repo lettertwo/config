@@ -5,7 +5,7 @@
 	whitespace = space-before-tab,trailing-space
 [alias]
 	ci = commit
-	co = !"f() { git checkout $1 || (git fetch origin && git checkout -b $1 --track origin/$1); }; f"
+	co = !"f() { git checkout $1 || (git fetch origin && git checkout -b $1 --track origin/$1) || (git checkout -b $1); }; f"
 	br = branch
 	bra = branch -a
 	brr = branch -r
