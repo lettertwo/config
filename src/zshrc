@@ -108,6 +108,12 @@ set_title() {
 	fi
 }
 
+# zmv '(*).lis' '$1.txt'
+# mmv *.c.orig orig/*.c
+# mmv **/*2008.mp3 **/*2009.mp3
+autoload -U zmv
+alias mmv='noglob zmv -W'
+
 # Default top to organize by cpu usage
 alias top='top -o cpu'
 
