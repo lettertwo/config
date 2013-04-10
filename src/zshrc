@@ -21,6 +21,7 @@ django
 python
 svn
 git
+rvm
 
 # Completions.
 zsh-users/zsh-completions src
@@ -146,3 +147,5 @@ alias setproject="setvirtualenvproject $VIRTUAL_ENV `pwd`"
 alias manage="python ./manage.py"
 alias dumpauth="manage dumpdata --indent=2 auth sessions"
 alias syncall="manage syncdb --noinput --all && manage migrate --fake"
+
+PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting
