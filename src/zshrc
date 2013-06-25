@@ -142,6 +142,9 @@ alias df='df -h'
 # Calculate total disk usage for a folder
 alias du='du -h -c'
 
+# split tab
+alias stab='split_tab'
+
 # IP addresses
 alias ip="dig +short myip.opendns.com @resolver1.opendns.com"
 alias localip="ipconfig getifaddr en1"
@@ -163,3 +166,12 @@ alias dumpauth="manage dumpdata --indent=2 auth sessions"
 alias syncall="manage syncdb --noinput --all && manage migrate --fake"
 
 PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting
+
+# Git aliases
+# these are overrides for some of the aliases defined by the omzsh git plugin
+alias gs='g st'
+alias gl='g l'
+alias ga='g add -p'
+alias gr='g r'
+
+alias ts='tig status'
