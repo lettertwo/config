@@ -24,7 +24,8 @@
 	whois = "!sh -c 'git log -i -1 --pretty=\"format:%an <%ae>\n\" --author=\"$1\"' -"
 	edit-unmerged = "!f() { git ls-files --unmerged | cut -f2 | sort -u ; }; vim `f`"
 	add-unmerged = "!f() { git ls-files --unmerged | cut -f2 | sort -u ; }; git add `f`"
-	l = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an>%Creset'
+	l = log --graph --date=short --pretty=format:'%C(red)%h%C(reset) %C(bold white)%ad%C(reset)%C(green)%d%C(reset) %C(white)%s%C(reset) %C(bold blue)%aN%C(reset)'
+	lr = !git l --date=relative
 	logme = !git l --author=\"`git config --get user.name`\"
 	incoming = !git l ..@{u}
 	outgoing = !git l @{u}..

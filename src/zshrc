@@ -171,6 +171,7 @@ PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting
 # these are overrides for some of the aliases defined by the omzsh git plugin
 alias gs='g st'
 alias gl='g l'
+alias glr='g lr'
 alias gr='g r'
 alias gap='g add -p'
 
