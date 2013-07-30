@@ -1,0 +1,26 @@
+{
+  "name": "dotfiles",
+  "version": "1.0.0",
+  "author": "Eric Eldredge <lettertwo@gmail.com>",
+  "description": "files that start with a dot.",
+  "homepage": "http://github.com/lettertwo/dotfiles",
+  "keywords": [
+    "dotfiles"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/lettertwo/dotfiles.git"
+  },
+  "main": "bin/dotfiles",
+  "dependencies": {
+    "colors": "*",
+    "coffee-script": "1.6.x",
+    "deferred": "0.6.x",
+    "shelljs": "0.1.x",
+    "argparse": "0.1.x"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=0.6"
+  }
+}

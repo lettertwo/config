@@ -1,0 +1,27 @@
+#!/usr/bin/env sh
+
+# var fs = require('fs')
+#     coffee = require('coffee-script')
+#     src = __dirname + '/src/dotfiles.coffee.md';
+
+# eval(coffee.compile(fs.readFileSync(src, 'utf8'), {literate: true}));
+
+command -v coffee >/dev/null
+
+if [[ $? != 0 ]] ; then
+  echo 'Error: coffee not found!'
+  exit 1
+fi
+
+coffee $(PWD)/bin/lib/dotfiles.coffee.md $@
+
+# Hack exit codes to decide how to proceed. 10 means bash, 20 means zsh.
+CODE=$?
+
+if [[ $CODE == 10 ]] ; then
+  exec `which bash` --login
+elif [[ $CODE == 20 ]] ; then
+  exec `which zsh` --login
+elif [[ $CODE != 0 ]] ; then
+  exit $CODE
+fi

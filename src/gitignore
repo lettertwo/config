@@ -6,11 +6,9 @@
 # Packages
 *.egg
 *.egg-info
-dist
 build
 eggs
 parts
-bin
 var
 sdist
 develop-eggs
@@ -67,3 +65,5 @@ Backup[ ]of[ ]*.numbers/
 .tm_properties
 *.sublime-*
 local_settings.py
+.env
+.cake_task_cache
