@@ -35,7 +35,7 @@ EOBUNDLES
 antigen-bundle history-substring-search
 
 # Load the theme.
-antigen-theme ~/Dotfiles/src/lettertwo/lettertwo.zsh-theme
+antigen-theme ~/Dotfiles/src/lettertwo.zsh-theme
 
 # Tell Antigen that we're done.
 antigen-apply

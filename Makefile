@@ -14,7 +14,7 @@ custom:
 	$(LINK) $(SRC)/$@.bash $(VENDOR)/bash_it/custom/$@.bash
 
 theme.lettertwo:
-	$(LINK) $(SRC)/lettertwo $(VENDOR)/bash_it/themes/lettertwo
+	$(LINK) $(SRC)/lettertwo.theme.bash $(VENDOR)/bash_it/themes/lettertwo/lettertwo.theme.bash
 
 link.dotfiles: .bash_profile .gitattributes .gitconfig .gitignore .inputrc .tm_properties .zshrc .zsh_nocorrect
 
