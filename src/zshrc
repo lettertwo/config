@@ -13,15 +13,11 @@ antigen-lib
 # Bundles from the default repo declared above.
 antigen-bundles <<EOBUNDLES
 
-osx
-extract
 cake
 npm
 django
 python
-svn
 git
-rvm
 
 # Completions.
 zsh-users/zsh-completions src
