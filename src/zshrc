@@ -98,9 +98,6 @@ fi
 # ADDITIONAL UTILS
 #
 
-# kennethreitz/autoenv
-source /usr/local/opt/autoenv/activate.sh
-
 # node version manager (nvm)
 [[ -s ~/.nvm/nvm.sh ]] && source ~/.nvm/nvm.sh
 
@@ -176,3 +173,7 @@ alias gr='g r'
 alias gap='g add -p'
 
 alias ts='tig status'
+
+# kennethreitz/autoenv
+source /usr/local/opt/autoenv/activate.sh
+autoenv_init
