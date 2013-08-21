@@ -17,6 +17,7 @@
 	sta = status -sb --untracked-files=all
 	who = shortlog -s --
 	track = checkout -t
+	upstream = "!f() { git rev-parse --verify -q --symbolic-full-name --abbrev-ref $1@{u}; }; f"
 	diffstat = diff --stat -r
 	# TODO: how to get cwd url (instead of repo root url)
 	svnurl = !git svn info | grep URL | sed 's/URL: \\(.*\\)/\\1/'
