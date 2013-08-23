@@ -3,6 +3,7 @@
 	attributesfile = ~/.gitattributes
 	editor = subl -w
 	whitespace = space-before-tab,trailing-space
+	pager = less -F -X
 [alias]
 	ci = commit
 	co = checkout
