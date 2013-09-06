@@ -44,6 +44,7 @@
 	fast-forward = merge --ff-only
 	ff = !git fast-forward
 	start = !git init && git commit --allow-empty -m 'Initial commit'
+	mkorphan = "!f() { if [ -z "$1" ] ; then echo 'Missing name for orphan branch. Usage: git mkorphan <branchname>'; exit 1; fi; git checkout --orphan $1 && git rm -rf . && git commit --allow-empty -m 'Initial commit'; }; f"
 
 	# Shows changes made by a branch since the last common commit with another branch.
 	# Usage:
