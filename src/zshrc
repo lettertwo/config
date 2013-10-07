@@ -167,6 +167,7 @@ alias gl='g l'
 alias glr='g lr'
 alias gr='g r'
 alias gap='g add -p'
+alias gdt='g difftool'
 
 alias ts='tig status'
 
