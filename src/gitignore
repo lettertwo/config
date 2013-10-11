@@ -68,3 +68,5 @@ local_settings.py
 .env
 .cake_task_cache
 .bower.json
+.floo
+.flooignore
