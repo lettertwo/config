@@ -15,9 +15,12 @@ antigen-bundles <<EOBUNDLES
 
 cake
 npm
+bower
 django
 python
 git
+
+yonchu/grunt-zsh-completion
 
 # Completions.
 zsh-users/zsh-completions src
