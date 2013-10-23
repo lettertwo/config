@@ -129,7 +129,7 @@ alias mmv='noglob zmv -W'
 alias top='top -o cpu'
 
 # Use trash instead of rm
-alias rm='trash-put'
+alias rm='trash'
 
 # Pings with 5 packets, not unlimited
 alias ping='ping -c 5'
