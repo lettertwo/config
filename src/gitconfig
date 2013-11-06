@@ -5,7 +5,7 @@
 	whitespace = space-before-tab,trailing-space
 	pager = less -F -X
 [alias]
-	ci = commit
+	ci = commit -v
 	co = checkout
 	br = branch
 	bra = branch -a
