@@ -1,9 +1,26 @@
+# core config
 [core]
 	excludesfile = ~/.gitignore
 	attributesfile = ~/.gitattributes
 	editor = subl -w
 	whitespace = space-before-tab,trailing-space
 	pager = less -F -X
+[branch]
+	autosetupmerge = true
+[push]
+	default = tracking
+[rerere]
+	enabled = false
+[help]
+	autocorrect = 1
+[difftool]
+	prompt = false
+[mergetool]
+	prompt = false
+[merge]
+	log = true
+
+# aliases
 [alias]
 	ci = commit -v
 	co = checkout
@@ -57,18 +74,9 @@
 	# TODO: Allow arguments to log to be passed through
 	changes = "!f() { git l `git merge-base ${1:-master} ${2:-@\\{u\\}}`..${2:-@\\{u\\}} ; }; f"
 	show-changes = "!f() { git log -p `git merge-base ${1:-master} ${2:-@\\{u\\}}`..${2:-@\\{u\\}} ; }; f"
-	ksreview = "!f() { local SHA=${1:-HEAD}; local BRANCH=${2:-master}; if [ $SHA == $BRANCH ]; then SHA=HEAD; fi; git difftool -y -t Kaleidoscope $BRANCH...$SHA; }; f"
-	ksshow = "!sh -c 'SHA=${1:-HEAD}; git difftool -y -t Kaleidoscope $SHA^..$SHA;' -"
-	ksdiff = difftool -y -t Kaleidoscope
-	review = !git ksreview
-	reviewtool = !git review
-	showtool = !git ksshow
-
-	# Show the diff between the latest commit and the current state
-	d = !"git diff-index --quiet HEAD -- || clear; git diff --patch-with-stat"
 
 	# `git di $number` shows the diff between the state `$number` revisions ago and the current state
-	di = !"d() { git diff --patch-with-stat HEAD~$1; }; git diff-index --quiet HEAD -- || clear; d"
+	di = !"d() { git difftool --patch-with-stat HEAD~$1; }; git diff-index --quiet HEAD -- || clear; d"
 
 	# Pull in remote changes for the current repository and all its submodules
 	pull-all = !"git pull; git submodule foreach git pull origin master"
@@ -79,7 +87,7 @@
 	# Show verbose output about tags, branches or remotes
 	tags = tag -l
 
-
+# color config
 [color]
 	branch = auto
 	diff = auto
@@ -95,28 +103,6 @@
 	whitespace = red reverse
 [color "status"]
 	untracked = yellow
-[branch]
-	autosetupmerge = true
-[push]
-	default = tracking
-[rerere]
-	enabled = false
-[help]
-	autocorrect = 1
-[difftool "Kaleidoscope"]
-	cmd = ksdiff --partial-changeset --relative-path \"$MERGED\" -- \"$LOCAL\" \"$REMOTE\"
-[mergetool "Kaleidoscope"]
-	cmd = ksdiff --merge --output \"$MERGED\" --base \"$BASE\" -- \"$LOCAL\" --snapshot \"$REMOTE\" --snapshot
-	trustExitCode = true
-[diff]
-	tool = Kaleidoscope
-[difftool]
-	prompt = false
-[mergetool]
-	prompt = false
-[merge]
-	tool = Kaleidoscope
-	log = true
 
 # URL shorthands
 [url "git@github.com:"]
