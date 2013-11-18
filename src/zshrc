@@ -74,8 +74,15 @@ export EDITOR=/usr/local/bin/subl
 export CLICOLOR=1
 
 # directory stack
-export DIRSTACKSIZE=8
-unsetopt autocd autopushd pushdminus pushdsilent pushdtohome
+export DIRSTACKSIZE=9
+DIRSTACKFILE=~/.zdirs
+if [[ -f $DIRSTACKFILE ]] && [[ $#dirstack -eq 0 ]]; then
+  dirstack=( ${(f)"$(< $DIRSTACKFILE)"} )
+  [[ -d $dirstack[1] ]] && cd $dirstack[1] && cd $OLDPWD
+fi
+chpwd() {
+  print -l $PWD ${(u)dirstack} >$DIRSTACKFILE
+}
 
 # path config
 export PATH="./node_modules/.bin:~/bin:~/sbin:/usr/local/bin:/usr/local/sbin:$PATH"
