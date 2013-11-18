@@ -108,6 +108,13 @@ fi
 [[ -s ~/.nvm/nvm.sh ]] && source ~/.nvm/nvm.sh
 
 #
+# KEYBINDINGS
+#
+
+bindkey "^R" history-incremental-pattern-search-backward
+bindkey "^S" history-incremental-pattern-search-forward
+
+#
 # ALIASES AND FUNCTIONS
 #
 
