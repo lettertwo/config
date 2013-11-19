@@ -129,13 +129,19 @@ cwd_prompt_info () {
 set_title() {
 	if [[ "$TERM" = screen* ]]
 	then
-		print -Pn "\ek$1:q\e\\"
+		print -Pn "\ek$1q\e\\"
 	elif [[ "$TERM" = xterm* ]] || [[ $TERM = rxvt* ]] || [[ "$TERM_PROGRAM" = "iTerm.app" ]]
 	then
-		print -Pn "\e]2;$2:q\a"
-		print -Pn "\e]1;$1:q\a"
+		print -Pn "\e]0;$1\a"
 	fi
 }
+
+# Set terminal title to the cwd
+case $TERM in
+    xterm*)
+        precmd () {set_title `cwd_prompt_info`}
+        ;;
+esac
 
 # zmv '(*).lis' '$1.txt'
 # mmv *.c.orig orig/*.c
