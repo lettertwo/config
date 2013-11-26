@@ -5,3 +5,5 @@ http
 grunt
 bower
 trash
+./setup.py
+./manage.py

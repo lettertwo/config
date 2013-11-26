@@ -179,18 +179,13 @@ alias ip="dig +short myip.opendns.com @resolver1.opendns.com"
 alias localip="ipconfig getifaddr en1"
 alias ips="ifconfig -a | grep -o 'inet6\? \(\([0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+\)\|[a-fA-F0-9:]\+\)' | sed -e 's/inet6* //'"
 
-# Enhanced WHOIS lookups
-# alias whois="whois -h whois-servers.net"
-
 # Python aliases
+alias setup="nocorrect python ./setup.py"
 # Show the current python path
 alias pypath='python -c "import sys; print sys.path" | tr "," "\n" | grep -v "egg"'
 
-# Virtualenv/Virtualenvwrapper aliases
-alias setproject="setvirtualenvproject $VIRTUAL_ENV `pwd`"
-
 # Django aliases
-alias manage="python ./manage.py"
+alias manage="nocorrect python ./manage.py"
 alias dumpauth="manage dumpdata --indent=2 auth sessions"
 alias syncall="manage syncdb --noinput --all && manage migrate --fake"
 
