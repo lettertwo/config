@@ -1,0 +1,7 @@
+#!/usr/bin/env zsh
+
+# node version manager (nvm)
+[[ -s ~/.nvm/nvm.sh ]] && source ~/.nvm/nvm.sh
+
+# ruby version manager (rvm)
+[[ -s ~/.rvm/scripts/rvm ]] && source ~/.rvm/scripts/rvm

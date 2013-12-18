@@ -6,7 +6,7 @@ VENDOR=$(CURDIR)/vendor
 .%:
 	$(LINK) $(SRC)/$(subst .,,$@) $(HOME)/$@
 
-link.dotfiles: .gitattributes .gitconfig .gitignore .zshrc .zsh_nocorrect
+link.dotfiles: .gitattributes .gitconfig .gitignore .zshrc .zprofile .zshenv .zsh_nocorrect
 
 link.antigen:
 	$(LINK) $(VENDOR)/antigen $(HOME)/.antigen

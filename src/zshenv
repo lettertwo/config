@@ -1,0 +1,8 @@
+#!/usr/bin/env zsh
+
+export EDITOR=subl
+export CLICOLOR=1
+export DIRSTACKSIZE=9
+
+path=(./node_modules/.bin /usr/local/share/npm/bin $HOME/bin $HOME/sbin /usr/local/bin /usr/local/sbin $path)
+cdpath=(~ ~/Projects/ ~/Library/Application\ Support/)
