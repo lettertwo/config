@@ -1,0 +1,167 @@
+#!/usr/bin/env zsh
+
+path=(
+    ./node_modules/.bin
+    /usr/local/share/npm/bin
+    $HOME/{bin,sbin}
+    /usr/local/{bin,sbin}
+    /usr/{bin,sbin}
+    /{bin,sbin}
+    /opt/X11/bin
+)
+
+cdpath=(~ ~/Projects/ ~/Library/Application\ Support/)
+
+# Make sure custom prompts are available
+fpath=(~/.zprompt ~/.zmodules $fpath)
+
+#
+# General
+#
+
+# Color output (auto set to 'no' on dumb terminals).
+zstyle ':prezto:*:*' color 'yes'
+
+# Set the Zsh functions to load (man zshcontrib).
+zstyle ':prezto:load' zfunction 'zargs' 'zmv'
+
+# Set the Prezto modules to load (browse modules).
+# The order matters.
+zstyle ':prezto:load' pmodule \
+  'environment' \
+  'terminal' \
+  'history' \
+  'directory' \
+  'spectrum' \
+  'utility' \
+  'completion' \
+  'git' \
+  'node' \
+  'autoenv' \
+  'syntax-highlighting' \
+  'history-substring-search' \
+  'prompt'
+
+#
+# History Substring Search
+#
+zstyle ':prezto:module:history-substring-search' color 'yes'
+
+# Set the query found color.
+zstyle ':prezto:module:history-substring-search:color' found 'bg=black,fg=cyan,bold'
+
+# Set the query not found color.
+zstyle ':prezto:module:history-substring-search:color' not-found 'bg=red,fg=black,bold'
+
+#
+# Prompt
+#
+
+# Set the prompt theme to load.
+# Setting it to 'random' loads a random theme.
+# Auto set to 'off' on dumb terminals.
+zstyle ':prezto:module:prompt' theme 'lettertwo'
+
+
+#
+# Syntax Highlighting
+#
+# Set syntax highlighters.
+# By default, only the main highlighter is enabled.
+zstyle ':prezto:module:syntax-highlighting' highlighters \
+  'main' \
+  'brackets' \
+  'pattern' \
+  'cursor' \
+  'root'
+#
+# Set syntax highlighting styles.
+# zstyle ':prezto:module:syntax-highlighting' styles \
+#   'builtin' 'bg=blue' \
+#   'command' 'bg=blue' \
+#   'function' 'bg=blue'
+
+
+#
+# Terminal
+#
+# Auto set the tab and window titles.
+zstyle ':prezto:module:terminal' auto-title 'yes'
+
+export EDITOR=subl
+
+# ruby version manager (rvm)
+[[ -s ~/.rvm/scripts/rvm ]] && source ~/.rvm/scripts/rvm
+
+#
+# HISTIGNORE
+#
+# A way to do bash-style history ignore for certain commands
+HISTIGNORE="&:cd:ls:ll:la:l1:l.:..::pwd:exit:clear:cls"
+function zshaddhistory() {
+    CMDS=("${(s/:/)HISTIGNORE}")
+    for CMD in $CMDS; do
+        if [[ $1 == "$CMD"* ]] ; then
+            return 1
+        fi
+    done
+}
+
+#
+# NOCORRECT
+#
+# theoretically helpful correction is too frequently just annoying :(
+# To help reduce annoying false corrections, we keep a .znocorrect file.
+# Any commands listed in that file will not be corrected.
+if [ -f ~/.znocorrect ]; then
+    while read -r COMMAND; do
+        alias $COMMAND="nocorrect $COMMAND"
+    done < ~/.znocorrect
+fi
+
+#
+# KEYBINDINGS
+#
+
+# bindkey "^R" history-incremental-pattern-search-backward
+# bindkey "^S" history-incremental-pattern-search-forward
+bindkey "^[[7~" beginning-of-line #Home key
+bindkey "^[[8~" end-of-line #End key
+bindkey "^[[3~" delete-char #Del key
+bindkey "^[[A" history-beginning-search-backward #Up Arrow
+bindkey "^[[B" history-beginning-search-forward #Down Arrow
+bindkey "^[Oc" forward-word # control + right arrow
+bindkey "^[Od" backward-word # control + left arrow
+bindkey "^H" backward-kill-word # control + backspace
+bindkey "^[[3^" kill-word # control + delete
+
+#
+# ALIASES AND FUNCTIONS
+#
+
+# Default top to organize by cpu usage
+alias top='top -o cpu'
+# Pings with 5 packets, not unlimited
+alias ping='ping -c 5'
+# Disk free, in gigabytes, not bytes
+alias df='df -h'
+# Calculate total disk usage for a folder
+alias du='du -h -c'
+
+# IP addresses
+alias ip="dig +short myip.opendns.com @resolver1.opendns.com"
+alias localip="ipconfig getifaddr en1"
+alias ips="ifconfig -a | grep -o 'inet6\? \(\([0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+\)\|[a-fA-F0-9:]\+\)' | sed -e 's/inet6* //'"
+
+# Python aliases
+alias setup="nocorrect python ./setup.py"
+# Show the current python path
+alias pypath='python -c "import sys; print sys.path" | tr "," "\n" | grep -v "egg"'
+
+# Django aliases
+alias manage="nocorrect python ./manage.py"
+alias dumpauth="manage dumpdata --indent=2 auth sessions"
+alias syncall="manage syncdb --noinput --all && manage migrate --fake"
+
+# Use trash instead of rm
+alias rm='trash'
