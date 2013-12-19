@@ -2,18 +2,23 @@ LINK=ln -sf
 SRC=$(CURDIR)/src
 VENDOR=$(CURDIR)/vendor
 
-
 .%:
 	$(LINK) $(SRC)/$(subst .,,$@) $(HOME)/$@
 
-link.dotfiles: .gitattributes .gitconfig .gitignore .zshrc .zshenv .zsh_nocorrect
+p.%:
+	$(LINK) $(VENDOR)/prezto/runcoms/$(subst p.,,$@) $(HOME)/$(subst p,,$@)
 
-link.antigen:
-	$(LINK) $(VENDOR)/antigen $(HOME)/.antigen
+link.dotfiles: .gitattributes .gitconfig .gitignore .zpreztorc .zsh_nocorrect
 
-install: link.dotfiles link.antigen
+link.prezto.dotfiles: p.zlogin p.zlogout p.zprofile p.zshenv p.zshrc
+
+link.prezto:
+	$(LINK) $(VENDOR)/prezto $(HOME)/.zprezto
+
+install: link.prezto link.prezto.dotfiles link.dotfiles
 
 .PHONY:
 	link.dotfiles
-	link.antigen
+	link.prezto
+	link.prezto.dotfiles
 	install
