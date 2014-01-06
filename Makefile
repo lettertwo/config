@@ -6,10 +6,10 @@ RUNCOMS=$(VENDOR)/prezto/runcoms
 PROMPTS=$(MODULES)/prompt/functions
 
 .%:
-	$(LINK) $(SRC)/$(subst .,,$@) $(HOME)/$@
+	$(LINK) $(SRC)/$(patsubst .%,%,$@) $(HOME)/$@
 
 p.%:
-	$(LINK) $(RUNCOMS)/$(subst p.,,$@) $(HOME)/$(subst p.,.,$@)
+	$(LINK) $(RUNCOMS)/$(patsubst p.%,%,$@) $(HOME)/$(patsubst p.%,.%,$@)
 
 link.modules:
 	$(LINK) $(SRC)/modules/autoenv $(MODULES)/autoenv
@@ -22,7 +22,7 @@ link.prezto:
 
 link.prezto.dotfiles: p.zlogin p.zlogout p.zshenv p.zshrc
 
-link.dotfiles: .gitconfig .gitignore .zprofile .zpreztorc .znocorrect
+link.dotfiles: .gitconfig .gitignore .zprofile .zpreztorc .znocorrect .tmux.conf
 
 install: link.modules link.prompts link.prezto link.prezto.dotfiles link.dotfiles
 
