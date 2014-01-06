@@ -9,7 +9,7 @@ PROMPTS=$(MODULES)/prompt/functions
 	$(LINK) $(SRC)/$(subst .,,$@) $(HOME)/$@
 
 p.%:
-	$(LINK) $(RUNCOMS)/$(subst p.,,$@) $(HOME)/$(subst p,,$@)
+	$(LINK) $(RUNCOMS)/$(subst p.,,$@) $(HOME)/$(subst p.,.,$@)
 
 link.modules:
 	$(LINK) $(SRC)/modules/autoenv $(MODULES)/autoenv
