@@ -20,9 +20,9 @@ link.prompts:
 link.prezto:
 	$(LINK) $(VENDOR)/prezto $(HOME)/.zprezto
 
-link.prezto.dotfiles: p.zlogin p.zlogout p.zprofile p.zshenv p.zshrc
+link.prezto.dotfiles: p.zlogin p.zlogout p.zshenv p.zshrc
 
-link.dotfiles: .gitconfig .gitignore .zpreztorc .znocorrect
+link.dotfiles: .gitconfig .gitignore .zprofile .zpreztorc .znocorrect
 
 install: link.modules link.prompts link.prezto link.prezto.dotfiles link.dotfiles
 

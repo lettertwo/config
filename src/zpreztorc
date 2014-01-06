@@ -1,17 +1,5 @@
 #!/usr/bin/env zsh
 
-path=(
-    ./node_modules/.bin
-    /usr/local/share/npm/bin
-    $HOME/{bin,sbin}
-    /usr/local/{bin,sbin}
-    /usr/{bin,sbin}
-    /{bin,sbin}
-    /opt/X11/bin
-)
-
-cdpath=(~ ~/Projects/ ~/Library/Application\ Support/)
-
 # Make sure custom prompts are available
 fpath=(~/.zprompt ~/.zmodules $fpath)
 
