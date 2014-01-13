@@ -3,6 +3,7 @@ cake
 volo
 http
 grunt
+gulp
 bower
 trash
 ./setup.py
