@@ -38,7 +38,7 @@ cdpath=(~ ~/Projects/ ~/Library/Application\ Support/)
 
 # Set the list of directories that Zsh searches for programs.
 path=(
-    ./node_modules/.bin
+    {.,$HOME}/node_modules/.bin
     /usr/local/share/npm/bin
     $HOME/{bin,sbin}
     /usr/local/{bin,sbin}
@@ -50,6 +50,12 @@ path=(
 # Ensure path arrays do not contain duplicates.
 typeset -gU cdpath fpath mailpath path
 
+#
+# NVM
+#
+if [[ -s "$HOME/.nvm/nvm.sh" ]]; then
+  source "$HOME/.nvm/nvm.sh"
+fi
 
 #
 # Less
