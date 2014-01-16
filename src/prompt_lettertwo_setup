@@ -120,7 +120,7 @@ function prompt_lettertwo_setup {
   # directories, black foreground and red background for setuid executables, etc.
   LSDARK=exfxcxdxbxegedabagacad
   LSBRIGHT=Exdxfxgxcxegedacagabac
-  LSCOLORS=$LSBRIGHT
+  export LSCOLORS=$LSBRIGHT
 }
 
 prompt_lettertwo_setup "$@"
