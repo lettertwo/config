@@ -1,4 +1,4 @@
-LINK=ln -sf
+LINK=ln -shf
 SRC=$(CURDIR)/src
 VENDOR=$(CURDIR)/vendor
 MODULES=$(VENDOR)/prezto/modules
@@ -13,6 +13,7 @@ p.%:
 
 link.modules:
 	$(LINK) $(SRC)/modules/autoenv $(MODULES)/autoenv
+	$(LINK) $(SRC)/modules/gulp $(MODULES)/gulp
 
 link.prompts:
 	$(LINK) $(SRC)/prompt_lettertwo_setup $(PROMPTS)/prompt_lettertwo_setup

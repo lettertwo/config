@@ -24,7 +24,9 @@ zstyle ':prezto:load' pmodule \
   'completion' \
   'git' \
   'node' \
+  'ruby' \
   'autoenv' \
+  'gulp' \
   'syntax-highlighting' \
   'history-substring-search' \
   'prompt'
