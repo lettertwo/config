@@ -191,4 +191,4 @@ alias syncall="manage syncdb --noinput --all && manage migrate --fake"
 alias rm='trash'
 
 # Use coffeescript with gulp by default
-alias gulp='gulp --require coffee-script'
+alias gulp='gulp --require coffee-script --require coffee-script/register'
