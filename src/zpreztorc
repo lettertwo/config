@@ -192,3 +192,10 @@ alias rm='trash'
 
 # Use coffeescript with gulp by default
 alias gulp='gulp --require coffee-script --require coffee-script/register'
+
+# rage quit!!!
+function fuck() {
+  if killall -9 "$2"; then
+    echo ; echo " (╯°□°）╯︵$(echo "$2"|toilet -f term -F rotate)"; echo
+  fi
+}
