@@ -23,11 +23,12 @@ for c (
     rm
     show
     status
+    stash
   ) alias "g$c"="git $c"
 
 # alias all git aliases for even speedier access:
 s=`git config --get-regexp alias`
 for i ("${(s/alias./)s}") alias "g$i[(w)1]"="git $i[(w)1]"
 
-#cleanup
+# cleanup
 unset c; unset s; unset i;
