@@ -14,6 +14,7 @@ p.%:
 link.modules:
 	$(LINK) $(SRC)/modules/autoenv $(MODULES)/autoenv
 	$(LINK) $(SRC)/modules/gulp $(MODULES)/gulp
+	$(LINK) $(SRC)/modules/simplegit $(MODULES)/simplegit
 
 link.prompts:
 	$(LINK) $(SRC)/prompt_lettertwo_setup $(PROMPTS)/prompt_lettertwo_setup

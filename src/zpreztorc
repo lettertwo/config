@@ -22,7 +22,7 @@ zstyle ':prezto:load' pmodule \
   'directory' \
   'spectrum' \
   'completion' \
-  'git' \
+  'simplegit' \
   'node' \
   'ruby' \
   'autoenv' \
