@@ -107,8 +107,8 @@
 	ls = ls-files
 	li = !git ignored
 	r = reset
-	rs = $git r --soft
-	rh = $git r --hard
+	rs = !git r --soft
+	rh = !git r --hard
 
 # color config
 [color]
