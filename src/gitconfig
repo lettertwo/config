@@ -45,7 +45,6 @@
 	# TODO: Find the git root and search from there.
 	cleanup = !sh -c 'find . -name *.orig -delete'
 	amend = !git log -n 1 --pretty=tformat:%s%n%n%b | git commit -F - --amend
-	# Remove files which have been deleted.
 	staged = diff --staged --name-status
 	unstaged = diff --name-status
 	update = pull --rebase
@@ -58,9 +57,9 @@
 	clone-all = clone --recursive
 	# Show verbose output about tags, branches or remotes
 	tags = tag -l
-  # List ignored files
+	# List ignored files
 	ignored = !git status --porcelain --short --ignored | sed -n "\"s/^!! //p\""
-  # List conflicted files
+	# List conflicted files
 	conflicted = !git status | sed -n "\"s/^.*both [a-z]*ed: *//p\""
 	# Record removal of missing files to the index.
 	index-removed = !git ls-files -z --deleted | xargs -0 git rm
@@ -103,7 +102,7 @@
 	ff = !git fast-forward
 	up = !git update
 	in = !git incoming
-  out = !git outgoing
+	out = !git outgoing
 	ls = ls-files
 	li = !git ignored
 	r = reset
@@ -126,17 +125,3 @@
 	whitespace = red reverse
 [color "status"]
 	untracked = yellow
-
-# URL shorthands
-[url "git@github.com:"]
-	insteadOf = "gh:"
-	pushInsteadOf = "github:"
-	pushInsteadOf = "git://github.com/"
-[url "git://github.com/"]
-	insteadOf = "github:"
-[url "git@gist.github.com:"]
-	insteadOf = "gst:"
-	pushInsteadOf = "gist:"
-	pushInsteadOf = "git://gist.github.com/"
-[url "git://gist.github.com/"]
-	insteadOf = "gist:"
