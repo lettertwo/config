@@ -108,6 +108,9 @@
 	r = reset
 	rs = !git r --soft
 	rh = !git r --hard
+	ri = !git rebase -i
+	rc = !git rebase --continue
+	ra = !git rebase --abort
 
 # color config
 [color]
