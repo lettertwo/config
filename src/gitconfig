@@ -85,8 +85,10 @@
 	id = !git wd --cached
 	p = push
 	c = commit -v
-	ci = !git c
+	ci = !git commit
 	cm = !git c -m
+	ca = !git amend
+	ce = !git ci --amend
 	co = checkout
 	br = branch
 	bra = branch -a
