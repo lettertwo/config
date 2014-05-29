@@ -41,7 +41,8 @@
 	incoming = !git l ..@{u}
 	outgoing = !git l @{u}..
 	stash-unstaged = stash -k
-	logme = !git l --author="\"`git config --get user.name`\""
+	logme = !git log-pretty --graph --date=short --author="\"`git config --get user.name`\""
+	log-pretty = log --pretty=format:'%C(red)%h%C(reset) %C(bold white)%ad%C(reset)%C(green)%d%C(reset) %C(white)%s%C(reset) %C(bold blue)%aN%C(reset)'
 	# TODO: Find the git root and search from there.
 	cleanup = !sh -c 'find . -name *.orig -delete'
 	amend = !git log -n 1 --pretty=tformat:%s%n%n%b | git commit -F - --amend
@@ -63,6 +64,10 @@
 	conflicted = !git status | sed -n "\"s/^.*both [a-z]*ed: *//p\""
 	# Record removal of missing files to the index.
 	index-removed = !git ls-files -z --deleted | xargs -0 git rm
+	# Show dropped stashes
+	stash-dropped = !"git fsck --unreachable 2> /dev/null | grep 'commit' | awk '{print $3}' | git log-pretty --extended-regexp --grep=\"${1:-(WIP )?[Oo]n [^:]+:}\" --merges --no-walk --stdin"
+	# Recover a dropped stash
+	stash-recover = !"f() { if [ -z "$1" ] ; then echo 'Missing commit hash.'; exit 1; fi; git update-ref -m \"$(git log -1 --pretty="format:%s" "$1")\" refs/stash "$1"; }; f"
 
 	# Shows changes made by a branch since the last common commit with another branch.
 	# Usage:
@@ -98,7 +103,7 @@
 	sts = !git s --untracked-files=no
 	sta = !git s --untracked-files=all
 	stc = !git conflicted
-	l = log --graph --date=short --pretty=format:'%C(red)%h%C(reset) %C(bold white)%ad%C(reset)%C(green)%d%C(reset) %C(white)%s%C(reset) %C(bold blue)%aN%C(reset)'
+	l = !git log-pretty --graph --date=short
 	lr = !git l --date=relative
 	lme = !git logme
 	ff = !git fast-forward
