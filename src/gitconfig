@@ -7,6 +7,8 @@
 	pager = less -F -X
 [branch]
 	autosetupmerge = true
+[pull]
+	ff = only
 [push]
 	default = tracking
 [rerere]
