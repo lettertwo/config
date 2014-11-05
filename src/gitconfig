@@ -2,7 +2,7 @@
 [core]
 	excludesfile = ~/.gitignore
 	attributesfile = ~/.gitattributes
-	editor = subl -w
+	editor = atom -w
 	whitespace = space-before-tab,trailing-space
 	pager = less -F -X
 [branch]
@@ -101,6 +101,7 @@
 	bra = branch -a
 	brr = branch -r
 	s = status -sb
+	# FIXME: !git changes the wd to the git root!
 	st = !git s
 	sts = !git s --untracked-files=no
 	sta = !git s --untracked-files=all
@@ -137,3 +138,7 @@
 	whitespace = red reverse
 [color "status"]
 	untracked = yellow
+[filter "media"]
+	required = true
+	clean = git media clean %f
+	smudge = git media smudge %f
