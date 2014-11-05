@@ -1,7 +1,8 @@
 #
 # Autoenv
 #
-source "$(brew --prefix autoenv)"/activate.sh
+# source "$(brew --prefix autoenv)"/activate.sh
+source ~/.autoenv/activate.sh
 
 # Make sure autoenv_init runs whenever we cd
 chpwd_functions=(autoenv_init $chpwd_functions)
