@@ -4,8 +4,17 @@
 # source "$(brew --prefix autoenv)"/activate.sh
 source ~/.autoenv/activate.sh
 
-# Make sure autoenv_init runs whenever we cd
-chpwd_functions=(autoenv_init $chpwd_functions)
+# Our own little autoenv tester, cuz the default one is recursive and that kinda sucks.
+shallow_autoenv()
+{
+  typeset target home _file
+  target=$1
+  home="$(dirname $HOME)"
+  _file="$PWD/$AUTOENV_ENV_FILENAME"
+  if [[ "$PWD" != "/" && "$PWD" != "$home" && -e "$_file" ]]
+  then autoenv_check_authz_and_run "$_file"
+  fi
+}
 
-# run it once, just in case we started the session with a .env
-autoenv_init
+# Make sure shallow_autoenv runs whenever we cd
+chpwd_functions=(shallow_autoenv $chpwd_functions)
