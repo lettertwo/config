@@ -190,9 +190,6 @@ alias syncall="manage syncdb --noinput --all && manage migrate --fake"
 # Use trash instead of rm
 alias rm='trash'
 
-# Use coffeescript with gulp by default
-alias gulp='gulp --require coffee-script --require coffee-script/register'
-
 # rage quit!!!
 function fuck() {
   if killall -9 "$2"; then
