@@ -2,7 +2,7 @@
 [core]
 	excludesfile = ~/.gitignore
 	attributesfile = ~/.gitattributes
-	editor = atom -w
+	editor = vim
 	whitespace = space-before-tab,trailing-space
 	pager = less -F -X
 [branch]
