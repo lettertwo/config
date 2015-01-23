@@ -83,6 +83,9 @@
 	changes = "!f() { git l `git merge-base ${1:-master} ${2:-@\\{u\\}}`..${2:-@\\{u\\}} ; }; f"
 	show-changes = "!f() { git log -p `git merge-base ${1:-master} ${2:-@\\{u\\}}`..${2:-@\\{u\\}} ; }; f"
 
+	# Shows the commits that are unique to the current branch (not in any other branches.)
+	unique = "!f() { local branch=${1:-$(git symbolic-ref --short HEAD)} ; git l --no-merges $branch --not $(git for-each-ref --format='%(refname)' refs/heads | grep -Fv refs/heads/$branch) ; }; f"
+	
 	# shortcuts
 	i = add
 	ip = add -p
