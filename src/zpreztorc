@@ -196,3 +196,5 @@ function fuck() {
     echo ; echo " (╯°□°）╯︵$(echo "$2"|toilet -f term -F rotate)"; echo
   fi
 }
+# alias rage quit for current user
+alias fu='fuck you'
