@@ -25,11 +25,11 @@ zstyle ':prezto:load' pmodule \
   'simplegit' \
   'node' \
   'ruby' \
-  'autoenv' \
   'gulp' \
   'syntax-highlighting' \
   'history-substring-search' \
-  'prompt'
+  'prompt' \
+  'autoenv' \
 
 #
 # History Substring Search
