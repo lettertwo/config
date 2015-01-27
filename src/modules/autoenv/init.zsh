@@ -17,4 +17,4 @@ shallow_autoenv()
 }
 
 # Make sure shallow_autoenv runs whenever we cd
-chpwd_functions=(shallow_autoenv $chpwd_functions)
+chpwd_functions=($chpwd_functions shallow_autoenv)
