@@ -30,6 +30,7 @@
 	remotes = remote -v
 	merged = branch -a --merged
 	unmerged = branch -a --no-merged
+	delete-merged = !git branch --merged | grep -v "\\*" | xargs -n 1 git branch -d
 	who = shortlog -s --
 	track = checkout -t
 	upstream = "!f() { git rev-parse --verify -q --symbolic-full-name --abbrev-ref $1@{u}; }; f"
@@ -85,7 +86,7 @@
 
 	# Shows the commits that are unique to the current branch (not in any other branches.)
 	unique = "!f() { local branch=${1:-$(git symbolic-ref --short HEAD)} ; git l --no-merges $branch --not $(git for-each-ref --format='%(refname)' refs/heads | grep -Fv refs/heads/$branch) ; }; f"
-	
+
 	# shortcuts
 	i = add
 	ip = add -p
