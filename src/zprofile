@@ -33,9 +33,6 @@ fi
 # Paths
 #
 
-# Set the the list of directories that cd searches.
-cdpath=(~ ~/Projects/ ~/Library/Application\ Support/)
-
 # Set the list of directories that Zsh searches for programs.
 path=(
     {.,$HOME}/node_modules/.bin
@@ -84,4 +81,3 @@ TMPPREFIX="${TMPDIR%/}/zsh"
 if [[ ! -d "$TMPPREFIX" ]]; then
   mkdir -p "$TMPPREFIX"
 fi
-
