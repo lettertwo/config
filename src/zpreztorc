@@ -16,6 +16,7 @@ zstyle ':prezto:load' zfunction 'zargs' 'zmv'
 # Set the Prezto modules to load (browse modules).
 # The order matters.
 zstyle ':prezto:load' pmodule \
+  'editor' \
   'environment' \
   'terminal' \
   'history' \
@@ -119,6 +120,10 @@ setopt CORRECT # correct commands
 #
 # KEYBINDINGS
 #
+
+zstyle ':prezto:module:editor' key-bindings 'vi'
+zstyle ':prezto:module:editor' dot-expansion 'yes'
+
 
 # bindkey "^R" history-incremental-pattern-search-backward
 # bindkey "^S" history-incremental-pattern-search-forward

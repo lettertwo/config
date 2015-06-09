@@ -10,6 +10,7 @@ pmodload 'helper'
 
 prompt_arrow=" %B%F{white}→%f%b "
 prompt_char="%F{cyan}♥%f"
+prompt_char_inverse="%F{magenta}♡%f"
 
 function prompt_lettertwo_pwd {
   _prompt_lettertwo_pwd="${PWD/#$HOME/~}"
@@ -51,6 +52,8 @@ function prompt_lettertwo_setup {
 
   # Set editor-info parameters.
   zstyle ':prezto:module:editor:info:completing' format '%B%F{red}...%f%b'
+  zstyle ':prezto:module:editor:info:keymap:primary' format "${prompt_char}"
+  zstyle ':prezto:module:editor:info:keymap:alternate' format "${prompt_char_inverse}"
 
   # Set git-info parameters.
   zstyle ':prezto:module:git:info' verbose 'yes'
@@ -75,7 +78,8 @@ function prompt_lettertwo_setup {
   # Define prompts.
   PROMPT='
   %F{black}${_prompt_lettertwo_pwd}%f${_virtualenv_prompt_info}${(e)git_info[prompt]}
-  ${prompt_char}${prompt_arrow}'
+  ${editor_info[keymap]}${prompt_arrow}'
+
   RPROMPT='${git_info[rprompt]} %F{black}%n@%m%f'
   SPROMPT='zsh: correct %F{red}%R%f to %F{green}%r%f [nyae]? '
 
