@@ -21,6 +21,8 @@
 	prompt = false
 [merge]
 	log = true
+[diff]
+	compactionHeuristic = true
 
 # aliases
 [alias]
