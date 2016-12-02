@@ -31,6 +31,7 @@ zstyle ':prezto:load' pmodule \
   'history-substring-search' \
   'prompt' \
   'autoenv' \
+  'fzf' \
 
 #
 # History Substring Search
