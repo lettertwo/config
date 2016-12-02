@@ -4,6 +4,15 @@
 # Authors:
 #   Eric Eldredge <lettertwo@gmail.com>
 #
+BLACK=59 #4e4e42
+RED=204 #fd4485
+GREEN=149 #b4e745
+YELLOW=186 #e8e38a
+BLUE=110 #95b4e2
+MAGENTA=204 #f43486
+CYAN=117 #85e1f1
+WHITE=145 #bfbfbf
+LIGHT_WHITE=188 #e6e5e6
 
 # Load dependencies.
 pmodload 'helper'
@@ -125,6 +134,12 @@ function prompt_lettertwo_setup {
   LSDARK=exfxcxdxbxegedabagacad
   LSBRIGHT=Exdxfxgxcxegedacagabac
   export LSCOLORS=$LSBRIGHT
+
+
+export FZF_DEFAULT_OPTS="
+--color fg:${BLACK},bg:-1,hl:${BLUE},fg+:${LIGHT_WHITE},bg+:-1,hl+:${CYAN}
+--color info:${YELLOW},prompt:${GREEN},spinner:${GREEN},pointer:${GREEN},marker:${MAGENTA}
+"
 }
 
 prompt_lettertwo_setup "$@"
