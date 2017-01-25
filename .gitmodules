@@ -1,3 +1,6 @@
 [submodule "vendor/prezto"]
 	path = vendor/prezto
 	url = https://github.com/sorin-ionescu/prezto.git
+[submodule "vendor/zsh-autoenv"]
+	path = vendor/zsh-autoenv
+	url = https://github.com/Tarrasch/zsh-autoenv
