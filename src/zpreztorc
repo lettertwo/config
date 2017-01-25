@@ -32,6 +32,7 @@ zstyle ':prezto:load' pmodule \
   'prompt' \
   'autoenv' \
   'fzf' \
+  'fastlane' \
 
 #
 # History Substring Search
