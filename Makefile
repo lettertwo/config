@@ -12,11 +12,11 @@ p.%:
 	$(LINK) $(RUNCOMS)/$(patsubst p.%,%,$@) $(HOME)/$(patsubst p.%,.%,$@)
 
 link.modules:
-	$(LINK) $(SRC)/modules/autoenv $(MODULES)/autoenv
 	$(LINK) $(SRC)/modules/gulp $(MODULES)/gulp
 	$(LINK) $(SRC)/modules/simplegit $(MODULES)/simplegit
 	$(LINK) $(SRC)/modules/fzf $(MODULES)/fzf
 	$(LINK) $(SRC)/modules/fastlane $(MODULES)/fastlane
+	$(LINK) $(VENDOR)/zsh-autoenv $(MODULES)/zsh-autoenv
 
 link.prompts:
 	$(LINK) $(SRC)/prompt_lettertwo_setup $(PROMPTS)/prompt_lettertwo_setup

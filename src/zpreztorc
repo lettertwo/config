@@ -30,9 +30,9 @@ zstyle ':prezto:load' pmodule \
   'syntax-highlighting' \
   'history-substring-search' \
   'prompt' \
-  'autoenv' \
   'fzf' \
   'fastlane' \
+  'zsh-autoenv' \
 
 #
 # History Substring Search
