@@ -66,6 +66,7 @@ Backup[ ]of[ ]*.numbers/
 *.sublime-*
 local_settings.py
 .env
+.autoenv*
 .cake_task_cache
 .bower.json
 .floo
