@@ -17,9 +17,10 @@ LIGHT_WHITE=188 #e6e5e6
 # Load dependencies.
 pmodload 'helper'
 
-prompt_arrow=" %B%F{white}→%f%b "
-prompt_char="%F{cyan}♥%f"
-prompt_char_inverse="%F{magenta}♡%f"
+prompt_arrow=" %B%F{white}❯%f%b "
+prompt_arrow_alternate=" %B%F{magenta}❯%f%b "
+insert_mode="%F{cyan}♥%f${prompt_arrow}"
+normal_mode="%F{magenta}♡%f${prompt_arrow_alternate}"
 
 function prompt_lettertwo_pwd {
   _prompt_lettertwo_pwd="${PWD/#$HOME/~}"
@@ -61,16 +62,16 @@ function prompt_lettertwo_setup {
 
   # Set editor-info parameters.
   zstyle ':prezto:module:editor:info:completing' format '%B%F{red}...%f%b'
-  zstyle ':prezto:module:editor:info:keymap:primary' format "${prompt_char}"
-  zstyle ':prezto:module:editor:info:keymap:alternate' format "${prompt_char_inverse}"
+  zstyle ':prezto:module:editor:info:keymap:primary' format "${insert_mode}"
+  zstyle ':prezto:module:editor:info:keymap:alternate' format "${normal_mode}"
 
   # Set git-info parameters.
   zstyle ':prezto:module:git:info' verbose 'yes'
   zstyle ':prezto:module:git:info:dirty' format ' %B%F{red}★%f%b'
   zstyle ':prezto:module:git:info:action' format ':%%B%F{yellow}%s%f%%b'
   zstyle ':prezto:module:git:info:added' format ' %%B%F{green}✚%f%%b'
-  zstyle ':prezto:module:git:info:ahead' format ' %%B%F{yellow}⬆%f%%b'
-  zstyle ':prezto:module:git:info:behind' format ' %%B%F{yellow}⬇%f%%b'
+  zstyle ':prezto:module:git:info:ahead' format ' %%B%F{yellow}⇡%f%%b'
+  zstyle ':prezto:module:git:info:behind' format ' %%B%F{yellow}⇣%f%%b'
   zstyle ':prezto:module:git:info:branch' format '%F{green}%b%f'
   zstyle ':prezto:module:git:info:commit' format ':%F{green}%.7c%f'
   zstyle ':prezto:module:git:info:deleted' format ' %%B%F{red}✖%f%%b'
@@ -87,7 +88,7 @@ function prompt_lettertwo_setup {
   # Define prompts.
   PROMPT='
   %F{black}${_prompt_lettertwo_pwd}%f${_virtualenv_prompt_info}${(e)git_info[prompt]}
-  ${editor_info[keymap]}${prompt_arrow}'
+  ${editor_info[keymap]}'
 
   RPROMPT='${git_info[rprompt]} %F{black}%n@%m%f'
   SPROMPT='zsh: correct %F{red}%R%f to %F{green}%r%f [nyae]? '
