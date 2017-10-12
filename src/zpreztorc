@@ -171,6 +171,17 @@ alias lc='lt -c'
 # Lists sorted by date, most recent last, shows access time.
 alias lu='lt -u'
 
+# exa versions of the ls aliases above.
+alias e='exa -1a'
+alias el='exa -lh --git'
+alias er='el -R'
+alias ea='el -a'
+alias ex='el -s extension'
+alias ek='el -s size'
+alias et='el -s oldest'
+alias ec='et -t created'
+alias eu='et -t accessed'
+
 # Default top to organize by cpu usage
 alias top='top -o cpu'
 # Pings with 5 packets, not unlimited
