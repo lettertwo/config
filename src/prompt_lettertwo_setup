@@ -38,6 +38,18 @@ function prompt_lettertwo_precmd {
 
   # Get virtualenv info.
   virtualenv_prompt_info
+
+  # Update xterm title.
+  # \e - escape sequence for escape (ESC)
+  # \a - escape sequence for bell (BEL)
+  # %n - expands to $USERNAME
+  # %m - expands to hostname up to first '.'
+  # %~ - expands to directory, replacing $HOME with '~'
+  case $TERM in
+    xterm*)
+      print -Pn "\e]0;%n@%m: %~\a"
+      ;;
+  esac
 }
 
 function virtualenv_prompt_info {
