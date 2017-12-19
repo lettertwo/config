@@ -56,6 +56,13 @@ if [[ -s "/usr/local/opt/nvm/nvm.sh" ]]; then
 fi
 
 #
+# pyenv
+#
+if (( $+commands[pyenv] )); then
+  eval "$(pyenv init -)"
+fi
+
+#
 # Less
 #
 
