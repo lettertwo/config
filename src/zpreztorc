@@ -24,6 +24,7 @@ zstyle ':prezto:load' pmodule \
   'spectrum' \
   'completion' \
   'simplegit' \
+  'simpledocker' \
   'node' \
   'ruby' \
   'gulp' \
