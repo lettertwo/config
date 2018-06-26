@@ -17,8 +17,13 @@ fi
 # Editors
 #
 
-export EDITOR='vim'
-export VISUAL='vim'
+if [[ "$TERM_PROGRAM" == "nuclide" ]]; then
+  export EDITOR='atom --add --wait'
+  export VISUAL='atom --add --wait'
+else
+  export EDITOR='vim'
+  export VISUAL='vim'
+fi
 export PAGER='less'
 
 #

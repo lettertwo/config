@@ -82,8 +82,6 @@ zstyle ':prezto:module:syntax-highlighting' highlighters \
 # Auto set the tab and window titles.
 zstyle ':prezto:module:terminal' auto-title 'yes'
 
-export EDITOR=atom
-
 # ruby version manager (rvm)
 [[ -s ~/.rvm/scripts/rvm ]] && source ~/.rvm/scripts/rvm
 
