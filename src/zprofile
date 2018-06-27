@@ -18,8 +18,13 @@ fi
 #
 
 if [[ "$TERM_PROGRAM" == "nuclide" ]]; then
-  export EDITOR='atom --add --wait'
-  export VISUAL='atom --add --wait'
+  if (( $+commands[atom-beta] )); then
+    export EDITOR='atom-beta --wait'
+    export VISUAL='atom-beta --wait'
+  else
+    export EDITOR='atom --wait'
+    export VISUAL='atom --wait'
+  fi
 else
   export EDITOR='vim'
   export VISUAL='vim'
