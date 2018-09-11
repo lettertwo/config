@@ -8,6 +8,7 @@
 	autosetupmerge = true
 [pull]
 	ff = only
+	rebase = true
 [push]
 	default = tracking
 [rerere]
@@ -20,6 +21,8 @@
 	prompt = false
 [merge]
 	log = true
+[rebase]
+	autoStash = true
 [diff]
 	compactionHeuristic = true
 
