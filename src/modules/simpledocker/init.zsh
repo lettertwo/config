@@ -22,4 +22,4 @@ zstyle ':completion:*:*:docker-*:*' option-stacking yes
 # Load dependencies.
 pmodload 'helper'
 
-source "${0:h:h}/docker/alias.zsh"
+source "${0:h}/alias.zsh"
