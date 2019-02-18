@@ -218,6 +218,14 @@ if (( $+commands[atom-beta] )); then
   alias apm=apm-beta
 fi
 
+# VSCode aliases
+if (( $+commands[code-insiders] )); then
+  if (( $+commands[code] )); then
+    alias code-stable=code
+  fi
+  alias code=code-insiders
+fi
+
 # rage quit!!!
 function fuck() {
   if killall -9 "$2"; then
