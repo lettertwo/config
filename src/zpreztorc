@@ -39,6 +39,14 @@ zstyle ':prezto:load' pmodule \
   'zsh-autoenv' \
   'alias-tips' \
   'contrib-clipboard' \
+  'enhancd' \
+
+#
+# Enhancd
+#
+zstyle ":prezto:module:enhancd" command "fzf:fzy:peco"
+zstyle ":prezto:module:enhancd" command "cd"
+zstyle ":prezto:module:enhancd" show-fullpath "ENHANCD_DOT_SHOW_FULLPATH"
 
 #
 # History Substring Search
@@ -58,7 +66,7 @@ zstyle ':prezto:module:history-substring-search:color' not-found 'bg=red,fg=blac
 # Set the prompt theme to load.
 # Setting it to 'random' loads a random theme.
 # Auto set to 'off' on dumb terminals.
-zstyle ':prezto:module:prompt' theme 'lettertwo'
+zstyle ':prezto:module:prompt' theme 'spaceship'
 
 
 #
