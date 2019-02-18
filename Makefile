@@ -1,9 +1,9 @@
 LINK=ln -shf
 SRC=$(CURDIR)/src
+CONTRIB=$(CURDIR)/contrib
 VENDOR=$(CURDIR)/vendor
-MODULES=$(VENDOR)/prezto/modules
+VENDOR_CONTRIB=$(VENDOR)/prezto/contrib
 RUNCOMS=$(VENDOR)/prezto/runcoms
-PROMPTS=$(MODULES)/prompt/functions
 
 .%:
 	$(LINK) $(SRC)/$(patsubst .%,%,$@) $(HOME)/$@
@@ -11,16 +11,11 @@ PROMPTS=$(MODULES)/prompt/functions
 p.%:
 	$(LINK) $(RUNCOMS)/$(patsubst p.%,%,$@) $(HOME)/$(patsubst p.%,.%,$@)
 
-link.modules:
-	$(LINK) $(SRC)/modules/gulp $(MODULES)/gulp
-	$(LINK) $(SRC)/modules/simpledocker $(MODULES)/simpledocker
-	$(LINK) $(SRC)/modules/simplegit $(MODULES)/simplegit
-	$(LINK) $(SRC)/modules/fzf $(MODULES)/fzf
-	$(LINK) $(SRC)/modules/fastlane $(MODULES)/fastlane
-	$(LINK) $(VENDOR)/zsh-autoenv $(MODULES)/zsh-autoenv
-
-link.prompts:
-	$(LINK) $(SRC)/prompt_lettertwo_setup $(PROMPTS)/prompt_lettertwo_setup
+link.contrib:
+	mkdir -p $(VENDOR_CONTRIB)
+	$(LINK) $(VENDOR)/prezto-contrib/*/ $(VENDOR_CONTRIB)/
+	$(LINK) $(SRC)/prezto-contrib/*/ $(VENDOR_CONTRIB)/
+	$(LINK) $(VENDOR)/zsh-autoenv $(VENDOR_CONTRIB)/zsh-autoenv
 
 link.prezto:
 	$(LINK) $(VENDOR)/prezto $(HOME)/.zprezto
@@ -29,11 +24,10 @@ link.prezto.dotfiles: p.zlogin p.zlogout p.zshenv p.zshrc
 
 link.dotfiles: .gitconfig .gitignore .zprofile .zpreztorc .znocorrect .tmux.conf
 
-install: link.modules link.prompts link.prezto link.prezto.dotfiles link.dotfiles
+install: link.contrib link.prezto link.prezto.dotfiles link.dotfiles
 
 .PHONY:
-	link.modules
-	link.prompts
+	link.contrib
 	link.prezto
 	link.prezto.dotfiles
 	link.dotfiles

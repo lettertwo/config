@@ -31,10 +31,14 @@ zstyle ':prezto:load' pmodule \
   'syntax-highlighting' \
   'history-substring-search' \
   'autosuggestions' \
+  'lettertwo' \
+  'contrib-prompt' \
   'prompt' \
   'fzf' \
   'fastlane' \
   'zsh-autoenv' \
+  'alias-tips' \
+  'contrib-clipboard' \
 
 #
 # History Substring Search
