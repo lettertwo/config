@@ -12,3 +12,17 @@ make install
 git pull --recursive-submodules
 make install
 ```
+
+## Git config
+
+The `.gitconfig` will try to include a `.gituser` config file.
+I do it this way to avoid having to modify the `.gitconfig` file
+with any settings that aren't shareable.
+
+You can add your own user and other settings to `.gituser` like this:
+
+```shell
+touch ~/.gituser
+git config --file ~/.gituser user.name "Your Name Here"
+git config --file ~/.gituser user.email "your@email.here"
+```
