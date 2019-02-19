@@ -1,0 +1,112 @@
+#!/usr/bin/env zsh
+#
+# Sourced by zplug as $ZPLUG_LOADFILE
+#
+
+# Let zplug manage itself
+zplug "zplug/zplug", hook-build:"zplug --self-manage"
+
+#
+# Config
+#
+
+# Completions
+zplug "modules/completion", from:prezto, defer:1
+
+# Syntax highlighting
+# this needs to load after compinit happens.
+zplug "zsh-users/zsh-syntax-highlighting", defer:2
+export ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern cursor root)
+
+# History
+# This needs to load after syntax highlighting.
+zplug "zsh-users/zsh-history-substring-search", defer:3
+zplug "modules/history", from:prezto
+# A way to do bash-style history ignore for certain commands
+HISTIGNORE="&:k:cd:ls:ll:la:l1:l.:..::pwd:exit:clear:cls"
+function zshaddhistory() {
+  CMDS=("${(s/:/)HISTIGNORE}")
+  for CMD in $CMDS; do
+    if [[ $1 == "$CMD"* ]] ; then
+        return 1
+    fi
+  done
+}
+
+# Autocorrect
+setopt correct
+# theoretically helpful correction is too frequently just annoying :(
+# To help reduce annoying false corrections, we keep a .znocorrect file.
+# Any commands listed in that file will not be corrected.
+if [ -f ~/.znocorrect ]; then
+  while read -r COMMAND; do
+    alias $COMMAND="nocorrect $COMMAND"
+  done < ~/.znocorrect
+fi
+
+# Autosuggestions
+zplug "zsh-users/zsh-autosuggestions"
+
+# vi-style editor modes
+zplug "modules/editor", from:prezto
+zstyle ':prezto:module:editor' key-bindings 'vi'
+zstyle ':prezto:module:editor' dot-expansion 'yes'
+
+# System clipboard integration
+zplug "lib/clipboard", from:oh-my-zsh, if:"[[ $OSTYPE == *darwin* ]]"
+
+# tell me when i could've typed less.
+zplug "djui/alias-tips"
+
+# Directory and cd
+zplug "modules/directory", from:prezto
+zplug "b4b4r07/enhancd", use:"init.sh"
+export ENHANCD_FILTER="fzy:fzf:peco"
+export ENHANCD_DOT_SHOW_FULLPATH=1
+
+# autoenv
+zplug "Tarrasch/zsh-autoenv"
+
+# prompt
+zplug "denysdovhan/spaceship-prompt", use:"spaceship.zsh", as:"theme"
+SPACESHIP_TIME_SHOW="true"
+SPACESHIP_BATTERY_THRESHOLD="80"
+SPACESHIP_EXIT_CODE_SHOW="true"
+SPACESHIP_EXIT_CODE_SYMBOL="✘ "
+
+#
+# Things with dependencies
+#
+
+# Fuzzy search integrations via fzy
+zplug "aperezdc/zsh-fzy"
+
+# Node ecosystem
+export NVM_LAZY_LOAD=true
+export NVM_AUTO_USE=true
+zplug "lukechilds/zsh-nvm"
+zplug "g-plane/zsh-yarn-autocompletions", hook-build:"./zplug.zsh", defer:1
+zplug "lukechilds/zsh-better-npm-completion", defer:2
+
+# Docker ecosystem
+zplug "docker/cli", use:contrib/completion/zsh, defer:1
+zstyle ':completion:*:*:docker:*' option-stacking yes
+zplug "docker/compose", use:contrib/completion/zsh, defer:1
+zstyle ':completion:*:*:docker-*:*' option-stacking yes
+
+#
+# Install
+#
+
+# Install packages that have not been installed yet
+if ! zplug check --verbose; then
+  printf "Install? [y/N]: "
+  if read -q; then
+    echo; zplug install
+  else
+    echo
+  fi
+fi
+
+# Load our plugins!
+zplug load

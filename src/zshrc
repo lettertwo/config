@@ -1,0 +1,292 @@
+#!/usr/bin/env zsh
+#
+# Executes commands at the start of an interactive session.
+#
+
+#
+# Zplug
+#
+
+# Check if zplug is installed
+if [[ ! -d ~/.zplug ]]; then
+  git clone --depth=1 https://github.com/zplug/zplug ~/.zplug
+  source ~/.zplug/init.zsh && zplug update --self
+fi
+
+# Load zplug with our config.
+export ZPLUG_LOADFILE=~/.zplugrc
+source ~/.zplug/init.zsh
+
+#
+# Autoload
+#
+
+# Set the Zsh functions to load (man zshcontrib).
+autoload -Uz "zargs"
+autoload -Uz "zmv"
+autoload run-help
+
+#
+# Keybindings
+#
+
+# use vi movements to perform history substring searching.
+bindkey -M vicmd 'k' history-substring-search-up
+bindkey -M vicmd 'j' history-substring-search-down
+
+if [[ -n "$key_info" ]]; then
+  # Accept next word in suggestion with Ctrl-F.
+  bindkey -M viins "$key_info[Control]F" vi-forward-word
+  # Accept the whole suggestion with Ctrl-E.
+  bindkey -M viins "$key_info[Control]E" vi-add-eol
+fi
+
+# CTRL-T: Place the selected file path in the command line
+bindkey '^T'  fzy-file-widget
+# CTRL-R: Place the selected command from history in the command line
+bindkey '^R'  fzy-history-widget
+# CTRL-P: Place the selected process ID in the command line
+bindkey '^P'  fzy-proc-widget
+
+#
+# Aliases & Functions
+#
+
+# exa versions of some ls aliases.
+
+# Lists in one column, hidden files.
+alias l='exa -1a'
+# Lists human readable sizes.
+alias ll='exa -lh --git'
+# Lists human readable sizes, recursively.
+alias lr='ll -R'
+# Lists human readable sizes, hidden files.
+alias la='ll -a'
+# Lists sorted by extension (GNU only).
+alias lx='ll -s extension'
+# Lists sorted by size, largest last.
+alias lk='ll -s size'
+# Lists sorted by date, most recent last.
+alias lt='ll -s oldest'
+# Lists sorted by date, most recent last, shows change time.
+alias lc='lt -t created'
+# Lists sorted by date, most recent last, shows access time.
+alias lu='lt -t accessed'
+
+
+# Utils
+
+# Default top to organize by cpu usage
+alias top='top -o cpu'
+# Pings with 5 packets, not unlimited
+alias ping='ping -c 5'
+# Disk free, in gigabytes, not bytes
+alias df='df -h'
+# Calculate total disk usage for a folder
+alias du='du -h -c'
+
+# IP addresses
+alias ip="dig +short myip.opendns.com @resolver1.opendns.com"
+alias localip="ipconfig getifaddr en1"
+alias ips="ifconfig -a | grep -o 'inet6\? \(\([0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+\)\|[a-fA-F0-9:]\+\)' | sed -e 's/inet6* //'"
+
+# Python aliases
+alias setup="nocorrect python ./setup.py"
+# Show the current python path
+alias pypath='python -c "import sys; print sys.path" | tr "," "\n" | grep -v "egg"'
+
+# Django aliases
+alias manage="nocorrect python ./manage.py"
+alias dumpauth="manage dumpdata --indent=2 auth sessions"
+alias syncall="manage syncdb --noinput --all && manage migrate --fake"
+
+# Use trash instead of rm
+alias rm='trash'
+
+# Atom aliases
+if (( $+commands[atom-beta] )); then
+  if (( $+commands[atom] )); then
+    alias atom-stable=atom
+    alias apm-stable=apm
+  fi
+  alias atom=atom-beta
+  alias apm=apm-beta
+fi
+
+# VSCode aliases
+if (( $+commands[code-insiders] )); then
+  if (( $+commands[code] )); then
+    alias code-stable=code
+  fi
+  alias code=code-insiders
+fi
+
+# rage quit!!!
+function fuck() {
+  if killall -9 "$2"; then
+    echo ; echo " (╯°□°）╯︵$(echo "$2"|toilet -f term -F rotate)"; echo
+  fi
+}
+# alias rage quit for current user
+alias fu='fuck you'
+
+# Print some stats about zsh usage. Lifted from https://github.com/robbyrussell/oh-my-zsh/blob/20f536c06432a5cda86fc9b5bdf73fd1115cb84d/lib/functions.zsh
+function zsh_stats() {
+  fc -l 1 | awk '{CMD[$2]++;count++;}END { for (a in CMD)print CMD[a] " " CMD[a]/count*100 "% " a;}' | grep -v "./" | column -c3 -s " " -t | sort -nr | nl |  head -n20
+}
+
+#
+# Git aliases
+#
+
+alias g='git'
+
+# alias the common git commands
+for c (
+  add
+  bisect
+  branch
+  checkout
+  clone
+  commit
+  diff
+  fetch
+  grep
+  init
+  log
+  merge
+  mv
+  pull
+  push
+  rebase
+  reset
+  rm
+  show
+  status
+  stash
+) alias "g$c"="git $c"
+
+# alias all git aliases for even speedier access:
+s=`git config --get-regexp alias`
+for i ("${(s/alias./)s}") alias "g$i[(w)1]"="git $i[(w)1]"
+
+#
+# Docker aliases
+#
+
+## Image (i)
+alias dimage='docker image'
+for c (
+  build
+  history
+  import
+  inspect
+  ls
+  prune
+  pull
+  push
+  rm
+  save
+  tag
+) alias "di$c"="docker image $c"
+
+## Volume (v)
+alias dvolume='docker volume'
+for c (
+  inspect
+  ls
+  prune
+  rm
+) alias "dv$c"="docker volume $c"
+
+## Network (n)
+alias dnetwork='docker network'
+for c (
+  connect
+  disconnect
+  inspect
+  ls
+  prune
+  rm
+) alias "dn$c"="docker network $c"
+
+## System (s)
+alias dsystem='docker system'
+for c (
+  df
+  prune
+) alias "ds$c"="docker system $c"
+
+# Docker Compose (c)
+alias dcompose='docker-compose'
+for c (
+  build
+  down
+  exec
+  kill
+  logs
+  ps
+  pause
+  unpause
+  pull
+  push
+  ps
+  run
+  rm
+  start
+  scale
+  restart
+  up
+  version
+  stop
+) alias "dc$c"="docker-compose $c"
+
+# Docker (d)
+for c (
+  attach
+  build
+  diff
+  exec
+  history
+  images
+  inspect
+  import
+  kill
+  logs
+  login
+  logout
+  ps
+  pause
+  unpause
+  pull
+  push
+  ps
+  run
+  rm
+  rmi
+  rename
+  start
+  restart
+  stats
+  save
+  tag
+  top
+  update
+  volume
+  version
+  wait
+  stop
+) alias "d$c"="docker $c"
+
+## Container (d)
+alias dcontainer='docker container'
+# Most container commands are mirrored at the docker level,
+# so we can just use the 'top level' aliases above.
+# Here, we add aliases for the few that aren't.
+for c (
+  ls
+  prune
+) alias "d$c"="docker container $c"
+
+# cleanup
+unset c; unset s; unset i;
