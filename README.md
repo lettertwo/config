@@ -1,7 +1,7 @@
 # Getting Started
 
 ```shell
-git clone --recursive git@github.com:lettertwo/dotfiles.git
+git clone git@github.com:lettertwo/dotfiles.git
 cd dotfiles
 make install
 ```
@@ -9,7 +9,7 @@ make install
 ## Updating
 
 ```shell
-git pull --recursive-submodules
+git pull
 make install
 ```
 
@@ -25,4 +25,5 @@ You can add your own user and other settings to `.gituser` like this:
 touch ~/.gituser
 git config --file ~/.gituser user.name "Your Name Here"
 git config --file ~/.gituser user.email "your@email.here"
+git config --file ~/.gituser credential.helper osxkeychain
 ```

@@ -2,7 +2,7 @@
 #
 # Executes commands at login pre-zshrc.
 #
-# Adapted from the prezto zprofile 'runcom'
+# Adapted from the prezto/runcoms/zprofile
 #
 
 #
@@ -37,7 +37,6 @@ else
   export EDITOR='vim'
   export VISUAL='vim'
 fi
-export PAGER='less'
 
 #
 # Language
@@ -51,30 +50,24 @@ fi
 # Paths
 #
 
-# Set the list of directories that Zsh searches for programs.
-path=(
-    {.,$HOME}/node_modules/.bin
-    /usr/local/share/npm/bin
-    $HOME/{bin,sbin}
-    /usr/local/{bin,sbin}
-    /usr/{bin,sbin}
-    /{bin,sbin}
-    /opt/X11/bin
-)
-
 # Ensure path arrays do not contain duplicates.
 typeset -gU cdpath fpath mailpath path
 
-#
-# pyenv
-#
-if (( $+commands[pyenv] )); then
-  eval "$(pyenv init -)"
-fi
+# Set the list of directories that Zsh searches for programs.
+path=(
+  {.,$HOME}/node_modules/.bin
+  /usr/local/share/npm/bin
+  $HOME/{bin,sbin}
+  /usr/local/{bin,sbin}
+  /usr/{bin,sbin}
+  /{bin,sbin}
+  /opt/X11/bin
+)
 
 #
 # Less
 #
+export PAGER='less'
 
 # Set the default Less options.
 # Mouse-wheel scrolling has been disabled by -X (disable screen clearing).
@@ -82,8 +75,9 @@ fi
 export LESS='-F -g -i -M -R -S -w -X -z-4'
 
 # Set the Less input preprocessor.
-if (( $+commands[lesspipe.sh] )); then
-  export LESSOPEN='| /usr/bin/env lesspipe.sh %s 2>&-'
+# Try both `lesspipe` and `lesspipe.sh` as either might exist on a system.
+if (( $#commands[(i)lesspipe(|.sh)] )); then
+  export LESSOPEN="| /usr/bin/env $commands[(i)lesspipe(|.sh)] %s 2>&-"
 fi
 
 #
