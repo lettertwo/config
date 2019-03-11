@@ -68,13 +68,10 @@ export ENHANCD_DOT_SHOW_FULLPATH=1
 zplug "Tarrasch/zsh-autoenv"
 
 # prompt
-zplug "denysdovhan/spaceship-prompt", use:"spaceship.zsh", as:"theme"
-SPACESHIP_TIME_SHOW="true"
-SPACESHIP_BATTERY_THRESHOLD="80"
-SPACESHIP_EXIT_CODE_SHOW="true"
-SPACESHIP_EXIT_CODE_SYMBOL="✘ "
-SPACESHIP_PACKAGE_SHOW="false"
-SPACESHIP_NODE_SHOW="false"
+zplug "modules/git", from:prezto, defer:1
+zplug "modules/prompt", from:prezto, defer:1
+zstyle ':prezto:module:prompt' theme 'sorin'
+zstyle ':prezto:module:prompt' show-return-val 'true'
 
 #
 # Things with dependencies
