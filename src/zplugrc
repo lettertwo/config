@@ -61,7 +61,7 @@ zplug "djui/alias-tips"
 # Directory and cd
 zplug "modules/directory", from:prezto
 zplug "b4b4r07/enhancd", use:"init.sh"
-export ENHANCD_FILTER="fzy:fzf:peco"
+export ENHANCD_FILTER="fzf:peco"
 export ENHANCD_DOT_SHOW_FULLPATH=1
 
 # autoenv
@@ -78,8 +78,10 @@ SPACESHIP_EXIT_CODE_SYMBOL="✘ "
 # Things with dependencies
 #
 
-# Fuzzy search integrations via fzy
-zplug "aperezdc/zsh-fzy"
+# Fuzzy search integrations via fzf
+export FZF_DEFAULT_OPTS="--layout=reverse --inline-info --ansi --height=40%"
+zplug "/usr/local/opt/fzf/shell", use:"key-bindings.zsh", from:"local", defer:2
+zplug "/usr/local/opt/fzf/shell", use:"completion.zsh", from:"local", defer:2
 
 # Node ecosystem
 export NVM_LAZY_LOAD=true

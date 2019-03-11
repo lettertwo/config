@@ -41,13 +41,6 @@ if [[ -n "$key_info" ]]; then
   bindkey -M viins "$key_info[Control]E" vi-add-eol
 fi
 
-# CTRL-T: Place the selected file path in the command line
-bindkey '^T'  fzy-file-widget
-# CTRL-R: Place the selected command from history in the command line
-bindkey '^R'  fzy-history-widget
-# CTRL-P: Place the selected process ID in the command line
-bindkey '^P'  fzy-proc-widget
-
 #
 # Aliases & Functions
 #
