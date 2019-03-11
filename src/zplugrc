@@ -87,13 +87,14 @@ zplug "/usr/local/opt/fzf/shell", use:"completion.zsh", from:"local", defer:2
 export NVM_LAZY_LOAD=true
 export NVM_AUTO_USE=true
 zplug "lukechilds/zsh-nvm"
-zplug "g-plane/zsh-yarn-autocompletions", hook-build:"./zplug.zsh", defer:1
+zplug "lukechilds/zsh-better-npm-completion", defer:2
+zplug "g-plane/zsh-yarn-autocompletions", hook-build:"./zplug.zsh", defer:2
 zplug "lukechilds/zsh-better-npm-completion", defer:2
 
 # Docker ecosystem
-zplug "docker/cli", use:contrib/completion/zsh, defer:1
+zplug "docker/cli", use:"contrib/completion/zsh", defer:2
 zstyle ':completion:*:*:docker:*' option-stacking yes
-zplug "docker/compose", use:contrib/completion/zsh, defer:1
+zplug "docker/compose", use:"contrib/completion/zsh", defer:2
 zstyle ':completion:*:*:docker-*:*' option-stacking yes
 
 #
