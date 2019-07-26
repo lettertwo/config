@@ -26,13 +26,8 @@ if [[ "$TERM_PROGRAM" == "nuclide" ]]; then
     export VISUAL='atom --wait'
   fi
 elif [[ "$TERM_PROGRAM" == "vscode" ]]; then
-  if (( $+commands[code-insiders] )); then
-    export EDITOR='code-insiders --wait'
-    export VISUAL='code-insiders --wait'
-  else
-    export EDITOR='code --wait'
-    export VISUAL='code --wait'
-  fi
+  export EDITOR='code --wait'
+  export VISUAL='code --wait'
 else
   export EDITOR='vim'
   export VISUAL='vim'
