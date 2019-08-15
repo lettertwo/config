@@ -3,6 +3,19 @@
 # Sourced by zplug as $ZPLUG_LOADFILE
 #
 
+# Set the list of directories that Zsh searches for programs.
+path=(
+  $HOME/.zplug/repos/zplug/zplug/bin
+  $HOME/.zplug/bin
+  {.,$HOME}/node_modules/.bin
+  /usr/local/share/npm/bin
+  $HOME/{bin,sbin}
+  /usr/local/{bin,sbin}
+  /usr/{bin,sbin}
+  /{bin,sbin}
+  /opt/X11/bin
+)
+
 # Let zplug manage itself
 zplug "zplug/zplug", hook-build:"zplug --self-manage"
 
