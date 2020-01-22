@@ -26,6 +26,10 @@ autoload -Uz "zargs"
 autoload -Uz "zmv"
 autoload run-help
 
+# Allow ^ to be used unescaped in args
+# See https://github.com/ohmyzsh/ohmyzsh/issues/449#issuecomment-6973425
+unsetopt nomatch
+
 #
 # Keybindings
 #
