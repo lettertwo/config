@@ -148,6 +148,7 @@ for c (
   pull
   push
   rebase
+  reflog
   reset
   rm
   show

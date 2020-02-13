@@ -103,8 +103,10 @@
 	id = !git wd --cached
 	p = push
 	c = commit -v
+	cf = !git c -n
 	ci = !git commit
 	cm = !git c -m
+	cfm = !git cf -m
 	ca = !git amend
 	ce = !git ci --amend
 	co = checkout
