@@ -9,5 +9,8 @@ grunt
 gulp
 bower
 trash
+theme
+netlify
+gh
 ./setup.py
 ./manage.py
