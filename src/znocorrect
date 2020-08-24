@@ -12,5 +12,6 @@ trash
 theme
 netlify
 gh
+tsc
 ./setup.py
 ./manage.py
