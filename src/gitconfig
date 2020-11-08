@@ -112,7 +112,7 @@
 	ca = !git amend
 	ce = !git ci --amend
 	co = checkout
-	br = branch
+	br = branch -vv
 	bra = branch -a
 	brr = branch -r
 	sw = switch
