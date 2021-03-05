@@ -19,7 +19,10 @@ fi
 # Editors
 #
 
-if [[ "$TERM_PROGRAM" == "vscode" ]]; then
+if [[ ! -z "$ONIVIM_TERMINAL" ]]; then
+  export EDITOR='oni2 --nofork --silent'
+  export VISUAL='oni2 --nofork --silent'
+elif [[ "$TERM_PROGRAM" == "vscode" ]]; then
   export EDITOR='code --wait'
   export VISUAL='code --wait'
 elif [[ $+commands[nvim] ]]; then
