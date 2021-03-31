@@ -109,6 +109,10 @@ zstyle ':completion:*:*:docker:*' option-stacking yes
 zplug "docker/compose", use:"contrib/completion/zsh", defer:2
 zstyle ':completion:*:*:docker-*:*' option-stacking yes
 
+# Rust ecosystem
+zplug "cowboyd/zsh-rust"
+zplug "ryutok/rust-zsh-completions"
+
 #
 # Install
 #
