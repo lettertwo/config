@@ -94,6 +94,7 @@ zstyle ':prezto:module:prompt' show-return-val 'true'
 export FZF_DEFAULT_OPTS="--layout=reverse --inline-info --ansi --height=40%"
 zplug "/usr/local/opt/fzf/shell", use:"key-bindings.zsh", from:"local", defer:2
 zplug "/usr/local/opt/fzf/shell", use:"completion.zsh", from:"local", defer:2
+zplug "Aloxaf/fzf-tab"
 
 # Node ecosystem
 export NVM_LAZY_LOAD=true
