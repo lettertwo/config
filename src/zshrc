@@ -100,6 +100,9 @@ alias syncall="manage syncdb --noinput --all && manage migrate --fake"
 # Use trash instead of rm
 alias rm='trash'
 
+# Use delta instead of diff
+alias diff='delta'
+
 # Atom aliases
 if (( $+commands[atom-beta] )); then
   if (( $+commands[atom] )); then

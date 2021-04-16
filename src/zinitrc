@@ -86,6 +86,10 @@ export ENHANCD_DOT_SHOW_FULLPATH=1
 zinit ice wait lucid from"gh-r" as"program" mv"exa* -> exa" pick"bin/exa"
 zinit light ogham/exa
 
+# dandavison/delta, replacement for diff
+zinit ice wait lucid from"gh-r" as"program" mv"delta* -> delta" pick"delta/delta"
+zinit light dandavison/delta
+
 # Node ecosystem
 export NVM_LAZY_LOAD=true
 export NVM_AUTO_USE=true
