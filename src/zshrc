@@ -4,18 +4,18 @@
 #
 
 #
-# Zplug
+# zinit
 #
 
-# Check if zplug is installed
-if [[ ! -d ~/.zplug ]]; then
-  git clone --depth=1 https://github.com/zplug/zplug ~/.zplug
-  source ~/.zplug/init.zsh && zplug update --self
+# Check if zinit is installed
+if [[ ! -d ~/.zinit ]]; then
+  mkdir -p ~/.zinit
+  git clone --depth=1 https://github.com/zdharma/zinit.git ~/.zinit/bin
 fi
 
-# Load zplug with our config.
-export ZPLUG_LOADFILE=~/.zplugrc
-source ~/.zplug/init.zsh
+# Load zinit with our config.
+source ~/.zinit/bin/zinit.zsh
+source ~/.zinitrc
 
 #
 # Autoload
