@@ -56,11 +56,13 @@ zinit ice wait lucid load djui/alias-tips
 zinit ice wait lucid load hlissner/zsh-autopair
 
 # History search. Note: this must be loaded before syntax highlighting
-zinit ice wait lucid load zsh-users/zsh-history-substring-search
+zinit ice from"gh" wait lucid pick"zsh-history-substring-search.plugin.zsh"
+zinit light zsh-users/zsh-history-substring-search
 zinit ice wait lucid snippet PZT::modules/history
 
 # Syntax higlighting
-zinit ice wait lucid load zdharma/fast-syntax-highlighting
+zinit ice from"gh" wait lucid atinit"zpcompinit; zpcdreplay"
+zplugin light zdharma/fast-syntax-highlighting
 
 # A way to do bash-style history ignore for certain commands
 HISTIGNORE="&:k:cd:ls:ll:la:l1:l.:..::pwd:exit:clear:cls"
