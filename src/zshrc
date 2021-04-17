@@ -106,6 +106,9 @@ alias diff='delta'
 # Use bat instead of cat
 alias cat='bat'
 
+# Use fd instead of find
+alias find='fd'
+
 # Atom aliases
 if (( $+commands[atom-beta] )); then
   if (( $+commands[atom] )); then
