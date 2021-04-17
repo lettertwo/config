@@ -103,6 +103,9 @@ alias rm='trash'
 # Use delta instead of diff
 alias diff='delta'
 
+# Use bat instead of cat
+alias cat='bat'
+
 # Atom aliases
 if (( $+commands[atom-beta] )); then
   if (( $+commands[atom] )); then
