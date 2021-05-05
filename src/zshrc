@@ -163,6 +163,7 @@ for c (
   show
   status
   stash
+  switch
 ) alias "g$c"="git $c"
 
 # alias all git aliases for even speedier access:
