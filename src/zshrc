@@ -50,7 +50,7 @@ fi
 #
 
 # exa versions of some ls aliases.
-
+alias ls='exa'
 # Lists in one column, hidden files.
 alias l='exa -1a'
 # Lists human readable sizes.
