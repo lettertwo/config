@@ -30,19 +30,19 @@ autoload run-help
 # See https://github.com/ohmyzsh/ohmyzsh/issues/449#issuecomment-6973425
 unsetopt nomatch
 
-#
-# Keybindings
-#
+# History
+# Let ! be !
+setopt NO_BANG_HIST
 
-# use vi movements to perform history substring searching.
-bindkey -M vicmd 'k' history-substring-search-up
-bindkey -M vicmd 'j' history-substring-search-down
-
-if [[ -n "$key_info" ]]; then
-  # Accept next word in suggestion with Ctrl-F.
-  bindkey -M viins "$key_info[Control]F" vi-forward-word
-  # Accept the whole suggestion with Ctrl-E.
-  bindkey -M viins "$key_info[Control]E" vi-add-eol
+# Autocorrect
+setopt correct
+# theoretically helpful correction is too frequently just annoying :(
+# To help reduce annoying false corrections, we keep a .znocorrect file.
+# Any commands listed in that file will not be corrected.
+if [ -f ~/.znocorrect ]; then
+  while read -r COMMAND; do
+    alias $COMMAND="nocorrect $COMMAND"
+  done < ~/.znocorrect
 fi
 
 #
@@ -109,16 +109,6 @@ alias cat='bat'
 # Use fd instead of find
 alias find='fd'
 
-# Atom aliases
-if (( $+commands[atom-beta] )); then
-  if (( $+commands[atom] )); then
-    alias atom-stable=atom
-    alias apm-stable=apm
-  fi
-  alias atom=atom-beta
-  alias apm=apm-beta
-fi
-
 # rage quit!!!
 function fuck() {
   if killall -9 "$2"; then
@@ -174,7 +164,7 @@ for i ("${(s/alias./)s}") alias "g$i[(w)1]"="git $i[(w)1]"
 # Docker aliases
 #
 
-## Image (i)
+# Image (i)
 alias dimage='docker image'
 for c (
   build
@@ -190,7 +180,7 @@ for c (
   tag
 ) alias "di$c"="docker image $c"
 
-## Volume (v)
+# Volume (v)
 alias dvolume='docker volume'
 for c (
   inspect
@@ -199,7 +189,7 @@ for c (
   rm
 ) alias "dv$c"="docker volume $c"
 
-## Network (n)
+# Network (n)
 alias dnetwork='docker network'
 for c (
   connect
@@ -210,7 +200,7 @@ for c (
   rm
 ) alias "dn$c"="docker network $c"
 
-## System (s)
+# System (s)
 alias dsystem='docker system'
 for c (
   df
@@ -278,7 +268,7 @@ for c (
   stop
 ) alias "d$c"="docker $c"
 
-## Container (d)
+# Container (d)
 alias dcontainer='docker container'
 # Most container commands are mirrored at the docker level,
 # so we can just use the 'top level' aliases above.

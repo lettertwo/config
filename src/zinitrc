@@ -3,18 +3,6 @@
 # Sourced from .zshrc
 #
 
-# Set the list of directories that Zsh searches for programs.
-# We include common node_modules/.bin locations for convenience.
-path=(
-  {.,$HOME}/node_modules/.bin
-  /usr/local/share/npm/bin
-  $HOME/{bin,sbin}
-  /usr/local/{bin,sbin}
-  /usr/{bin,sbin}
-  /{bin,sbin}
-  /opt/X11/bin
-)
-
 # prompt
 zstyle :prompt:pure:git:stash show yes
 zinit ice compile'(pure|async).zsh' pick'async.zsh' src'pure.zsh'
@@ -29,20 +17,17 @@ zinit light zsh-users/zsh-completions
 autoload compinit
 compinit
 
-# Autocorrect
-setopt correct
-# theoretically helpful correction is too frequently just annoying :(
-# To help reduce annoying false corrections, we keep a .znocorrect file.
-# Any commands listed in that file will not be corrected.
-if [ -f ~/.znocorrect ]; then
-  while read -r COMMAND; do
-    alias $COMMAND="nocorrect $COMMAND"
-  done < ~/.znocorrect
-fi
+# Allow running programs and scripts without adding anything to $PATH
+zinit light zinit-zsh/z-a-bin-gem-node
+
+# BurntSushi/ripgrep
+zinit ice from"gh-r" mv"ripgrep* -> rg" sbin"rg/rg"
+zinit light BurntSushi/ripgrep
 
 # fzf
 export FZF_DEFAULT_OPTS="--layout=reverse --inline-info --ansi --height=40%"
-zinit ice wait lucid from"gh-r" as"program" mv"fzf* -> fzf"
+export FZF_DEFAULT_COMMAND='rg --files --no-ignore --hidden --follow --glob "!.git/*"'
+zinit ice wait lucid from"gh-r" mv"fzf* -> fzf" sbin"fzf"
 zinit light junegunn/fzf
 # NOTE: fzf-tab needs to be loaded after compinit, but before plugins which will wrap widgets, such as zsh-autosuggestions or fast-syntax-highlighting!!
 zinit ice wait lucid
@@ -80,49 +65,39 @@ zinit ice wait lucid snippet PZT::modules/history
 
 # Syntax higlighting
 zinit ice from"gh" wait lucid atinit"zpcompinit; zpcdreplay"
-zplugin light zdharma/fast-syntax-highlighting
+zinit light zdharma/fast-syntax-highlighting
 
-# A way to do bash-style history ignore for certain commands
-HISTIGNORE="&:k:cd:ls:ll:la:l1:l.:..::pwd:exit:clear:cls"
-function zshaddhistory() {
-  CMDS=("${(s/:/)HISTIGNORE}")
-  for CMD in $CMDS; do
-    if [[ $1 == "$CMD"* ]] ; then
-        return 1
-    fi
-  done
-}
+## A way to do bash-style history ignore for certain commands
+HISTORY_IGNORE="&:k:cd:ls:ll:la:l1:l.:..::pwd:exit:clear:cls"
+zinit snippet PZT::modules/history
 
 # System clipboard integration
 zinit snippet OMZ::lib/clipboard.zsh
 
 # Directory and cd
 zinit snippet PZT::modules/directory
-zinit light b4b4r07/enhancd
-export ENHANCD_FILTER="fzf:peco"
-export ENHANCD_DOT_SHOW_FULLPATH=1
 
 # sharkdp/fd, replacement for find
-zinit ice wait lucid as"command" from"gh-r" mv"fd* -> fd" pick"fd/fd"
+zinit ice wait lucid from"gh-r" mv"fd* -> fd" sbin"fd/fd"
 zinit light sharkdp/fd
 
 # sharkdp/bat, replacement for cat
-zinit ice wait lucid as"command" from"gh-r" mv"bat* -> bat" pick"bat/bat"
+zinit ice wait lucid from"gh-r" mv"bat* -> bat" sbin"bat/bat"
 zinit light sharkdp/bat
 
 # ogham/exa, replacement for ls
-zinit ice wait lucid from"gh-r" as"program" mv"exa* -> exa" pick"bin/exa"
+zinit ice wait lucid from"gh-r" mv"exa* -> exa" sbin"bin/exa"
 zinit light ogham/exa
 
 # dandavison/delta, replacement for diff
-zinit ice wait lucid from"gh-r" as"program" mv"delta* -> delta" pick"delta/delta"
+zinit ice wait lucid from"gh-r" mv"delta* -> delta" sbin"delta/delta"
 zinit light dandavison/delta
 
 # Node ecosystem
 export NVM_LAZY_LOAD=true
 export NVM_AUTO_USE=true
+zinit light lukechilds/zsh-nvm
 zinit wait lucid for \
-  lukechilds/zsh-nvm \
   lukechilds/zsh-better-npm-completion \
   atload"zpcdreplay" atclone'./zplug.zsh' g-plane/zsh-yarn-autocompletions
 
