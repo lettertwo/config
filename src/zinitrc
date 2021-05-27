@@ -20,15 +20,20 @@ compinit
 # Allow running programs and scripts without adding anything to $PATH
 zinit light zinit-zsh/z-a-bin-gem-node
 
+# Allow packs to apply patches to installs.
+# This is required by the fzf pack.
+zinit light zinit-zsh/z-a-patch-dl
+
 # BurntSushi/ripgrep
 zinit ice from"gh-r" mv"ripgrep* -> rg" sbin"rg/rg"
 zinit light BurntSushi/ripgrep
 
 # fzf
-export FZF_DEFAULT_OPTS="--layout=reverse --inline-info --ansi --height=40%"
+export FZF_DEFAULT_OPTS="--layout reverse --info inline --height 40%"
+export FZF_CTRL_T_OPTS="--preview \"bat --style=numbers --color=always --line-range :500 {}\""
 export FZF_DEFAULT_COMMAND='rg --files --no-ignore --hidden --follow --glob "!.git/*"'
-zinit ice wait lucid from"gh-r" mv"fzf* -> fzf" sbin"fzf"
-zinit light junegunn/fzf
+export FZF_CTRL_T_OPTS="--preview \"bat --style=numbers --color=always --line-range :500 {}\""
+zinit pack"bgn-binary+keys" for fzf
 # NOTE: fzf-tab needs to be loaded after compinit, but before plugins which will wrap widgets, such as zsh-autosuggestions or fast-syntax-highlighting!!
 zinit ice wait lucid
 zinit light Aloxaf/fzf-tab
@@ -58,9 +63,7 @@ zinit ice wait lucid load djui/alias-tips
 # 'Smart' auto-close, delete and skips over matching delimiters
 zinit ice wait lucid load hlissner/zsh-autopair
 
-# History search. Note: this must be loaded before syntax highlighting
-zinit ice from"gh" wait lucid pick"zsh-history-substring-search.plugin.zsh"
-zinit light zsh-users/zsh-history-substring-search
+# History
 zinit ice wait lucid snippet PZT::modules/history
 
 # Syntax higlighting
