@@ -22,12 +22,12 @@ fi
 if [[ "$TERM_PROGRAM" == "vscode" ]]; then
   export EDITOR='code --wait'
   export VISUAL='code --wait'
-elif (( $+commands[nvim] )); then
-  export EDITOR='nvim'
-  export VISUAL='nvim'
+elif [[ $+commands[nvim] ]]; then
+  export VISUAL=nvim
+  export EDITOR=$VISUAL
 else
-  export EDITOR='vim'
   export VISUAL='vim'
+  export EDITOR=$VISUAL
 fi
 
 #

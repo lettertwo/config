@@ -1,0 +1,53 @@
+#!/usr/bin/env zsh
+#
+# Executes commands at the start of a login session.
+#
+# NOTE: This happens __before__ .zshrc in an interactive session.
+#
+
+# Check if zinit is installed
+if [[ ! -d ~/.zinit ]]; then
+  mkdir -p ~/.zinit
+  git clone --depth=1 https://github.com/zdharma/zinit.git ~/.zinit/bin
+fi
+
+# Load zinit.
+source ~/.zinit/bin/zinit.zsh
+
+# Allow running programs and scripts without adding anything to $PATH
+zinit light zinit-zsh/z-a-bin-gem-node
+
+# Allow packs to apply patches to installs.
+# This is required by the fzf pack.
+zinit light zinit-zsh/z-a-patch-dl
+
+# BurntSushi/ripgrep
+zinit ice from"gh-r" mv"ripgrep* -> rg" sbin"rg/rg"
+zinit light BurntSushi/ripgrep
+
+# sharkdp/fd, replacement for find
+zinit ice wait lucid from"gh-r" mv"fd* -> fd" sbin"fd/fd"
+zinit light sharkdp/fd
+
+# sharkdp/bat, replacement for cat
+zinit ice wait lucid from"gh-r" mv"bat* -> bat" sbin"bat/bat"
+zinit light sharkdp/bat
+
+# ogham/exa, replacement for ls
+zinit ice wait lucid from"gh-r" mv"exa* -> exa" sbin"bin/exa"
+zinit light ogham/exa
+
+# dandavison/delta, replacement for diff
+zinit ice wait lucid from"gh-r" mv"delta* -> delta" sbin"delta/delta"
+zinit light dandavison/delta
+
+# forgit, cool fzf-based git utils
+zinit light wfxr/forgit
+
+# Node ecosystem
+export NVM_LAZY_LOAD=true
+export NVM_AUTO_USE=true
+zinit light lukechilds/zsh-nvm
+
+# Rust ecosystem
+zinit light cowboyd/zsh-rust

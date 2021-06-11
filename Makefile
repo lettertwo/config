@@ -4,7 +4,7 @@ SRC=$(CURDIR)/src
 .%:
 	$(LINK) $(SRC)/$(patsubst .%,%,$@) $(HOME)/$@
 
-link.dotfiles: .gitconfig .gitignore .zshenv .zshrc .zinitrc .znocorrect
+link.dotfiles: .gitconfig .gitignore .zshenv .zprofile .zshrc
 
 install: link.dotfiles
 

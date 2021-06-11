@@ -3,47 +3,112 @@
 # Executes commands at the start of an interactive session.
 #
 
-#
-# zinit
-#
-
-# Check if zinit is installed
-if [[ ! -d ~/.zinit ]]; then
-  mkdir -p ~/.zinit
-  git clone --depth=1 https://github.com/zdharma/zinit.git ~/.zinit/bin
+if ! [[ -o login ]]; then
+  source ~/.zprofile
 fi
 
-# Load zinit with our config.
-source ~/.zinit/bin/zinit.zsh
-source ~/.zinitrc
+#
+# Prompt
+#
+
+zstyle :prompt:pure:git:stash show yes
+zinit ice compile'(pure|async).zsh' pick'async.zsh' src'pure.zsh'
+zinit light sindresorhus/pure
 
 #
 # Autoload
 #
+
+autoload -Uz _zinit
 
 # Set the Zsh functions to load (man zshcontrib).
 autoload -Uz "zargs"
 autoload -Uz "zmv"
 autoload run-help
 
-# Allow ^ to be used unescaped in args
-# See https://github.com/ohmyzsh/ohmyzsh/issues/449#issuecomment-6973425
-unsetopt nomatch
+#
+# Completions
+#
+
+zinit ice blockf atpull'zinit creinstall -q .'
+zinit light zsh-users/zsh-completions
+autoload compinit
+compinit
+
+zstyle ':completion:*:*:docker:*' option-stacking yes
+zstyle ':completion:*:*:docker-*:*' option-stacking yes
+zinit wait lucid has'docker' for \
+  as'completion' is-snippet 'https://github.com/docker/cli/blob/master/contrib/completion/zsh/_docker' \
+  as'completion' is-snippet 'https://github.com/docker/compose/blob/master/contrib/completion/zsh/_docker-compose' \
+  lukechilds/zsh-better-npm-completion atload"zpcdreplay" atclone'./zplug.zsh' g-plane/zsh-yarn-autocompletions \
+  ryutok/rust-zsh-completions
+
+#
+# Options
+#
+
+setopt AUTO_CD              # Auto changes to a directory without typing cd.
+setopt AUTO_PUSHD           # Push the old directory onto the stack on cd.
+setopt PUSHD_IGNORE_DUPS    # Do not store duplicates in the stack.
+setopt PUSHD_SILENT         # Do not print the directory stack after pushd or popd.
+setopt PUSHD_TO_HOME        # Push to home directory when no argument is given.
+setopt CDABLE_VARS          # Change directory to a path stored in a variable.
+setopt MULTIOS              # Write to multiple descriptors.
+setopt EXTENDED_GLOB        # Use extended globbing syntax.
+unsetopt CLOBBER            # Do not overwrite existing files with > and >>.
+                            # Use >! and >>! to bypass.
+unsetopt NOMATCH            # Allow ^ to be used unescaped in args.
+                            # See https://github.com/ohmyzsh/ohmyzsh/issues/449#issuecomment-6973425
 
 # History
-# Let ! be !
-setopt NO_BANG_HIST
+zinit snippet PZT::modules/history
+setopt NO_BANG_HIST # Let ! be !
 
-# Autocorrect
-setopt correct
-# theoretically helpful correction is too frequently just annoying :(
-# To help reduce annoying false corrections, we keep a .znocorrect file.
-# Any commands listed in that file will not be corrected.
-if [ -f ~/.znocorrect ]; then
-  while read -r COMMAND; do
-    alias $COMMAND="nocorrect $COMMAND"
-  done < ~/.znocorrect
-fi
+## A way to do bash-style history ignore for certain commands
+HISTORY_IGNORE="&:k:cd:ls:ll:la:l1:l.:..::pwd:exit:clear:cls"
+zinit snippet PZT::modules/history
+
+# vi-style editor modes
+# zinit snippet OMZ::plugins/vi-mode
+
+# Autosuggestions
+zinit ice wait lucid atload'_zsh_autosuggest_start'
+zinit light zsh-users/zsh-autosuggestions
+
+# tell me when i could've typed less.
+zinit ice wait lucid load djui/alias-tips
+
+# 'Smart' auto-close, delete and skips over matching delimiters
+zinit ice wait lucid load hlissner/zsh-autopair
+
+# Syntax higlighting
+zinit ice from"gh" wait lucid atinit"zpcompinit; zpcdreplay"
+zinit light zdharma/fast-syntax-highlighting
+
+# fzf
+export FZF_DEFAULT_OPTS="--layout reverse --info inline --height 40%"
+export FZF_CTRL_T_OPTS="--preview \"bat --style=numbers --color=always --line-range :500 {}\""
+export FZF_DEFAULT_COMMAND='rg --files --no-ignore --hidden --follow --glob "!.git/*"'
+export FZF_CTRL_T_OPTS="--preview \"bat --style=numbers --color=always --line-range :500 {}\""
+zinit pack"bgn-binary+keys" for fzf
+# NOTE: fzf-tab needs to be loaded after compinit, but before plugins which will wrap widgets, such as zsh-autosuggestions or fast-syntax-highlighting!!
+zinit ice wait lucid
+zinit light Aloxaf/fzf-tab
+# disable sort when completing `git checkout`
+zstyle ':completion:*:git-checkout:*' sort false
+# set descriptions format to enable group support
+zstyle ':completion:*:descriptions' format '[%d]'
+# set list-colors to enable filename colorizing
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+# preview directory's content with exa when completing cd
+zstyle ':fzf-tab:complete:cd:*' fzf --preview 'exa -1 --color=always $realpath'
+# switch group using `,` and `.`
+zstyle ':fzf-tab:*' switch-group ',' '.'
+# give a preview of commandline arguments when completing `kill`
+zstyle ':completion:*:*:*:*:processes' command "ps -u $USER -o pid,user,comm -w -w"
+zstyle ':fzf-tab:complete:(kill|ps):argument-rest' fzf --preview \
+  '[[ $group == "[process ID]" ]] && ps --pid=$word -o cmd --no-headers -w -w'
+zstyle ':fzf-tab:complete:(kill|ps):argument-rest' fzf-flags --preview-window=down:3:wrap
 
 #
 # Aliases & Functions
