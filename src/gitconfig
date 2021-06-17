@@ -43,6 +43,7 @@
 	upstream = "!f() { git rev-parse --verify -q --symbolic-full-name --abbrev-ref $1@{u}; }; f"
 	diffstat = diff --stat -r
 	patch = !git --no-pager diff --no-color
+	pick = cherry-pick
 	# TODO: how to get cwd url (instead of repo root url)
 	svnurl = !git svn info | grep URL | sed 's/URL: \\(.*\\)/\\1/'
 	svnroot = !git svn info | grep Root | sed 's/Repository Root: \\(.*\\)/\\1/'
