@@ -52,8 +52,9 @@
 	incoming = !git l ..@{u}
 	outgoing = !git l @{u}..
 	stash-unstaged = stash -k
-	logme = !git log-pretty --graph --date=short --author="\"`git config --get user.name`\""
-	log-pretty = log --color=always --pretty=format:'%C(red)%h%C(reset) %C(bold white)%ad%C(reset)%C(green)%d%C(reset) %C(white)%s%C(reset) %C(bold blue)%aN%C(reset)'
+	logsmart = "log --graph --pretty=format:'commit: %C(bold red)%h%Creset %C(red)<%H>%Creset %C(bold magenta)%d %Creset%ndate: %C(bold yellow)%cd %Creset%C(yellow)%cr%Creset%nauthor: %C(bold blue)%an%Creset %C(blue)<%ae>%Creset%n%C(cyan)%s%n%Creset'"
+	logme = !git logsmart --author="\"`git config --get user.name`\""
+	loggraph = log --graph --pretty=format:'%C(bold red)%h%Creset %s %C(bold blue)%an%Creset %C(yellow)(%cr)%Creset%C(bold magenta)%d%Creset'
 	# TODO: Find the git root and search from there.
 	cleanup = !sh -c 'find . -name *.orig -delete'
 	amend = !git log -n 1 --pretty=tformat:%s%n%n%b | git commit -F - --amend
@@ -125,7 +126,8 @@
 	sta = !git s --untracked-files=all
 	stc = !git conflicted
 	sf = !git show-files
-	l = !git log-pretty --graph --date=short
+	l = !git logsmart
+	lg = !git loggraph
 	lme = !git logme
 	ff = !git fast-forward
 	up = !git update
