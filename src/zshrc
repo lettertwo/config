@@ -69,7 +69,9 @@ HISTORY_IGNORE="&:k:cd:ls:ll:la:l1:l.:..::pwd:exit:clear:cls"
 zinit snippet PZT::modules/history
 
 # vi-style editor modes
-# zinit snippet OMZ::plugins/vi-mode
+export ZVM_LAZY_KEYBINDINGS=true
+zinit ice depth=1
+zinit light jeffreytse/zsh-vi-mode
 
 # Autosuggestions
 zinit ice wait lucid atload'_zsh_autosuggest_start'
