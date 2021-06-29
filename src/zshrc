@@ -66,12 +66,14 @@ setopt NO_BANG_HIST # Let ! be !
 
 ## A way to do bash-style history ignore for certain commands
 HISTORY_IGNORE="&:k:cd:ls:ll:la:l1:l.:..::pwd:exit:clear:cls"
-zinit snippet PZT::modules/history
 
 # vi-style editor modes
 export ZVM_LAZY_KEYBINDINGS=true
 zinit ice depth=1
 zinit light jeffreytse/zsh-vi-mode
+# A 'fix' for zvm clobbering fzf's keybindings.
+# See https://github.com/jeffreytse/zsh-vi-mode/issues/24
+zvm_after_init_commands+=('source ~/.zinit/plugins/fzf/key-bindings.zsh')
 
 # Autosuggestions
 zinit ice wait lucid atload'_zsh_autosuggest_start'
