@@ -193,6 +193,13 @@ function zsh_stats() {
 }
 
 #
+# vim aliases
+#
+alias vi='nvim'
+alias vim='nvim'
+alias vimdiff='nvim -d'
+
+#
 # Git aliases
 #
 
