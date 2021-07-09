@@ -30,18 +30,23 @@ autoload run-help
 # Completions
 #
 
-zinit ice blockf atpull'zinit creinstall -q .'
-zinit light zsh-users/zsh-completions
 autoload compinit
 compinit
+
+zinit ice blockf atpull'zinit creinstall -q .'
+zinit light zsh-users/zsh-completions
+
+zinit ice atload"zpcdreplay" atclone'./zplug.zsh'
+zinit light g-plane/zsh-yarn-autocompletions
+
+zinit ice blockf atpull'zinit creinstall -q .'
+zinit light ryutok/rust-zsh-completions
 
 zstyle ':completion:*:*:docker:*' option-stacking yes
 zstyle ':completion:*:*:docker-*:*' option-stacking yes
 zinit wait lucid has'docker' for \
   as'completion' is-snippet 'https://github.com/docker/cli/blob/master/contrib/completion/zsh/_docker' \
-  as'completion' is-snippet 'https://github.com/docker/compose/blob/master/contrib/completion/zsh/_docker-compose' \
-  lukechilds/zsh-better-npm-completion atload"zpcdreplay" atclone'./zplug.zsh' g-plane/zsh-yarn-autocompletions \
-  ryutok/rust-zsh-completions
+  as'completion' is-snippet 'https://github.com/docker/compose/blob/master/contrib/completion/zsh/_docker-compose'
 
 #
 # Options
