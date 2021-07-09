@@ -44,6 +44,10 @@ zinit light dandavison/delta
 # forgit, cool fzf-based git utils
 zinit light wfxr/forgit
 
+# git-fuzzy, even cooler fzf-based git utils?
+zinit ice wait lucid sbin"bin/git-fuzzy"
+zinit light bigH/git-fuzzy
+
 # Node ecosystem
 export NVM_LAZY_LOAD=true
 export NVM_AUTO_USE=true
