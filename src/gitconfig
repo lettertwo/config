@@ -20,8 +20,12 @@
 	prompt = false
 [mergetool]
 	prompt = false
+	keepBackup = false
+	hideResolved = true
 [merge]
 	log = true
+	tool = nvimdiff2
+	conflictStyle = diff3
 [rebase]
 	autoStash = true
 [diff]
