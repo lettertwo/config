@@ -82,7 +82,7 @@
 	# Record removal of missing files to the index.
 	index-removed = !git ls-files -z --deleted | xargs -0 git rm
 	# Show dropped stashes
-	stash-dropped = !"git fsck --unreachable 2> /dev/null | grep 'commit' | awk '{print $3}' | git log-pretty --extended-regexp --grep=\"${1:-(WIP )?[Oo]n [^:]+:}\" --merges --no-walk --stdin"
+	stash-dropped = !"git fsck --unreachable 2> /dev/null | grep 'commit' | awk '{print $3}' | git log --extended-regexp --grep=\"${1:-(WIP )?[Oo]n [^:]+:}\" --merges --no-walk --stdin"
 	# Recover a dropped stash
 	stash-recover = !"f() { if [ -z "$1" ] ; then echo 'Missing commit hash.'; exit 1; fi; git update-ref -m \"$(git log -1 --pretty="format:%s" "$1")\" refs/stash "$1"; }; f"
 	# Show the list of files changed in a commit
