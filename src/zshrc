@@ -183,6 +183,15 @@ alias cat='bat'
 # Use fd instead of find
 alias find='fd'
 
+# Change dir fast
+alias d='dirs -v'
+for index ({1..9}) alias "$index"="cd +${index}"; unset index
+alias ...='cd ../../'
+alias ....='cd ../../../'
+alias .....='cd ../../../../'
+alias ......='cd ../../../../../'
+alias .......='cd ../../../../../../'
+
 # rage quit!!!
 function fuck() {
   if killall -9 "$2"; then
