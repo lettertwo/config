@@ -147,8 +147,15 @@ alias lu='lt -t accessed'
 
 # Utils
 
-# Default top to organize by cpu usage
-alias top='top -o cpu'
+if [[ $+commands[glances] ]]; then
+  alias top='glances'
+elif [[ $+commands[htop] ]]; then
+  alias top='htop'
+else
+  # Default top to organize by cpu usage
+  alias top='top -o cpu'
+fi
+
 # Pings with 5 packets, not unlimited
 alias ping='ping -c 5'
 # Disk free, in gigabytes, not bytes
@@ -209,9 +216,14 @@ function zsh_stats() {
 #
 # vim aliases
 #
-alias vi='nvim'
-alias vim='nvim'
-alias vimdiff='nvim -d'
+if [[ $+commands[oni2] ]]; then
+  alias vi='oni2'
+  alias vim='oni2'
+elif [[ $+commands[nvim] ]]; then
+  alias vi='nvim'
+  alias vim='nvim'
+  alias vimdiff='nvim -d'
+fi
 
 #
 # Git aliases
