@@ -53,7 +53,6 @@ typeset -gU cdpath fpath mailpath path
 path=(
   {.,$HOME}/node_modules/.bin
   /usr/local/share/npm/bin
-  $HOME/.zinit/polaris/bin
   $HOME/{bin,sbin}
   /usr/local/{bin,sbin}
   /usr/{bin,sbin}

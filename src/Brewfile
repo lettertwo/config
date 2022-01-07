@@ -1,0 +1,47 @@
+# Homebrew Bundle
+# https://github.com/Homebrew/homebrew-bundle
+
+# brew all teh things
+tap "homebrew/services"
+brew "mas"
+
+# CLI Tools
+brew "zsh"
+brew "fzf"
+brew "git"
+brew "sheldon"
+brew "coreutils"
+brew "tree"
+brew "readline"
+brew "wget"
+brew "tldr"
+brew "trash"
+brew "ripgrep" # BurntSushi/ripgrep
+brew "fd" # sharkdp/fd, replacement for find
+brew "bat" # sharkdp/bat, replacement for cat
+brew "exa" # ogham/exa, replacement for ls
+brew "git-delta" # dandavison/delta, replacement for diff
+brew "dust" # bootandy/dust, replacement for du
+brew "duf" # muesli/duf, replacement for df
+brew "glances" # nicolargo/glances, replacement for top
+# brew "broot"
+
+# git
+brew "gh"
+brew "git-absorb"
+brew "git-lfs"
+
+# node
+brew "node"
+
+# python
+brew "pyenv"
+brew "python"
+
+# Quick Look plugins
+cask "qlcolorcode" # https://github.com/anthonygelibert/QLColorCode
+cask "qlstephen" # https://github.com/whomwah/qlstephen
+cask "qlmarkdown"
+cask "quicklook-json" # https://github.com/sindresorhus/quick-look-plugins
+cask "qlimagesize" # https://github.com/Nyx0uf/qlImageSize
+cask "webpquicklook" # https://github.com/dchest/webp-quicklook

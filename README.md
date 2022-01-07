@@ -11,6 +11,7 @@ make install
 ```shell
 git pull
 make install
+make upgrade
 ```
 
 ## Git config

@@ -1,20 +1,26 @@
 LINK=ln -shf
 SRC=$(CURDIR)/src
-CONFIG=$(HOME)/.config
-
-.config/%:
-	$(LINK) $(SRC)/$(patsubst .%,%,$@) $(HOME)/$@
+SHELDON=$(HOME)/.sheldon
 
 .%:
 	$(LINK) $(SRC)/$(patsubst .%,%,$@) $(HOME)/$@
 
-link.dotfiles: .gitconfig .gitignore .zshenv .zprofile .zshrc
+.sheldon/%:
+	$(LINK) $(SRC)/$(patsubst .%,%,$@) $(HOME)/$@
 
-link.config: .config/kitty/kitty.conf .config/kitty/dracula
+link.dotfiles: .gitconfig .gitignore .zshenv .zprofile .zshrc .Brewfile
 
-install: link.dotfiles link.config
+link.config: .config/brew/Brewfile
+
+link.sheldon: .sheldon/plugins.toml
+
+install: link.dotfiles link.sheldon
+
+upgrade:
+	cd ~; brew bundle --global && brew upgrade && brew cleanup; cd -
 
 .PHONY:
 	link.dotfiles
-	link.config
+	link.sheldon
 	install
+	upgrade

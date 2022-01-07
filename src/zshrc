@@ -4,22 +4,14 @@
 #
 
 if ! [[ -o login ]]; then
+  # If we're not in a login shell, we must be in a subshell.
+  # Manually source .zprofile.
   source ~/.zprofile
 fi
 
 #
-# Prompt
-#
-
-zstyle :prompt:pure:git:stash show yes
-zinit ice compile'(pure|async).zsh' pick'async.zsh' src'pure.zsh'
-zinit light sindresorhus/pure
-
-#
 # Autoload
 #
-
-autoload -Uz _zinit
 
 # Set the Zsh functions to load (man zshcontrib).
 autoload -Uz "zargs"
@@ -33,21 +25,6 @@ autoload run-help
 autoload compinit
 compinit
 
-zinit ice blockf atpull'zinit creinstall -q .'
-zinit light zsh-users/zsh-completions
-
-zinit ice atload"zpcdreplay" atclone'./zplug.zsh'
-zinit light g-plane/zsh-yarn-autocompletions
-
-zinit ice blockf atpull'zinit creinstall -q .'
-zinit light ryutok/rust-zsh-completions
-
-zstyle ':completion:*:*:docker:*' option-stacking yes
-zstyle ':completion:*:*:docker-*:*' option-stacking yes
-zinit wait lucid has'docker' for \
-  as'completion' is-snippet 'https://github.com/docker/cli/blob/master/contrib/completion/zsh/_docker' \
-  as'completion' is-snippet 'https://github.com/docker/compose/blob/master/contrib/completion/zsh/_docker-compose'
-
 #
 # Options
 #
@@ -60,49 +37,17 @@ setopt PUSHD_TO_HOME        # Push to home directory when no argument is given.
 setopt CDABLE_VARS          # Change directory to a path stored in a variable.
 setopt MULTIOS              # Write to multiple descriptors.
 setopt EXTENDED_GLOB        # Use extended globbing syntax.
+setopt NO_BANG_HIST         # Let ! be !
 unsetopt CLOBBER            # Do not overwrite existing files with > and >>.
                             # Use >! and >>! to bypass.
 unsetopt NOMATCH            # Allow ^ to be used unescaped in args.
                             # See https://github.com/ohmyzsh/ohmyzsh/issues/449#issuecomment-6973425
-
-# History
-zinit snippet PZT::modules/history
-setopt NO_BANG_HIST # Let ! be !
-
-## A way to do bash-style history ignore for certain commands
-HISTORY_IGNORE="&:k:cd:ls:ll:la:l1:l.:..::pwd:exit:clear:cls"
-
-# vi-style editor modes
-export ZVM_LAZY_KEYBINDINGS=true
-zinit ice depth=1
-zinit light jeffreytse/zsh-vi-mode
-# A 'fix' for zvm clobbering fzf's keybindings.
-# See https://github.com/jeffreytse/zsh-vi-mode/issues/24
-zvm_after_init_commands+=('source ~/.zinit/plugins/fzf/key-bindings.zsh')
-
-# Autosuggestions
-zinit ice wait lucid atload'_zsh_autosuggest_start'
-zinit light zsh-users/zsh-autosuggestions
-
-# tell me when i could've typed less.
-zinit ice wait lucid load djui/alias-tips
-
-# 'Smart' auto-close, delete and skips over matching delimiters
-zinit ice wait lucid load hlissner/zsh-autopair
-
-# Syntax higlighting
-zinit ice from"gh" wait lucid atinit"zpcompinit; zpcdreplay"
-zinit light zdharma/fast-syntax-highlighting
 
 # fzf
 export FZF_DEFAULT_OPTS="--layout reverse --info inline --height 40%"
 export FZF_CTRL_T_OPTS="--preview \"bat --style=numbers --color=always --line-range :500 {}\""
 export FZF_DEFAULT_COMMAND='rg --files --no-ignore --hidden --follow --glob "!.git/*"'
 export FZF_CTRL_T_OPTS="--preview \"bat --style=numbers --color=always --line-range :500 {}\""
-zinit pack"bgn-binary+keys" for fzf
-# NOTE: fzf-tab needs to be loaded after compinit, but before plugins which will wrap widgets, such as zsh-autosuggestions or fast-syntax-highlighting!!
-zinit ice wait lucid
-zinit light Aloxaf/fzf-tab
 # disable sort when completing `git checkout`
 zstyle ':completion:*:git-checkout:*' sort false
 # set descriptions format to enable group support
@@ -143,40 +88,17 @@ alias lt='ll -s oldest'
 alias lc='lt -t created'
 # Lists sorted by date, most recent last, shows access time.
 alias lu='lt -t accessed'
-
-
-# Utils
-
-if [[ $+commands[glances] ]]; then
-  alias top='glances'
-elif [[ $+commands[htop] ]]; then
-  alias top='htop'
-else
-  # Default top to organize by cpu usage
-  alias top='top -o cpu'
-fi
-
-# Pings with 5 packets, not unlimited
-alias ping='ping -c 5'
-# Disk free, in gigabytes, not bytes
-alias df='df -h'
-# Calculate total disk usage for a folder
-alias du='du -h -c'
+# Show tree view of directory.
+alias tree='exa --tree'
 
 # IP addresses
 alias ip="dig +short myip.opendns.com @resolver1.opendns.com"
 alias localip="ipconfig getifaddr en1"
 alias ips="ifconfig -a | grep -o 'inet6\? \(\([0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+\)\|[a-fA-F0-9:]\+\)' | sed -e 's/inet6* //'"
 
-# Python aliases
-alias setup="nocorrect python ./setup.py"
-# Show the current python path
-alias pypath='python -c "import sys; print sys.path" | tr "," "\n" | grep -v "egg"'
-
-# Django aliases
-alias manage="nocorrect python ./manage.py"
-alias dumpauth="manage dumpdata --indent=2 auth sessions"
-alias syncall="manage syncdb --noinput --all && manage migrate --fake"
+# Use glances instead of top/htop
+alias top='glances'
+alias htop='glances'
 
 # Use trash instead of rm
 alias rm='trash'
@@ -189,6 +111,12 @@ alias cat='bat'
 
 # Use fd instead of find
 alias find='fd'
+
+# Use dust instead of du
+alias du='dust'
+
+# Use duf isntead of df
+alias df='duf'
 
 # Change dir fast
 alias d='dirs -v'
