@@ -17,7 +17,7 @@ link.sheldon: .sheldon/plugins.toml .sheldon/local
 install: link.dotfiles link.sheldon
 
 upgrade:
-	cd ~; brew bundle --global && brew upgrade && brew cleanup; cd -
+	cd ~; brew bundle --global && brew upgrade && brew cleanup && sheldon lock; cd -
 
 .PHONY:
 	link.dotfiles

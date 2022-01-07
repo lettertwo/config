@@ -10,6 +10,3 @@ if [[ ! -d /usr/local/Cellar ]]; then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
   brew bundle
 fi
-
-# initialize sheldon
-eval "$(sheldon source)"
