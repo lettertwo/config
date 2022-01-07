@@ -121,11 +121,6 @@ alias df='duf'
 # Change dir fast
 alias d='dirs -v'
 for index ({1..9}) alias "$index"="cd +${index}"; unset index
-alias ...='cd ../../'
-alias ....='cd ../../../'
-alias .....='cd ../../../../'
-alias ......='cd ../../../../../'
-alias .......='cd ../../../../../../'
 
 # rage quit!!!
 function fuck() {

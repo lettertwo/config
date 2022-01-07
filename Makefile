@@ -12,7 +12,7 @@ link.dotfiles: .gitconfig .gitignore .zshenv .zprofile .zshrc .Brewfile
 
 link.config: .config/brew/Brewfile
 
-link.sheldon: .sheldon/plugins.toml
+link.sheldon: .sheldon/plugins.toml .sheldon/local
 
 install: link.dotfiles link.sheldon
 
