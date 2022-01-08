@@ -22,8 +22,6 @@ alias lt='ll -s oldest'
 alias lc='lt -t created'
 # Lists sorted by date, most recent last, shows access time.
 alias lu='lt -t accessed'
-# Show tree view of directory.
-alias tree='exa --tree'
 
 # IP addresses
 alias ip="dig +short myip.opendns.com @resolver1.opendns.com"
@@ -54,6 +52,9 @@ alias df='duf'
 
 # Use tldr instead of help
 alias help='tldr'
+
+# Use broot instead of tree
+alias tree='broot'
 
 # Change dir fast
 alias d='dirs -v'
