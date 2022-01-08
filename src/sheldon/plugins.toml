@@ -33,7 +33,7 @@ github = "hlissner/zsh-autopair"
 apply = ["defer"]
 
 [plugins.nvm]
-github = "lukechilds/nvm"
+github = "lukechilds/zsh-nvm"
 apply = ["defer"]
 
 [plugins.rust]

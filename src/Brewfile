@@ -39,9 +39,4 @@ brew "pyenv"
 brew "python"
 
 # Quick Look plugins
-cask "qlcolorcode" # https://github.com/anthonygelibert/QLColorCode
-cask "qlstephen" # https://github.com/whomwah/qlstephen
-cask "qlmarkdown"
-cask "quicklook-json" # https://github.com/sindresorhus/quick-look-plugins
-cask "qlimagesize" # https://github.com/Nyx0uf/qlImageSize
-cask "webpquicklook" # https://github.com/dchest/webp-quicklook
+cask "syntax-highlight"

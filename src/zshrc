@@ -58,5 +58,8 @@ zstyle ':fzf-tab:complete:(kill|ps):argument-rest' fzf --preview \
   '[[ $group == "[process ID]" ]] && ps --pid=$word -o cmd --no-headers -w -w'
 zstyle ':fzf-tab:complete:(kill|ps):argument-rest' fzf-flags --preview-window=down:3:wrap
 
+# nvm
+export NVM_AUTO_USE=true
+
 # Initialize sheldon
 eval "$(sheldon source)"
