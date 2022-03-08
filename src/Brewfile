@@ -39,4 +39,4 @@ brew "pyenv"
 brew "python"
 
 # Quick Look plugins
-cask "syntax-highlight"
+cask "syntax-highlight" # https://github.com/sbarex/SourceCodeSyntaxHighlight
