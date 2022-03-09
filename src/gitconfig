@@ -40,8 +40,10 @@
 	merged = branch -a --merged
 	unmerged = branch -a --no-merged
 	delete-merged = !git branch --merged | grep -v "\\*" | xargs -n 1 git branch -d
+	prune-remote = !git remote | fzf | xargs -I {} git remote prune {}
   gone = ! "git fetch -p && git for-each-ref --format '%(refname:short) %(upstream:track)' | awk '$2 == \"[gone]\" {print $1}' | xargs git branch -D"
 	publish = !git remote | fzf | xargs -I {} git push -u {} HEAD
+	unpublish = ! "git branch -r | fzf | awk '{sub(/\\//,\" --delete \");print}' | xargs -p git push"
 	who = shortlog -s --
 	track = !git branch -r | cut -c 3- | fzf | xargs git checkout -t
 	upstream = "!f() { git rev-parse --verify -q --symbolic-full-name --abbrev-ref $1@{u}; }; f"
@@ -60,8 +62,6 @@
 	logsmart = "log --graph --pretty=format:'commit: %C(bold red)%h%Creset %C(red)<%H>%Creset %C(bold magenta)%d %Creset%ndate: %C(bold yellow)%cd %Creset%C(yellow)%cr%Creset%nauthor: %C(bold blue)%an%Creset %C(blue)<%ae>%Creset%n%C(cyan)%s%n%Creset'"
 	logme = !git logsmart --author="\"`git config --get user.name`\""
 	loggraph = log --graph --pretty=format:'%C(bold red)%h%Creset %s %C(bold blue)%an%Creset %C(yellow)(%cr)%Creset%C(bold magenta)%d%Creset'
-	# TODO: Find the git root and search from there.
-	cleanup = !sh -c 'find . -name *.orig -delete'
 	amend = !git log -n 1 --pretty=tformat:%s%n%n%b | git commit -F - --amend
 	staged = diff --staged --name-status
 	unstaged = diff --name-status
