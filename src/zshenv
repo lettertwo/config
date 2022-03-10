@@ -52,6 +52,7 @@ typeset -gU cdpath fpath mailpath path
 # We include common node_modules/.bin locations for convenience.
 path=(
   {.,$HOME}/node_modules/.bin
+  $HOME/.local/{bin,sbin}
   /usr/local/share/npm/bin
   $HOME/{bin,sbin}
   /usr/local/{bin,sbin}
