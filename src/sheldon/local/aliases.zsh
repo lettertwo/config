@@ -77,9 +77,10 @@ function zsh_stats() {
 #
 # vim aliases
 #
-if [[ $+commands[oni2] ]]; then
-  alias vi='oni2'
-  alias vim='oni2'
+if [[ $+commands[lvim] ]]; then
+  alias vi='lvim'
+  alias vim='lvim'
+  alias vimdiff='lnvim -d'
 elif [[ $+commands[nvim] ]]; then
   alias vi='nvim'
   alias vim='nvim'

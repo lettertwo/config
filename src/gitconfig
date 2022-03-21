@@ -18,14 +18,16 @@
 	autocorrect = 1
 [difftool]
 	prompt = false
+[merge]
+	log = true
+	tool = lvimdiff2
+	conflictStyle = diff3
 [mergetool]
 	prompt = false
 	keepBackup = false
 	hideResolved = true
-[merge]
-	log = true
-	tool = nvimdiff2
-	conflictStyle = diff3
+[mergetool "lvimdiff2"]
+	cmd = lvim -f -d -c 'wincmd l' $LOCAL $MERGED $REMOTE
 [rebase]
 	autoStash = true
 [diff]
