@@ -15,7 +15,7 @@ shell = "zsh"
 [plugins]
 
 [plugins.local]
-local = "~/.sheldon/local"
+local = "~/.config/sheldon/local"
 
 [plugins.zsh-defer]
 github = "romkatv/zsh-defer"

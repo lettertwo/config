@@ -1,26 +1,28 @@
-LINK=ln -shf
-SRC=$(CURDIR)/src
-SHELDON=$(HOME)/.sheldon
+define XDG_CONFIG
+# XDG_CONFIG start
+export XDG_CONFIG_HOME="$$HOME/.config"
+export XDG_CACHE_HOME="$$HOME/.cache"
+export XDG_DATA_HOME="$$HOME/.local/share"
+export XDG_STATE_HOME="$$HOME/.local/share"
+export ZDOTDIR="$$XDG_CONFIG_HOME/zsh"
+# XDG_CONFIG end
+endef
 
-.%:
-	$(LINK) $(SRC)/$(patsubst .%,%,$@) $(HOME)/$@
+export XDG_CONFIG
+/etc/zshenv:
+ifneq ($(XDG_CONFIG_HOME), "$$HOME/.config")
+	@echo Configuring XDG Base Directories...
+	@echo "$$XDG_CONFIG" | sudo tee -a $@ > /dev/null
+	@if [ "$$?" -ne "0" ]; then echo "Failed!"; exit 1; else echo "Done!"; fi
+endif
 
-.sheldon/%:
-	$(LINK) $(SRC)/$(patsubst .%,%,$@) $(HOME)/$@
+install: /etc/zshenv update
 
-link.dotfiles: .gitconfig .gitignore .zshenv .zprofile .zshrc .Brewfile
-
-link.config: .config/brew/Brewfile
-
-link.sheldon: .sheldon/plugins.toml .sheldon/local
-
-install: link.dotfiles link.sheldon
-
-upgrade:
-	cd ~; brew bundle --global && brew upgrade && brew cleanup && sheldon lock; cd -
+update:
+	brew bundle
+	brew cleanup
+	sheldon lock
 
 .PHONY:
-	link.dotfiles
-	link.sheldon
 	install
-	upgrade
+	update

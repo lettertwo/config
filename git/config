@@ -1,7 +1,7 @@
 # core config
 [core]
-	excludesfile = ~/.gitignore
-	attributesfile = ~/.gitattributes
+	excludesfile = ./ignore
+	attributesfile = ./attributes
 	whitespace = space-before-tab,trailing-space
 	pager = delta
 [branch]
@@ -178,8 +178,6 @@
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 	required = true
-[include]
-  path = ~/.gituser
 [interactive]
 	diffFilter = delta --color-only
 [delta]
@@ -200,3 +198,8 @@
     line-numbers-plus-style = 28
 [init]
 	defaultBranch = main
+
+[include]
+  path = ./aliases
+  path = ./user
+
