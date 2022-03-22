@@ -20,10 +20,6 @@ local = "~/.config/sheldon/local"
 [plugins.zsh-defer]
 github = "romkatv/zsh-defer"
 
-[plugins.pure]
-github = "sindresorhus/pure"
-use = ["async.zsh", "pure.zsh"]
-
 [plugins.alias-tips]
 github = 'djui/alias-tips'
 apply = ["defer"]

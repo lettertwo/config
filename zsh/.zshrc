@@ -63,3 +63,7 @@ export NVM_AUTO_USE=true
 
 # Initialize sheldon
 eval "$(sheldon source)"
+
+# Initialize starship
+eval "$(starship init zsh)"
+
