@@ -60,19 +60,13 @@ zstyle ':completion:*:descriptions' format '[%d]'
 # set list-colors to enable filename colorizing
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 # preview directory's content with exa when completing cd
-zstyle ':fzf-tab:complete:cd:*' fzf --preview 'exa -1 --color=always $realpath'
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'exa -1 --color=always $realpath'
 # switch group using `,` and `.`
-zstyle ':fzf-tab:*' switch-group ',' '.'
+zstyle ':fzf-tab:*' switch-group 'ctrl-h' 'ctrl-l'
 # give a preview of commandline arguments when completing `kill`
-zstyle ':completion:*:*:*:*:processes' command "ps -u $USER -o pid,user,comm -w -w"
-zstyle ':fzf-tab:complete:(kill|ps):argument-rest' fzf --preview \
-  '[[ $group == "[process ID]" ]] && ps --pid=$word -o cmd --no-headers -w -w'
 zstyle ':fzf-tab:complete:(kill|ps):argument-rest' fzf-flags --preview-window=down:3:wrap
 
-# Use fd (https://github.com/sharkdp/fd) instead of the default find
-# command for listing path candidates.
-# - The first argument to the function ($1) is the base path to start traversal
-# - See the source code (completion.{bash,zsh}) for the details.
+# Use fd instead of the default find command for listing path candidates.
 _fzf_compgen_path() {
   fd --hidden --follow --exclude ".git" . "$1"
 }
