@@ -82,18 +82,15 @@ _fzf_compgen_dir() {
   fd --type d --hidden --follow --exclude ".git" . "$1"
 }
 
-# fzf auto-completion
-source "$(brew --prefix)/opt/fzf/shell/completion.zsh" 2> /dev/null
-
-# fzf key bindings
-source "$(brew --prefix)/opt/fzf/shell/key-bindings.zsh"
-
 # nvm
 export NVM_AUTO_USE=true
-
-# Initialize sheldon
-eval "$(sheldon source)"
 
 # Initialize starship
 eval "$(starship init zsh)"
 
+# Initialize sheldon
+eval "$(sheldon source)"
+
+# Initialize fzf
+source "$BREW_PREFIX/opt/fzf/shell/completion.zsh" 2> /dev/null
+source "$BREW_PREFIX/opt/fzf/shell/key-bindings.zsh"

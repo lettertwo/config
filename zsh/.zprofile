@@ -11,9 +11,10 @@ if [[ ! -d /usr/local/Cellar ]]; then
   brew bundle
 fi
 
+export BREW_PREFIX="$(which brew | sed 's/\/bin\/brew//')"
+
 # Use brew-installed zsh as the login shell.
-brewpath="$(which brew | sed 's/\/brew//')"
-if [ "$SHELL" != "$brewpath/zsh" ]; then
+if [ "$SHELL" != "$BREW_PREFIX/bin/zsh" ]; then
 
   # install zsh if not already installed
   if [ -z "$(brew list | grep zsh)" ]; then
@@ -22,14 +23,14 @@ if [ "$SHELL" != "$brewpath/zsh" ]; then
   fi
 
   # include homebrew zsh path in /etc/shells
-  if [ -z "$(grep -irn "$brewpath/zsh" /etc/shells)" ]; then
+  if [ -z "$(grep -irn "$BREW_PREFIX/bin/zsh" /etc/shells)" ]; then
     echo "Whitelisting Homebrew installed ZSH"
-    sudo -s "echo '$brewpath/zsh' >> /etc/shells"
+    sudo -s "echo '$BREW_PREFIX/bin/zsh' >> /etc/shells"
   fi
 
   # change shell to homebrew zsh
   echo "Changing shell from $SHELL to homebrew-installed zsh"
-  chsh -s $brewpath/zsh
+  chsh -s $BREW_PREFIX/bin/zsh
 
   if [[ $? != 0 ]]; then
     echo "Setup failed!"
