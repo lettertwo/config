@@ -164,7 +164,11 @@
 	new = green bold
 	whitespace = red reverse
 [color "status"]
+	header = black
+	added = green
+	changed = magenta
 	untracked = yellow
+	unmerged = red
 [filter "media"]
 	required = true
 	clean = git media clean %f
