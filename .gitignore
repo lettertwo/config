@@ -1,2 +1,13 @@
+configstore
 git/user
+iterm2/AppSupport
+karabiner/automatic_backups
+lvim/plugin
+nvim/plugin
+oni2/extensions
+oni2/store
+oni2/workspace
+pip
+raycast
+yarn
 Brewfile.lock.json
