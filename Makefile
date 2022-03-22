@@ -1,22 +1,22 @@
-define XDG_CONFIG
-# XDG_CONFIG start
-export XDG_CONFIG_HOME="$$HOME/.config"
-export XDG_CACHE_HOME="$$HOME/.cache"
-export XDG_DATA_HOME="$$HOME/.local/share"
-export XDG_STATE_HOME="$$HOME/.local/share"
-export ZDOTDIR="$$XDG_CONFIG_HOME/zsh"
-# XDG_CONFIG end
+define ZDOTDIR
+export ZDOTDIR="$$HOME/.config/zsh"
 endef
 
-export XDG_CONFIG
+export ZDOTDIR
 /etc/zshenv:
-ifneq ($(XDG_CONFIG_HOME), "$$HOME/.config")
-	@echo Configuring XDG Base Directories...
-	@echo "$$XDG_CONFIG" | sudo tee -a $@ > /dev/null
+ifneq ($(ZDOTDIR), "$$HOME/.config/zsh")
+	@echo Configuring ZDOTDIR...
+	@echo "$$ZDOTDIR" | sudo tee -a $@ > /dev/null
 	@if [ "$$?" -ne "0" ]; then echo "Failed!"; exit 1; else echo "Done!"; fi
 endif
 
-install: /etc/zshenv update
+~/.local/state/zsh:
+	mkdir -p ~/.local/state/zsh
+
+~/.cache/zsh:
+	mkdir -p ~/.cache/zsh
+
+install: /etc/zshenv ~/.local/state/zsh ~/.cache/zsh update
 
 update:
 	brew bundle

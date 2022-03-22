@@ -8,6 +8,15 @@
 setopt no_global_rcs
 
 #
+# XDG Base Directories
+# https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
+#
+export XDG_CONFIG_HOME="$HOME/.config"     # configuration files
+export XDG_CACHE_HOME="$HOME/.cache"       # non-essential data
+export XDG_DATA_HOME="$HOME/.local/share"  # essential portable data
+export XDG_STATE_HOME="$HOME/.local/state" # persistant non-portable data
+
+#
 # Browser
 #
 

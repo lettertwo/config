@@ -17,25 +17,36 @@ autoload run-help
 #
 
 autoload compinit
-compinit
+compinit -d $XDG_CACHE_HOME/zsh/zcompdump
 
 #
 # Options
 #
 
-setopt AUTO_CD              # Auto changes to a directory without typing cd.
-setopt AUTO_PUSHD           # Push the old directory onto the stack on cd.
-setopt PUSHD_IGNORE_DUPS    # Do not store duplicates in the stack.
-setopt PUSHD_SILENT         # Do not print the directory stack after pushd or popd.
-setopt PUSHD_TO_HOME        # Push to home directory when no argument is given.
-setopt CDABLE_VARS          # Change directory to a path stored in a variable.
-setopt MULTIOS              # Write to multiple descriptors.
-setopt EXTENDED_GLOB        # Use extended globbing syntax.
-setopt NO_BANG_HIST         # Let ! be !
-unsetopt CLOBBER            # Do not overwrite existing files with > and >>.
-                            # Use >! and >>! to bypass.
-unsetopt NOMATCH            # Allow ^ to be used unescaped in args.
-                            # See https://github.com/ohmyzsh/ohmyzsh/issues/449#issuecomment-6973425
+setopt AUTO_CD                # Auto changes to a directory without typing cd.
+setopt AUTO_PUSHD             # Push the old directory onto the stack on cd.
+setopt PUSHD_IGNORE_DUPS      # Do not store duplicates in the stack.
+setopt PUSHD_SILENT           # Do not print the directory stack after pushd or popd.
+setopt PUSHD_TO_HOME          # Push to home directory when no argument is given.
+setopt CDABLE_VARS            # Change directory to a path stored in a variable.
+setopt MULTIOS                # Write to multiple descriptors.
+setopt EXTENDED_GLOB          # Use extended globbing syntax.
+setopt NO_BANG_HIST           # Let ! be !
+unsetopt CLOBBER              # Do not overwrite existing files with > and >>.
+                              # Use >! and >>! to bypass.
+unsetopt NOMATCH              # Allow ^ to be used unescaped in args.
+                              # See https://github.com/ohmyzsh/ohmyzsh/issues/449#issuecomment-6973425
+setopt HIST_FIND_NO_DUPS      # Do not find duplicate command when searching
+setopt HIST_EXPIRE_DUPS_FIRST # Trim duplicates from history file first
+setopt HIST_IGNORE_SPACE      # Prepend a command with a space to exclude it from history
+setopt SHARE_HISTORY          # Share history across zsh sessions
+
+# The file where the history is stored
+export HISTFILE="$XDG_STATE_HOME/zsh/history"
+# Number of events loaded into memory
+export HISTSIZE=10200
+# Number of events stored in the zsh history file
+export SAVEHIST=10000
 
 # fzf
 export FZF_DEFAULT_OPTS="--layout reverse --info inline --height 40%"
