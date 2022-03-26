@@ -40,7 +40,7 @@ format = 'on [$symbol($version)]($style)'
 
 [git_status]
 style = 'black'
-format = '([([*$modified$renamed$deleted](purple))$staged$untracked$conflicted( \[$ahead_behind\])]($style) )'
+format = '([([*$modified$renamed$deleted](purple))$staged$untracked$conflicted( \[$ahead_behind\])]($style)) '
 ahead = 'ahead [${count}](green)'
 diverged = 'ahead [${ahead_count}](green), behind [${behind_count}](red)'
 behind = 'behind [${count}](red)'
