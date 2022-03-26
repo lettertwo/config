@@ -80,6 +80,7 @@ function zsh_stats() {
 if [[ $+commands[lvim] ]]; then
   alias vi='lvim'
   alias vim='lvim'
+  alias nvim='lvim'
   alias vimdiff='lnvim -d'
 elif [[ $+commands[nvim] ]]; then
   alias vi='nvim'
