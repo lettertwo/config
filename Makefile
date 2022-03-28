@@ -16,6 +16,9 @@ endif
 ~/.cache/zsh:
 	mkdir -p ~/.cache/zsh
 
+~/.local/share/zsh/completions:
+	mkdir -p ~/.local/state/zsh/completions
+
 install: /etc/zshenv ~/.local/state/zsh ~/.cache/zsh update
 
 update:

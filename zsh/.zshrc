@@ -16,7 +16,7 @@ autoload run-help
 # Completions
 #
 
-autoload compinit
+autoload -U compinit
 compinit -d $XDG_CACHE_HOME/zsh/zcompdump
 
 #
