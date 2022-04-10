@@ -32,6 +32,10 @@ apply = ["defer"]
 github = "lukechilds/zsh-nvm"
 apply = ["defer"]
 
+[plugins.yarn]
+github = "g-plane/zsh-yarn-autocompletions"
+apply = ["install-yarn-autocompletions", "defer"]
+
 [plugins.rust]
 github = "cowboyd/zsh-rust"
 apply = ["defer"]
@@ -57,3 +61,5 @@ apply = ["defer"]
 
 [templates]
 defer = { value = 'zsh-defer source "{{ file }}"', each = true }
+# TODO: Figure out how to run this on install AND updates
+install-yarn-autocompletions = { value = 'if [ ! -f "{{ dir }}/yarn-autocompletions" ]; then cd "{{ dir }}"; source ./zplug.zsh; cd -; fi', each = false }
