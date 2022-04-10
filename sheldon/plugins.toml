@@ -36,6 +36,10 @@ apply = ["defer"]
 github = "cowboyd/zsh-rust"
 apply = ["defer"]
 
+[plugins.poetry]
+github = "darvid/zsh-poetry"
+apply = ["defer"]
+
 # NOTE: fzf-tab needs to be loaded before plugins which will wrap widgets,
 # such as zsh-autosuggestions or fast-syntax-highlighting!!
 [plugins.fzf-tab]

@@ -79,6 +79,9 @@ _fzf_compgen_dir() {
 # nvm
 export NVM_AUTO_USE=true
 
+# poetry
+export POETRY_CACHE_DIR="$XDG_CACHE_HOME/pypoetry"
+
 # Initialize starship
 eval "$(starship init zsh)"
 
