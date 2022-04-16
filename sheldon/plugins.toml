@@ -44,6 +44,10 @@ apply = ["defer"]
 github = "darvid/zsh-poetry"
 apply = ["defer"]
 
+[plugins.luaver]
+github = "DhavalKapil/luaver"
+apply = ["defer"]
+
 # NOTE: fzf-tab needs to be loaded before plugins which will wrap widgets,
 # such as zsh-autosuggestions or fast-syntax-highlighting!!
 [plugins.fzf-tab]
