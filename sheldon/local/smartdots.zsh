@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env zsh
 
 # from https://github.com/denysdovhan/dotfiles/blob/master/lib/smartdots.zsh
 

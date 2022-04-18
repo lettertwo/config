@@ -14,11 +14,11 @@ shell = "zsh"
 
 [plugins]
 
-[plugins.local]
-local = "~/.config/sheldon/local"
-
 [plugins.zsh-defer]
 github = "romkatv/zsh-defer"
+
+[plugins.local]
+local = "~/.config/sheldon/local"
 
 [plugins.alias-tips]
 github = 'djui/alias-tips'
