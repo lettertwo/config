@@ -52,7 +52,6 @@ export LESS="\
   --quit-if-one-screen \
   --ignore-case \
   --incsearch \
-  --mouse \
   --status-column \
   --LONG-PROMPT \
   --RAW-CONTROL-CHARS \
