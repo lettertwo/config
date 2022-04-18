@@ -70,6 +70,10 @@ apply = ["defer"]
 local = "~/.config/sheldon/local/compinit"
 apply = ["defer"]
 
+# Uncomment to profile startup time.
+# [plugins.zprof]
+# inline = 'zmodload zsh/zprof && zsh-defer -1 -2 zprof'
+
 [templates]
 defer = { value = 'zsh-defer source "{{ file }}"', each = true }
 # TODO: Figure out how to run this on install AND updates
