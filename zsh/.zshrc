@@ -13,13 +13,6 @@ autoload -Uz "zmv"
 autoload run-help
 
 #
-# Completions
-#
-
-autoload -U compinit
-compinit -d $XDG_CACHE_HOME/zsh/zcompdump
-
-#
 # Options
 #
 

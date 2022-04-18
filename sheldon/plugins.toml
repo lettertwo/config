@@ -17,8 +17,8 @@ shell = "zsh"
 [plugins.zsh-defer]
 github = "romkatv/zsh-defer"
 
-[plugins.local]
-local = "~/.config/sheldon/local"
+[plugins.smartdots]
+local = "~/.config/sheldon/local/smartdots"
 
 [plugins.alias-tips]
 github = 'djui/alias-tips'
@@ -64,6 +64,10 @@ apply = ["defer"]
 [plugins.zsh-autosuggestions]
 github = "zsh-users/zsh-autosuggestions"
 use = ["{{ name }}.zsh"]
+apply = ["defer"]
+
+[plugins.compinit]
+local = "~/.config/sheldon/local/compinit"
 apply = ["defer"]
 
 [templates]
