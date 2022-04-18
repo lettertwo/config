@@ -27,6 +27,12 @@ brew "duf" # muesli/duf, replacement for df
 brew "glances" # nicolargo/glances, replacement for top
 brew "broot" # canop/broot, replacement for tree
 
+# lua
+brew "lua"
+brew "luajit", args: ["HEAD"]
+brew "luarocks"
+brew "lua-language-server"
+
 # neovim
 brew "neovim", args: ["HEAD"]
 
