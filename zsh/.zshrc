@@ -83,7 +83,17 @@ export POETRY_CACHE_DIR="$XDG_CACHE_HOME/pypoetry"
 # Initialize starship
 eval "$(starship init zsh)"
 
-# Initialize sheldon
+# Initialize aliases
+for file in $ZDOTDIR/aliases/*.zsh; do
+  source "$file"
+done
+
+# Initialize functions
+for file in $ZDOTDIR/functions/*.zsh; do
+  source "$file"
+done
+
+# Initialize sheldon plugins
 eval "$(sheldon source)"
 
 # Initialize fzf
