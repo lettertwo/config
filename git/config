@@ -30,6 +30,7 @@
 	cmd = lvim -f -d -c 'wincmd l' $LOCAL $MERGED $REMOTE
 [rebase]
 	autoStash = true
+	autoSquash = true
 [diff]
 	compactionHeuristic = true
 
@@ -65,6 +66,7 @@
 	logme = !git logsmart --author="\"`git config --get user.name`\""
 	loggraph = log --graph --pretty=format:'%C(bold red)%h%Creset %s %C(bold blue)%an%Creset %C(yellow)(%cr)%Creset%C(bold magenta)%d%Creset'
 	amend = !git log -n 1 --pretty=tformat:%s%n%n%b | git commit -F - --amend
+	fixup = !git log --no-merges --oneline $(git rev-parse --abbrev-ref @{upstream})..HEAD | fzf | cut -d' ' -f1 | xargs -o git commit --fixup
 	staged = diff --staged --name-status
 	unstaged = diff --name-status
 	update = pull --rebase
@@ -114,10 +116,9 @@
 	id = !git wd --cached
 	p = push
 	c = commit -v
-	cf = !git c -n
 	ci = !git commit
+	cf = !git fixup
 	cm = !git c -m
-	cfm = !git cf -m
 	ca = !git amend
 	ce = !git ci --amend
 	co = checkout
