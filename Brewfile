@@ -27,6 +27,9 @@ brew "duf" # muesli/duf, replacement for df
 brew "glances" # nicolargo/glances, replacement for top
 brew "broot" # canop/broot, replacement for tree
 
+# neovim
+brew "neovim", args: ["HEAD"]
+
 # git
 brew "gh"
 brew "git-absorb"
