@@ -28,6 +28,9 @@ apply = ["defer"]
 github = "hlissner/zsh-autopair"
 apply = ["defer"]
 
+[plugins."z.lua"]
+github = "skywind3000/z.lua"
+
 [plugins.nvm]
 github = "lukechilds/zsh-nvm"
 apply = ["defer"]

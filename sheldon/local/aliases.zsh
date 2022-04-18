@@ -2,6 +2,12 @@
 # Aliases & Functions
 #
 
+# z.lua aliases
+alias zz='z -c'      # restrict matches to subdirs of $PWD
+alias zi='z -I'      # use fzf to select in multiple matches
+alias zb='z -b'      # quickly cd to the parent directory
+alias zbi='z -b -I'  # use fzf to select in multiple parent directories
+
 # exa versions of some ls aliases.
 alias ls='exa'
 # Lists in one column, hidden files.
