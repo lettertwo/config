@@ -37,6 +37,7 @@ brew "git-lfs"
 
 # node
 brew "node"
+brew "fnm" # fast node version manager
 
 # python
 brew "pyenv"

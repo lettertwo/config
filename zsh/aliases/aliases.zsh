@@ -62,6 +62,9 @@ alias help='tldr'
 # Use broot instead of tree
 alias tree='broot'
 
+# Use fnm instead of nvm
+alias nvm='fnm'
+
 # Change dir fast
 alias d='dirs -v'
 for index ({1..9}) alias "$index"="cd +${index}"; unset index

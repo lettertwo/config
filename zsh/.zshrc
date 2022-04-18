@@ -74,9 +74,6 @@ export _ZL_DATA="$XDG_CACHE_HOME/zlua"
 export _ZL_MATCH_MODE=1
 export _ZL_ROOT_MARKERS=".git,.svn,.hg,package.json"
 
-# nvm
-export NVM_AUTO_USE=true
-
 # poetry
 export POETRY_CACHE_DIR="$XDG_CACHE_HOME/pypoetry"
 
