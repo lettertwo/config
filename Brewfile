@@ -17,6 +17,7 @@ brew "readline"
 brew "wget"
 brew "tldr"
 brew "trash"
+brew "lnav"
 brew "ripgrep" # BurntSushi/ripgrep
 brew "fd" # sharkdp/fd, replacement for find
 brew "bat" # sharkdp/bat, replacement for cat
