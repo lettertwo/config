@@ -6,9 +6,9 @@ function NvimTree.config()
 	end
 
 	lvim.builtin.nvimtree.setup.view.side = "right"
+	lvim.builtin.nvimtree.setup.hijack_unnamed_buffer_when_opening = true
+	lvim.builtin.nvimtree.setup.actions.open_file.quit_on_open = true
 	lvim.builtin.nvimtree.show_icons.git = 1
-	lvim.builtin.nvimtree.setup.hide_dotfiles = 0
-	lvim.builtin.nvimtree.setup.auto_close = 1
 end
 
 return NvimTree

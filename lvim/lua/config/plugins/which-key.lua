@@ -5,6 +5,10 @@ function WhichKey.config()
 		return
 	end
 
+	lvim.builtin.which_key.setup.plugins.presets.motions = true
+	lvim.builtin.which_key.setup.plugins.presets.operators = true
+	lvim.builtin.which_key.setup.plugins.presets.text_objects = true
+
 	-- Use which-key to add extra bindings with the leader-key prefix
 	lvim.builtin.which_key.mappings["P"] = { "<cmd>Telescope projects<CR>", "Projects" }
 	lvim.builtin.which_key.mappings["t"] = {
@@ -15,6 +19,7 @@ function WhichKey.config()
 		q = { "<cmd>Trouble quickfix<cr>", "QuickFix" },
 		l = { "<cmd>Trouble loclist<cr>", "LocationList" },
 		w = { "<cmd>Trouble workspace_diagnostics<cr>", "Diagnostics" },
+		t = { "<cmd>Trouble telescope<cr>", "Telescope" },
 	}
 	lvim.builtin.which_key.mappings["<cr>"] = { "<cmd>update!<CR>", "Save, if changed" }
 	lvim.builtin.which_key.mappings["b"] = vim.tbl_deep_extend("error", lvim.builtin.which_key.mappings["b"], {

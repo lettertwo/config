@@ -10,13 +10,10 @@ vim.opt.wrap = false -- Disable line wrapping
 vim.opt.scrolloff = 10
 vim.opt.sidescrolloff = 15
 
--- Show line numbers, relative normally, nonrelative when inserting
+-- Show line numbers
 vim.opt.number = true
+-- relative normally, nonrelative in insert mode (see `config.autocommands`).
 vim.opt.relativenumber = true
-lvim.autocommands.custom_groups = {
-	{ "InsertEnter", "*", ":set norelativenumber" },
-	{ "InsertLeave", "*", ":set relativenumber" },
-}
 
 -- Insert mode completion setting
 vim.opt.completeopt = { "menu", "menuone", "noselect" }
@@ -33,8 +30,6 @@ vim.opt.errorformat:append("%f:%l:%c%p%m")
 lvim.log.level = "warn"
 lvim.format_on_save = true
 lvim.line_wrap_cursor_movement = true
-
-lvim.colorscheme = "laserwave"
 
 -- Don't highlight trailing whitespace for these filetypes
 vim.g.better_whitespace_filetypes_blacklist = {
@@ -63,11 +58,7 @@ lvim.builtin.notify.active = true
 lvim.builtin.terminal.active = true
 lvim.builtin.dap.active = true
 
-require("keys")
-require("lsp")
-require("plugins")
+-- custom mappings will be provided
+vim.g.kitty_navigator_no_mappings = 1
 
--- Autocommands (https://neovim.io/doc/user/autocmd.html)
--- lvim.autocommands.custom_groups = {
---   { "BufWinEnter", "*.lua", "setlocal ts=8 sw=8" },
--- }
+require("config").load()

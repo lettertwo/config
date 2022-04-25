@@ -34,7 +34,7 @@ end
 local formatters = require("lvim.lsp.null-ls.formatters")
 formatters.setup({
 	{ command = "stylua" },
-	{ command = "prettier" },
+	{ command = "prettier", filetypes = { "typescript", "typescriptreact", "javascript", "javascriptreact" } },
 })
 
 -- set additional linters
