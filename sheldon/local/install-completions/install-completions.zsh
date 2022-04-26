@@ -4,10 +4,10 @@ install-completions() {
   local ttl=h+24
   local dir=${XDG_STATE_HOME:-~/.local/state}/zsh/completions
   local name cmd output result dryrun update verbose
-  while getopts ":hvnt:d:" opt
+  while getopts ":hvnft:d:" opt
   do
     case $opt in
-      (*h) print -r -- 'install-completions [-vn] [-t <ttl>] [-d <dir>] <name> <cmd>
+      (*h) print -r -- 'install-completions [-vnf] [-t <ttl>] [-d <dir>] <name> <cmd>
 
 Evaluates `<cmd>` to generate a completion function and caches it as `<name>`.
 
@@ -20,6 +20,13 @@ Options:
      Print the contents of the evaluated completion script to stdout instead of
      writing to disk. If the install would do nothing (`-t` has not expired),
      prints a message to stderr instead.
+
+     With `-f`, forces printing of the contents (ignoring `-t`).
+
+  -f
+     Force the installation. The `-t` argument will have no effect.
+
+     With `-n`, forces printing of the contents (ignoring `-t`).
 
   -t <unit><operator><n>
      Define a time to live for the function cache. Defaults to `h+24`.
@@ -57,6 +64,7 @@ Examples:
       ;;
       v) verbose=1 ;;
       n) dryrun=1 ;;
+      f) update=1 ;;
       t)
         ttl=$OPTARG
         if [[ ! $ttl =~ ^[Mwdhms][+-][0-9]+$ ]]; then
