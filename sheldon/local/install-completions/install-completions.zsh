@@ -3,15 +3,18 @@
 install-completions() {
   local ttl=h+24
   local dir=${XDG_STATE_HOME:-~/.local/state}/zsh/completions
-  local name cmd output result dryrun
-  while getopts ":hnt:d:" opt
+  local name cmd output result dryrun update verbose
+  while getopts ":hvnt:d:" opt
   do
     case $opt in
-      (*h) print -r -- 'install-completions [-n] [-t <ttl>] [-d <dir>] <name> <cmd>
+      (*h) print -r -- 'install-completions [-vn] [-t <ttl>] [-d <dir>] <name> <cmd>
 
 Evaluates `<cmd>` to generate a completion function and caches it as `<name>`.
 
 Options:
+
+  -v
+     More noise.
 
   -n
      Print the contents of the evaluated completion script to stdout instead of
@@ -52,6 +55,7 @@ Examples:
   install-completions -t w+1 -d ~/.zsh/completions graphite '\'gt completion\'''
         return 0
       ;;
+      v) verbose=1 ;;
       n) dryrun=1 ;;
       t)
         ttl=$OPTARG
@@ -92,25 +96,28 @@ Examples:
     return $result
   fi
 
-  if [[ ! -f $name ]]; then
-    if (( $dryrun = 1 )); then
-      echo $output
+  if [[ ! $update ]]; then
+    if [[ ! -f $name ]]; then
+      update=1
     else
-      echo $output > $name
+      for dump in $name(N.m$ttl); do
+        update=1
+        break
+      done
     fi
-  else
-    local updated=0
-    for dump in $name(N.m$ttl); do
-      (( updated++ ))
-      if [[ $dryrun ]]; then
-        echo $output
-      else
-        echo $output >! $name
-      fi
-    done
-    if [[ $dryrun && $updated = 0 ]]; then
-      >&2 print -r -- "install-completions: ${name:t} is up-to-date ($ttl)."
+  fi
+
+  if [[ $update ]]; then
+    if [[ $dryrun ]]; then
+      print -r -- $output
+    else
+      echo $output >! $name
     fi
+    if [[ $verbose ]]; then
+      >&2 print -r -- "install-completions: updated ${name:t}."
+    fi
+  elif [[ $verbose || $dryrun ]]; then
+    >&2 print -r -- "install-completions: ${name:t} is up-to-date ($ttl)."
   fi
 }
 
