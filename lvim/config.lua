@@ -61,4 +61,4 @@ lvim.builtin.dap.active = true
 -- custom mappings will be provided
 vim.g.kitty_navigator_no_mappings = 1
 
-require("config").load()
+require("user").load()

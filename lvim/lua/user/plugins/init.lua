@@ -1,15 +1,15 @@
 -- After changing plugin config exit and reopen LunarVim, Run :PackerInstall :PackerCompile
 
 -- LunarVim Builtins
-require("config.plugins.bufferline").config()
-require("config.plugins.cmp").config()
-require("config.plugins.dap").config()
-require("config.plugins.dashboard").config()
-require("config.plugins.lualine").config()
-require("config.plugins.nvim-tree").config()
-require("config.plugins.telescope").config()
-require("config.plugins.treesitter").config()
-require("config.plugins.which-key").config()
+require("user.plugins.bufferline").config()
+require("user.plugins.cmp").config()
+require("user.plugins.dap").config()
+require("user.plugins.dashboard").config()
+require("user.plugins.lualine").config()
+require("user.plugins.nvim-tree").config()
+require("user.plugins.telescope").config()
+require("user.plugins.treesitter").config()
+require("user.plugins.which-key").config()
 
 -- Additional Plugins
 lvim.plugins = {
@@ -27,13 +27,13 @@ lvim.plugins = {
 		event = "BufReadPre", -- this will only start session saving when an actual file was opened
 		module = "persistence",
 		config = function()
-			require("config.plugins.persistence").config()
+			require("user.plugins.persistence").config()
 		end,
 	},
 	{
 		"norcalli/nvim-colorizer.lua",
 		config = function()
-			require("config.plugins.colorizer").config()
+			require("user.plugins.colorizer").config()
 		end,
 	},
 	{
