@@ -24,6 +24,9 @@ vim.opt.wildmode = "longest:full,full" -- autocomplete full on first tab, full o
 vim.opt.grepprg = "rg --vimgrep --follow"
 vim.opt.errorformat:append("%f:%l:%c%p%m")
 
+-- Things to save in sessions
+vim.opt.sessionoptions = "buffers,curdir,folds,tabpages,winpos,winsize"
+
 -- general
 lvim.log.level = "warn"
 lvim.format_on_save = true
