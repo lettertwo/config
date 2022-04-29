@@ -35,6 +35,8 @@ function Telescope.config()
 			},
 		},
 	}
+	lvim.builtin.which_key.mappings["P"] = { "<cmd>Telescope projects<CR>", "Projects" }
+	lvim.builtin.which_key.mappings["H"] = { "<cmd>Telescope highlights<CR>", "Highlights" }
 end
 
 return Telescope

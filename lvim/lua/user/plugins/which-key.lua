@@ -30,10 +30,8 @@ function WhichKey.config()
 	})
 	lvim.builtin.which_key.mappings["%"] = {
 		name = "+File",
-		s = { "<cmd source %<CR>", "Source current file" },
+		s = { "<cmd>source %<CR>", "Source current file" },
 	}
-
-	lvim.builtin.which_key.mappings["H"] = { "<cmd>Telescope highlights<CR>", "Highlights" }
 end
 
 return WhichKey
