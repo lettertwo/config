@@ -17,7 +17,12 @@ lvim.plugins = {
 		"lettertwo/laserwave.nvim",
 		requires = { "rktjmp/lush.nvim" },
 	},
-	{ "folke/trouble.nvim", cmd = "TroubleToggle" },
+	{
+		"folke/trouble.nvim",
+		config = function()
+			require("user.plugins.trouble").config()
+		end,
+	},
 	{ "simrat39/symbols-outline.nvim", cmd = "SymbolsOutline" },
 	{ "ntpeters/vim-better-whitespace" },
 	{ "sindrets/diffview.nvim", event = "BufRead" },
