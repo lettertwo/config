@@ -1,3 +1,5 @@
+local Log = require("lvim.core.log")
+
 ---@usage Select which servers should be configured manually. Requires `:LvimCacheReset` to take effect.
 local servers = {
 	"flow",
@@ -8,8 +10,17 @@ local servers = {
 	"sumneko_lua",
 }
 
--- See the full default list `:lua print(vim.inspect(lvim.lsp.override))`
-vim.list_extend(lvim.lsp.override, servers)
+-- Exempt our manually configured servers from automatic configuration
+local skipped_servers = lvim.lsp.automatic_configuration.skipped_servers
+for k, v in pairs(servers) do
+	if type(k) == "number" then
+		k = v
+	end
+	if not vim.tbl_contains(skipped_servers, k) then
+		Log:debug("Skipping automatic lsp config for  " .. k)
+		table.insert(skipped_servers, k)
+	end
+end
 
 ---@usage setup a server -- see: https://www.lunarvim.org/languages/#overriding-the-default-configuration
 local lsp_setup = require("lvim.lsp.manager").setup
