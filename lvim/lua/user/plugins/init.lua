@@ -23,11 +23,9 @@ lvim.plugins = {
 	{ "sindrets/diffview.nvim", event = "BufRead" },
 	{ "f-person/git-blame.nvim", event = "BufRead" },
 	{
-		"folke/persistence.nvim",
-		event = "BufReadPre", -- this will only start session saving when an actual file was opened
-		module = "persistence",
+		"olimorris/persisted.nvim",
 		config = function()
-			require("user.plugins.persistence").config()
+			require("user.plugins.persisted").config()
 		end,
 	},
 	{
