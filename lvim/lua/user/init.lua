@@ -44,9 +44,6 @@ end
 local function reload(changed)
 	unload()
 	vim.cmd([[:LvimReload]])
-	if changed and changed:match("plugins") then
-		require("packer").sync()
-	end
 	Log:debug("user config reloaded!")
 end
 
