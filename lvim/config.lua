@@ -1,5 +1,3 @@
--- lvim.builtin.alpha.mode = "startify"
-
 -- Don't wrap text, but highlight long lines
 vim.opt.textwidth = 80 -- the width that'll be used for wrapping (gq)
 vim.opt.colorcolumn:append("+1") -- color column 80 so I know when my line's too long
