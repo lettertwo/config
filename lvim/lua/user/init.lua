@@ -5,32 +5,32 @@ local configpath = get_config_dir()
 
 -- These config modules should be loaded before others.
 local modules = {
-	"config.plugins",
-	"config.keys",
+	"user.plugins",
+	"user.keys",
 }
 
--- Find and load config modules, starting with those defined in `modules`.
+-- Find and load user config modules, starting with those defined in `modules`.
 local function load()
 	-- Load everything defined in `modules` first.
 	for _, name in pairs(modules) do
 		Log:debug("loading " .. name)
 		require(name)
 	end
-	-- Discover and load other config modules.
-	for name in walk_modules(join_paths(configpath, "lua", "config")) do
-		if name ~= "config" and not modules[name] then
+	-- Discover and load other user config modules.
+	for name in walk_modules(join_paths(configpath, "lua", "user")) do
+		if name ~= "user" and not modules[name] then
 			Log:debug("found and loaded " .. name)
 			require(name)
 		end
 	end
 end
 
--- Unload all config modules.
+-- Unload all user config modules.
 local function unload()
-	-- Also remove config modules from impatient.nvim cache.
+	-- Also remove user config modules from impatient.nvim cache.
 	local luacache = (_G.__luacache or {}).cache
 	for name, _ in pairs(package.loaded) do
-		if name:match("^config.") then
+		if name:match("^user.") then
 			package.loaded[name] = nil
 			if luacache then
 				luacache[name] = nil
@@ -40,14 +40,14 @@ local function unload()
 	end
 end
 
--- Reload all config modules.
+-- Reload all user config modules.
 local function reload(changed)
 	unload()
 	vim.cmd([[:LvimReload]])
 	if changed and changed:match("plugins") then
 		require("packer").sync()
 	end
-	Log:debug("config reloaded!")
+	Log:debug("user config reloaded!")
 end
 
 return {
