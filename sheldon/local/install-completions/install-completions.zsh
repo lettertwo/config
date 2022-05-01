@@ -3,13 +3,15 @@
 install-completions() {
   local ttl=h+24
   local dir=${XDG_STATE_HOME:-~/.local/state}/zsh/completions
-  local name cmd output result dryrun update verbose
+  local name cmd output code dryrun update verbose
   while getopts ":hvnft:d:" opt
   do
     case $opt in
-      (*h) print -r -- 'install-completions [-vnf] [-t <ttl>] [-d <dir>] <name> <cmd>
+      (*h) print -r -- 'install-completions [-vnf] [-t <ttl>] [-d <dir>] <name> [cmd]
 
-Evaluates `<cmd>` to generate a completion function and caches it as `<name>`.
+Evaluates `[cmd]` to generate a completion function and caches it as `<name>`.
+
+if [cmd] is not provided, waits for `stdin` to provide the contents instead.
 
 Options:
 
@@ -54,12 +56,23 @@ Options:
 Positional Arguments (required in order):
 
   <name> - The name of the completion function.
-  <cmd>  - Expression to generate a completion function when evaluated.
+  [cmd]  - Expression to generate a completion module when evaluated.
+           If not provided, then the contents of the completion module
+           are expected to be piped in.
 
 Examples:
 
   install-completions graphite gt completion
-  install-completions -t w+1 -d ~/.zsh/completions graphite '\'gt completion\'''
+
+  gt completion | install-completions graphite
+
+  gt completion | install-completions -t w+1 -d ~/.zsh/completions graphite
+
+  install-completions graphite <<- EOF
+    #compdef gt
+    _gt() { ... }
+    compdef _gt gt
+  EOF'
         return 0
       ;;
       v) verbose=1 ;;
@@ -91,17 +104,17 @@ Examples:
   name=${dir%/}/_${@[OPTIND++]#_}
 
   if (( OPTIND > ARGC )); then
-    >&2 print -r -- "install-completions: missing <cmd> argument"
-    return 1
+    read -rd '' output;
+    code=0
+  else
+    cmd=$@[OPTIND,-1]
+    output=$(eval " $cmd" 2>&1)
+    code=$?
   fi
-  cmd=$@[OPTIND,-1]
 
-  output=$(eval " $cmd" 2>&1)
-  result=$?
-
-  if (( $result != 0 )); then
+  if (( $code != 0 )); then
     >&2 print -rl -- "install-completions: error evaluating ${cmd}:" $output
-    return $result
+    return $code
   fi
 
   if [[ ! $update ]]; then
