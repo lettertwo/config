@@ -17,6 +17,9 @@ shell = "zsh"
 [plugins.zsh-defer]
 github = "romkatv/zsh-defer"
 
+[plugins.install-completions]
+local = "~/.config/sheldon/local/install-completions"
+
 [plugins.smartdots]
 local = "~/.config/sheldon/local/smartdots"
 
@@ -71,5 +74,6 @@ apply = ["defer"]
 
 [templates]
 defer = { value = 'zsh-defer source "{{ file }}"', each = true }
+install-completions = { value = 'install-completions {{ name }} {{ cmd }}', each = false }
 # TODO: Figure out how to run this on install AND updates
 install-yarn-autocompletions = { value = 'if [ ! -f "{{ dir }}/yarn-autocompletions" ]; then cd "{{ dir }}"; source ./zplug.zsh; cd -; fi', each = false }
