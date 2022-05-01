@@ -17,9 +17,6 @@ shell = "zsh"
 [plugins.zsh-defer]
 github = "romkatv/zsh-defer"
 
-[plugins.install-completions]
-local = "~/.config/sheldon/local/install-completions"
-
 [plugins.smartdots]
 local = "~/.config/sheldon/local/smartdots"
 
@@ -36,10 +33,6 @@ github = "skywind3000/z.lua"
 
 [plugins.fnm]
 inline = 'zsh-defer -1 -2 eval "$(fnm env --use-on-cd --version-file-strategy recursive)"'
-
-[plugins.yarn]
-github = "g-plane/zsh-yarn-autocompletions"
-apply = ["install-yarn-autocompletions", "defer"]
 
 [plugins.rust]
 github = "cowboyd/zsh-rust"
@@ -64,6 +57,17 @@ github = "zsh-users/zsh-autosuggestions"
 use = ["{{ name }}.zsh"]
 apply = ["defer"]
 
+### completion
+
+# NOTE: install-completions plugins should run before compinit!
+[plugins.install-completions]
+local = "~/.config/sheldon/local/install-completions"
+
+[plugins.yarn-completions]
+github = "chrisands/zsh-yarn-completions"
+use = ["zsh-yarn-completions.zsh"]
+apply = ["install-yarn-completions"]
+
 [plugins.compinit]
 local = "~/.config/sheldon/local/compinit"
 apply = ["defer"]
@@ -74,6 +78,4 @@ apply = ["defer"]
 
 [templates]
 defer = { value = 'zsh-defer source "{{ file }}"', each = true }
-install-completions = { value = 'install-completions {{ name }} {{ cmd }}', each = false }
-# TODO: Figure out how to run this on install AND updates
-install-yarn-autocompletions = { value = 'if [ ! -f "{{ dir }}/yarn-autocompletions" ]; then cd "{{ dir }}"; source ./zplug.zsh; cd -; fi', each = false }
+install-yarn-completions = { value = "install-completions {{ name }} <<-EOF\n#compdef yarn\nsource {{ file }}\nEOF", each = true }
