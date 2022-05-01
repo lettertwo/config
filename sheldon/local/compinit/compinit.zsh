@@ -3,6 +3,7 @@
 autoload -Uz compinit
 
 comprebuild() {
+  rm -f $XDG_CACHE_HOME/zsh/zcompdump 2>/dev/null
   compinit -d $XDG_CACHE_HOME/zsh/zcompdump
 }
 
