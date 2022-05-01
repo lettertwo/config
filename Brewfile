@@ -41,6 +41,7 @@ brew "neovim", args: ["HEAD"]
 brew "gh"
 brew "git-absorb"
 brew "git-lfs"
+brew "graphite"
 
 # node
 brew "node"
