@@ -53,4 +53,5 @@ lvim.plugins = {
 	-- "sa" to add surround, "sd" to delete, "sr" to replace
 	{ "machakann/vim-sandwich" },
 	{ "knubie/vim-kitty-navigator" },
+	{ "TaDaa/vimade" },
 }
