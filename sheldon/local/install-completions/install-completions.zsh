@@ -3,15 +3,20 @@
 install-completions() {
   local ttl=h+24
   local dir=${XDG_STATE_HOME:-~/.local/state}/zsh/completions
-  local name cmd output result
-  while getopts ":ht:d:" opt
+  local name cmd output result dryrun
+  while getopts ":hnt:d:" opt
   do
     case $opt in
-      (*h) print -r -- 'install-completions [-t <ttl>] [-d <dir>] <name> <cmd>
+      (*h) print -r -- 'install-completions [-n] [-t <ttl>] [-d <dir>] <name> <cmd>
 
 Evaluates `<cmd>` to generate a completion function and caches it as `<name>`.
 
 Options:
+
+  -n
+     Print the contents of the evaluated completion script to stdout instead of
+     writing to disk. If the install would do nothing (`-t` has not expired),
+     prints a message to stderr instead.
 
   -t <unit><operator><n>
      Define a time to live for the function cache. Defaults to `h+24`.
@@ -47,6 +52,7 @@ Examples:
   install-completions -t w+1 -d ~/.zsh/completions graphite '\'gt completion\'''
         return 0
       ;;
+      n) dryrun=1 ;;
       t)
         ttl=$OPTARG
         if [[ ! $ttl =~ ^[Mwdhms][+-][0-9]+$ ]]; then
@@ -87,11 +93,24 @@ Examples:
   fi
 
   if [[ ! -f $name ]]; then
-    echo $output > $name
+    if (( $dryrun = 1 )); then
+      echo $output
+    else
+      echo $output > $name
+    fi
   else
+    local updated=0
     for dump in $name(N.m$ttl); do
-      echo $output >! $name
+      (( updated++ ))
+      if [[ $dryrun ]]; then
+        echo $output
+      else
+        echo $output >! $name
+      fi
     done
+    if [[ $dryrun && $updated = 0 ]]; then
+      >&2 print -r -- "install-completions: ${name:t} is up-to-date ($ttl)."
+    fi
   fi
 }
 
