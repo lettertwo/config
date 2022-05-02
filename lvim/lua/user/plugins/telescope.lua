@@ -7,6 +7,7 @@ function Telescope.config()
 
 	local actions = require("telescope.actions")
 	local trouble = require("trouble.providers.telescope")
+	local files = require("telescope.builtin.files")
 	local themes = require("telescope.themes")
 
 	-- Use ivy theme by default.
@@ -42,6 +43,37 @@ function Telescope.config()
 	lvim.builtin.which_key.mappings["P"] = { "<cmd>Telescope projects<CR>", "Projects" }
 	lvim.builtin.which_key.mappings["H"] = { "<cmd>Telescope highlights<CR>", "Highlights" }
 	lvim.builtin.which_key.mappings["br"] = { "<cmd>Telescope oldfiles<CR>", "Open Recent File" }
+
+	local function lvim_config_files()
+		files.find_files(themes.get_ivy({
+			prompt_title = "Lvim Config Files",
+			cwd = vim.env.LUNARVIM_CONFIG_DIR,
+		}))
+	end
+
+	local function xdg_config_files()
+		files.find_files({
+			prompt_title = "Config Files",
+			cwd = vim.env.XDG_CONFIG_DIR,
+		})
+	end
+
+	local function xdg_config_grep()
+		files.live_grep({
+			prompt_title = "Search Config",
+			search_dirs = { vim.env.XDG_CONFIG_DIR },
+		})
+	end
+
+	-- Config search
+	lvim.builtin.which_key.mappings["LC"] = { lvim_config_files, "User Config Files" }
+
+	lvim.builtin.which_key.mappings["c"] = {
+		name = "Config",
+		["l"] = { lvim_config_files, "LunarVim Config Files" },
+		["f"] = { xdg_config_files, "Find Config Files" },
+		["s"] = { xdg_config_grep, "Search Config Dir" },
+	}
 end
 
 return Telescope
