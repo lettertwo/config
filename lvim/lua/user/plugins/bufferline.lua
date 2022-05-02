@@ -6,6 +6,9 @@ function Bufferline.config()
 	end
 
 	lvim.builtin.bufferline.options.always_show_bufferline = true
+
+	lvim.builtin.bufferline.keymap.normal_mode["<M-h>"] = ":BufferLineMovePrev<CR>"
+	lvim.builtin.bufferline.keymap.normal_mode["<M-l>"] = ":BufferLineMoveNext<CR>"
 end
 
 return Bufferline
