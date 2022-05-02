@@ -10,7 +10,6 @@ function WhichKey.config()
 	lvim.builtin.which_key.setup.plugins.presets.text_objects = true
 
 	-- Use which-key to add extra bindings with the leader-key prefix
-	lvim.builtin.which_key.mappings["P"] = { "<cmd>Telescope projects<CR>", "Projects" }
 	lvim.builtin.which_key.mappings["<cr>"] = { "<cmd>update!<CR>", "Save, if changed" }
 	lvim.builtin.which_key.mappings["b"] = vim.tbl_deep_extend("error", lvim.builtin.which_key.mappings["b"], {
 		w = { "<cmd>w<CR>", "Write current buffer" },
