@@ -64,7 +64,7 @@ apply = ["defer"]
 local = "~/.config/sheldon/local/install-completions"
 
 [plugins.graphite-completions]
-inline = 'install-completions -v graphite gt completion'
+inline = 'install-completions graphite gt completion'
 
 [plugins.yarn-completions]
 github = "chrisands/zsh-yarn-completions"
