@@ -26,7 +26,7 @@ endef
 export ZDOTDIR
 /etc/zshenv:
 ifneq ($(ZDOTDIR), "$$HOME/.config/zsh")
-	$(call error,"ZDOTDIR misconfigured!")
+	$(call err,"ZDOTDIR misconfigured!")
 	$(call log,"Configuring ZDOTDIR...")
 	$(call run,echo "$$ZDOTDIR" | sudo tee -a $@ > /dev/null)
 	$(call done)
@@ -59,7 +59,7 @@ BREW := $(shell command -v brew 2> /dev/null)
 .PHONY: brew
 brew:
 ifndef BREW
-	$(call error,"brew not found!")
+	$(call err,"brew not found!")
 	$(call log,"Installing brew...")
 	$(call run,curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)
 	$(call done)
@@ -80,7 +80,7 @@ SHELDON := $(shell command -v sheldon 2> /dev/null)
 .PHONY: sheldon
 sheldon: brew
 ifndef SHELDON
-	$(call error,"sheldon not found!")
+	$(call err,"sheldon not found!")
 	$(call log,"Installing sheldon...")
 	$(call run,brew install sheldon)
 	$(call done)
