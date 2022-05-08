@@ -6,9 +6,9 @@ function Telescope.config()
   end
 
   local actions = require("telescope.actions")
-  local trouble = require("trouble.providers.telescope")
   local files = require("telescope.builtin.files")
   local themes = require("telescope.themes")
+  local _, trouble = pcall(require, "trouble.providers.telescope")
 
   -- Use ivy theme by default.
   lvim.builtin.telescope.defaults = vim.tbl_deep_extend("force", lvim.builtin.telescope.defaults, themes.get_ivy())
@@ -21,15 +21,20 @@ function Telescope.config()
       ["<C-k>"] = actions.move_selection_previous,
       ["<C-n>"] = actions.cycle_history_next,
       ["<C-p>"] = actions.cycle_history_prev,
-      ["<C-t>"] = trouble.open_with_trouble,
     },
     -- for normal mode
     n = {
       ["<C-j>"] = actions.move_selection_next,
       ["<C-k>"] = actions.move_selection_previous,
-      ["<C-t>"] = trouble.open_with_trouble,
     },
   }
+
+  if trouble then
+    lvim.builtin.telescope.defaults.mappings.i["<C-t>"] = trouble.open_with_trouble
+    lvim.builtin.telescope.defaults.mappings.n["<C-t>"] = trouble.open_with_trouble
+  end
+
+  -- Delete buffers in the buffer picker with <c-d>
   lvim.builtin.telescope.defaults.pickers.buffers = {
     mappings = {
       i = {
