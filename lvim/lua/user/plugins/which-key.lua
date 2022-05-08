@@ -9,28 +9,26 @@ function WhichKey.config()
   lvim.builtin.which_key.setup.plugins.presets.operators = true
   lvim.builtin.which_key.setup.plugins.presets.text_objects = true
 
+  local function save_as()
+    local fname = vim.fn.input("Save as: ", vim.fn.bufname(), "file")
+    if fname ~= "" then
+      vim.cmd(":saveas! " .. fname)
+    end
+  end
+
   -- Use which-key to add extra bindings with the leader-key prefix
   lvim.builtin.which_key.mappings["<cr>"] = { "<cmd>update!<CR>", "Save, if changed" }
   lvim.builtin.which_key.mappings["b"] = vim.tbl_deep_extend("error", lvim.builtin.which_key.mappings["b"], {
     w = { "<cmd>w<CR>", "Write current buffer" },
-    W = { "<cmd>wa<CR>", "Write all buffers" },
+    W = { "<cmd>noa w<CR>", "Write without autocmds" },
+    a = { "<cmd>wa<CR>", "Write all buffers" },
     u = { "<cmd>update<CR>", "Update current buffer" },
     c = { "<cmd>bd!<CR>", "Close current buffer" },
     C = { "<cmd>%bd|e#|bd#<CR>", "Close all buffers" },
-    s = {
-      function()
-        local fname = vim.fn.input("Save as: ", vim.fn.bufname(), "file")
-        if fname ~= "" then
-          vim.cmd(":saveas! " .. fname)
-        end
-      end,
-      "Save current buffer (as)",
-    },
+    n = { "<cmd>enew<CR>", "Open new buffer" },
+    s = { save_as, "Save current buffer (as)" },
+    ["%"] = { "<cmd>source %<CR>", "Source current file" },
   })
-  lvim.builtin.which_key.mappings["%"] = {
-    name = "+File",
-    s = { "<cmd>source %<CR>", "Source current file" },
-  }
 end
 
 return WhichKey
