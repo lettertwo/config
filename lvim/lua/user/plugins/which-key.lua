@@ -9,6 +9,10 @@ function WhichKey.config()
   lvim.builtin.which_key.setup.plugins.presets.operators = true
   lvim.builtin.which_key.setup.plugins.presets.text_objects = true
 
+  lvim.builtin.which_key.setup.operators = {
+    sa = "Sandwich",
+  }
+
   local function save_as()
     local fname = vim.fn.input("Save as: ", vim.fn.bufname(), "file")
     if fname ~= "" then
