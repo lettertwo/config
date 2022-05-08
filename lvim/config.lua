@@ -51,6 +51,14 @@ vim.g.better_whitespace_filetypes_blacklist = {
 -- Don't show gitblame virtual text for these filetypes.
 vim.g.gitblame_ignored_filetypes = { "NvimTree", "Outline", "Trouble" }
 
+-- Fade inactive windows while preserving syntax highlights.
+vim.g.vimade = {
+  fadelevel = 0.7,
+  enablesigns = 1,
+  enablefocusfading = 1,
+  enabletreesitter = 1,
+}
+
 -- folding
 vim.opt.foldcolumn = "1"
 vim.opt.foldlevelstart = 99
