@@ -34,18 +34,18 @@ lvim.line_wrap_cursor_movement = true
 
 -- Don't highlight trailing whitespace for these filetypes
 vim.g.better_whitespace_filetypes_blacklist = {
-	"diff",
-	"git",
-	"gitcommit",
-	"unite",
-	"qf",
-	"help",
-	"markdown",
-	"fugitive",
-	"dashboard",
-	"NvimTree",
-	"Outline",
-	"Trouble",
+  "diff",
+  "git",
+  "gitcommit",
+  "unite",
+  "qf",
+  "help",
+  "markdown",
+  "fugitive",
+  "dashboard",
+  "NvimTree",
+  "Outline",
+  "Trouble",
 }
 
 -- Don't show gitblame virtual text for these filetypes.

@@ -11,7 +11,7 @@ local function to_module_name(path)
 end
 
 local function is_module(pathname)
-  if pathname:match ".lua$" then
+  if pathname:match(".lua$") then
     return true
   end
   if exists(join_paths(pathname, "index.lua")) then
