@@ -55,4 +55,12 @@ lvim.plugins = {
   { "machakann/vim-sandwich" },
   { "knubie/vim-kitty-navigator" },
   { "TaDaa/vimade" },
+  {
+    "ray-x/lsp_signature.nvim",
+    event = "BufRead",
+    config = function()
+      require("lsp_signature").setup({ hint_enable = false })
+      require("lsp_signature").on_attach()
+    end,
+  },
 }
