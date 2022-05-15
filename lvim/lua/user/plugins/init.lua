@@ -63,6 +63,7 @@ lvim.plugins = {
       require("lsp_signature").on_attach()
     end,
   },
+  { "dstein64/vim-startuptime", cmd = "StartupTime" },
 
   { "github/copilot.vim" },
   { "petertriho/cmp-git", requires = "nvim-lua/plenary.nvim" },
