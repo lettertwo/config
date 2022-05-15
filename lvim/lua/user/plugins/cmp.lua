@@ -7,71 +7,125 @@ function Cmp.config()
   if not cmp or not luasnip then
     return
   end
+  -- Set configuration for specific filetype.
+  cmp.setup.filetype("gitcommit", {
+    sources = cmp.config.sources({
+      { name = "cmp_git" },
+    }, {
+      { name = "buffer" },
+    }),
+  })
+  cmp.setup.filetype("zsh", {
+    sources = cmp.config.sources({
+      { name = "zsh" },
+    }, {
+      { name = "buffer" },
+    }),
+  })
 
-  local has_words_before = function()
-    local line, col = unpack(vim.api.nvim_win_get_cursor(0))
-    return col ~= 0 and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s") == nil
-  end
+  -- Use buffer source for '/'
+  cmp.setup.cmdline("/", {
+    mapping = cmp.mapping.preset.cmdline(),
+    sources = { { name = "buffer" } },
+  })
 
-  local select_next = cmp.mapping.select_next_item()
-  local select_prev = cmp.mapping.select_prev_item()
-  local scroll_docs = cmp.mapping.scroll_docs
+  -- Use cmdline & path source for ':'
+  cmp.setup.cmdline(":", {
+    mapping = cmp.mapping.preset.cmdline(),
+    sources = cmp.config.sources({
+      { name = "path" },
+    }, {
+      { name = "cmdline" },
+    }),
+  })
 
-  local complete_or_jump = cmp.mapping(function(fallback)
-    if cmp.visible() then
-      if cmp.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = false }) then
-        if luasnip and luasnip.jumpable(1) then
-          luasnip.jump(1)
-        end
-        return
-      end
-    end
+  local jumpable = require("lvim.core.cmp").methods.jumpable
 
-    if luasnip and luasnip.jumpable(1) then
+  local jump_or_fallback = function(fallback)
+    if jumpable() then
       if not luasnip.jump(1) then
         fallback()
       end
     else
       fallback()
     end
-  end)
+  end
 
-  local select_next_or_jump = cmp.mapping(function(fallback)
-    if cmp.visible() then
-      cmp.select_next_item()
-    elseif luasnip and luasnip.expand_or_jumpable() then
-      luasnip.expand_or_jump()
-    elseif has_words_before() then
-      cmp.complete()
+  local confirm_copilot_or_fallback = function(fallback)
+    -- If a cmp selection wasn't confirmed, accept copilot suggestion if present.
+    local copilot_keys = vim.fn["copilot#Accept"]("")
+    if copilot_keys ~= "" then
+      vim.api.nvim_feedkeys(copilot_keys, "i", true)
     else
       fallback()
     end
-  end, { "i", "s" })
+  end
 
-  local select_prev_or_jump = cmp.mapping(function(fallback)
-    if cmp.visible() then
-      cmp.select_prev_item()
-    elseif luasnip and luasnip.jumpable(-1) then
-      luasnip.jump(-1)
-    else
-      fallback()
+  local confirm = function()
+    if cmp.confirm(lvim.builtin.cmp.confirm_opts) then
+      if jumpable() then
+        luasnip.jump(1)
+      end
+      return true
     end
-  end, { "i", "s" })
+    return false
+  end
 
-  lvim.builtin.cmp.mapping = {
-    ["<C-n>"] = select_next,
-    ["<C-j>"] = select_next,
-    ["<Down"] = select_next,
-    ["<C-p>"] = select_prev,
-    ["<C-k>"] = select_prev,
-    ["<Up>"] = select_prev,
-    ["<Right>"] = complete_or_jump,
-    ["<CR>"] = complete_or_jump,
-    ["<Tab>"] = select_next_or_jump,
-    ["<S-Tab>"] = select_prev_or_jump,
-    ["<C-d>"] = scroll_docs(-4),
-    ["<C-f>"] = scroll_docs(4),
+  local enter = function(fallback)
+    if cmp.visible() and confirm() then
+      return
+    end
+    jump_or_fallback(fallback)
+  end
+
+  local right = function(fallback)
+    if cmp.visible() and confirm() then
+      return
+    end
+    if jumpable() then
+      jump_or_fallback(fallback)
+    else
+      confirm_copilot_or_fallback(fallback)
+    end
+  end
+
+  local tab = function(fallback)
+    -- If a cmp selection is active, confirm it.
+    if cmp.visible() and cmp.get_selected_entry() ~= nil and confirm() then
+      return
+    end
+    confirm_copilot_or_fallback(fallback)
+  end
+
+  lvim.builtin.cmp.sources = {
+    { name = "nvim_lua" },
+    { name = "nvim_lsp" },
+    { name = "path" },
+    { name = "luasnip" },
+    { name = "buffer", keyword_length = 5 },
+    { name = "calc" },
+    { name = "emoji" },
+    { name = "treesitter" },
+    { name = "crates" },
+    { name = "tmux" },
   }
+
+  -- TODO: Figure out how to add hints for sources.
+  -- cmp.config.source_names({
+  --   nvim_lua = "(Lua)",
+  -- })
+
+  -- TODO: Figure out how to add "lukas-reineke/cmp-under-comparator"
+  -- Also see https://github.com/tjdevries/config_manager/blob/master/xdg_config/nvim/after/plugin/completion.lua#L116
+  -- lvim.builtin.cmp.sorting = {
+  -- }
+
+  lvim.builtin.cmp.mapping["<Down"] = cmp.mapping.select_next_item()
+  lvim.builtin.cmp.mapping["<Up>"] = cmp.mapping.select_prev_item()
+  lvim.builtin.cmp.mapping["<Right>"] = cmp.mapping(right, { "i", "c" })
+  lvim.builtin.cmp.mapping["<CR>"] = cmp.mapping(enter, { "i", "c" })
+  lvim.builtin.cmp.mapping["<Tab>"] = cmp.mapping(tab, { "i", "c" })
+  lvim.builtin.cmp.mapping["<S-Tab>"] = cmp.config.disable
 end
 
 return Cmp

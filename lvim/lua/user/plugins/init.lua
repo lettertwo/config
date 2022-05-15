@@ -63,4 +63,10 @@ lvim.plugins = {
       require("lsp_signature").on_attach()
     end,
   },
+
+  { "github/copilot.vim" },
+  { "petertriho/cmp-git", requires = "nvim-lua/plenary.nvim" },
+  { "tamago324/cmp-zsh" },
+  { "lukas-reineke/cmp-under-comparator" },
+  { "hrsh7th/cmp-nvim-lua" },
 }

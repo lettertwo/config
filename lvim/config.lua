@@ -70,4 +70,8 @@ lvim.builtin.dap.active = true
 -- custom mappings will be provided
 vim.g.kitty_navigator_no_mappings = 1
 
+-- copilot suggestions are integrated into cmp
+vim.g.copilot_no_tab_map = true
+vim.g.copilot_assume_mapped = true
+
 require("user").load()
