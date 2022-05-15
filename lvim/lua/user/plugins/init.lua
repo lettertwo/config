@@ -69,4 +69,7 @@ lvim.plugins = {
   { "tamago324/cmp-zsh" },
   { "lukas-reineke/cmp-under-comparator" },
   { "hrsh7th/cmp-nvim-lua" },
+
+  -- Smarter line splits and joins
+  { "AndrewRadev/splitjoin.vim", keys = { "gJ", "gS" } },
 }
