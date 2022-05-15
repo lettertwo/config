@@ -9,7 +9,11 @@ function Persisted.config()
       "~/Code",
     },
   })
-  require("telescope").load_extension("persisted")
+
+  local _, telescope = pcall(require, "telescope")
+  if telescope then
+    telescope.load_extension("persisted")
+  end
 
   lvim.builtin.which_key.mappings["S"] = { "<cmd>Telescope persisted<cr>", "Sessions" }
 end
