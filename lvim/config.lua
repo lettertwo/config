@@ -74,4 +74,15 @@ vim.g.kitty_navigator_no_mappings = 1
 vim.g.copilot_no_tab_map = true
 vim.g.copilot_assume_mapped = true
 
+-- Configure undotree
+vim.g.undotree_WindowLayout = 4
+vim.g.undotree_ShortIndicators = 1
+vim.g.undotree_SetFocusWhenToggle = 1
+vim.g.undotree_TreeNodeShape = "◉"
+vim.g.undotree_TreeVertShape = "│"
+vim.g.undotree_TreeSplitShape = "─╯"
+vim.g.undotree_TreeReturnShape = "─╮"
+-- TODO: Use delta when this is done: https://github.com/mbbill/undotree/issues/128
+-- vim.g.undotree_DiffCommand = "delta"
+
 require("user").load()

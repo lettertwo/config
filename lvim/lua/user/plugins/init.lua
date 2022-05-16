@@ -65,6 +65,9 @@ lvim.plugins = {
   },
   { "dstein64/vim-startuptime", cmd = "StartupTime" },
 
+  -- Visualize and search the Undo tree.
+  { "mbbill/undotree" },
+
   { "github/copilot.vim" },
   { "petertriho/cmp-git", requires = "nvim-lua/plenary.nvim" },
   { "tamago324/cmp-zsh" },
