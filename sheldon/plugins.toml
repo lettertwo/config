@@ -38,6 +38,10 @@ inline = 'zsh-defer -1 -2 eval "$(fnm env --use-on-cd --version-file-strategy re
 github = "cowboyd/zsh-rust"
 apply = ["defer"]
 
+[plugins.pyenv]
+github = "mattberther/zsh-pyenv"
+apply = ["defer"]
+
 [plugins.poetry]
 github = "darvid/zsh-poetry"
 apply = ["defer"]

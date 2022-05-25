@@ -49,6 +49,7 @@ brew "fnm" # fast node version manager
 
 # python
 brew "pyenv"
+brew "pyenv-virtualenv"
 brew "python"
 
 # Quick Look plugins
