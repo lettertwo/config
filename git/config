@@ -8,6 +8,8 @@
 	pager = delta
 [branch]
 	autosetupmerge = true
+[fetch]
+  prune = true
 [pull]
 	ff = only
 	rebase = true
