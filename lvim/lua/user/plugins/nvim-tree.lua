@@ -5,10 +5,10 @@ function NvimTree.config()
     return
   end
 
+  lvim.builtin.nvimtree.setup.disable_netrw = false
   lvim.builtin.nvimtree.setup.view.side = "right"
   lvim.builtin.nvimtree.setup.hijack_unnamed_buffer_when_opening = true
   lvim.builtin.nvimtree.setup.actions.open_file.quit_on_open = true
-  lvim.builtin.nvimtree.show_icons.git = 1
 end
 
 return NvimTree
