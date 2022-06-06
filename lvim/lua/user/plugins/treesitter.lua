@@ -1,5 +1,12 @@
 local Treesitter = {}
 
+local _, parsers = pcall(require, "nvim-treesitter.parsers")
+if parsers then
+  -- Associate the flowtype filetype with the typescript parser.
+  -- See autocommands.lua for more.
+  parsers.filetype_to_parsername.flowtype = "typescript"
+end
+
 function Treesitter.config()
   if not lvim.builtin.treesitter.active then
     return
@@ -34,6 +41,7 @@ function Treesitter.config()
 
   lvim.builtin.treesitter.ignore_install = { "haskell" }
   lvim.builtin.treesitter.highlight.enable = true
+  lvim.builtin.treesitter.highlight.use_languagetree = true
   lvim.builtin.treesitter.highlight.additional_vim_regex_highlighting = false
   lvim.builtin.treesitter.playground.enable = false
   lvim.builtin.treesitter.matchup.enable = true

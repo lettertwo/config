@@ -34,30 +34,33 @@ end
 
 -- -- you can set a custom on_attach function that will be used for all the language servers
 -- -- See <https://github.com/neovim/nvim-lspconfig#keybindings-and-completion>
--- lvim.lsp.on_attach_callback = function(client, bufnr)
--- 	if client.name == "sumneko_lua" then
--- 		client.resolved_capabilities.document_formatting = false
--- 		client.resolved_capabilities.document_range_formatting = false
--- 	end
--- end
+lvim.lsp.on_attach_callback = function(client, bufnr)
+  if client.name == "sumneko_lua" then
+    client.server_capabilities.documentFormattingProvider = false
+    client.server_capabilities.documentRangeFormattingProvider = false
+  end
+end
+
+-- filetypes that javascript-adjacent.
+local js_filetypes = { "typescript", "typescriptreact", "javascript", "javascriptreact", "flowtype" }
 
 -- set a formatter, this will override the language server formatting capabilities (if it exists)
 local formatters = require("lvim.lsp.null-ls.formatters")
 formatters.setup({
   { command = "stylua" },
-  { command = "prettier", filetypes = { "typescript", "typescriptreact", "javascript", "javascriptreact" } },
+  { command = "prettier", filetypes = js_filetypes },
 })
 
 -- set additional linters
 local linters = require("lvim.lsp.null-ls.linters")
 linters.setup({
-  { command = "eslint" },
+  { command = "eslint", filetypes = js_filetypes },
 })
 
 -- set additional code actions
 local code_actions = require("lvim.lsp.null-ls.code_actions")
 code_actions.setup({
-  { command = "eslint" },
+  { command = "eslint", filetypes = js_filetypes },
   { command = "gitsigns" },
   { command = "gitrebase" },
 })
