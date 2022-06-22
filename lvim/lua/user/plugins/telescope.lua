@@ -64,23 +64,23 @@ function Telescope.config()
   lvim.builtin.which_key.mappings["e"] = { "<cmd>Telescope file_browser path=%:p:h<CR>", "File Explorer" }
 
   local function lvim_config_files()
-    files.find_files(themes.get_ivy({
+    files.find_files({
       prompt_title = "Lvim Config Files",
       cwd = vim.env.LUNARVIM_CONFIG_DIR,
-    }))
+    })
   end
 
   local function xdg_config_files()
     files.find_files({
       prompt_title = "Config Files",
-      cwd = vim.env.XDG_CONFIG_DIR,
+      cwd = vim.env.XDG_CONFIG_HOME,
     })
   end
 
   local function xdg_config_grep()
     files.live_grep({
       prompt_title = "Search Config",
-      search_dirs = { vim.env.XDG_CONFIG_DIR },
+      search_dirs = { vim.env.XDG_CONFIG_HOME },
     })
   end
 
