@@ -47,9 +47,6 @@ behind = 'behind [${count}](red)'
 conflicted = '[!${count}](red)'
 untracked = '[?](yellow)'
 staged = '[+](green)'
-modified = "​"
-renamed = "​"
-deleted = "​"
 
 ### top line modules
 
