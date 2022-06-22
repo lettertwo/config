@@ -28,11 +28,11 @@ apply = ["defer"]
 github = "hlissner/zsh-autopair"
 apply = ["defer"]
 
-[plugins."z.lua"]
-github = "skywind3000/z.lua"
-
 [plugins.fnm]
 inline = 'zsh-defer -1 -2 eval "$(fnm env --use-on-cd --version-file-strategy recursive)"'
+
+[plugins.zoxide]
+inline = 'zsh-defer -1 -2 eval "$(zoxide init zsh)"'
 
 [plugins.nnn-nerdfont]
 inline = 'zsh-defer -1 -2 source /usr/local/share/nnn-nerdfont/quitcd/quitcd.bash_zsh'

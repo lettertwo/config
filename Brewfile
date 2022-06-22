@@ -28,6 +28,7 @@ brew "dust" # bootandy/dust, replacement for du
 brew "duf" # muesli/duf, replacement for df
 brew "glances" # nicolargo/glances, replacement for top
 brew "broot" # canop/broot, replacement for tree
+brew "zoxide" # ajeetdsouza/zoxide, smarter cd
 brew "nnn-nerdfont", args: ["HEAD"] # tapped to enable nerdfont icons
 
 # lua

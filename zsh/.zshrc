@@ -69,10 +69,9 @@ _fzf_compgen_dir() {
   fd --type d --hidden --follow --exclude ".git" . "$1"
 }
 
-# z.lua (smart cd command)
-export _ZL_DATA="$XDG_CACHE_HOME/zlua"
-export _ZL_MATCH_MODE=1
-export _ZL_ROOT_MARKERS=".git,.svn,.hg,package.json"
+# zoxide (smart cd command)
+export _ZO_DATA_DIR="$XDG_CACHE_HOME/zoxide"
+export _ZO_ECHO=1
 
 # nnn
 export NNN_PLUG='z:autojump;o:fzopen;p:preview-tui;u:getplugs'
