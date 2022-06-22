@@ -74,6 +74,11 @@ export _ZL_DATA="$XDG_CACHE_HOME/zlua"
 export _ZL_MATCH_MODE=1
 export _ZL_ROOT_MARKERS=".git,.svn,.hg,package.json"
 
+# nnn
+export NNN_PLUG='z:autojump;o:fzopen;p:preview-tui;u:getplugs'
+export NNN_FIFO='/tmp/nnn.fifo'
+export NNN_TRASH=1 # use trash-cli when deleting
+
 # poetry
 export POETRY_CACHE_DIR="$XDG_CACHE_HOME/pypoetry"
 

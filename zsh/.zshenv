@@ -49,7 +49,6 @@ fi
 # Paging
 #
 export LESS="\
-  --quit-if-one-screen \
   --ignore-case \
   --incsearch \
   --status-column \

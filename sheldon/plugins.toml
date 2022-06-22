@@ -34,6 +34,9 @@ github = "skywind3000/z.lua"
 [plugins.fnm]
 inline = 'zsh-defer -1 -2 eval "$(fnm env --use-on-cd --version-file-strategy recursive)"'
 
+[plugins.nnn-nerdfont]
+inline = 'zsh-defer -1 -2 source /usr/local/share/nnn-nerdfont/quitcd/quitcd.bash_zsh'
+
 [plugins.rust]
 github = "cowboyd/zsh-rust"
 apply = ["defer"]

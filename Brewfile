@@ -3,6 +3,7 @@
 
 # brew all teh things
 tap "homebrew/services"
+tap "lettertwo/brew"
 brew "mas"
 
 # CLI Tools
@@ -27,6 +28,7 @@ brew "dust" # bootandy/dust, replacement for du
 brew "duf" # muesli/duf, replacement for df
 brew "glances" # nicolargo/glances, replacement for top
 brew "broot" # canop/broot, replacement for tree
+brew "nnn-nerdfont", args: ["HEAD"] # tapped to enable nerdfont icons
 
 # lua
 brew "lua"
