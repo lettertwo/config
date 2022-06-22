@@ -66,6 +66,7 @@ vim.opt.foldlevelstart = 99
 lvim.builtin.notify.active = true
 lvim.builtin.terminal.active = true
 lvim.builtin.dap.active = true
+lvim.builtin.nvimtree.active = false
 
 -- custom mappings will be provided
 vim.g.kitty_navigator_no_mappings = 1

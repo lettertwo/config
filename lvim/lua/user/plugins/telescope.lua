@@ -5,6 +5,13 @@ function Telescope.config()
     return
   end
 
+  local _, telescope = pcall(require, "telescope")
+  if not telescope then
+    return
+  end
+
+  pcall(telescope.load_extension, "file_browser")
+
   local actions = require("telescope.actions")
   local files = require("telescope.builtin.files")
   local themes = require("telescope.themes")
@@ -48,6 +55,8 @@ function Telescope.config()
   lvim.builtin.which_key.mappings["P"] = { "<cmd>Telescope projects<CR>", "Projects" }
   lvim.builtin.which_key.mappings["H"] = { "<cmd>Telescope highlights<CR>", "Highlights" }
   lvim.builtin.which_key.mappings["br"] = { "<cmd>Telescope oldfiles<CR>", "Open Recent File" }
+  lvim.builtin.which_key.mappings["r"] = { "<cmd>Telescope oldfiles<CR>", "Open Recent File" }
+  lvim.builtin.which_key.mappings["e"] = { "<cmd>Telescope file_browser path=%:p:h<CR>", "File Explorer" }
 
   local function lvim_config_files()
     files.find_files(themes.get_ivy({

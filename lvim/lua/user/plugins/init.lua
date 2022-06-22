@@ -7,7 +7,6 @@ require("user.plugins.dap").config()
 require("user.plugins.dashboard").config()
 require("user.plugins.lualine").config()
 require("user.plugins.notify").config()
-require("user.plugins.nvim-tree").config()
 require("user.plugins.telescope").config()
 require("user.plugins.treesitter").config()
 require("user.plugins.which-key").config()
@@ -76,4 +75,6 @@ lvim.plugins = {
 
   -- Smarter line splits and joins
   { "AndrewRadev/splitjoin.vim", keys = { "gJ", "gS" } },
+
+  { "nvim-telescope/telescope-file-browser.nvim" },
 }
