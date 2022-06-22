@@ -19,3 +19,8 @@ vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
     end
   end,
 })
+
+vim.api.nvim_create_autocmd({ "TermOpen" }, {
+  pattern = { "*" },
+  command = ":DisableWhitespace",
+})
