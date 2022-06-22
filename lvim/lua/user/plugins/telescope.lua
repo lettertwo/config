@@ -63,6 +63,8 @@ function Telescope.config()
   lvim.builtin.which_key.mappings["r"] = { "<cmd>Telescope oldfiles<CR>", "Open Recent File" }
   lvim.builtin.which_key.mappings["e"] = { "<cmd>Telescope file_browser path=%:p:h<CR>", "File Explorer" }
 
+  lvim.builtin.which_key.mappings["<Leader>"] = { "<cmd>Telescope<CR>", "Telescope" }
+
   -- Art (╯°□°）╯︵ ┻━┻
   lvim.builtin.which_key.mappings["se"] = {
     "<cmd>lua require'telescope.builtin'.symbols({sources={'emoji'}})<CR>",

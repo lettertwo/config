@@ -7,6 +7,7 @@ function WhichKey.config()
 
   lvim.builtin.which_key.setup.plugins.presets.motions = true
   lvim.builtin.which_key.setup.plugins.presets.operators = true
+  lvim.builtin.which_key.setup.plugins.presets.windows = true
   lvim.builtin.which_key.setup.plugins.presets.text_objects = true
 
   lvim.builtin.which_key.setup.operators = {
