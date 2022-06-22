@@ -10,6 +10,9 @@ function Telescope.config()
     return
   end
 
+  -- TODO: configure this: https://github.com/nvim-telescope/telescope-ui-select.nvim
+  pcall(telescope.load_extension, "ui-select")
+  -- TODO: Configure this: https://github.com/nvim-telescope/telescope-file-browser.nvim
   pcall(telescope.load_extension, "file_browser")
 
   local actions = require("telescope.actions")
@@ -19,6 +22,8 @@ function Telescope.config()
 
   -- Use ivy theme by default.
   lvim.builtin.telescope.defaults = vim.tbl_deep_extend("force", lvim.builtin.telescope.defaults, themes.get_ivy())
+
+  lvim.builtin.telescope.extensions["ui-select"] = { theme = "dropdown" }
 
   -- Change Telescope navigation to use j and k for navigation and n and p for history in both input and normal mode.
   lvim.builtin.telescope.defaults.mappings = {

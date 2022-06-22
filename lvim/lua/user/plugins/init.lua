@@ -76,5 +76,6 @@ lvim.plugins = {
   -- Smarter line splits and joins
   { "AndrewRadev/splitjoin.vim", keys = { "gJ", "gS" } },
 
+  { "nvim-telescope/telescope-ui-select.nvim" },
   { "nvim-telescope/telescope-file-browser.nvim" },
 }
