@@ -78,4 +78,5 @@ lvim.plugins = {
 
   { "nvim-telescope/telescope-ui-select.nvim" },
   { "nvim-telescope/telescope-file-browser.nvim" },
+  { "nvim-telescope/telescope-symbols.nvim" },
 }
