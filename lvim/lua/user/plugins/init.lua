@@ -13,26 +13,40 @@ require("user.plugins.which-key").config()
 
 -- Additional Plugins
 lvim.plugins = {
+  -- colorscheme
   {
-    "lettertwo/laserwave.nvim",
-    requires = { "rktjmp/lush.nvim" },
+    "~/.local/share/laserwave",
+    requires = { "rktjmp/lush.nvim", "rktjmp/shipwright.nvim" },
   },
-  {
-    "folke/trouble.nvim",
-    config = function()
-      require("user.plugins.trouble").config()
-    end,
-  },
-  { "simrat39/symbols-outline.nvim", cmd = "SymbolsOutline" },
-  { "ntpeters/vim-better-whitespace" },
-  { "sindrets/diffview.nvim", event = "BufRead" },
-  { "f-person/git-blame.nvim", event = "BufRead" },
+
+  -- Projects, Sessions, etc.
   {
     "olimorris/persisted.nvim",
     config = function()
       require("user.plugins.persisted").config()
     end,
   },
+
+  -- LSP, diagnostics
+  {
+    "folke/trouble.nvim",
+    config = function()
+      require("user.plugins.trouble").config()
+    end,
+  },
+  { "ntpeters/vim-better-whitespace" },
+  { "romainl/vim-qf" }, -- Quickfix enhancements. See :help vim-qf
+  {
+    "ray-x/lsp_signature.nvim",
+    event = "BufRead",
+    config = function()
+      require("lsp_signature").setup({ hint_enable = false })
+      require("lsp_signature").on_attach()
+    end,
+  },
+
+  -- Treesitter, highlighting
+  { "simrat39/symbols-outline.nvim", cmd = "SymbolsOutline" },
   {
     "norcalli/nvim-colorizer.lua",
     config = function()
@@ -49,34 +63,41 @@ lvim.plugins = {
   { "nvim-treesitter/playground", event = "BufRead" },
   { "nvim-treesitter/nvim-treesitter-textobjects" },
   { "RRethy/nvim-treesitter-textsubjects" },
-  { "andymass/vim-matchup" },
-  -- "sa" to add surround, "sd" to delete, "sr" to replace
-  { "machakann/vim-sandwich" },
-  { "knubie/vim-kitty-navigator" },
-  { "TaDaa/vimade" },
-  {
-    "ray-x/lsp_signature.nvim",
-    event = "BufRead",
-    config = function()
-      require("lsp_signature").setup({ hint_enable = false })
-      require("lsp_signature").on_attach()
-    end,
-  },
-  { "dstein64/vim-startuptime", cmd = "StartupTime" },
 
-  -- Visualize and search the Undo tree.
-  { "mbbill/undotree" },
-
+  -- cmp
   { "github/copilot.vim" },
   { "petertriho/cmp-git", requires = "nvim-lua/plenary.nvim" },
   { "tamago324/cmp-zsh" },
   { "lukas-reineke/cmp-under-comparator" },
   { "hrsh7th/cmp-nvim-lua" },
 
-  -- Smarter line splits and joins
+  -- Git, SCM
+  { "sindrets/diffview.nvim", event = "BufRead" },
+  { "f-person/git-blame.nvim", event = "BufRead" },
+
+  -- Window management
+  { "TaDaa/vimade" },
+
+  -- pairs, surrounds, splits, joins
+  { "andymass/vim-matchup" },
+  { "machakann/vim-sandwich" }, -- "sa" to add surround, "sd" to delete, "sr" to replace
   { "AndrewRadev/splitjoin.vim", keys = { "gJ", "gS" } },
 
+  -- navigation
+  { "knubie/vim-kitty-navigator" },
+
+  -- Visualize and search the Undo tree.
+  { "mbbill/undotree" },
+
+  -- Telescope extensions
   { "nvim-telescope/telescope-ui-select.nvim" },
   { "nvim-telescope/telescope-file-browser.nvim" },
   { "nvim-telescope/telescope-symbols.nvim" },
+
+  -- Debugger
+  { "rcarriga/nvim-dap-ui" },
+  { "theHamsta/nvim-dap-virtual-text" },
+
+  -- misc
+  { "dstein64/vim-startuptime", cmd = "StartupTime" },
 }
