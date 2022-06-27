@@ -23,7 +23,7 @@ function WhichKey.config()
 
   -- Use which-key to add extra bindings with the leader-key prefix
   lvim.builtin.which_key.mappings["<cr>"] = { "<cmd>update!<CR>", "Save, if changed" }
-  lvim.builtin.which_key.mappings["b"] = vim.tbl_deep_extend("error", lvim.builtin.which_key.mappings["b"], {
+  lvim.builtin.which_key.mappings["b"] = vim.tbl_deep_extend("force", lvim.builtin.which_key.mappings["b"], {
     w = { "<cmd>w<CR>", "Write current buffer" },
     W = { "<cmd>noa w<CR>", "Write without autocmds" },
     a = { "<cmd>wa<CR>", "Write all buffers" },

@@ -68,19 +68,19 @@ function Telescope.config()
   -- Art (╯°□°）╯︵ ┻━┻
   lvim.builtin.which_key.mappings["se"] = {
     "<cmd>lua require'telescope.builtin'.symbols({sources={'emoji'}})<CR>",
-    "Emoji",
+    "Emoji 😀",
   }
   lvim.builtin.which_key.mappings["sg"] = {
     "<cmd>lua require'telescope.builtin'.symbols({sources={'gitmoji'}})<CR>",
-    "Gitmoji",
+    "Gitmoji 🚀",
   }
-  lvim.builtin.which_key.mappings["sk"] = {
+  lvim.builtin.which_key.mappings["sa"] = {
     "<cmd>lua require'telescope.builtin'.symbols({sources={'kaomoji'}})<CR>",
-    "Kaomoji",
+    "Art (╯°□°）╯︵ ┻━┻",
   }
   lvim.builtin.which_key.mappings["sm"] = {
     "<cmd>lua require'telescope.builtin'.symbols({sources={'math'}})<CR>",
-    "Math Symbols",
+    "Math Symbols ∑",
   }
 
   local function lvim_config_files()
