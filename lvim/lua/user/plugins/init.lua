@@ -35,6 +35,12 @@ lvim.plugins = {
     end,
   },
   { "ntpeters/vim-better-whitespace" },
+  {
+    "lukas-reineke/indent-blankline.nvim",
+    config = function()
+      require("user.plugins.indent-blankline").config()
+    end,
+  },
   { "romainl/vim-qf" }, -- Quickfix enhancements. See :help vim-qf
   {
     "ray-x/lsp_signature.nvim",
