@@ -85,6 +85,7 @@ lvim.plugins = {
 
   -- navigation
   { "knubie/vim-kitty-navigator" },
+  { "unblevable/quick-scope" },
 
   -- Visualize and search the Undo tree.
   { "mbbill/undotree" },

@@ -86,4 +86,8 @@ vim.g.undotree_TreeReturnShape = "─╮"
 -- TODO: Use delta when this is done: https://github.com/mbbill/undotree/issues/128
 -- vim.g.undotree_DiffCommand = "delta"
 
+-- quick-scope
+vim.g.qs_lazy_highlight = 1
+vim.g.qs_highlight_on_keys = { "f", "F", "t", "T" }
+
 require("user").load()
