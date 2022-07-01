@@ -69,6 +69,7 @@ lvim.plugins = {
   { "nvim-treesitter/playground", event = "BufRead" },
   { "nvim-treesitter/nvim-treesitter-textobjects" },
   { "RRethy/nvim-treesitter-textsubjects" },
+  { "SmiteshP/nvim-navic" },
 
   -- cmp
   { "github/copilot.vim" },

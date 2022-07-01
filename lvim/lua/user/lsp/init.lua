@@ -32,12 +32,18 @@ for lsp, opts in pairs(servers) do
   end
 end
 
+local _, navic = pcall(require, "nvim-navic")
+
 -- -- you can set a custom on_attach function that will be used for all the language servers
 -- -- See <https://github.com/neovim/nvim-lspconfig#keybindings-and-completion>
 lvim.lsp.on_attach_callback = function(client, bufnr)
   if client.name == "sumneko_lua" then
     client.server_capabilities.documentFormattingProvider = false
     client.server_capabilities.documentRangeFormattingProvider = false
+  end
+
+  if navic and client.server_capabilities.documentSymbolProvider then
+    navic.attach(client, bufnr)
   end
 end
 
