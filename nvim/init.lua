@@ -81,6 +81,7 @@ vim.opt.foldcolumn = "1"
 vim.opt.foldlevelstart = 99
 
 require("autocommands")
+require("keymap")
 require("plugins")
 
 if (vim.g.CONFIG_LOADED) then
