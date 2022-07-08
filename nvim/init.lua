@@ -49,6 +49,7 @@ vim.opt.updatetime = 300          -- tigger CursorHold autocmds faster
 vim.opt.fillchars.eob=" "         -- hide squiggles at the end of a buffer
 vim.opt.colorcolumn:append("+1")  -- color column at textwidth so I know when my line's too long
 vim.opt.shortmess:append("c")     -- hide messaging about completions
+vim.opt.lazyredraw = true         -- don't redraw during automations (e.g., macros)
 
 -- Window management
 vim.opt.splitbelow = true         -- force all horizontal splits to go below current window
