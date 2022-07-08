@@ -28,8 +28,13 @@ vim.opt.smartcase = true
 -- Allow mouse interactivity
 vim.opt.mouse = "a"
 
--- UI settings
+-- colorscheme
+vim.g.colors_name = "laserwave"
 vim.opt.termguicolors = true
+vim.opt.background = "dark"
+vim.cmd [[ colorscheme laserwave ]]
+
+-- UI settings
 vim.opt.pumheight = 10            -- reasonable popup menu height
 vim.opt.showmode = false          -- hide the mode label (e.g., INSERT) 
 vim.opt.showtabline = 2           -- always show tabs
