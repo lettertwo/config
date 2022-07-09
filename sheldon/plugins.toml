@@ -35,6 +35,7 @@ inline = 'zsh-defer -1 -2 eval "$(fnm env --use-on-cd --version-file-strategy re
 inline = 'zsh-defer -1 -2 eval "$(zoxide init zsh)"'
 
 [plugins.nnn-nerdfont]
+# TODO: Also install nnn plugins (~/.config/nnn/plugins)
 inline = 'zsh-defer -1 -2 source /usr/local/share/nnn-nerdfont/quitcd/quitcd.bash_zsh'
 
 [plugins.rust]
@@ -47,6 +48,10 @@ apply = ["defer"]
 
 [plugins.poetry]
 github = "darvid/zsh-poetry"
+apply = ["defer"]
+
+[plugins.luaver]
+github = "DhavalKapil/luaver"
 apply = ["defer"]
 
 # NOTE: fzf-tab needs to be loaded before plugins which will wrap widgets,
