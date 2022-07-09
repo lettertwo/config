@@ -5,16 +5,27 @@ local module_path = join_paths(configpath, "lua")
 local init_file = join_paths(configpath, "init.lua")
 local group = vim.api.nvim_create_augroup('config', { clear = true }) 
 
-local function reload(evt)
+local function unload_module(module_name)
   local luacache = (_G.__luacache or {}).cache -- impatient.nvim cache
-  for module in walk_modules(module_path) do
-    if package.loaded[module] ~= nil then
-      print('reloading ' .. module)
-      package.loaded[module] = nil
+  local module_name_pattern = vim.pesc(module_name)
+  local function matcher(pack)
+  end
+
+  for pack, _ in pairs(package.loaded) do
+    if string.find(pack, "^" .. module_name_pattern) then
+      print('unloading ' .. pack)
+      package.loaded[pack] = nil
       if luacache then
-        luacache[name] = nil
+        luacache[pack] = nil
       end
     end
+  end
+
+end
+
+local function reload(evt)
+  for module in walk_modules(module_path) do
+    unload_module(module)
   end
   vim.cmd(':luafile ' .. init_file)
   if evt.file:match("plugins.lua$") then
