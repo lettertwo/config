@@ -2,7 +2,11 @@
 # https://github.com/Homebrew/homebrew-bundle
 
 # brew all teh things
+tap "homebrew/core"
+tap "homebrew/bundle"
+tap "homebrew/cask"
 tap "homebrew/services"
+tap "withgraphite/tap"
 tap "lettertwo/brew"
 brew "mas"
 
@@ -31,10 +35,12 @@ brew "broot" # canop/broot, replacement for tree
 brew "zoxide" # ajeetdsouza/zoxide, smarter cd
 brew "nnn-nerdfont", args: ["HEAD"] # tapped to enable nerdfont icons
 
+# misc. dev tooling
+brew "watchman"
+brew "graphviz"
+brew "hyperfine"
+
 # lua
-brew "lua"
-brew "luajit", args: ["HEAD"]
-brew "luarocks"
 brew "lua-language-server"
 
 # neovim
