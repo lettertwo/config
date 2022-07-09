@@ -138,11 +138,12 @@ update-lvim: update-nvim lvim
 KITTY := $(shell command -v kitty 2> /dev/null)
 
 .PHONY: kitty
-lvim:
+kitty:
 ifndef KITTY
 	$(call err,"kitty not found!")
 	$(call log,"Installing kitty...")
 	$(call run,curl -L https://sw.kovidgoyal.net/kitty/installer.sh | zsh /dev/stdin)
+	$(call run,ln -sf /Applications/kitty.app/Contents/MacOS/kitty "$$HOME/.local/bin/kitty")
 	$(call done)
 endif
 
@@ -156,6 +157,7 @@ else
 	$(call log,"Updating kitty...")
 endif
 	$(call run,curl -L https://sw.kovidgoyal.net/kitty/installer.sh | zsh /dev/stdin)
+	$(call run,ln -sf /Applications/kitty.app/Contents/MacOS/kitty "$$HOME/.local/bin/kitty")
 	$(call done)
 
 ### config
