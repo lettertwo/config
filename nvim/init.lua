@@ -2,6 +2,25 @@ if require("first_run")() then
   return
 end
 
+-- Disable some builtins
+vim.g.loaded_gzip = 1
+vim.g.loaded_zip = 1
+vim.g.loaded_zipPlugin = 1
+vim.g.loaded_tar = 1
+vim.g.loaded_tarPlugin = 1
+vim.g.loaded_getscript = 1
+vim.g.loaded_getscriptPlugin = 1
+vim.g.loaded_vimball = 1
+vim.g.loaded_vimballPlugin = 1
+vim.g.loaded_2html_plugin = 1
+vim.g.loaded_matchit = 1
+vim.g.loaded_matchparen = 1
+vim.g.loaded_logiPat = 1
+vim.g.loaded_rrhelper = 1
+-- vim.g.loaded_netrw = 1
+-- vim.g.loaded_netrwPlugin = 1
+-- vim.g.loaded_netrwSettings = 1
+
 -- Magic files
 vim.opt.backup = false       -- don't create backup files
 vim.opt.writebackup = false  -- seriously, don't create backup files
@@ -36,6 +55,7 @@ vim.cmd [[ colorscheme laserwave ]]
 
 -- UI settings
 vim.opt.pumheight = 10            -- reasonable popup menu height
+vim.opt.cmdheight = 2             -- more command line space
 vim.opt.showmode = false          -- hide the mode label (e.g., INSERT) 
 vim.opt.showtabline = 2           -- always show tabs
 vim.opt.cursorline = true         -- highlight the current line
