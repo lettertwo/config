@@ -20,6 +20,7 @@ use "kyazdani42/nvim-web-devicons" -- Icons used by lots of other nvim plugins
 
 -- some assembly required --
 use { "folke/which-key.nvim", config = [[ require("keymap") ]] }
+use { "numToStr/Comment.nvim", config = [[ require("config.comment") ]] }
 
 -- Status bar --
 use { "nvim-lualine/lualine.nvim", config = [[ require("config.lualine") ]] }
