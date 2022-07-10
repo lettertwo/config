@@ -1,5 +1,9 @@
 local wk = require("which-key")
 
+-- Space is leader
+vim.g.mapleader = " "
+vim.g.maplocalleader = " "
+
 wk.setup {
   window = { border = "single" }
 }
@@ -39,10 +43,6 @@ local insert = bindmode "i"
 local command = bindmode "c"
 local terminal = bindmode "t"
 
--- Space is leader
-vim.g.mapleader = " "
-vim.g.maplocalleader = " "
-
 -- Normal --
 normal("<C-h>", "<C-w>h", "Go to the left window")
 normal("<C-j>", "<C-w>j", "Go to the down window")
@@ -50,9 +50,7 @@ normal("<C-k>", "<C-w>k", "Go to the up window")
 normal("<C-l>", "<C-w>l", "Go to the left window")
 normal("L", ":bnext<CR>", "Go to the next buffer")
 normal("H", ":bprevious<CR>", "Go to the previous buffer")
-
--- Cancel search highlighting with ESC
-normal("<ESC>", ":nohlsearch<Bar>:echo<CR>")
+normal("<Esc>", ":nohlsearch<Bar>:echo<CR>", "Cancel search highlight")
 
 -- Visual --
 visual("p", '"_dP', "Paste over selection (without yanking)")
