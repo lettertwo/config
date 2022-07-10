@@ -73,10 +73,17 @@ local terminal = bindmode "t"
 normal("<C-h>", "<C-w>h", "Go to the left window")
 normal("<C-j>", "<C-w>j", "Go to the down window")
 normal("<C-k>", "<C-w>k", "Go to the up window")
-normal("<C-l>", "<C-w>l", "Go to the left window")
+normal("<C-l>", "<C-w>l", "Go to the right window")
 normal("L", ":bnext<CR>", "Go to the next buffer")
 normal("H", ":bprevious<CR>", "Go to the previous buffer")
 normal("<Esc>", ":nohlsearch<Bar>:echo<CR>", "Cancel search highlight")
+normal("<C-Up>", ":resize -2<CR>", "Decrease height")
+normal("<C-Down>", ":resize +2<CR>", "Increase height")
+normal("<C-Left>", ":vertical resize -2<CR>", "Decrease width")
+normal("<C-Right>", ":vertical resize +2<CR>", "Increase width")
+normal("]q", ":cnext<CR>", "Next quickfix")
+normal("[q", ":cprev<CR>", "Previous quickfix")
+normal("<C-q>", ":call QuickFixToggle()<CR>", "Toggle quickfix")
 
 -- Visual --
 visual("p", '"_dP', "Paste over selection (without yanking)")
@@ -86,6 +93,12 @@ visual(">", ">gv", "Indent selected lines")
 visual("L", ">gv", "Indent selected lines")
 visual("J", ":move '>+1<CR>gv-gv", "Move selected lines down")
 visual("K", ":move '<-2<CR>gv-gv", "Move selected lines up")
+
+-- Terminal --
+terminal("<C-h>", "<C-\\><C-N><C-w>h", "Go to the left window")
+terminal("<C-j>", "<C-\\><C-N><C-w>j", "Go to the down window")
+terminal("<C-k>", "<C-\\><C-N><C-w>k", "Go to the up window")
+terminal("<C-l>", "<C-\\><C-N><C-w>l", "Go to the right window")
 
 -- Buffer management
 normal.leader {
