@@ -12,6 +12,29 @@ wk.setup {
 
 local register = wk.register
 
+local function map(mode, lhs, rhs, label)
+  if mode == '' then mode = 'nvo' end
+  if #mode > 1 then
+    for mode in mode:gmatch('.') do
+      return register({ [lhs] = {rhs, label} }, { mode = mode })
+    end
+  else
+    return register({ [lhs] = {rhs, label} }, { mode = mode })
+  end
+end
+
+local function label(mode, lhs, label)
+  if mode == '' then mode = 'nvo' end
+  if #mode > 1 then
+    for mode in mode:gmatch('.') do
+      return register({ [lhs] = label }, { mode = mode })
+    end
+  else
+    return register({ [lhs] = label }, { mode = mode })
+  end
+end
+
+
 local function callable(tbl)
   local __call = tbl.__call
   if type(__call) ~= "function" then
@@ -23,14 +46,17 @@ end
 
 local function bindmode(mode)
   return callable {
-    __call = function(self, lhs, rhs, desc)
-      return self.register({[lhs] = {rhs, desc}})
+    __call = function(self, lhs, rhs, label)
+      return self.register({[lhs] = {rhs, label}})
     end,
     register = function(mappings)
       return register(mappings, { mode = mode })
     end,
     leader = function(mappings)
       return register(mappings, { mode = mode, prefix = "<Leader>" })
+    end,
+    label = function(lhs, label)
+      return register({[lhs] = label}, { mode = mode })
     end,
   }
 end
@@ -98,6 +124,7 @@ normal.leader {
 }
 
 return {
+  normal = normal,
   visual = visual,
   select = select,
   operator = operator,
@@ -105,4 +132,6 @@ return {
   command = command,
   terminal = terminal,
   register = register,
+  label = label,
+  map = map,
 }
