@@ -49,5 +49,19 @@ use {
   config = [[require('config.cmp')]],
 }
 
+-- Treesitter
+use {
+  'nvim-treesitter/nvim-treesitter',
+  requires = {
+    'nvim-treesitter/nvim-treesitter-textobjects',
+    'nvim-treesitter/nvim-treesitter-refactor',
+    'RRethy/nvim-treesitter-textsubjects',
+    'RRethy/nvim-treesitter-endwise',
+    "JoosepAlviste/nvim-ts-context-commentstring",
+  },
+  run = ':TSUpdate',
+  config = [[ require("config.treesitter") ]],
+}
+
 packer.compile() -- since we didn't use packer.startup(), manually compile plugins
 
