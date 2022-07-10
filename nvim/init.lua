@@ -111,7 +111,6 @@ vim.g.copilot_no_tab_map = true
 vim.g.copilot_assume_mapped = true
 
 require("autocommands")
-require("keymap")
 require("plugins")
 
 if (vim.g.CONFIG_LOADED) then
