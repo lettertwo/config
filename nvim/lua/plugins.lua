@@ -49,7 +49,7 @@ use {
   config = [[require('config.cmp')]],
 }
 
--- Treesitter
+-- Treesitter and Highlighting
 use {
   'nvim-treesitter/nvim-treesitter',
   requires = {
@@ -62,6 +62,37 @@ use {
   run = ':TSUpdate',
   config = [[ require("config.treesitter") ]],
 }
+-- Highlight colors
+use {
+  'norcalli/nvim-colorizer.lua',
+  ft = { 'css', 'javascript', 'vim', 'html', 'lua' },
+  config = [[ require('colorizer').setup({'css', 'javascript', 'vim', 'html', 'lua'}) ]],
+}
+-- Highlights for markdown
+use { 'lukas-reineke/headlines.nvim', config = [[ require('headlines').setup() ]] }
+-- Highlight blank lines
+use {
+  "lukas-reineke/indent-blankline.nvim",
+  config = [[ require('indent_blankline').setup({ show_current_context = true }) ]]
+}
+-- Highlight whitespace
+use { "ntpeters/vim-better-whitespace", setup = [[
+  -- Don't highlight trailing whitespace for these filetypes
+  vim.g.better_whitespace_filetypes_blacklist = {
+    "diff",
+    "git",
+    "gitcommit",
+    "unite",
+    "qf",
+    "help",
+    "markdown",
+    "fugitive",
+    "dashboard",
+    "NvimTree",
+    "Outline",
+    "Trouble",
+  }
+]] }
 
 packer.compile() -- since we didn't use packer.startup(), manually compile plugins
 
