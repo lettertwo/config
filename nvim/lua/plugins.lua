@@ -13,10 +13,11 @@ local use = packer.use
 packer.reset()
 
 -- "always on" plugins; no setup necessary! --
-use "wbthomason/packer.nvim"       -- Packer can manage itself
-use 'lewis6991/impatient.nvim'     -- Gotta go fast
-use "nvim-lua/plenary.nvim"        -- A common dependency in lua plugins
-use "kyazdani42/nvim-web-devicons" -- Icons used by lots of other nvim plugins
+use "wbthomason/packer.nvim"          -- Packer can manage itself
+use 'lewis6991/impatient.nvim'        -- Gotta go fast
+use "nvim-lua/plenary.nvim"           -- A common dependency in lua plugins
+use "kyazdani42/nvim-web-devicons"    -- Icons used by lots of other nvim plugins
+use "antoinemadec/FixCursorHold.nvim" -- Workaround for bugs with neovim cursorhold autocmds
 
 -- some assembly required --
 use { "folke/which-key.nvim", config = [[ require("keymap") ]] }
