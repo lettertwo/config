@@ -94,5 +94,10 @@ use { "ntpeters/vim-better-whitespace", setup = [[
   }
 ]] }
 
+-- Git, SCM
+use { "lewis6991/gitsigns.nvim", config = [[ require("config.gitsigns") ]] }
+-- TODO: Configure this
+-- use { "sindrets/diffview.nvim", event = "BufRead" }
+
 packer.compile() -- since we didn't use packer.startup(), manually compile plugins
 
