@@ -37,7 +37,7 @@ end
 vim.api.nvim_create_autocmd("InsertEnter", { group = group, pattern = { "*" }, command = ":set norelativenumber" })
 vim.api.nvim_create_autocmd("InsertLeave", { group = group, pattern = { "*" }, command = ":set relativenumber" })
 
--- TODO: Reload config files
+-- Reload config files
 vim.api.nvim_create_autocmd("BufWritePost", {
   group = group,
   pattern = { init_file, "*/nvim/lua/*.lua", "*/nvim/lua/*/*.lua" },

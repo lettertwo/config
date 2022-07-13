@@ -12,29 +12,6 @@ wk.setup {
 
 local register = wk.register
 
-local function map(mode, lhs, rhs, label)
-  if mode == '' then mode = 'nvo' end
-  if #mode > 1 then
-    for mode in mode:gmatch('.') do
-      return register({ [lhs] = {rhs, label} }, { mode = mode })
-    end
-  else
-    return register({ [lhs] = {rhs, label} }, { mode = mode })
-  end
-end
-
-local function label(mode, lhs, label)
-  if mode == '' then mode = 'nvo' end
-  if #mode > 1 then
-    for mode in mode:gmatch('.') do
-      return register({ [lhs] = label }, { mode = mode })
-    end
-  else
-    return register({ [lhs] = label }, { mode = mode })
-  end
-end
-
-
 local function callable(tbl)
   local __call = tbl.__call
   if type(__call) ~= "function" then
@@ -44,30 +21,42 @@ local function callable(tbl)
   return setmetatable(tbl, { __call = __call })
 end
 
-local function bindmode(mode)
+local function bindopts(opts)
   return callable {
     __call = function(self, lhs, rhs, label)
       return self.register({[lhs] = {rhs, label}})
     end,
     register = function(mappings)
-      return register(mappings, { mode = mode })
+      return register(mappings, opts)
     end,
     leader = function(mappings)
-      return register(mappings, { mode = mode, prefix = "<Leader>" })
+      return register(mappings, vim.tbl_deep_extend("error", { prefix = "<Leader>" }, opts))
     end,
     label = function(lhs, label)
-      return register({[lhs] = label}, { mode = mode })
+      return register({[lhs] = label}, opts)
     end,
   }
 end
 
-local normal = bindmode "n"
-local visual = bindmode "x"
-local select = bindmode "s"
-local operator = bindmode "o"
-local insert = bindmode "i"
-local command = bindmode "c"
-local terminal = bindmode "t"
+local normal   = bindopts { mode = "n" }
+local visual   = bindopts { mode = "x" }
+local select   = bindopts { mode = "s" }
+local operator = bindopts { mode = "o" }
+local insert   = bindopts { mode = "i" }
+local command  = bindopts { mode = "c" }
+local terminal = bindopts { mode = "t" }
+
+local function buffer(bufno)
+  return {
+    normal   = bindopts { buffer = bufno, mode = "n" },
+    visual   = bindopts { buffer = bufno, mode = "x" },
+    select   = bindopts { buffer = bufno, mode = "s" },
+    operator = bindopts { buffer = bufno, mode = "o" },
+    insert   = bindopts { buffer = bufno, mode = "i" },
+    command  = bindopts { buffer = bufno, mode = "c" },
+    terminal = bindopts { buffer = bufno, mode = "t" },
+  }
+end
 
 -- Normal --
 normal("<C-h>", "<C-w>h", "Go to the left window")
@@ -137,6 +126,7 @@ normal.leader {
 }
 
 return {
+  buffer = buffer,
   normal = normal,
   visual = visual,
   select = select,
@@ -145,6 +135,4 @@ return {
   command = command,
   terminal = terminal,
   register = register,
-  label = label,
-  map = map,
 }
