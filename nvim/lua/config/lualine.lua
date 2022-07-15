@@ -27,7 +27,7 @@ local branch = {
   cond = hide_in_width,
 }
 
-local filename = { "filename", color = {}, cond = nil }
+local filename = { "filename", cond = nil }
 
 local filetype = { "filetype", cond = hide_in_width }
 
@@ -60,7 +60,7 @@ local treesitter = {
 local diagnostics = {
   "diagnostics",
   sources = { "nvim_diagnostic" },
-  symbols = { error = " ", warn = " ", info = " ", hint = " " },
+  symbols = { error = " ", warn = " ", info = " ", hint = " " },
   cond = hide_in_width,
 }
 
@@ -78,20 +78,26 @@ local lsp = {
       end
     end
 
-    -- add formatter
-    local formatters = require "lvim.lsp.null-ls.formatters"
-    local supported_formatters = formatters.list_registered(buf_ft)
-    vim.list_extend(buf_client_names, supported_formatters)
+    -- add null-ls sources
+    local _, sources = pcall(require, "null-ls.sources")
+    if sources then
+      local methods = require("null-ls").methods
 
-    -- add linter
-    local linters = require "lvim.lsp.null-ls.linters"
-    local supported_linters = linters.list_registered(buf_ft)
-    vim.list_extend(buf_client_names, supported_linters)
+      -- add formatter
+      for _, formatter in pairs(sources.get_available(buf_ft, methods.FORMATTING)) do
+        table.insert(buf_client_names, formatter.name)
+      end
 
-    local unique_client_names = vim.fn.uniq(buf_client_names)
-    return "[" .. table.concat(unique_client_names, ", ") .. "]"
+      -- add linter/diagnostics
+      for _, linter in pairs(sources.get_available(buf_ft, methods.DIAGNOSTICS)) do
+        table.insert(buf_client_names, linter.name)
+      end
+    end
+
+    return "[" .. table.concat(vim.fn.uniq(buf_client_names), ", ") .. "]"
   end,
-  cond = function() 
+  color = { gui = "bold" },
+  cond = function()
     return hide_in_width() or vim.lsp.buf_get_clients() == nil
   end,
 }

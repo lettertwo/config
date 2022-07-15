@@ -29,6 +29,21 @@ use { "nvim-lualine/lualine.nvim", config = [[ require("config.lualine") ]] }
 -- Colorscheme --
 use { "~/.local/share/laserwave", requires = { "rktjmp/lush.nvim", "rktjmp/shipwright.nvim" } }
 
+-- LSP and linting
+use {
+  "neovim/nvim-lspconfig",
+  requires = {
+    { "jose-elias-alvarez/null-ls.nvim", after = "nvim-lspconfig", config = [[ require("config.null-ls") ]] },
+    "williamboman/nvim-lsp-installer",
+    "ray-x/lsp_signature.nvim",
+    "kosayoda/nvim-lightbulb",
+  },
+  config = [[ require("config.lsp") ]],
+}
+
+-- Diagnostics
+use { "folke/trouble.nvim", after = "nvim-lspconfig", config = [[ require("config.diagnostics") ]] }
+
 -- Completion
 use {
   'hrsh7th/nvim-cmp',
