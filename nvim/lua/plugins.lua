@@ -126,5 +126,8 @@ use { "TaDaa/vimade", setup = [[
   }
 ]]}
 
+-- Wrapping/delimiters
+use { "~/Code/nvim-surround", config = [[ require("config.surround") ]] }
+
 packer.compile() -- since we didn't use packer.startup(), manually compile plugins
 
