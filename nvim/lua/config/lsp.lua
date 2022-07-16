@@ -116,7 +116,11 @@ local function on_attach(client, bufnr)
   lsp_keymaps(bufnr)
 end
 
-local default_opts = { on_attach = on_attach }
+-- The nvim-cmp almost supports LSP's capabilities so You should advertise it to LSP servers..
+local capabilities = vim.lsp.protocol.make_client_capabilities()
+capabilities = require('cmp_nvim_lsp').update_capabilities(capabilities)
+
+local default_opts = { on_attach = on_attach, capabilities = capabilities }
 
 for server, opts in pairs(servers) do
   if type(server) == "number" then
