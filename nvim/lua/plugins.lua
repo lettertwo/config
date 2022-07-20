@@ -23,8 +23,15 @@ use "antoinemadec/FixCursorHold.nvim" -- Workaround for bugs with neovim cursorh
 use { "folke/which-key.nvim", config = [[ require("keymap") ]] }
 use { "numToStr/Comment.nvim", config = [[ require("config.comment") ]] }
 
--- Status bar --
-use { "nvim-lualine/lualine.nvim", config = [[ require("config.lualine") ]] }
+-- Status bar, Tab bar, location --
+use { "nvim-lualine/lualine.nvim",
+  requires = {
+    "SmiteshP/nvim-navic",
+    "SmiteshP/nvim-gps",
+  },
+  after = { "nvim-lspconfig", "nvim-treesitter" },
+  config = [[ require("config.lualine") ]]
+}
 
 -- Colorscheme --
 use { "~/.local/share/laserwave", requires = { "rktjmp/lush.nvim", "rktjmp/shipwright.nvim" } }

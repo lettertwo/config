@@ -13,6 +13,8 @@ local colors = {
   red = "#ec5f67",
 }
 
+local location = require("config.location")
+
 local window_width_limit = 70
 
 local function hide_in_width()
@@ -129,4 +131,22 @@ require("lualine").setup {
     lualine_y = {},
     lualine_z = {},
   },
+  tabline = {
+    lualine_a = { { "tabs", mode = 1 } },
+    lualine_b = {},
+    lualine_c = { location },
+    lualine_x = {},
+    lualine_y = {},
+    lualine_z = {},
+  },
 }
+
+-- TODO: Fix intitialization of location on startup
+-- TODO: Find better separation between tabs and location
+
+-- Force more frequent tabline redraw
+vim.api.nvim_create_autocmd({ "CursorMoved", "BufWinEnter", "BufFilePost", "InsertEnter", "BufWritePost" }, {
+  group = vim.api.nvim_create_augroup("tabline", { clear = true }),
+  command = ":redrawtabline",
+})
+

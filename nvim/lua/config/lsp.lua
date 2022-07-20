@@ -113,6 +113,11 @@ local function on_attach(client, bufnr)
     client.server_capabilities.documentRangeFormattingProvider = false
   end
 
+  local _, navic = pcall(require, "nvim-navic")
+  if navic and client.server_capabilities.documentSymbolProvider then
+    navic.attach(client, bufnr)
+  end
+
   lsp_keymaps(bufnr)
 end
 
