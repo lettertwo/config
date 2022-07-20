@@ -111,6 +111,10 @@ normal.leader {
       end,
       "Save current buffer as",
     },
+    a = { "<cmd>wa<CR>", "Write all buffers" },
+    n = { "<cmd>enew<CR>", "Open new buffer" },
+    C = { "<cmd>%bd|e#|bd#<CR>", "Close all buffers" },
+    ["%"] = { "<cmd>source %<CR>", "Source current file" },
   },
 }
 
