@@ -18,6 +18,18 @@ use 'lewis6991/impatient.nvim'        -- Gotta go fast
 use "nvim-lua/plenary.nvim"           -- A common dependency in lua plugins
 use "kyazdani42/nvim-web-devicons"    -- Icons used by lots of other nvim plugins
 use "antoinemadec/FixCursorHold.nvim" -- Workaround for bugs with neovim cursorhold autocmds
+use { "TaDaa/vimade",                 -- Fade inactive windows while preserving syntax highlights.
+  setup = [[
+    vim.g.vimade = {
+    fadelevel = 0.7,
+    enablesigns = 1,
+    enablefocusfading = 1,
+    enabletreesitter = 1,
+  }
+]]}
+
+-- Colorscheme --
+use { "~/.local/share/laserwave", requires = { "rktjmp/lush.nvim", "rktjmp/shipwright.nvim" } }
 
 -- some assembly required --
 use { "folke/which-key.nvim", config = [[ require("keymap") ]] }
@@ -25,16 +37,10 @@ use { "numToStr/Comment.nvim", config = [[ require("config.comment") ]] }
 
 -- Status bar, Tab bar, location --
 use { "nvim-lualine/lualine.nvim",
-  requires = {
-    "SmiteshP/nvim-navic",
-    "SmiteshP/nvim-gps",
-  },
+  requires = { "SmiteshP/nvim-navic", "SmiteshP/nvim-gps" },
   after = { "nvim-lspconfig", "nvim-treesitter" },
   config = [[ require("config.lualine") ]]
 }
-
--- Colorscheme --
-use { "~/.local/share/laserwave", requires = { "rktjmp/lush.nvim", "rktjmp/shipwright.nvim" } }
 
 -- Completion
 use {
@@ -58,11 +64,10 @@ use {
   config = [[require('config.cmp')]],
 }
 
--- LSP and linting
+-- LSP
 use {
   "neovim/nvim-lspconfig",
   requires = {
-    { "jose-elias-alvarez/null-ls.nvim", after = "nvim-lspconfig", config = [[ require("config.null-ls") ]] },
     "williamboman/nvim-lsp-installer",
     "ray-x/lsp_signature.nvim",
     "kosayoda/nvim-lightbulb",
@@ -70,6 +75,9 @@ use {
   after = "cmp-nvim-lsp",
   config = [[ require("config.lsp") ]],
 }
+
+-- Linting
+use { "jose-elias-alvarez/null-ls.nvim", after = "nvim-lspconfig", config = [[ require("config.null-ls") ]] }
 
 -- Diagnostics
 use { "folke/trouble.nvim", after = "nvim-lspconfig", config = [[ require("config.diagnostics") ]] }
@@ -93,13 +101,16 @@ use {
   ft = { 'css', 'javascript', 'vim', 'html', 'lua' },
   config = [[ require('colorizer').setup({'css', 'javascript', 'vim', 'html', 'lua'}) ]],
 }
+
 -- Highlights for markdown
 use { 'lukas-reineke/headlines.nvim', config = [[ require('headlines').setup() ]] }
+
 -- Highlight blank lines
 use {
   "lukas-reineke/indent-blankline.nvim",
   config = [[ require('indent_blankline').setup({ show_current_context = true }) ]]
 }
+
 -- Highlight whitespace
 use { "ntpeters/vim-better-whitespace", setup = [[
   -- Don't highlight trailing whitespace for these filetypes
@@ -121,19 +132,9 @@ use { "ntpeters/vim-better-whitespace", setup = [[
 
 -- Git, SCM
 use { "lewis6991/gitsigns.nvim", config = [[ require("config.gitsigns") ]] }
+
 -- TODO: Configure this
 -- use { "sindrets/diffview.nvim", event = "BufRead" }
-
--- Window, buffer management
-use { "TaDaa/vimade", setup = [[
-  -- Fade inactive windows while preserving syntax highlights.
-  vim.g.vimade = {
-    fadelevel = 0.7,
-    enablesigns = 1,
-    enablefocusfading = 1,
-    enabletreesitter = 1,
-  }
-]]}
 
 -- Wrapping/delimiters
 use { "~/Code/nvim-surround", config = [[ require("config.surround") ]] }
@@ -150,6 +151,9 @@ use {
   { "nvim-telescope/telescope-file-browser.nvim" },
   { "nvim-telescope/telescope-symbols.nvim" },
 }
+
+-- Profiling
+use { 'dstein64/vim-startuptime', cmd = 'StartupTime', config = [[vim.g.startuptime_tries = 10]] }
 
 packer.compile() -- since we didn't use packer.startup(), manually compile plugins
 
