@@ -138,5 +138,18 @@ use { "TaDaa/vimade", setup = [[
 -- Wrapping/delimiters
 use { "~/Code/nvim-surround", config = [[ require("config.surround") ]] }
 
+-- Telescope, Search
+use {
+  {
+    'nvim-telescope/telescope.nvim',
+    requires = { 'nvim-lua/plenary.nvim' },
+    config = [[require('config.telescope')]],
+  },
+  { 'nvim-telescope/telescope-fzf-native.nvim', run = 'make' },
+  { "nvim-telescope/telescope-ui-select.nvim" },
+  { "nvim-telescope/telescope-file-browser.nvim" },
+  { "nvim-telescope/telescope-symbols.nvim" },
+}
+
 packer.compile() -- since we didn't use packer.startup(), manually compile plugins
 
