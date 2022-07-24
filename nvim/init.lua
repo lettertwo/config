@@ -77,10 +77,14 @@ vim.opt.splitright = true         -- force all vertical splits to go to the righ
 
 -- Cursor behavior
 vim.opt.wrap = false                    -- Disable line wrapping
-vim.opt.formatoptions:remove("t")       -- do not automatically wrap text when typing
 vim.opt.textwidth = 120                 -- the width that'll be used for wrapping (gq)
 vim.opt.whichwrap:append("<,>,[,],h,l") -- navigate to next/prev lines more naturally
 
+-- Formatting behavior
+-- Many ftplugins will override these settings; Check `:verbose setlocal formatoptions?`.
+-- Duplicating them in after/ftplugin/<filetype>.lua may be necessary.
+vim.opt.formatoptions:remove("t") -- Disable text wrapping in formatting
+vim.opt.formatoptions:remove("o") -- Disable comment continuation when entering insert mode
 vim.opt.iskeyword:append("-")
 
 vim.opt.scrolloff = 10        -- keep lines below cursor when scrolling
