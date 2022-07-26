@@ -2,14 +2,27 @@ local telescope = require('telescope')
 local telescope_actions = require("telescope.actions")
 local builtin = require("telescope.builtin")
 local themes = require("telescope.themes")
+local utils = require("telescope.utils")
+local Path = require("plenary.path")
+
 local _, trouble = pcall(require, "trouble.providers.telescope")
+
+local function normalized(_, path)
+  local transformed_path = Path:new(path)
+  if transformed_path:is_dir() then
+    return transformed_path:normalize()
+  else
+    local tail = utils.path_tail(path)
+    return string.format("%s (%s)", tail, transformed_path:normalize())
+  end
+end
 
 telescope.setup({
   defaults = vim.tbl_deep_extend("force", themes.get_ivy(), {
     prompt_prefix = " ",
     selection_caret = " ",
     entry_prefix = "  ",
-    path_display = { "smart" },
+    path_display = normalized,
     file_ignore_patterns = { ".git/", "node_modules" },
     mappings = {
       i = {
@@ -37,6 +50,9 @@ telescope.setup({
     },
     ['ui-select'] = {
       themes.get_dropdown({}),
+    },
+    file_browser = {
+      hijack_netrw = true,
     },
   },
   pickers = {

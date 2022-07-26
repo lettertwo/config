@@ -48,6 +48,9 @@ local command  = bindopts { mode = "c" }
 local terminal = bindopts { mode = "t" }
 
 local function buffer(bufno)
+  if bufno == nil then
+    bufno = vim.api.nvim_get_current_buf()
+  end
   return {
     normal   = bindopts { buffer = bufno, mode = "n" },
     visual   = bindopts { buffer = bufno, mode = "x" },
