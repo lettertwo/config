@@ -2,6 +2,9 @@ if require("first_run")() then
   return
 end
 
+-- Set $NVIM_CONFIG_DIR to the directory containing this file.
+vim.env.NVIM_CONFIG_DIR = vim.fn.stdpath("config")
+
 -- Disable some builtins
 vim.g.loaded_gzip = 1
 vim.g.loaded_zip = 1

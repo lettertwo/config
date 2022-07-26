@@ -69,7 +69,7 @@ telescope.load_extension 'file_browser'
 local function nvim_config_files()
   builtin.find_files({
     prompt_title = "Nvim Config Files",
-    cwd = vim.fn.stdpath("config"),
+    cwd = vim.env.NVIM_CONFIG_DIR,
   })
 end
 
@@ -88,15 +88,17 @@ local function xdg_config_grep()
 end
 
 require("keymap").normal.leader({
-  ["<Leader>"] = { "<cmd>Telescope<CR>", "Telescope" },
+  p = { "<cmd>Telescope<CR>", "Telescope" },
   k = { "<cmd>Telescope keymaps<CR>", "Keymaps" },
-  p = { "<cmd>Telescope commands<CR>", "Commands" },
-  r = { "<cmd>Telescope oldfiles<CR>", "Open Recent File" },
   e = { "<cmd>Telescope file_browser path=%:p:h respect_gitignore=false<CR>", "File Explorer" },
+  t = { "<cmd>Telescope buffers<CR>", "Buffers" },
   bb = { "<cmd>Telescope buffers<CR>", "Buffers" },
-  ["/"] = {
+  f = { "<cmd>Telescope find_files<CR>", "Files" },
+  r = { "<cmd>Telescope oldfiles<CR>", "Recent File" },
+  s = {
     name = "Search",
     f = { "<cmd>Telescope find_files<CR>", "Files" },
+    r = { "<cmd>Telescope oldfiles<CR>", "Recent File" },
     ["/"] = { "<cmd>Telescope current_buffer_fuzzy_find<CR>", "Search file" },
     ["*"] = { "<cmd>Telescope grep_string<CR>", "Word under cursor" },
     ["a"] = { "<cmd>Telescope live_grep<CR>", "Grep files" },
@@ -106,7 +108,7 @@ require("keymap").normal.leader({
     o = { "<cmd>Telescope vim_options<CR>", "Vim options" },
     H = { "<cmd>Telescope highlights<CR>", "Highlights" },
     c = { "<cmd>Telescope command_history<CR>", "Command history" },
-    s = { "<cmd>Telescope search_history<CR>", "Search history" },
+    S = { "<cmd>Telescope search_history<CR>", "Search history" },
     q = { "<cmd>Telescope quickfix<CR>", "Quickfix" },
     j = { "<cmd>Telescope jumplist<CR>", "Jumplist" },
     g = {
@@ -118,13 +120,13 @@ require("keymap").normal.leader({
       s = { "<cmd>Telescope git_status<CR>", "Status" },
       S = { "<cmd>Telescope git_stash<CR>", "Stash" },
     },
-  },
-  s = {
-    name = "Symbols",
-    e = { "<cmd>lua require'telescope.builtin'.symbols({sources={'emoji'}})<CR>", "Emoji 😀" },
-    g = { "<cmd>lua require'telescope.builtin'.symbols({sources={'gitmoji'}})<CR>", "Gitmoji 🚀" },
-    a = { "<cmd>lua require'telescope.builtin'.symbols({sources={'kaomoji'}})<CR>", "Art (╯°□°）╯︵ ┻━┻" },
-    m = { "<cmd>lua require'telescope.builtin'.symbols({sources={'math'}})<CR>", "Math Symbols ∑" },
+    s = {
+      name = "Symbols",
+      e = { "<cmd>lua require'telescope.builtin'.symbols({sources={'emoji'}})<CR>", "Emoji 😀" },
+      g = { "<cmd>lua require'telescope.builtin'.symbols({sources={'gitmoji'}})<CR>", "Gitmoji 🚀" },
+      a = { "<cmd>lua require'telescope.builtin'.symbols({sources={'kaomoji'}})<CR>", "Art (╯°□°）╯︵ ┻━┻" },
+      m = { "<cmd>lua require'telescope.builtin'.symbols({sources={'math'}})<CR>", "Math Symbols ∑" },
+    },
   },
   c = {
     name = "Config",

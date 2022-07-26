@@ -51,10 +51,14 @@ lsp_installer.setup({
 local function lsp_keymaps(bufnr)
   local keymap = require("keymap").buffer(bufnr)
   keymap.normal.leader({
+    ["."] = { ":lua vim.lsp.buf.code_action()<CR>", "Show code actions" },
+    ["="] = { ":lua vim.lsp.buf.formatting()<CR>", "Format document" },
+    R = { ":lua vim.lsp.buf.rename()<CR>", "Rename" },
     l = {
       name = "LSP",
       f = { ":lua vim.lsp.buf.formatting()<CR>", "Format document" },
       a = { ":lua vim.lsp.buf.code_action()<CR>", "Show code actions" },
+      h = { ":lua vim.lsp.buf.hover()<CR>", "Show hover" },
       r = { ":lua vim.lsp.buf.rename()<CR>", "Rename" },
       s = { ":lua vim.lsp.buf.signature_help()<CR>", "Show signature help" },
       S = { ":LspInfo<CR>", "Show LSP status" },
@@ -62,44 +66,19 @@ local function lsp_keymaps(bufnr)
     },
   })
 
-  keymap.normal("K", "<cmd>lua vim.lsp.buf.hover()<CR>", "Show hover")
-  keymap.insert("<A-K>", "<cmd>lua vim.lsp.buf.hover()<CR>", "Show hover")
+  keymap.normal("K", ":lua vim.lsp.buf.hover()<CR>", "Show hover")
+  keymap.insert("<A-K>", ":lua vim.lsp.buf.hover()<CR>", "Show hover")
 
-  keymap.normal("<A-k>", "<cmd>lua vim.lsp.buf.signature_help()<CR>", "Show signature help")
-  keymap.insert("<A-k>", "<cmd>lua vim.lsp.buf.signature_help()<CR>", "Show signature help")
+  keymap.normal("<A-k>", ":lua vim.lsp.buf.signature_help()<CR>", "Show signature help")
+  keymap.insert("<A-k>", ":lua vim.lsp.buf.signature_help()<CR>", "Show signature help")
 
-  local trouble_ok, _ = pcall(require, "trouble")
-  if trouble_ok then
-    keymap.normal.register({
-      gd = { ":Trouble lsp_definitions<CR>", "Go to definition" },
-      gr = { ":Trouble lsp_references<CR>", "Find references" },
-    })
-    keymap.normal.leader({
-      l = {
-        name = "LSP",
-        d = { ":Trouble lsp_definitions<CR>", "Go to definition" },
-        r = { ":Trouble lsp_references<CR>", "Find references" },
-        t = { ":Trouble lsp_type_definitions<CR>", "Go to type" },
-        D = { ":lua vim.lsp.buf.declaration()<CR>", "Go to declaration" },
-        i = { ":Trouble lsp_implementations<CR>", "Go to implementation" },
-      },
-    })
-  else
-    keymap.normal.register({
-      gd = { ":lua vim.lsp.buf.definition()<CR>", "Go to definition" },
-      gr = { ":lua vim.lsp.buf.references()<CR>", "Find references" },
-    })
-    keymap.normal.leader({
-      l = {
-        name = "LSP",
-        d = { ":lua vim.lsp.buf.definition()<CR>", "Go to definition" },
-        r = { ":lua vim.lsp.buf.references()<CR>", "Find references" },
-        t = { ":lua vim.lsp.buf.type_definition()<CR>", "Go to type" },
-        D = { ":lua vim.lsp.buf.declaration()<CR>", "Go to declaration" },
-        i = { ":lua vim.lsp.buf.implementation()<CR>", "Go to implementation" },
-      },
-    })
-  end
+  keymap.normal.register({
+    gd = { ":lua vim.lsp.buf.definition()<CR>", "Go to definition" },
+    gr = { ":lua vim.lsp.buf.references()<CR>", "Find references" },
+    gt = { ":lua vim.lsp.buf.type_definition()<CR>", "Go to type" },
+    gD = { ":lua vim.lsp.buf.declaration()<CR>", "Go to declaration" },
+    gI = { ":lua vim.lsp.buf.implementation()<CR>", "Go to implementation" },
+  })
 end
 
 local function on_attach(client, bufnr)
@@ -123,7 +102,7 @@ end
 
 -- The nvim-cmp almost supports LSP's capabilities so You should advertise it to LSP servers..
 local capabilities = vim.lsp.protocol.make_client_capabilities()
-capabilities = require('cmp_nvim_lsp').update_capabilities(capabilities)
+capabilities = require("cmp_nvim_lsp").update_capabilities(capabilities)
 
 local default_opts = { on_attach = on_attach, capabilities = capabilities }
 
@@ -144,7 +123,7 @@ vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.s
   border = "rounded",
 })
 
-require('lsp_signature').setup({
+require("lsp_signature").setup({
   bind = true,
   handler_opts = {
     border = "rounded",
