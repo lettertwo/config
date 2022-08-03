@@ -34,6 +34,7 @@ use { "kyazdani42/nvim-web-devicons", config = [[ require("nvim-web-devicons").s
 use { "~/.local/share/laserwave", requires = { "rktjmp/lush.nvim", "rktjmp/shipwright.nvim" } }
 
 -- some assembly required --
+use { "goolord/alpha-nvim", config = [[ require("config.dashboard") ]] }
 use { "folke/which-key.nvim", config = [[ require("keymap") ]] }
 use { "numToStr/Comment.nvim", config = [[ require("config.comment") ]] }
 
@@ -122,6 +123,7 @@ use {
 use { "ntpeters/vim-better-whitespace", setup = [[
   -- Don't highlight trailing whitespace for these filetypes
   vim.g.better_whitespace_filetypes_blacklist = {
+    "alpha",
     "diff",
     "git",
     "gitcommit",
