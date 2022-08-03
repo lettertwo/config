@@ -16,7 +16,6 @@ packer.reset()
 use "wbthomason/packer.nvim"          -- Packer can manage itself
 use 'lewis6991/impatient.nvim'        -- Gotta go fast
 use "nvim-lua/plenary.nvim"           -- A common dependency in lua plugins
-use "kyazdani42/nvim-web-devicons"    -- Icons used by lots of other nvim plugins
 use "antoinemadec/FixCursorHold.nvim" -- Workaround for bugs with neovim cursorhold autocmds
 use { "TaDaa/vimade",                 -- Fade inactive windows while preserving syntax highlights.
   setup = [[
@@ -27,6 +26,9 @@ use { "TaDaa/vimade",                 -- Fade inactive windows while preserving 
     enabletreesitter = 1,
   }
 ]]}
+
+-- Icons used by lots of other nvim plugins
+use { "kyazdani42/nvim-web-devicons", config = [[ require("nvim-web-devicons").setup({ default = true }) ]]}
 
 -- Colorscheme --
 use { "~/.local/share/laserwave", requires = { "rktjmp/lush.nvim", "rktjmp/shipwright.nvim" } }
