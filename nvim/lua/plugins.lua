@@ -42,6 +42,13 @@ use { "nvim-lualine/lualine.nvim",
   config = [[ require("config.lualine") ]]
 }
 
+-- Copilot (RIP my job)
+use { "github/copilot.vim", setup = [[
+  -- Accepting copilot suggestions is managed via nvim-cmp config.
+  vim.g.copilot_no_tab_map = true -- Don't use default <Tab> binding.
+  vim.g.copilot_assume_mapped = true -- A key is mapped (via cmp config) to accept copilot suggestions.
+]] }
+
 -- Completion
 use {
   'hrsh7th/nvim-cmp',
@@ -59,7 +66,6 @@ use {
     { "hrsh7th/cmp-cmdline" },
     { "dmitmel/cmp-cmdline-history" },
     { "petertriho/cmp-git" },
-    { "github/copilot.vim" },
   },
   config = [[require('config.cmp')]],
 }

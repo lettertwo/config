@@ -110,10 +110,6 @@ vim.opt.sessionoptions = "buffers,curdir,folds,tabpages,winpos,winsize"
 vim.opt.foldcolumn = "1"
 vim.opt.foldlevelstart = 99
 
--- copilot suggestions are integrated into cmp
-vim.g.copilot_no_tab_map = true
-vim.g.copilot_assume_mapped = true
-
 require("autocommands")
 require("plugins")
 
