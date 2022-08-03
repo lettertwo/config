@@ -44,3 +44,10 @@ vim.api.nvim_create_autocmd("BufWritePost", {
   callback = reload,
 })
 
+-- Close cmdwin with <Esc>
+vim.api.nvim_create_autocmd("CmdwinEnter", {
+  group = group,
+  callback = function()
+    require("keymap").buffer().normal("<Esc>", "<C-c><C-c>", "Exit Command")
+  end,
+})
