@@ -23,21 +23,23 @@ gitsigns.setup({
     keymap.normal.leader({
       g = {
         name = "Git",
-        s = { gitsigns.stage_hunk, "Stage hunk" },
-        S = { gitsigns.stage_buffer, "Stage buffer" },
+        j = { gitsigns.next_hunk, "Next Hunk" },
+        k = { gitsigns.prev_hunk, "Prev Hunk" },
+        a = { gitsigns.stage_hunk, "Stage hunk" },
+        A = { gitsigns.stage_buffer, "Stage buffer" },
         u = { gitsigns.undo_stage_hunk, "Unstage hunk" },
         r = { gitsigns.reset_hunk, "Reset hunk" },
         R = { gitsigns.reset_buffer, "Reset buffer" },
         p = { gitsigns.preview_hunk, "Preview hunk" },
-        b = { function() gitsigns.blame_line({full=true}) end, "Blame" },
+        l = { function() gitsigns.blame_line() end, "Blame" },
         d = { gitsigns.diffthis, "Diff" },
         D = { function() gitsigns.diffthis('~') end, "Diff this file" },
         t = { gitsigns.toggle_deleted, "Toggle deleted lines" },
       },
     })
 
-    keymap.operator("ih", gitsigns.select_hunk, "Select hunk")
-    keymap.operator("ah", gitsigns.select_hunk, "Select hunk")
+    keymap.visual("ih", gitsigns.select_hunk, "Select hunk")
+    keymap.visual("ah", gitsigns.select_hunk, "Select hunk")
 
     keymap.normal("]c", function()
       if vim.wo.diff then return ']c' end

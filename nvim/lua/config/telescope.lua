@@ -75,6 +75,15 @@ telescope.setup({
         },
       },
     },
+    git_branches = {
+      initial_mode = "normal",
+    },
+    git_status = {
+      initial_mode = "normal",
+    },
+    git_stash = {
+      initial_mode = "normal",
+    },
   },
 })
 
@@ -127,15 +136,6 @@ require("keymap").normal.leader({
     S = { "<cmd>Telescope search_history<CR>", "Search history" },
     q = { "<cmd>Telescope quickfix<CR>", "Quickfix" },
     j = { "<cmd>Telescope jumplist<CR>", "Jumplist" },
-    g = {
-      name = "Git",
-      f = { "<cmd>Telescope git_files<CR>", "Git files" },
-      c = { "<cmd>Telescope git_commits<CR>", "Commits" },
-      b = { "<cmd>Telescope git_bcommits<CR>", "Buffer Commits" },
-      B = { "<cmd>Telescope git_branches<CR>", "Branches" },
-      s = { "<cmd>Telescope git_status<CR>", "Status" },
-      S = { "<cmd>Telescope git_stash<CR>", "Stash" },
-    },
     s = {
       name = "Symbols",
       e = { "<cmd>lua require'telescope.builtin'.symbols({sources={'emoji'}})<CR>", "Emoji 😀" },
@@ -143,6 +143,15 @@ require("keymap").normal.leader({
       a = { "<cmd>lua require'telescope.builtin'.symbols({sources={'kaomoji'}})<CR>", "Art (╯°□°）╯︵ ┻━┻" },
       m = { "<cmd>lua require'telescope.builtin'.symbols({sources={'math'}})<CR>", "Math Symbols ∑" },
     },
+  },
+  g = {
+    name = "Git",
+    f = { "<cmd>Telescope git_files<CR>", "Git files" },
+    c = { "<cmd>Telescope git_commits<CR>", "Commits" },
+    C = { "<cmd>Telescope git_bcommits<CR>", "Buffer Commits" },
+    b = { "<cmd>Telescope git_branches<CR>", "Branches" },
+    s = { "<cmd>Telescope git_status<CR>", "Status" },
+    S = { "<cmd>Telescope git_stash<CR>", "Stash" },
   },
   c = {
     name = "Config",
