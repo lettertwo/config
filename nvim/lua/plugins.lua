@@ -77,7 +77,6 @@ use {
   "neovim/nvim-lspconfig",
   requires = {
     "williamboman/nvim-lsp-installer",
-    "ray-x/lsp_signature.nvim",
     "kosayoda/nvim-lightbulb",
   },
   after = "cmp-nvim-lsp",

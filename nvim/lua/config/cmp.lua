@@ -1,11 +1,11 @@
 local cmp_status_ok, cmp = pcall(require, "cmp")
 if not cmp_status_ok then
-	return
+  return
 end
 
 local snip_status_ok, luasnip = pcall(require, "luasnip")
 if not snip_status_ok then
-	return
+  return
 end
 
 require("luasnip/loaders/from_vscode").lazy_load()
@@ -69,52 +69,54 @@ local function tab(fallback)
 end
 
 local kind_icons = {
-	Text = "",
-	Method = "",
-	Function = "",
-	Constructor = "",
-	Field = "",
-	Variable = "",
-	Class = "",
-	Interface = "",
-	Module = "",
-	Property = "",
-	Unit = "",
-	Value = "",
-	Enum = "",
-	Keyword = "",
-	Snippet = "",
-	Color = "",
-	File = "",
-	Reference = "",
-	Folder = "",
-	EnumMember = "",
-	Constant = "",
-	Struct = "",
-	Event = "",
-	Operator = "",
-	TypeParameter = "",
+  Text = "",
+  Method = "",
+  Function = "",
+  Constructor = "",
+  Field = "",
+  Variable = "",
+  Class = "",
+  Interface = "",
+  Module = "",
+  Property = "",
+  Unit = "",
+  Value = "",
+  Enum = "",
+  Keyword = "",
+  Snippet = "",
+  Color = "",
+  File = "",
+  Reference = "",
+  Folder = "",
+  EnumMember = "",
+  Constant = "",
+  Struct = "",
+  Event = "",
+  Operator = "",
+  TypeParameter = "",
 }
 
 cmp.setup({
-	snippet = {
-		expand = function(args)
-			luasnip.lsp_expand(args.body)
-		end,
-	},
-	sources = cmp.config.sources({
-		{ name = "nvim_lsp" },
-		{ name = "nvim_lua", dup = 0 },
-		{ name = "luasnip" },
+  snippet = {
+    expand = function(args)
+      luasnip.lsp_expand(args.body)
+    end,
+  },
+  sources = cmp.config.sources({
+    { name = "nvim_lsp" },
+    { name = "nvim_lsp_document_symbol" },
+    { name = "nvim_lsp_signature_help" },
+    { name = "nvim_lua", dup = 0 },
+    { name = "under_comparator" },
+    { name = "luasnip" },
     { name = "buffer" },
-		{ name = "path" },
+    { name = "path" },
     { name = "calc" },
     { name = "emoji" },
     { name = "treesitter" },
     { name = "crates" },
   }),
-
-	mapping = cmp.mapping.preset.insert({
+  mapping = cmp.mapping.preset.insert({
     ["<C-k>"] = cmp.mapping.select_prev_item(),
     ["<C-j>"] = cmp.mapping.select_next_item(),
     ["<C-b>"] = cmp.mapping(cmp.mapping.scroll_docs(-1), { "i", "c" }),
@@ -137,39 +139,57 @@ cmp.setup({
     end
     return true
   end,
-	formatting = {
-		fields = {
+  formatting = {
+    fields = {
       cmp.ItemField.Kind,
       cmp.ItemField.Abbr,
       cmp.ItemField.Menu,
     },
-		format = function(entry, vim_item)
-			vim_item.kind = kind_icons[vim_item.kind]
-			vim_item.menu = ({
-				nvim_lsp = "[LSP]",
-				nvim_lua = "[lua]",
-				luasnip = "[Snip]",
-				buffer = "[Buf]",
-				path = "[Path]",
-				emoji = "[Emoji]",
-			})[entry.source.name]
-			return vim_item
-		end,
-	},
-  sorting = {
-    comparators = cmp.config.compare.recently_used,
+    format = function(entry, vim_item)
+      vim_item.kind = kind_icons[vim_item.kind]
+      vim_item.menu = ({
+        nvim_lsp = "[LSP]",
+        nvim_lsp_signature_help = "[Sig]",
+        nvim_lsp_document_symbol = "[Symbol]",
+        nvim_lua = "[Lua]",
+        luasnip = "[Snip]",
+        buffer = "[Buf]",
+        path = "[Path]",
+        emoji = "[Emoji]",
+        calc = "[Calc]",
+        cmdline = "[Cmd]",
+        cmdline_history = "[History]",
+        git = "[Git]",
+      })[entry.source.name]
+      return vim_item
+    end,
   },
-	confirm_opts = {
-		behavior = cmp.ConfirmBehavior.Replace,
-		select = false,
-	},
-	window = {
-		completion = cmp.config.window.bordered(),
-		documentation = cmp.config.window.bordered(),
-	},
-	experimental = {
-		ghost_text = true,
-	}
+  sorting = {
+    comparators = {
+      cmp.config.compare.offset,
+      cmp.config.compare.exact,
+      cmp.config.compare.scopes,
+      cmp.config.compare.score,
+      require("cmp-under-comparator").under,
+      cmp.config.compare.recently_used,
+      cmp.config.compare.locality,
+      cmp.config.compare.kind,
+      cmp.config.compare.sort_text,
+      cmp.config.compare.length,
+      cmp.config.compare.order,
+    },
+  },
+  confirm_opts = {
+    behavior = cmp.ConfirmBehavior.Replace,
+    select = false,
+  },
+  window = {
+    completion = cmp.config.window.bordered(),
+    documentation = cmp.config.window.bordered(),
+  },
+  experimental = {
+    ghost_text = true,
+  },
 })
 
 -- Configuration for specific filetypes
@@ -198,30 +218,30 @@ cmp.setup.filetype("dap-repl", {
 })
 
 -- cmdline completion
-cmp.setup.cmdline(':', {
+cmp.setup.cmdline(":", {
   mapping = cmp.mapping.preset.cmdline({
-    ["<C-k>"] = cmp.mapping(cmp.mapping.select_prev_item(), {"c"}),
-    ["<C-j>"] = cmp.mapping(cmp.mapping.select_next_item(), {"c"}),
+    ["<C-k>"] = cmp.mapping(cmp.mapping.select_prev_item(), { "c" }),
+    ["<C-j>"] = cmp.mapping(cmp.mapping.select_next_item(), { "c" }),
   }),
   sources = {
-    { name = 'cmdline' },
+    { name = "cmdline" },
     { name = "cmdline_history" },
     { name = "path" },
-  }
+  },
 })
 
 -- search completion
-cmp.setup.cmdline('/', {
+cmp.setup.cmdline("/", {
   mapping = cmp.mapping.preset.cmdline({
-    ["<C-k>"] = cmp.mapping(cmp.mapping.select_prev_item(), {"c"}),
-    ["<C-j>"] = cmp.mapping(cmp.mapping.select_next_item(), {"c"}),
+    ["<C-k>"] = cmp.mapping(cmp.mapping.select_prev_item(), { "c" }),
+    ["<C-j>"] = cmp.mapping(cmp.mapping.select_next_item(), { "c" }),
   }),
-  sources = { { name = 'buffer' } }
+  sources = { { name = "buffer" } },
 })
-cmp.setup.cmdline('?', {
+cmp.setup.cmdline("?", {
   mapping = cmp.mapping.preset.cmdline({
-    ["<C-k>"] = cmp.mapping(cmp.mapping.select_prev_item(), {"c"}),
-    ["<C-j>"] = cmp.mapping(cmp.mapping.select_next_item(), {"c"}),
+    ["<C-k>"] = cmp.mapping(cmp.mapping.select_prev_item(), { "c" }),
+    ["<C-j>"] = cmp.mapping(cmp.mapping.select_next_item(), { "c" }),
   }),
-  sources = { { name = 'buffer' } }
+  sources = { { name = "buffer" } },
 })
