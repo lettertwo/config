@@ -1,37 +1,45 @@
-local colors = {
-  bg = "#202328",
-  fg = "#bbc2cf",
-  yellow = "#ECBE7B",
-  cyan = "#008080",
-  darkblue = "#081633",
-  green = "#98be65",
-  orange = "#FF8800",
-  violet = "#a9a1e1",
-  magenta = "#c678dd",
-  purple = "#c678dd",
-  blue = "#51afef",
-  red = "#ec5f67",
-}
-
 local location = require("config.location")
 
 local window_width_limit = 70
 
-local function hide_in_width()
+local function visible_for_width()
   return vim.fn.winwidth(0) > window_width_limit
 end
+
+local excluded_filetypes = {
+  "help",
+  "startify",
+  "dashboard",
+  "packer",
+  "neogitstatus",
+  "NvimTree",
+  "Trouble",
+  "alpha",
+  "Outline",
+  "spectre_panel",
+  "toggleterm",
+  "TelescopePrompt",
+}
+
+local function visible_for_filetype()
+  return not vim.tbl_contains(excluded_filetypes, vim.bo.filetype)
+end
+
+local tabs = {
+  "tabs",
+  mode = 1,
+  cond = visible_for_filetype,
+}
 
 local branch = {
   -- "b:gitsigns_head",
   "branch",
   icon = " ",
   color = { gui = "bold" },
-  cond = hide_in_width,
+  cond = visible_for_width,
 }
 
-local filename = { "filename", cond = nil }
-
-local filetype = { "filetype", cond = hide_in_width }
+local filetype = { "filetype", cond = visible_for_width }
 
 local diff = { "diff", symbols = { added = "  ", modified = " ", removed = " " }, cond = nil }
 
@@ -43,8 +51,7 @@ local persisting = {
       return " "
     end
   end,
-  color = { fg = colors.bg },
-  cond = hide_in_width,
+  cond = visible_for_width,
 }
 
 local treesitter = {
@@ -55,15 +62,14 @@ local treesitter = {
     end
     return ""
   end,
-  color = { fg = colors.bg },
-  cond = hide_in_width,
+  cond = visible_for_width,
 }
 
 local diagnostics = {
   "diagnostics",
   sources = { "nvim_diagnostic" },
   symbols = { error = " ", warn = " ", info = " ", hint = " " },
-  cond = hide_in_width,
+  cond = visible_for_width,
 }
 
 -- Adapted from https://github.com/LunarVim/LunarVim/blob/48320e/lua/lvim/core/lualine/components.lua#L82
@@ -100,9 +106,23 @@ local lsp = {
   end,
   color = { gui = "bold" },
   cond = function()
-    return hide_in_width() or vim.lsp.buf_get_clients() == nil
+    return visible_for_width() or vim.lsp.buf_get_clients() == nil
   end,
 }
+
+local filepath = {
+  "filename",
+  file_status = false,
+  path = 3, -- 3: Absolute path, with tilde as the home directory
+  shorting_target = 20, -- Shortens path to leave 40 spaces in the window for other components.
+  cond = visible_for_filetype,
+}
+
+-- If we have only one tab open, we will be showing location in the tabline.
+-- If we have more than one tab open, we will be showing location in the winbar.
+local function winbar_active()
+  return vim.fn.tabpagenr("$") > 1
+end
 
 require("lualine").setup({
   options = {
@@ -113,18 +133,14 @@ require("lualine").setup({
   },
   sections = {
     lualine_a = { "mode" },
-    lualine_b = { branch, filename },
-    lualine_c = {
-      diff,
-    },
+    lualine_b = { branch },
+    lualine_c = { diff },
     lualine_x = { diagnostics, lsp, filetype },
     lualine_y = {},
     lualine_z = { treesitter, persisting },
   },
   inactive_sections = {
-    lualine_a = {
-      "filename",
-    },
+    lualine_a = { filepath },
     lualine_b = {},
     lualine_c = {},
     lualine_x = {},
@@ -132,20 +148,33 @@ require("lualine").setup({
     lualine_z = {},
   },
   tabline = {
-    lualine_a = { { "tabs", mode = 1 } },
+    lualine_a = { tabs },
     lualine_b = {},
-    lualine_c = { location },
+    lualine_c = {
+      {
+        location.get_location,
+        cond = function()
+          return not winbar_active() and location.is_available()
+        end,
+      },
+    },
+    lualine_x = {},
+    lualine_y = { filepath },
+    lualine_z = {},
+  },
+  winbar = {
+    lualine_a = {},
+    lualine_b = {},
+    lualine_c = {
+      {
+        location.get_location,
+        cond = function()
+          return winbar_active() and location.is_available()
+        end,
+      },
+    },
     lualine_x = {},
     lualine_y = {},
     lualine_z = {},
   },
-})
-
--- TODO: Fix intitialization of location on startup
--- TODO: Find better separation between tabs and location
-
--- Force more frequent tabline redraw
-vim.api.nvim_create_autocmd({ "CursorMoved", "BufWinEnter", "BufFilePost", "InsertEnter", "BufWritePost" }, {
-  group = vim.api.nvim_create_augroup("tabline", { clear = true }),
-  command = ":redrawtabline",
 })

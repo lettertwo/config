@@ -7,18 +7,18 @@ local init_file = join_paths(configpath, "init.lua")
 
 local M = {}
 
-local function create_cmd(name, cmd, opts)
+local function create(name, cmd, opts)
   vim.api.nvim_create_user_command(name, cmd, opts)
   M[name] = cmd
 end
 
-local function delete_cmd(name)
+local function delete(name)
   vim.api.nvim_del_user_command(name)
   M[name] = nil
 end
 
-M.create_cmd = create_cmd
-M.delete_cmd = delete_cmd
+M.create = create
+M.delete = delete
 
 local function unload_module(module_name)
   if module_name.args then
@@ -38,7 +38,7 @@ local function unload_module(module_name)
   end
 end
 
-create_cmd("UnloadModule", unload_module, {
+create("UnloadModule", unload_module, {
   nargs = 1,
   desc = "Unload a lua module",
   complete = function()
@@ -59,7 +59,7 @@ local function reload_config(sync_plugins)
   end
 end
 
-create_cmd("ReloadConfig", reload_config, {
+create("ReloadConfig", reload_config, {
   nargs = "?",
   desc = "Reload config files",
 })

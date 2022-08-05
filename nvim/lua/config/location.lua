@@ -108,7 +108,7 @@ gps.setup({
   },
 })
 
-local winbar_exclude = {
+local location_exclude = {
   "help",
   "startify",
   "dashboard",
@@ -158,10 +158,8 @@ local function get_filename()
   end
 end
 
-local function get_location2() end
-
 local function excludes()
-  if vim.tbl_contains(winbar_exclude, vim.bo.filetype) then
+  if vim.tbl_contains(location_exclude, vim.bo.filetype) then
     vim.opt_local.winbar = nil
     return true
   end
@@ -208,4 +206,4 @@ local function get_location()
   return location
 end
 
-return { get_location, cond = is_available }
+return { get_location = get_location, is_available = is_available }
