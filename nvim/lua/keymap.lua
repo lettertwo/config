@@ -4,10 +4,10 @@ local wk = require("which-key")
 vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 
-wk.setup {
+wk.setup({
   window = { border = "single" },
   operators = { gs = "Surround" },
-}
+})
 -- TODO: Figure out how to reset bindings on reload
 -- wk.reset()
 
@@ -16,16 +16,16 @@ local register = wk.register
 local function callable(tbl)
   local __call = tbl.__call
   if type(__call) ~= "function" then
-    error "Expected a __call method on table!"
+    error("Expected a __call method on table!")
   end
   tbl.__call = nil
   return setmetatable(tbl, { __call = __call })
 end
 
 local function bindopts(opts)
-  return callable {
+  return callable({
     __call = function(self, lhs, rhs, label)
-      return self.register({[lhs] = {rhs, label}})
+      return self.register({ [lhs] = { rhs, label } })
     end,
     register = function(mappings)
       return register(mappings, opts)
@@ -34,31 +34,31 @@ local function bindopts(opts)
       return register(mappings, vim.tbl_deep_extend("error", { prefix = "<Leader>" }, opts))
     end,
     label = function(lhs, label)
-      return register({[lhs] = label}, opts)
+      return register({ [lhs] = label }, opts)
     end,
-  }
+  })
 end
 
-local normal   = bindopts { mode = "n" }
-local visual   = bindopts { mode = "x" }
-local select   = bindopts { mode = "s" }
-local operator = bindopts { mode = "o" }
-local insert   = bindopts { mode = "i" }
-local command  = bindopts { mode = "c" }
-local terminal = bindopts { mode = "t" }
+local normal = bindopts({ mode = "n" })
+local visual = bindopts({ mode = "x" })
+local select = bindopts({ mode = "s" })
+local operator = bindopts({ mode = "o" })
+local insert = bindopts({ mode = "i" })
+local command = bindopts({ mode = "c" })
+local terminal = bindopts({ mode = "t" })
 
 local function buffer(bufno)
   if bufno == nil then
     bufno = vim.api.nvim_get_current_buf()
   end
   return {
-    normal   = bindopts { buffer = bufno, mode = "n" },
-    visual   = bindopts { buffer = bufno, mode = "x" },
-    select   = bindopts { buffer = bufno, mode = "s" },
-    operator = bindopts { buffer = bufno, mode = "o" },
-    insert   = bindopts { buffer = bufno, mode = "i" },
-    command  = bindopts { buffer = bufno, mode = "c" },
-    terminal = bindopts { buffer = bufno, mode = "t" },
+    normal = bindopts({ buffer = bufno, mode = "n" }),
+    visual = bindopts({ buffer = bufno, mode = "x" }),
+    select = bindopts({ buffer = bufno, mode = "s" }),
+    operator = bindopts({ buffer = bufno, mode = "o" }),
+    insert = bindopts({ buffer = bufno, mode = "i" }),
+    command = bindopts({ buffer = bufno, mode = "c" }),
+    terminal = bindopts({ buffer = bufno, mode = "t" }),
   }
 end
 
@@ -94,7 +94,7 @@ terminal("<C-k>", "<C-\\><C-N><C-w>k", "Go to the up window")
 terminal("<C-l>", "<C-\\><C-N><C-w>l", "Go to the right window")
 
 -- Buffer management
-normal.leader {
+normal.leader({
   -- TODO: Look at lvim's smart quit
   q = { ":q!<CR>", "Quit" },
   w = { ":write<CR>", "Save" },
@@ -119,10 +119,10 @@ normal.leader {
     C = { "<cmd>%bd|e#|bd#<CR>", "Close all buffers" },
     ["%"] = { "<cmd>source %<CR>", "Source current file" },
   },
-}
+})
 
 -- Packer
-normal.leader {
+normal.leader({
   P = {
     name = "Packer",
     c = { ":PackerCompile<cr>", "Compile" },
@@ -131,7 +131,7 @@ normal.leader {
     s = { ":PackerSync<CR>", "Sync" },
     S = { ":PackerStatus<CR>", "Status" },
   },
-}
+})
 
 return {
   buffer = buffer,

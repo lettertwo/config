@@ -104,7 +104,7 @@ local lsp = {
   end,
 }
 
-require("lualine").setup {
+require("lualine").setup({
   options = {
     component_separators = { left = "", right = "" },
     section_separators = { left = "", right = "" },
@@ -139,7 +139,7 @@ require("lualine").setup {
     lualine_y = {},
     lualine_z = {},
   },
-}
+})
 
 -- TODO: Fix intitialization of location on startup
 -- TODO: Find better separation between tabs and location
@@ -149,4 +149,3 @@ vim.api.nvim_create_autocmd({ "CursorMoved", "BufWinEnter", "BufFilePost", "Inse
   group = vim.api.nvim_create_augroup("tabline", { clear = true }),
   command = ":redrawtabline",
 })
-

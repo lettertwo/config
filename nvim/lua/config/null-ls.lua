@@ -10,13 +10,13 @@ local hover = null_ls.builtins.hover
 null_ls.setup({
   debug = false,
   sources = {
-    formatting.prettier.with { extra_filetypes = { "toml", "flowtype" } },
-    formatting.black.with { extrargs = { "fast" } },
+    formatting.prettier.with({ extra_filetypes = { "toml", "flowtype" } }),
+    formatting.black.with({ extrargs = { "fast" } }),
     formatting.stylua,
     formatting.google_java_format,
-    diagnostics.eslint.with { extra_filetypes = { "flowtype" } },
+    diagnostics.eslint.with({ extra_filetypes = { "flowtype" } }),
     diagnostics.flake8,
-    code_actions.eslint.with { extra_filetypes = { "flowtype" } },
+    code_actions.eslint.with({ extra_filetypes = { "flowtype" } }),
     code_actions.gitsigns,
     code_actions.gitrebase,
     completion.spell,

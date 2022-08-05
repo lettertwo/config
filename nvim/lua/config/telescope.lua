@@ -1,4 +1,4 @@
-local telescope = require('telescope')
+local telescope = require("telescope")
 local telescope_actions = require("telescope.actions")
 local builtin = require("telescope.builtin")
 local themes = require("telescope.themes")
@@ -33,12 +33,14 @@ telescope.setup({
         ["<C-p>"] = telescope_actions.cycle_history_prev,
       },
       n = {
-        ["/"] = function() vim.cmd([[startinsert]]) end,
+        ["/"] = function()
+          vim.cmd([[startinsert]])
+        end,
         ["<C-j>"] = telescope_actions.move_selection_next,
         ["<C-k>"] = telescope_actions.move_selection_previous,
         ["<C-q>"] = telescope_actions.smart_send_to_qflist + telescope_actions.open_qflist,
       },
-    }
+    },
   }),
   extensions = {
     fzf = {
@@ -47,7 +49,7 @@ telescope.setup({
       override_file_sorter = true,
       case_mode = "smart_case",
     },
-    ['ui-select'] = {
+    ["ui-select"] = {
       themes.get_dropdown({}),
     },
     file_browser = {
@@ -90,9 +92,9 @@ telescope.setup({
   },
 })
 
-telescope.load_extension 'fzf'
-telescope.load_extension 'ui-select'
-telescope.load_extension 'file_browser'
+telescope.load_extension("fzf")
+telescope.load_extension("ui-select")
+telescope.load_extension("file_browser")
 
 local function nvim_config_files()
   builtin.find_files({
@@ -144,7 +146,10 @@ require("keymap").normal.leader({
       name = "Emoji",
       e = { "<cmd>lua require'telescope.builtin'.symbols({sources={'emoji'}})<CR>", "Emoji 😀" },
       g = { "<cmd>lua require'telescope.builtin'.symbols({sources={'gitmoji'}})<CR>", "Gitmoji 🚀" },
-      a = { "<cmd>lua require'telescope.builtin'.symbols({sources={'kaomoji'}})<CR>", "Art (╯°□°）╯︵ ┻━┻" },
+      a = {
+        "<cmd>lua require'telescope.builtin'.symbols({sources={'kaomoji'}})<CR>",
+        "Art (╯°□°）╯︵ ┻━┻",
+      },
       m = { "<cmd>lua require'telescope.builtin'.symbols({sources={'math'}})<CR>", "Math Symbols ∑" },
     },
   },

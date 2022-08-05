@@ -337,7 +337,7 @@ local function embed_section_line(header_line, section_line, winwidth)
     local start_byte = #substr(val, 1, start)
     local hl = {}
     table.insert(hl, { header_opts.hl, 0, start_byte })
-    if type(button_opts.hl) == 'table' then
+    if type(button_opts.hl) == "table" then
       for _, b in ipairs(button_opts.hl) do
         table.insert(hl, { b[1], b[2] + start_byte, b[3] + start_byte })
       end

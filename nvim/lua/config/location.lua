@@ -2,28 +2,28 @@ local gps = require("nvim-gps")
 local navic = require("nvim-navic")
 
 local highlights = {
-  CmpItemKindText          = true,
-  CmpItemKindKeyword       = true,
-  CmpItemKindVariable      = true,
-  CmpItemKindConstant      = true,
-  CmpItemKindReference     = true,
-  CmpItemKindValue         = true,
-  CmpItemKindFunction      = true,
-  CmpItemKindMethod        = true,
-  CmpItemKindConstructor   = true,
-  CmpItemKindClass         = true,
-  CmpItemKindInterface     = true,
-  CmpItemKindStruct        = true,
-  CmpItemKindEvent         = true,
-  CmpItemKindEnum          = true,
-  CmpItemKindUnit          = true,
-  CmpItemKindModule        = true,
-  CmpItemKindProperty      = true,
-  CmpItemKindField         = true,
+  CmpItemKindText = true,
+  CmpItemKindKeyword = true,
+  CmpItemKindVariable = true,
+  CmpItemKindConstant = true,
+  CmpItemKindReference = true,
+  CmpItemKindValue = true,
+  CmpItemKindFunction = true,
+  CmpItemKindMethod = true,
+  CmpItemKindConstructor = true,
+  CmpItemKindClass = true,
+  CmpItemKindInterface = true,
+  CmpItemKindStruct = true,
+  CmpItemKindEvent = true,
+  CmpItemKindEnum = true,
+  CmpItemKindUnit = true,
+  CmpItemKindModule = true,
+  CmpItemKindProperty = true,
+  CmpItemKindField = true,
   CmpItemKindTypeParameter = true,
-  CmpItemKindEnumMember    = true,
-  CmpItemKindOperator      = true,
-  CmpItemKindSnippet       = true,
+  CmpItemKindEnumMember = true,
+  CmpItemKindOperator = true,
+  CmpItemKindSnippet = true,
 }
 
 local function capcase(str)
@@ -35,7 +35,7 @@ local function format_highlight(str, group)
 end
 
 local function highlight(icon, kind)
-  local group = 'CmpItemKind' .. capcase(kind)
+  local group = "CmpItemKind" .. capcase(kind)
   if not highlights[group] then
     group = "CmpItemKindText"
   end
@@ -45,31 +45,31 @@ end
 local separator = highlight("  ", "Snippet")
 
 local icons = {
-  File          = highlight(" ", "File"),
-  Module        = highlight(" ", "Module"),
-  Namespace     = highlight(" ", "Namespace"),
-  Package       = highlight(" ", "Package"),
-  Class         = highlight(" ", "Class"),
-  Method        = highlight(" ", "Method"),
-  Property      = highlight(" ", "Property"),
-  Field         = highlight(" ", "Field"),
-  Constructor   = highlight(" ", "Constructor"),
-  Enum          = highlight("練", "Enum"),
-  Interface     = highlight("練", "Interface"),
-  Function      = highlight(" ", "Function"),
-  Variable      = highlight(" ", "Variable"),
-  Constant      = highlight(" ", "Constant"),
-  String        = highlight(" ", "String"),
-  Number        = highlight(" ", "Number"),
-  Boolean       = highlight("◩ ", "Boolean"),
-  Array         = highlight(" ", "Array"),
-  Object        = highlight(" ", "Object"),
-  Key           = highlight(" ", "Key"),
-  Null          = highlight("ﳠ ", "Null"),
-  EnumMember    = highlight(" ", "EnumMember"),
-  Struct        = highlight(" ", "Struct"),
-  Event         = highlight(" ", "Event"),
-  Operator      = highlight(" ", "Operator"),
+  File = highlight(" ", "File"),
+  Module = highlight(" ", "Module"),
+  Namespace = highlight(" ", "Namespace"),
+  Package = highlight(" ", "Package"),
+  Class = highlight(" ", "Class"),
+  Method = highlight(" ", "Method"),
+  Property = highlight(" ", "Property"),
+  Field = highlight(" ", "Field"),
+  Constructor = highlight(" ", "Constructor"),
+  Enum = highlight("練", "Enum"),
+  Interface = highlight("練", "Interface"),
+  Function = highlight(" ", "Function"),
+  Variable = highlight(" ", "Variable"),
+  Constant = highlight(" ", "Constant"),
+  String = highlight(" ", "String"),
+  Number = highlight(" ", "Number"),
+  Boolean = highlight("◩ ", "Boolean"),
+  Array = highlight(" ", "Array"),
+  Object = highlight(" ", "Object"),
+  Key = highlight(" ", "Key"),
+  Null = highlight("ﳠ ", "Null"),
+  EnumMember = highlight(" ", "EnumMember"),
+  Struct = highlight(" ", "Struct"),
+  Event = highlight(" ", "Event"),
+  Operator = highlight(" ", "Operator"),
   TypeParameter = highlight(" ", "TypeParameter"),
 }
 
@@ -82,29 +82,29 @@ navic.setup({
 gps.setup({
   separator = separator,
   icons = {
-    ["class-name"]        = icons.Class,
-    ["function-name"]     = icons.Function,
-    ["method-name"]       = icons.Method,
-    ["mapping-name"]      = icons.Object,
-    ["sequence-name"]     = icons.Array,
-    ["null-name"]         = icons.Null,
-    ["boolean-name"]      = icons.Boolean,
-    ["integer-name"]      = icons.Number,
-    ["float-name"]        = icons.Number,
-    ["string-name"]       = icons.String,
-    ["array-name"]        = icons.Array,
-    ["object-name"]       = icons.Object,
-    ["number-name"]       = icons.Number,
-    ["table-name"]        = icons.Object,
+    ["class-name"] = icons.Class,
+    ["function-name"] = icons.Function,
+    ["method-name"] = icons.Method,
+    ["mapping-name"] = icons.Object,
+    ["sequence-name"] = icons.Array,
+    ["null-name"] = icons.Null,
+    ["boolean-name"] = icons.Boolean,
+    ["integer-name"] = icons.Number,
+    ["float-name"] = icons.Number,
+    ["string-name"] = icons.String,
+    ["array-name"] = icons.Array,
+    ["object-name"] = icons.Object,
+    ["number-name"] = icons.Number,
+    ["table-name"] = icons.Object,
     ["inline-table-name"] = icons.Object,
-    ["module-name"]       = icons.Module,
-		["tag-name"]          = highlight("炙", "Reference"),
-    ["date-name"]         = highlight(" ", "Text"),
-    ["date-time-name"]    = highlight(" ", "Text"),
-    ["time-name"]         = highlight(" ", "Text"),
-    ["title-name"]        = highlight("# ", "Reference"),
-    ["label-name"]        = highlight(" ", "Reference"),
-    ["container-name"]    = highlight(" ", "Object"),
+    ["module-name"] = icons.Module,
+    ["tag-name"] = highlight("炙", "Reference"),
+    ["date-name"] = highlight(" ", "Text"),
+    ["date-time-name"] = highlight(" ", "Text"),
+    ["time-name"] = highlight(" ", "Text"),
+    ["title-name"] = highlight("# ", "Reference"),
+    ["label-name"] = highlight(" ", "Reference"),
+    ["container-name"] = highlight(" ", "Object"),
   },
 })
 
@@ -158,8 +158,7 @@ local function get_filename()
   end
 end
 
-local function get_location2()
-end
+local function get_location2() end
 
 local function excludes()
   if vim.tbl_contains(winbar_exclude, vim.bo.filetype) then
@@ -203,7 +202,7 @@ local function get_location()
   end
 
   if not isempty(location) and get_buf_option("mod") then
-    location = location .. " " ..format_highlight("", "diffChanged")
+    location = location .. " " .. format_highlight("", "diffChanged")
   end
 
   return location

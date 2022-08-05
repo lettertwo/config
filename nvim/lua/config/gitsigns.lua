@@ -8,7 +8,7 @@ gitsigns.setup({
     delay = 500,
     ignore_whitespace = false,
   },
-  current_line_blame_formatter = ' <author> • <author_time:%m/%d/%y %I:%M %p> • <summary>',
+  current_line_blame_formatter = " <author> • <author_time:%m/%d/%y %I:%M %p> • <summary>",
   preview_config = {
     border = "rounded",
     style = "minimal",
@@ -31,9 +31,19 @@ gitsigns.setup({
         r = { gitsigns.reset_hunk, "Reset hunk" },
         R = { gitsigns.reset_buffer, "Reset buffer" },
         p = { gitsigns.preview_hunk, "Preview hunk" },
-        l = { function() gitsigns.blame_line() end, "Blame" },
+        l = {
+          function()
+            gitsigns.blame_line()
+          end,
+          "Blame",
+        },
         d = { gitsigns.diffthis, "Diff" },
-        D = { function() gitsigns.diffthis('~') end, "Diff this file" },
+        D = {
+          function()
+            gitsigns.diffthis("~")
+          end,
+          "Diff this file",
+        },
         t = { gitsigns.toggle_deleted, "Toggle deleted lines" },
       },
     })
@@ -42,16 +52,23 @@ gitsigns.setup({
     keymap.visual("ah", gitsigns.select_hunk, "Select hunk")
 
     keymap.normal("]c", function()
-      if vim.wo.diff then return ']c' end
-      vim.schedule(function() gitsigns.next_hunk() end)
-      return '<Ignore>'
+      if vim.wo.diff then
+        return "]c"
+      end
+      vim.schedule(function()
+        gitsigns.next_hunk()
+      end)
+      return "<Ignore>"
     end, "Next hunk")
 
     keymap.normal("[c", function()
-      if vim.wo.diff then return '[c' end
-      vim.schedule(function() gitsigns.prev_hunk() end)
-      return '<Ignore>'
+      if vim.wo.diff then
+        return "[c"
+      end
+      vim.schedule(function()
+        gitsigns.prev_hunk()
+      end)
+      return "<Ignore>"
     end, "Previous hunk")
-
-  end
+  end,
 })

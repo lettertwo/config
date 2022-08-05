@@ -1,20 +1,20 @@
 local status_ok, configs = pcall(require, "nvim-treesitter.configs")
 if not status_ok then
-	return
+  return
 end
 
-local keymap = require('keymap')
+local keymap = require("keymap")
 
 keymap.operator.label("af", "a function")
 keymap.operator.label("if", "inner function")
 keymap.operator.label("ac", "a class")
 keymap.operator.label("ic", "inner class")
-keymap.operator.label(",",  "previous selection")
-keymap.operator.label(".",  "smart selection")
-keymap.operator.label(";",  "container")
+keymap.operator.label(",", "previous selection")
+keymap.operator.label(".", "smart selection")
+keymap.operator.label(";", "container")
 keymap.operator.label("i;", "inner container")
 
-keymap.normal.label('gd', "Go to definition")
+keymap.normal.label("gd", "Go to definition")
 
 -- local _, parsers = pcall(require, "nvim-treesitter.parsers")
 -- if parsers then
@@ -24,7 +24,7 @@ keymap.normal.label('gd', "Go to definition")
 -- end
 
 configs.setup({
-	ensure_installed = {
+  ensure_installed = {
     "bash",
     "c",
     "css",
@@ -49,15 +49,15 @@ configs.setup({
     "vim",
     "yaml",
   },
-	ignore_install = { "haskell" },
-	highlight = {
-		enable = true, -- false will disable the whole extension
+  ignore_install = { "haskell" },
+  highlight = {
+    enable = true, -- false will disable the whole extension
     use_languagetree = true,
     additional_vim_regex_highlighting = false,
-	},
-  matchup = { enable = true, },
-	autopairs = { enable = true, },
-	indent = { enable = true, disable = { "python", "css" } },
+  },
+  matchup = { enable = true },
+  autopairs = { enable = true },
+  indent = { enable = true, disable = { "python", "css" } },
   endwise = { enable = true },
   context_commentstring = { enable = true, enable_autocmd = false },
   textobjects = {
@@ -105,7 +105,7 @@ configs.setup({
         list_definitions_toc = "<nop>",
         goto_next_usage = "<nop>",
         goto_previous_usage = "<nop>",
-      }
-    }
+      },
+    },
   },
 })

@@ -33,7 +33,7 @@ require("trouble").setup({
 
 require("keymap").normal.leader({
   d = {
-    name = 'Diagnostics',
+    name = "Diagnostics",
     j = { ":lua vim.diagnostic.goto_next({buffer=0})<CR>", "Jump to next diagnostic" },
     k = { ":lua vim.diagnostic.goto_prev({buffer=0})<CR>", "Jump to previous diagnostic" },
     q = { ":Trouble quickfix<cr>", "QuickFix" },
@@ -41,7 +41,7 @@ require("keymap").normal.leader({
     t = { ":Trouble telescope<cr>", "Telescope" },
     d = { ":Trouble document_diagnostics<cr>", "Diagnostics" },
     w = { ":Trouble workspace_diagnostics<cr>", "Workspace Diagnostics" },
-  }
+  },
 })
 
 local function hover()
@@ -56,15 +56,8 @@ local function setup_buffer()
   local bufnr = vim.api.nvim_buf_get_number(0)
   local buf_group = vim.api.nvim_create_augroup("lsp_hover_" .. bufnr, { clear = true })
   -- Show diagnostic on hover
-  vim.api.nvim_create_autocmd(
-    "CursorHold",
-    { buffer = bufnr, group = buf_group, callback = hover }
-  )
+  vim.api.nvim_create_autocmd("CursorHold", { buffer = bufnr, group = buf_group, callback = hover })
 end
 
-local group = vim.api.nvim_create_augroup("diagnostics", { clear = true }); 
+local group = vim.api.nvim_create_augroup("diagnostics", { clear = true })
 vim.api.nvim_create_autocmd("BufEnter", { group = group, callback = setup_buffer })
-
-
-
-
