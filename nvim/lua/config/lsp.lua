@@ -52,11 +52,11 @@ local function lsp_keymaps(bufnr)
   local keymap = require("keymap").buffer(bufnr)
   keymap.normal.leader({
     ["."] = { ":lua vim.lsp.buf.code_action()<CR>", "Show code actions" },
-    ["="] = { ":lua vim.lsp.buf.formatting()<CR>", "Format document" },
+    ["="] = { ":lua vim.lsp.buf.format({ async = true })<CR>", "Format document" },
     R = { ":lua vim.lsp.buf.rename()<CR>", "Rename" },
     l = {
       name = "LSP",
-      f = { ":lua vim.lsp.buf.formatting()<CR>", "Format document" },
+      f = { ":lua vim.lsp.buf.format({ async = true })<CR>", "Format document" },
       a = { ":lua vim.lsp.buf.code_action()<CR>", "Show code actions" },
       h = { ":lua vim.lsp.buf.hover()<CR>", "Show hover" },
       r = { ":lua vim.lsp.buf.rename()<CR>", "Rename" },

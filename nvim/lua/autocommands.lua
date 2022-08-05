@@ -33,4 +33,12 @@ create_autocmd("CmdwinEnter", {
   end,
 })
 
+-- Automatically format on save
+create_autocmd("BufWritePre", {
+  pattern = { "*" },
+  callback = function()
+    vim.lsp.buf.format()
+  end,
+})
+
 return M
