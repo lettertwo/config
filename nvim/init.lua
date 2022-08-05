@@ -110,6 +110,7 @@ vim.opt.sessionoptions = "buffers,curdir,folds,tabpages,winpos,winsize"
 vim.opt.foldcolumn = "1"
 vim.opt.foldlevelstart = 99
 
+require("commands")
 require("autocommands")
 require("plugins")
 
