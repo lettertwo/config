@@ -17,7 +17,6 @@ gitsigns.setup({
     col = 1,
   },
   on_attach = function(bufnr)
-    print("GitSigns: attached to buffer " .. bufnr)
     local keymap = require("keymap").buffer(bufnr)
 
     keymap.normal.leader({
