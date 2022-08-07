@@ -101,6 +101,8 @@ telescope.setup({
 telescope.load_extension("fzf")
 telescope.load_extension("ui-select")
 telescope.load_extension("file_browser")
+telescope.load_extension("persisted")
+telescope.load_extension("projects")
 
 local function nvim_config_files()
   builtin.find_files({
@@ -174,4 +176,7 @@ require("keymap").normal.leader({
     ["f"] = { xdg_config_files, "Find Config Files" },
     ["s"] = { xdg_config_grep, "Search Config Dir" },
   },
+  -- TODO: implement something like lvim's info: https://github.com/LunarVim/LunarVim/blob/rolling/lua/lvim/core/info.lua
+  -- TODO: implement something like lvim's log: https://github.com/LunarVim/LunarVim/blob/rolling/lua/lvim/core/which-key.lua#L211-L236
+  -- TODO: implement something like lvim's peak:https://github.com/LunarVim/LunarVim/blob/rolling/lua/lvim/core/which-key.lua#L173-L178
 })

@@ -144,10 +144,9 @@ local section_links = {
   val = {
     { type = "text", val = "Find Stuff", opts = { hl = "SpecialComment", position = "center" } },
     { type = "padding", val = 1 },
-    -- button("l", "  Last Session", "<CMD>SessionLoadLast<CR>"),
-    -- button("s", "  Load Session", "<CMD>SessionLoad<CR>"),
-    -- button("S", "  Recent Sessions", "<CMD>Telescope persisted<CR>"),
-    -- button("p", "  Recent Projects", "<CMD>Telescope projects<CR>"),
+    button("l", "  Load Session", "<CMD>SessionLoad<CR>"),
+    button("s", "  Recent Sessions", "<CMD>Telescope persisted<CR>"),
+    button("p", "  Recent Projects", "<CMD>Telescope projects<CR>"),
     button("e", "פּ  Explore", "<CMD>Telescope file_browser<CR>"),
     button("f", "  Find File", "<CMD>Telescope find_files<CR>"),
     button("r", "  Find Recent", "<CMD>Telescope oldfiles<CR>"),

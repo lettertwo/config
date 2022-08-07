@@ -164,6 +164,7 @@ use({
   {
     "nvim-telescope/telescope.nvim",
     requires = { "nvim-lua/plenary.nvim" },
+    after = { "trouble.nvim", "persisted.nvim", "project.nvim" },
     config = [[require('config.telescope')]],
   },
   { "nvim-telescope/telescope-fzf-native.nvim", run = "make" },
@@ -174,5 +175,9 @@ use({
 
 -- Profiling
 use({ "dstein64/vim-startuptime", cmd = "StartupTime", config = [[vim.g.startuptime_tries = 10]] })
+
+-- Project Management/Sessions
+use({ "olimorris/persisted.nvim", config = [[ require("config.persisted") ]] })
+use({ "ahmedkhalf/project.nvim", config = [[ require("config.project") ]] })
 
 packer.compile() -- since we didn't use packer.startup(), manually compile plugins

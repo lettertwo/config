@@ -103,7 +103,7 @@ vim.opt.grepprg = "rg --vimgrep --follow"
 vim.opt.errorformat:append("%f:%l:%c%p%m")
 
 -- Things to save in sessions
-vim.opt.sessionoptions = "buffers,curdir,folds,tabpages,winpos,winsize"
+vim.opt.sessionoptions = "blank,buffers,curdir,folds,help,tabpages,terminal,winpos,winsize"
 
 -- folding
 vim.opt.foldcolumn = "1"
