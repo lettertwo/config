@@ -69,7 +69,6 @@ local diagnostics = {
   "diagnostics",
   sources = { "nvim_diagnostic" },
   symbols = { error = " ", warn = " ", info = " ", hint = " " },
-  cond = visible_for_width,
 }
 
 -- Adapted from https://github.com/LunarVim/LunarVim/blob/48320e/lua/lvim/core/lualine/components.lua#L82
@@ -115,7 +114,9 @@ local filepath = {
   file_status = false,
   path = 3, -- 3: Absolute path, with tilde as the home directory
   shorting_target = 20, -- Shortens path to leave 40 spaces in the window for other components.
-  cond = visible_for_filetype,
+  cond = function()
+    return visible_for_width() and visible_for_filetype()
+  end,
 }
 
 -- If we have only one tab open, we will be showing location in the tabline.
@@ -134,8 +135,8 @@ require("lualine").setup({
   sections = {
     lualine_a = { "mode" },
     lualine_b = { branch },
-    lualine_c = { diff },
-    lualine_x = { diagnostics, lsp, filetype },
+    lualine_c = {},
+    lualine_x = { diff, diagnostics, lsp, filetype },
     lualine_y = {},
     lualine_z = { treesitter, persisting },
   },
