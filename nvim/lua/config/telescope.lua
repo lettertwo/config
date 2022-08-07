@@ -4,8 +4,7 @@ local builtin = require("telescope.builtin")
 local themes = require("telescope.themes")
 local utils = require("telescope.utils")
 local Path = require("plenary.path")
-
-local _, trouble = pcall(require, "trouble.providers.telescope")
+local trouble = require("trouble.providers.telescope")
 
 local function normalized(_, path)
   local transformed_path = Path:new(path)
@@ -19,18 +18,21 @@ end
 
 telescope.setup({
   defaults = vim.tbl_deep_extend("force", themes.get_ivy(), {
-    prompt_prefix = " ",
-    selection_caret = " ",
     entry_prefix = "  ",
+    prompt_prefix = "   ",
+    selection_caret = "  ",
+    color_devicons = true,
     path_display = normalized,
     file_ignore_patterns = { ".git/", "node_modules" },
     mappings = {
       i = {
         ["<C-j>"] = telescope_actions.move_selection_next,
         ["<C-k>"] = telescope_actions.move_selection_previous,
-        ["<C-q>"] = telescope_actions.smart_send_to_qflist + telescope_actions.open_qflist,
         ["<C-n>"] = telescope_actions.cycle_history_next,
         ["<C-p>"] = telescope_actions.cycle_history_prev,
+        ["<C-t>"] = trouble.open_with_trouble,
+        ["<C-q>"] = false,
+        ["<M-q>"] = false,
       },
       n = {
         ["/"] = function()
@@ -38,7 +40,11 @@ telescope.setup({
         end,
         ["<C-j>"] = telescope_actions.move_selection_next,
         ["<C-k>"] = telescope_actions.move_selection_previous,
-        ["<C-q>"] = telescope_actions.smart_send_to_qflist + telescope_actions.open_qflist,
+        ["<C-n>"] = telescope_actions.cycle_history_next,
+        ["<C-p>"] = telescope_actions.cycle_history_prev,
+        ["<C-t>"] = trouble.open_with_trouble,
+        ["<C-q>"] = false,
+        ["<M-q>"] = false,
       },
     },
   }),
