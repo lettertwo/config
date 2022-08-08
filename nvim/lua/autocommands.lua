@@ -21,10 +21,12 @@ create("InsertEnter", { pattern = { "*" }, command = ":set norelativenumber" })
 create("InsertLeave", { pattern = { "*" }, command = ":set relativenumber" })
 
 -- Reload config files
-create(
-  "BufWritePost",
-  { pattern = { init_file, "*/nvim/lua/*.lua", "*/nvim/lua/*/*.lua" }, callback = commands.ReloadConfig }
-)
+create("BufWritePost", {
+  pattern = { init_file, "*/nvim/lua/*.lua", "*/nvim/lua/*/*.lua" },
+  callback = function(evt)
+    commands.ReloadConfig(evt.file:match("plugins.lua") ~= nil)
+  end,
+})
 
 -- Close cmdwin with <Esc>
 create("CmdwinEnter", {

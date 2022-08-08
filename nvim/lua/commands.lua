@@ -47,14 +47,16 @@ create("UnloadModule", unload_module, {
 })
 
 local function reload_config(sync_plugins)
-  if sync_plugins and sync_plugins.args then
-    sync_plugins = sync_plugins.args
+  print("reloading config... sync? ")
+  print(vim.inspect(sync_plugins))
+  if type(sync_plugins) == "table" and sync_plugins.args then
+    sync_plugins = sync_plugins.args == "true"
   end
   for module in walk_modules(module_path) do
     unload_module(module)
   end
   vim.cmd(":luafile " .. init_file)
-  if sync_plugins == "true" then
+  if sync_plugins == true then
     vim.cmd([[ PackerSync ]])
   end
 end
