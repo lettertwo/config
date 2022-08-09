@@ -29,7 +29,7 @@ github = "hlissner/zsh-autopair"
 apply = ["defer"]
 
 [plugins.fnm]
-inline = 'zsh-defer -1 -2 eval "$(fnm env --use-on-cd --version-file-strategy recursive)"'
+inline = 'eval "$(fnm env --use-on-cd)"'
 
 [plugins.zoxide]
 inline = 'zsh-defer -1 -2 eval "$(zoxide init zsh)"'
