@@ -2,6 +2,9 @@
 #
 # Executes commands at the start of an interactive session.
 #
+if [[ "$ZPROF" = true ]]; then
+  zmodload zsh/zprof
+fi
 
 #
 # Autoload
@@ -100,3 +103,7 @@ eval "$(sheldon source)"
 # Initialize fzf
 source "$BREW_PREFIX/opt/fzf/shell/completion.zsh" 2> /dev/null
 source "$BREW_PREFIX/opt/fzf/shell/key-bindings.zsh"
+
+if [[ "$ZPROF" = true ]]; then
+  zprof
+fi

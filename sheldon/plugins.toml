@@ -78,9 +78,5 @@ local = "~/.config/sheldon/local/compinit"
 [plugins.tab-title]
 local = "~/.config/sheldon/local/tab-title"
 
-# Uncomment to profile startup time.
-# [plugins.zprof]
-# inline = 'zmodload zsh/zprof && zprof'
-
 [templates]
 install-yarn-completions = { value = "install-completions {{ name }} <<-EOF\n#compdef yarn\nsource {{ file }}\nEOF", each = true }
