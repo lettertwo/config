@@ -24,14 +24,14 @@
 	prompt = true
 [merge]
 	log = true
-	tool = lvimdiff2
+	tool = nvimdiff2
 	conflictStyle = diff3
 [mergetool]
 	prompt = false
 	keepBackup = false
 	hideResolved = true
-[mergetool "lvimdiff2"]
-	cmd = lvim -f -d -c 'wincmd l' $LOCAL $MERGED $REMOTE
+[mergetool "nvimdiff2"]
+	cmd = nvim -f -d -c 'wincmd l' $LOCAL $MERGED $REMOTE
 [rebase]
 	autoStash = true
 	autoSquash = true

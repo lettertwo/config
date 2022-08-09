@@ -91,12 +91,7 @@ function cdr() {
 #
 # vim aliases
 #
-if [[ $+commands[lvim] ]]; then
-  alias vi='lvim'
-  alias vim='lvim'
-  alias nvim='lvim'
-  alias vimdiff='lnvim -d'
-elif [[ $+commands[nvim] ]]; then
+if [[ $+commands[nvim] ]]; then
   alias vi='nvim'
   alias vim='nvim'
   alias vimdiff='nvim -d'

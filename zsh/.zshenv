@@ -34,9 +34,6 @@ if [[ ! -z "$ONIVIM_TERMINAL" ]]; then
 elif [[ "$TERM_PROGRAM" == "vscode" ]]; then
   export EDITOR='code --wait'
   export VISUAL='code --wait'
-elif [[ $+commands[lvim] ]]; then
-  export VISUAL=lvim
-  export EDITOR=$VISUAL
 elif [[ $+commands[nvim] ]]; then
   export VISUAL=nvim
   export EDITOR=$VISUAL

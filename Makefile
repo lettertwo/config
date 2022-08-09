@@ -95,7 +95,6 @@ update-sheldon: sheldon
 ### neovim + lunarvim
 
 NVIM := $(shell command -v nvim 2> /dev/null)
-LVIM := $(shell command -v lvim 2> /dev/null)
 
 .PHONY: nvim
 nvim: brew
@@ -107,30 +106,12 @@ ifndef NVIM
 endif
 
 .PHONY: update-nvim
+NVIM_OUT := $(shell mktemp)
 update-nvim: nvim
 	$(call log,"Updating neovim...")
 	$(call run,brew reinstall neovim)
-	$(call done)
-
-.PHONY: lvim
-export LV_BRANCH=rolling
-lvim: nvim
-ifndef LVIM
-	$(call err,"lvim not found!")
-	$(call log,"Installing lvim...")
-	$(call run,curl -s https://raw.githubusercontent.com/lunarvim/lunarvim/rolling/utils/installer/install.sh | zsh)
-	$(call done)
-endif
-
-.PHONY: update-lvim
-LVIM_OUT := $(shell mktemp)
-update-lvim: update-nvim lvim
-	$(call log,"Updating LunarVim...")
-	$(call run,lvim +LvimUpdate +q)
 	$(call log,"Updating Plugins...")
-	$(call run,lvim +'autocmd User PackerComplete sleep 100m | write! ${LVIM_OUT} | qall' +PackerUpdate ; cat ${LVIM_OUT} | rg -v 'Press')
-	$(call log,"Syncing Core Plugins...")
-	$(call run,lvim +'autocmd User PackerComplete sleep 100m | write! ${LVIM_OUT} | qall' +LvimSyncCorePlugins ; cat ${LVIM_OUT} | rg -v 'Press')
+	$(call run,nvim +'autocmd User PackerComplete sleep 100m | write! ${NVIM_OUT} | qall' +PackerUpdate ; cat ${NVIM_OUT} | rg -v 'Press')
 	$(call done)
 
 ### kitty
@@ -172,8 +153,8 @@ update-config:
 mkdirs: ~/.cache/zsh ~/.local/share ~/.local/state/zsh/completions
 
 .PHONY: install
-install: mkdirs /etc/zshenv ~/.local/share/laserwave brew sheldon lvim kitty
+install: mkdirs /etc/zshenv ~/.local/share/laserwave brew sheldon nvim kitty
 	@echo "Run $(BLUE)make update$(END) to fetch the latest stuff."
 
 .PHONY: update
-update: update-config update-laserwave update-brew update-sheldon update-lvim update-kitty
+update: update-config update-laserwave update-brew update-sheldon update-nvim update-kitty
