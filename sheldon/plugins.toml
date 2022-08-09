@@ -87,6 +87,10 @@ apply = ["install-yarn-completions"]
 local = "~/.config/sheldon/local/compinit"
 apply = ["defer"]
 
+### tab title
+[plugins.tab-title]
+local = "~/.config/sheldon/local/tab-title"
+
 # Uncomment to profile startup time.
 # [plugins.zprof]
 # inline = 'zmodload zsh/zprof && zsh-defer -1 -2 zprof'
