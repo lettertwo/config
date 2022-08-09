@@ -103,20 +103,6 @@ Examples:
   fi
   name=${dir%/}/_${@[OPTIND++]#_}
 
-  if (( OPTIND > ARGC )); then
-    read -rd '' output;
-    code=0
-  else
-    cmd=$@[OPTIND,-1]
-    output=$(eval " $cmd" 2>&1)
-    code=$?
-  fi
-
-  if (( $code != 0 )); then
-    >&2 print -rl -- "install-completions: error evaluating ${cmd}:" $output
-    return $code
-  fi
-
   if [[ ! $update ]]; then
     if [[ ! -f $name ]]; then
       update=1
@@ -129,6 +115,20 @@ Examples:
   fi
 
   if [[ $update ]]; then
+    if (( OPTIND > ARGC )); then
+      read -rd '' output;
+      code=0
+    else
+      cmd=$@[OPTIND,-1]
+      output=$(eval " $cmd" 2>&1)
+      code=$?
+    fi
+
+    if (( $code != 0 )); then
+      >&2 print -rl -- "install-completions: error evaluating ${cmd}:" $output
+      return $code
+    fi
+
     if [[ $dryrun ]]; then
       print -r -- $output
     else
