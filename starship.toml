@@ -24,6 +24,12 @@ $status\
 $shell\
 $character"""
 
+[character]
+format = "$symbol "
+success_symbol = "[](blue) [❯](yellow)"
+error_symbol = "[](bright-red) [❯](yellow)"
+vimcmd_symbol = "[](blue) [❮](yellow)"
+
 [directory]
 read_only = " "
 truncation_length = 8
