@@ -21,7 +21,7 @@
 [help]
 	autocorrect = 1
 [difftool]
-	prompt = false
+	prompt = true
 [merge]
 	log = true
 	tool = lvimdiff2
