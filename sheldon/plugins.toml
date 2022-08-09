@@ -43,8 +43,7 @@ github = "cowboyd/zsh-rust"
 apply = ["defer"]
 
 [plugins.pyenv]
-github = "mattberther/zsh-pyenv"
-apply = ["defer"]
+inline = 'eval "$(pyenv init --path --no-rehash)"'
 
 [plugins.poetry]
 github = "darvid/zsh-poetry"
