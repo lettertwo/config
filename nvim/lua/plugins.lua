@@ -180,4 +180,7 @@ use({ "dstein64/vim-startuptime", cmd = "StartupTime", config = [[vim.g.startupt
 use({ "olimorris/persisted.nvim", config = [[ require("config.persisted") ]] })
 use({ "ahmedkhalf/project.nvim", config = [[ require("config.project") ]] })
 
+-- Navigate seamlessly between kitty and nvim windows.
+use({ "knubie/vim-kitty-navigator", run = [[ cp ./*.py $XDG_CONFIG_HOME/kitty/ ]] })
+
 packer.compile() -- since we didn't use packer.startup(), manually compile plugins

@@ -63,10 +63,6 @@ local function buffer(bufno)
 end
 
 -- Normal --
-normal("<C-h>", "<C-w>h", "Go to the left window")
-normal("<C-j>", "<C-w>j", "Go to the down window")
-normal("<C-k>", "<C-w>k", "Go to the up window")
-normal("<C-l>", "<C-w>l", "Go to the right window")
 normal("L", ":bnext<CR>", "Go to the next buffer")
 normal("H", ":bprevious<CR>", "Go to the previous buffer")
 normal("<Esc>", ":nohlsearch<Bar>:echo<CR>", "Cancel search highlight")
@@ -86,12 +82,6 @@ visual(">", ">gv", "Indent selected lines")
 visual("L", ">gv", "Indent selected lines")
 visual("J", ":move '>+1<CR>gv-gv", "Move selected lines down")
 visual("K", ":move '<-2<CR>gv-gv", "Move selected lines up")
-
--- Terminal --
-terminal("<C-h>", "<C-\\><C-N><C-w>h", "Go to the left window")
-terminal("<C-j>", "<C-\\><C-N><C-w>j", "Go to the down window")
-terminal("<C-k>", "<C-\\><C-N><C-w>k", "Go to the up window")
-terminal("<C-l>", "<C-\\><C-N><C-w>l", "Go to the right window")
 
 -- Buffer management
 normal.leader({
