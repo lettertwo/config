@@ -81,14 +81,14 @@ use({
   config = [[require('config.cmp')]],
 })
 
+-- Package manager for LSP, DAP, Linting, Formatting, etc.
+use({ "williamboman/mason.nvim", config = [[ require("mason").setup() ]] })
+
 -- LSP
 use({
   "neovim/nvim-lspconfig",
-  requires = {
-    "williamboman/nvim-lsp-installer",
-    "kosayoda/nvim-lightbulb",
-  },
-  after = "cmp-nvim-lsp",
+  requires = { "williamboman/mason-lspconfig.nvim" },
+  after = { "mason.nvim", "cmp-nvim-lsp" },
   config = [[ require("config.lsp") ]],
 })
 

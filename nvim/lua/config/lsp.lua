@@ -1,5 +1,6 @@
-local lsp_installer = require("nvim-lsp-installer")
 local lspconfig = require("lspconfig")
+
+require("mason-lspconfig").setup({ automatic_installation = true })
 
 local servers = {
   sumneko_lua = {
@@ -34,19 +35,6 @@ local servers = {
   "bashls",
   "yamlls",
 }
-
-lsp_installer.setup({
-  ensure_installed = {},
-  automatic_installation = true,
-  ui = {
-    border = "rounded",
-    icons = {
-      server_installed = "✓",
-      server_pending = "",
-      server_uninstalled = "✗",
-    },
-  },
-})
 
 local function lsp_keymaps(bufnr)
   local keymap = require("keymap").buffer(bufnr)
