@@ -16,12 +16,12 @@ keymap.operator.label("i;", "inner container")
 
 keymap.normal.label("gd", "Go to definition")
 
--- local _, parsers = pcall(require, "nvim-treesitter.parsers")
--- if parsers then
---   -- Associate the flowtype filetype with the typescript parser.
---   -- See autocommands.lua for more.
---   parsers.filetype_to_parsername.flowtype = "typescript"
--- end
+local _, parsers = pcall(require, "nvim-treesitter.parsers")
+if parsers then
+  -- Associate the flowtype filetypes with the typescript parser.
+  parsers.filetype_to_parsername.flowtype = "typescript"
+  parsers.filetype_to_parsername.flowtypereact = "tsx"
+end
 
 configs.setup({
   ensure_installed = {
