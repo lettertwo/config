@@ -9,7 +9,6 @@ tap "homebrew/services"
 tap "withgraphite/tap"
 tap "lettertwo/brew"
 tap "qmk/qmk"
-brew "mas"
 
 # CLI Tools
 brew "zsh"
