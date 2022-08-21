@@ -150,7 +150,7 @@ update-config:
 	$(call done)
 
 .PHONY: mkdirs
-mkdirs: ~/.cache/zsh ~/.local/share ~/.local/state/zsh/completions
+mkdirs: ~/.cache/zsh ~/.local/bin ~/.local/share ~/.local/state/zsh/completions
 
 .PHONY: install
 install: mkdirs /etc/zshenv ~/.local/share/laserwave brew sheldon nvim kitty
