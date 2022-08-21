@@ -92,16 +92,30 @@ update-sheldon: sheldon
 	$(call run,sheldon lock)
 	$(call done)
 
-### neovim + lunarvim
+### pip3
+PIP3 := $(shell command -v pip3 2> /dev/null)
+
+.PHONY: pip3
+pip3: brew
+ifndef PIP3
+	$(call err,"pip3 not found!")
+	$(call log,"Installing python...")
+	$(call run,brew install python)
+	$(call done)
+endif
+
+### neovim
 
 NVIM := $(shell command -v nvim 2> /dev/null)
 
 .PHONY: nvim
-nvim: brew
+nvim: brew pip3
 ifndef NVIM
 	$(call err,"nvim not found!")
 	$(call log,"Installing neovim...")
 	$(call run,brew install --HEAD neovim)
+	$(call log,"Installing pynvim...")
+	$(call run,pip3 install --user --upgrade pynvim)
 	$(call done)
 endif
 
@@ -110,6 +124,8 @@ NVIM_OUT := $(shell mktemp)
 update-nvim: nvim
 	$(call log,"Updating neovim...")
 	$(call run,brew reinstall neovim)
+	$(call log,"Updating pynvim...")
+	$(call run,pip3 install --user --upgrade pynvim)
 	$(call log,"Updating Plugins...")
 	$(call run,nvim +'autocmd User PackerComplete sleep 100m | write! ${NVIM_OUT} | qall' +PackerUpdate ; cat ${NVIM_OUT} | rg -v 'Press')
 	$(call done)
@@ -156,7 +172,9 @@ mkdirs: ~/.cache/zsh ~/.local/bin ~/.local/share ~/.local/state/zsh/completions
 
 .PHONY: install
 install: mkdirs /etc/zshenv ~/.local/share/laserwave brew sheldon nvim kitty
-	@echo "$(BLUE)Done!$(END)"
+	@echo ""
+	$(call done)
+	@echo ""
 	@echo "Other useful things to install:"
 	@echo "  1password: $(CYAN)https://1password.com/downloads/mac/$(END)"
 	@echo "  raycast:   $(CYAN)https://www.raycast.com/$(END)"
