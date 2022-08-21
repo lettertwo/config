@@ -125,6 +125,7 @@ ifndef KITTY
 	$(call log,"Installing kitty...")
 	$(call run,curl -L https://sw.kovidgoyal.net/kitty/installer.sh | zsh /dev/stdin)
 	$(call run,ln -sf /Applications/kitty.app/Contents/MacOS/kitty "$$HOME/.local/bin/kitty")
+	$(call run,ln -sf "$$HOME/.local/share/laserwave/dist/kitty/laserwave.conf" "$$HOME/.config/kitty/laserwave.conf")
 	$(call done)
 endif
 
@@ -139,6 +140,7 @@ else
 endif
 	$(call run,curl -L https://sw.kovidgoyal.net/kitty/installer.sh | zsh /dev/stdin)
 	$(call run,ln -sf /Applications/kitty.app/Contents/MacOS/kitty "$$HOME/.local/bin/kitty")
+	$(call run,ln -sf "$$HOME/.local/share/laserwave/dist/kitty/laserwave.conf" "$$HOME/.config/kitty/laserwave.conf")
 	$(call done)
 
 ### config
