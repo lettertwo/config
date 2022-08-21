@@ -8,6 +8,7 @@ tap "homebrew/cask"
 tap "homebrew/services"
 tap "withgraphite/tap"
 tap "lettertwo/brew"
+tap "qmk/qmk"
 brew "mas"
 
 # CLI Tools
@@ -63,3 +64,7 @@ brew "python"
 
 # Quick Look plugins
 cask "syntax-highlight" # https://github.com/sbarex/SourceCodeSyntaxHighlight
+
+# QMK
+brew "qmk/qmk/qmk"
+cask "qmk-toolbox"
