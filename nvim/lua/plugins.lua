@@ -157,7 +157,7 @@ use({ "lewis6991/gitsigns.nvim", config = [[ require("config.gitsigns") ]] })
 -- use { "sindrets/diffview.nvim", event = "BufRead" }
 
 -- Wrapping/delimiters
-use({ "~/Code/nvim-surround", config = [[ require("config.surround") ]] })
+use({ "kylechui/nvim-surround", config = [[ require("config.surround") ]] })
 
 -- Telescope, Search
 use({
