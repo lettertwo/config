@@ -154,6 +154,12 @@ mkdirs: ~/.cache/zsh ~/.local/bin ~/.local/share ~/.local/state/zsh/completions
 
 .PHONY: install
 install: mkdirs /etc/zshenv ~/.local/share/laserwave brew sheldon nvim kitty
+	@echo "$(BLUE)Done!$(END)"
+	@echo "Other useful things to install:"
+	@echo "  1password: $(CYAN)https://1password.com/downloads/mac/$(END)"
+	@echo "  raycast:   $(CYAN)https://www.raycast.com/$(END)"
+	@echo "  rectangle: $(CYAN)https://rectangleapp.com/pro$(END)"
+	@echo ""
 	@echo "Run $(BLUE)make update$(END) to fetch the latest stuff."
 
 .PHONY: update
