@@ -179,6 +179,7 @@ install: mkdirs /etc/zshenv ~/.local/share/laserwave brew sheldon nvim kitty
 	@echo "  1password: $(CYAN)https://1password.com/downloads/mac/$(END)"
 	@echo "  raycast:   $(CYAN)https://www.raycast.com/$(END)"
 	@echo "  rectangle: $(CYAN)https://rectangleapp.com/pro$(END)"
+	@echo "  clover:    $(CYAN)https://cloverapp.com/download$(END)"
 	@echo ""
 	@echo "Run $(BLUE)make update$(END) to fetch the latest stuff."
 
