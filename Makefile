@@ -175,13 +175,23 @@ install: mkdirs /etc/zshenv ~/.local/share/laserwave brew sheldon nvim kitty
 	@echo ""
 	$(call done)
 	@echo ""
+	@echo "Be sure to run $(BLUE)make update$(END) to fetch the latest stuff."
+	@echo ""
 	@echo "Other useful things to install:"
 	@echo "  1password: $(CYAN)https://1password.com/downloads/mac/$(END)"
 	@echo "  raycast:   $(CYAN)https://www.raycast.com/$(END)"
 	@echo "  rectangle: $(CYAN)https://rectangleapp.com/pro$(END)"
 	@echo "  clover:    $(CYAN)https://cloverapp.com/download$(END)"
+	@echo "  MonoLisa:  $(CYAN)https://www.monolisa.dev/orders$(END)"
 	@echo ""
-	@echo "Run $(BLUE)make update$(END) to fetch the latest stuff."
+	@echo "    Add nerdfonts to MonoLisa after download (example):"
+	@echo "    $(BLUE)mkdir ~/Downloads/MonoLisa/nerdfonts"
+	@echo "    $(BLUE)docker run --rm \\"
+	@echo "      -v ~/Downloads/MonoLisa/ttf:/in \\"
+	@echo "      -v ~/Downloads/MonoLisa/nerdfonts:/out \\"
+	@echo "      nerdfonts/patcher -c$(END)"
+	@echo ""
+	@echo "    It'll take a while. Afterward, just drag them into Font Book!"
 
 .PHONY: update
 update: update-config update-laserwave update-brew update-sheldon update-nvim update-kitty
