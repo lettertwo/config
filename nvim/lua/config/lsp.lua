@@ -27,7 +27,9 @@ local servers = {
     -- Only activate tsserver if the project has config for it.
     root_dir = lspconfig.util.root_pattern("tsconfig.json", "jsconfig.json"),
   },
-  "flow",
+  flow = {
+    filetypes = { "javascript", "javascriptreact", "javascript.jsx", "flowtype", "flowtypereact" },
+  },
   "html",
   "jsonls",
   "cssls",
