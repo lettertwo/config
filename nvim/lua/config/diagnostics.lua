@@ -31,17 +31,24 @@ require("trouble").setup({
   use_diagnostic_signs = true,
 })
 
-require("keymap").normal.leader({
+local keymap = require("keymap")
+
+keymap.normal.leader({
   d = {
     name = "Diagnostics",
-    j = { ":lua vim.diagnostic.goto_next({buffer=0})<CR>", "Jump to next diagnostic" },
-    k = { ":lua vim.diagnostic.goto_prev({buffer=0})<CR>", "Jump to previous diagnostic" },
+    j = { ":lua vim.diagnostic.goto_next({buffer=0})<CR>", "Next diagnostic" },
+    k = { ":lua vim.diagnostic.goto_prev({buffer=0})<CR>", "Previous diagnostic" },
     q = { ":Trouble quickfix<cr>", "QuickFix" },
     l = { ":Trouble loclist<cr>", "Locationlist" },
     t = { ":Trouble telescope<cr>", "Telescope" },
     d = { ":Trouble document_diagnostics<cr>", "Diagnostics" },
     w = { ":Trouble workspace_diagnostics<cr>", "Workspace Diagnostics" },
   },
+})
+
+keymap.normal.register({
+  ["]d"] = { ":lua vim.diagnostic.goto_next({buffer=0})<CR>", "Next diagnostic" },
+  ["[d"] = { ":lua vim.diagnostic.goto_prev({buffer=0})<CR>", "Previous diagnostic" },
 })
 
 local function hover()
