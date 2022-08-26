@@ -1,5 +1,23 @@
 local wk = require("which-key")
 
+-- HACK: Prevent which-key from hijacking inputs for certain filetypes.
+-- See: https://github.com/folke/which-key.nvim/issues/273#issuecomment-1138697539
+local view = require("which-key.view")
+local show = wk.show
+local ignore_filetype = { "TelescopePrompt" }
+wk.show = function(keys, opts)
+  if vim.tbl_contains(ignore_filetype, vim.bo.filetype) then
+    view.keys = keys
+    view.mode = opts.mode
+    view.count = vim.api.nvim_get_vvar("count")
+    view.reg = vim.api.nvim_get_vvar("register")
+    view.execute(keys, opts.mode, vim.api.nvim_get_current_buf())
+    return
+  else
+    show(keys, opts)
+  end
+end
+
 -- Space is leader
 vim.g.mapleader = " "
 vim.g.maplocalleader = " "
