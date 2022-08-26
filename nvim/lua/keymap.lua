@@ -90,7 +90,6 @@ normal("<C-Left>", ":vertical resize -2<CR>", "Decrease width")
 normal("<C-Right>", ":vertical resize +2<CR>", "Increase width")
 normal("]q", ":cnext<CR>", "Next quickfix")
 normal("[q", ":cprev<CR>", "Previous quickfix")
-normal("<C-q>", ":call QuickFixToggle()<CR>", "Toggle quickfix")
 
 -- Visual --
 visual("p", '"_dP', "Paste over selection (without yanking)")
