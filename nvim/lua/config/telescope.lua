@@ -23,7 +23,6 @@ telescope.setup({
     selection_caret = "  ",
     color_devicons = true,
     path_display = normalized,
-    file_ignore_patterns = { ".git/", "node_modules" },
     mappings = {
       i = {
         ["<C-j>"] = telescope_actions.move_selection_next,
@@ -62,6 +61,7 @@ telescope.setup({
       initial_mode = "normal",
       hijack_netrw = true,
       path = "%:p:h",
+      cwd_to_path = false,
       respect_gitignore = false,
     },
   },
@@ -69,9 +69,13 @@ telescope.setup({
     find_files = {
       hidden = true,
     },
+    oldfiles = {
+      -- TODO: something like only_project_root = true (doesn't actually exist)
+      only_cwd = true,
+      -- TODO: add mapping to toggle only_cwd
+    },
     buffers = {
       theme = "dropdown",
-      initial_mode = "normal",
       ignore_current_buffer = false,
       sort_mru = true,
       sort_lastused = true,
