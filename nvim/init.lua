@@ -111,7 +111,11 @@ vim.opt.foldlevelstart = 99
 
 require("commands")
 require("autocommands")
-require("plugins")
+
+-- no need to load this immediately, since we have packer_compiled
+vim.defer_fn(function()
+  require("plugins")
+end, 0)
 
 if vim.g.CONFIG_LOADED then
   print("Config reloaded!")
