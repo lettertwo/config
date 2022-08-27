@@ -27,8 +27,16 @@ vim.diagnostic.config({
   },
 })
 
+-- HACK: see https://github.com/folke/trouble.nvim/issues/153
+local util = require("trouble.util")
+local _jump_to_item = util.jump_to_item
+util.jump_to_item = function(win, ...)
+  return _jump_to_item(win or 0, ...)
+end
+
 require("trouble").setup({
   use_diagnostic_signs = true,
+  auto_jump = { "lsp_definitions", "lsp_references", "lsp_type_definitions", "lsp_implementations" },
 })
 
 local keymap = require("keymap")
@@ -38,11 +46,11 @@ keymap.normal.leader({
     name = "Diagnostics",
     j = { ":lua vim.diagnostic.goto_next({buffer=0})<CR>", "Next diagnostic" },
     k = { ":lua vim.diagnostic.goto_prev({buffer=0})<CR>", "Previous diagnostic" },
-    q = { ":Trouble quickfix<cr>", "QuickFix" },
-    l = { ":Trouble loclist<cr>", "Locationlist" },
-    t = { ":Trouble telescope<cr>", "Telescope" },
-    d = { ":Trouble document_diagnostics<cr>", "Diagnostics" },
-    w = { ":Trouble workspace_diagnostics<cr>", "Workspace Diagnostics" },
+    q = { ":TroubleToggle quickfix<cr>", "QuickFix" },
+    l = { ":TroubleToggle loclist<cr>", "Locationlist" },
+    t = { ":TroubleToggle telescope<cr>", "Telescope" },
+    d = { ":TroubleToggle document_diagnostics<cr>", "Diagnostics" },
+    w = { ":TroubleToggle workspace_diagnostics<cr>", "Workspace Diagnostics" },
   },
 })
 

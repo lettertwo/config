@@ -63,11 +63,10 @@ local function lsp_keymaps(bufnr)
   keymap.insert("<A-k>", ":lua vim.lsp.buf.signature_help()<CR>", "Show signature help")
 
   keymap.normal.register({
-    gd = { ":lua vim.lsp.buf.definition()<CR>", "Go to definition" },
-    gr = { ":lua vim.lsp.buf.references()<CR>", "Find references" },
-    gt = { ":lua vim.lsp.buf.type_definition()<CR>", "Go to type" },
-    gD = { ":lua vim.lsp.buf.declaration()<CR>", "Go to declaration" },
-    gI = { ":lua vim.lsp.buf.implementation()<CR>", "Go to implementation" },
+    gd = { ":TroubleToggle lsp_definitions<CR>", "Go to definition" },
+    gr = { ":TroubleToggle lsp_references<CR>", "Find references" },
+    gt = { ":TroubleToggle lsp_type_definitions<CR>", "Go to type" },
+    gI = { ":TroubleToggle lsp_implementations<CR>", "Go to implementation" },
   })
 end
 
