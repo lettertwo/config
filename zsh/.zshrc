@@ -84,6 +84,9 @@ export NNN_TRASH=1 # use trash-cli when deleting
 # poetry
 export POETRY_CACHE_DIR="$XDG_CACHE_HOME/pypoetry"
 
+# initialize zsh-vi-mode immediately to avoid clobbering plugins that come afterward (e.g., syntax-highlight).
+export ZVM_INIT_MODE="sourcing"
+
 # Initialize starship
 eval "$(starship init zsh)"
 

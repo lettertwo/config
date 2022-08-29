@@ -50,6 +50,9 @@ github = "DhavalKapil/luaver"
 [plugins.fzf-tab]
 github = "Aloxaf/fzf-tab"
 
+[plugins.zsh-vi-mode]
+github = "jeffreytse/zsh-vi-mode"
+
 [plugins.zsh-syntax-highlighting]
 github = "zsh-users/zsh-syntax-highlighting"
 
