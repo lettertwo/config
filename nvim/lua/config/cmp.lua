@@ -3,23 +3,6 @@ if not cmp_status_ok then
   return
 end
 
-local snip_status_ok, luasnip = pcall(require, "luasnip")
-if not snip_status_ok then
-  return
-end
-
-require("luasnip/loaders/from_vscode").lazy_load()
-
-local function jump_or_fallback(fallback)
-  if luasnip.jumpable(1) then
-    if not luasnip.jump(1) then
-      fallback()
-    end
-  else
-    fallback()
-  end
-end
-
 local function confirm_copilot_or_fallback(fallback)
   -- If a cmp selection wasn't confirmed, accept copilot suggestion if present.
   local copilot_status_ok, copilot_keys = pcall(vim.fn["copilot#Accept"], "")
@@ -29,40 +12,23 @@ local function confirm_copilot_or_fallback(fallback)
   fallback()
 end
 
-local function confirm()
-  if cmp.confirm() then
-    if luasnip.expand_or_jumpable(1) then
-      return luasnip.expand_or_jump(1)
-    end
-    return true
-  end
-  return false
-end
-
 local function enter(fallback)
-  if cmp.visible() and confirm() then
+  if cmp.visible() and cmp.confirm() then
     return
   end
-  jump_or_fallback(fallback)
+  fallback()
 end
 
 local function right(fallback)
-  if cmp.visible() and confirm() then
-    print(1)
+  if cmp.visible() and cmp.confirm() then
     return
   end
-  if luasnip.jumpable(1) then
-    print(2)
-    jump_or_fallback(fallback)
-  else
-    print(3)
-    confirm_copilot_or_fallback(fallback)
-  end
+  confirm_copilot_or_fallback(fallback)
 end
 
 local function tab(fallback)
   -- If a cmp selection is active, confirm it.
-  if cmp.visible() and cmp.get_selected_entry() ~= nil and confirm() then
+  if cmp.visible() and cmp.get_selected_entry() ~= nil and cmp.confirm() then
     return
   end
   confirm_copilot_or_fallback(fallback)
@@ -97,18 +63,12 @@ local kind_icons = {
 }
 
 cmp.setup({
-  snippet = {
-    expand = function(args)
-      luasnip.lsp_expand(args.body)
-    end,
-  },
   sources = cmp.config.sources({
     { name = "nvim_lsp" },
     { name = "nvim_lsp_document_symbol" },
     { name = "nvim_lsp_signature_help" },
     { name = "nvim_lua", dup = 0 },
     { name = "under_comparator" },
-    { name = "luasnip" },
     { name = "buffer" },
     { name = "path" },
     { name = "calc" },
@@ -152,7 +112,6 @@ cmp.setup({
         nvim_lsp_signature_help = "[Sig]",
         nvim_lsp_document_symbol = "[Symbol]",
         nvim_lua = "[Lua]",
-        luasnip = "[Snip]",
         buffer = "[Buf]",
         path = "[Path]",
         emoji = "[Emoji]",
