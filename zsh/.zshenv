@@ -34,8 +34,13 @@ if [[ ! -z "$ONIVIM_TERMINAL" ]]; then
 elif [[ "$TERM_PROGRAM" == "vscode" ]]; then
   export EDITOR='code --wait'
   export VISUAL='code --wait'
+elif [[ ! -z "$NVIM" && $+commands[nvr] ]]; then
+  export GIT_EDITOR='nvr --nostart --remote-tab-wait +"set bufhidden=delete"'
+  alias nvim='nvr -l'
+  export EDITOR='nvim'
+  export VISUAL=$VISUAL
 elif [[ $+commands[nvim] ]]; then
-  export VISUAL=nvim
+  export VISUAL='nvim'
   export EDITOR=$VISUAL
 else
   export VISUAL='vim'

@@ -45,6 +45,7 @@ brew "lua-language-server"
 
 # neovim
 brew "neovim", args: ["HEAD"]
+brew "nvr", args: ["HEAD"]
 
 # git
 brew "gh"
