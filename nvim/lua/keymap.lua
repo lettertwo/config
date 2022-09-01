@@ -139,6 +139,15 @@ normal.leader({
     S = { ":PackerStatus<CR>", "Status" },
   },
 })
+-- Mason
+normal.leader({
+  M = {
+    name = "Mason",
+    l = { ":MasonLog<cr>", "Logs" },
+    h = { ":checkhealth mason<cr>", "Check health" },
+    M = { ":Mason<cr>", "Status" },
+  },
+})
 
 return {
   buffer = buffer,
