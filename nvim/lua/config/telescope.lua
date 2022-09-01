@@ -2,19 +2,7 @@ local telescope = require("telescope")
 local telescope_actions = require("telescope.actions")
 local builtin = require("telescope.builtin")
 local themes = require("telescope.themes")
-local utils = require("telescope.utils")
-local Path = require("plenary.path")
 local trouble = require("trouble.providers.telescope")
-
-local function normalized(_, path)
-  local transformed_path = Path:new(path)
-  if transformed_path:is_dir() then
-    return transformed_path:normalize()
-  else
-    local tail = utils.path_tail(path)
-    return string.format("%s (%s)", tail, transformed_path:normalize())
-  end
-end
 
 telescope.setup({
   defaults = vim.tbl_deep_extend("force", themes.get_ivy(), {
@@ -22,7 +10,6 @@ telescope.setup({
     prompt_prefix = "   ",
     selection_caret = "  ",
     color_devicons = true,
-    path_display = normalized,
     mappings = {
       i = {
         ["<C-j>"] = telescope_actions.move_selection_next,
