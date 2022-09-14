@@ -32,7 +32,7 @@
 	logme = !git logsmart --author="\"`git config --get user.name`\""
 	loggraph = log --graph --pretty=format:'%C(bold red)%h%Creset %s %C(bold blue)%an%Creset %C(yellow)(%cr)%Creset%C(bold magenta)%d%Creset'
 	amend = !git log -n 1 --pretty=tformat:%s%n%n%b | git commit -F - --amend
-	fixup = !git log --no-merges --oneline $(git rev-parse --abbrev-ref @{upstream})..HEAD | fzf | cut -d' ' -f1 | xargs -o git commit --fixup
+  fixup = !git log --no-merges --oneline $(git rev-parse --abbrev-ref @{upstream} 2>/dev/null || >&2 echo 'upstream branch not found! using master...' && echo master)..HEAD | fzf --prompt='which commit? > ' | cut -d' ' -f1 | xargs -ot git commit --fixup
 	staged = diff --staged --name-status
 	unstaged = diff --name-status
 	update = pull --rebase
