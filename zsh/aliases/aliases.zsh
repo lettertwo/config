@@ -69,6 +69,11 @@ alias nvm='fnm'
 alias d='dirs -v'
 for index ({1..9}) alias "$index"="cd +${index}"; unset index
 
+# Find process listening on a port
+function whoson {
+  sudo lsof -nP -i:$1 | grep LISTEN
+}
+
 # rage quit!!!
 function fuck() {
   if killall -9 "$2"; then
