@@ -55,7 +55,7 @@ vim.cmd([[ colorscheme laserwave ]])
 
 -- UI settings
 vim.opt.pumheight = 10 -- reasonable popup menu height
-vim.opt.cmdheight = 2 -- more command line space
+vim.opt.cmdheight = 1 -- more command line space
 vim.opt.showmode = false -- hide the mode label (e.g., INSERT)
 vim.opt.showtabline = 2 -- always show tabs
 vim.opt.cursorline = true -- highlight the current line
