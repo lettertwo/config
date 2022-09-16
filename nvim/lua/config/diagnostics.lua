@@ -27,13 +27,6 @@ vim.diagnostic.config({
   },
 })
 
--- HACK: see https://github.com/folke/trouble.nvim/issues/153
-local util = require("trouble.util")
-local _jump_to_item = util.jump_to_item
-util.jump_to_item = function(win, ...)
-  return _jump_to_item(win or 0, ...)
-end
-
 require("trouble").setup({
   use_diagnostic_signs = true,
   auto_jump = { "lsp_definitions", "lsp_references", "lsp_type_definitions", "lsp_implementations" },
