@@ -3,6 +3,11 @@ if not cmp_status_ok then
   return
 end
 
+local luasnip_status_ok, luasnip = pcall(require, "luasnip")
+if not luasnip_status_ok then
+  return
+end
+
 local function confirm_copilot_or_fallback(fallback)
   -- If a cmp selection wasn't confirmed, accept copilot suggestion if present.
   local copilot_status_ok, copilot_keys = pcall(vim.fn["copilot#Accept"], "")
@@ -63,6 +68,13 @@ local kind_icons = {
 }
 
 cmp.setup({
+  snippet = {
+    -- REQUIRED - you must specify a snippet engine :(
+    -- See https://github.com/hrsh7th/nvim-cmp/issues/373
+    expand = function(args)
+      luasnip.lsp_expand(args.body)
+    end,
+  },
   sources = cmp.config.sources({
     { name = "nvim_lsp" },
     { name = "nvim_lsp_document_symbol" },

@@ -75,6 +75,7 @@ use({
     { "hrsh7th/cmp-cmdline" },
     { "dmitmel/cmp-cmdline-history" },
     { "petertriho/cmp-git" },
+    { "L3MON4D3/LuaSnip" },
   },
   config = [[require('config.cmp')]],
 })
