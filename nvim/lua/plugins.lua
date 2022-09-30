@@ -30,6 +30,8 @@ use({
   }
 ]],
 })
+-- Package manager for LSP, DAP, Linting, Formatting, etc.
+use({ "williamboman/mason.nvim", config = [[ require("mason").setup() ]] })
 
 -- Icons used by lots of other nvim plugins
 use({ "kyazdani42/nvim-web-devicons", config = [[ require("nvim-web-devicons").setup({ default = true }) ]] })
@@ -80,13 +82,10 @@ use({
   config = [[require('config.cmp')]],
 })
 
--- Package manager for LSP, DAP, Linting, Formatting, etc.
-use({ "williamboman/mason.nvim", config = [[ require("mason").setup() ]] })
-
 -- LSP
 use({
   "neovim/nvim-lspconfig",
-  requires = { "williamboman/mason-lspconfig.nvim" },
+  requires = { "williamboman/mason-lspconfig.nvim", "folke/lua-dev.nvim" },
   after = { "mason.nvim", "cmp-nvim-lsp" },
   config = [[ require("config.lsp") ]],
 })
