@@ -10,16 +10,14 @@ alias zbi='z -b -I'  # use fzf to select in multiple parent directories
 
 # exa versions of some ls aliases.
 alias ls='exa'
-# Lists in one column, hidden files.
-alias l='exa -1a'
+# Lists in one column, hidden files, sorted by extension.
+alias l='exa -1a --icons -s extension'
 # Lists human readable sizes.
-alias ll='exa -lh --git'
+alias ll='exa -lh --octal-permissions --git --icons -s extension'
 # Lists human readable sizes, recursively.
 alias lr='ll -R'
 # Lists human readable sizes, hidden files.
 alias la='ll -a'
-# Lists sorted by extension (GNU only).
-alias lx='ll -s extension'
 # Lists sorted by size, largest last.
 alias lk='ll -s size'
 # Lists sorted by date, most recent last.
