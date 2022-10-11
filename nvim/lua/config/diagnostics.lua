@@ -30,6 +30,10 @@ vim.diagnostic.config({
 require("trouble").setup({
   use_diagnostic_signs = true,
   auto_jump = { "lsp_definitions", "lsp_references", "lsp_type_definitions", "lsp_implementations" },
+  action_keys = {
+    jump = { "<S-CR>" },
+    jump_close = { "<CR>" },
+  },
 })
 
 local keymap = require("keymap")
