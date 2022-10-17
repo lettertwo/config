@@ -88,11 +88,11 @@ visual("K", ":move '<-2<CR>gv-gv", "Move selected lines up")
 -- Buffer management
 normal.leader({
   -- TODO: Look at lvim's smart quit
-  q = { ":q!<CR>", "Quit" },
-  w = { ":write<CR>", "Save" },
-  W = { ":noautocmd write<CR>", "Save (no autocmd)" },
-  u = { ":update<CR>", "Save, if changed" },
-  ["<cr>"] = { ":update<CR>", "Save, if changed" },
+  q = { ":quit!<CR>", "Quit" },
+  w = { ":write!<CR>", "Save" },
+  W = { ":noautocmd write!<CR>", "Save (no autocmd)" },
+  u = { ":update!<CR>", "Save, if changed" },
+  ["<cr>"] = { ":update!<CR>", "Save, if changed" },
   b = {
     name = "Buffer",
     d = { ":bd!<CR>", "Close current buffer" },
@@ -106,7 +106,7 @@ normal.leader({
       end,
       "Save current buffer as",
     },
-    a = { "<cmd>wa<CR>", "Write all buffers" },
+    a = { "<cmd>wa!<CR>", "Write all buffers" },
     n = { "<cmd>enew<CR>", "Open new buffer" },
     C = { "<cmd>%bd|e#|bd#<CR>", "Close all buffers" },
     ["%"] = { "<cmd>source %<CR>", "Source current file" },
