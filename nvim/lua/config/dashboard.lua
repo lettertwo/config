@@ -91,8 +91,9 @@ local len = vim.fn.strchars
 
 -- Get a substring of `str` starting with the character at `start`
 -- and ending after `count` characters.
----@type fun(str: string, start: integer, count: integer): string
--- local substr = vim.fn.strcharpart
+---@param str string
+---@param start integer
+---@param count? integer
 local function substr(str, start, count)
   if count == nil then
     count = len(str) - start + 1
