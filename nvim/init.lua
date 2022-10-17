@@ -109,6 +109,10 @@ vim.opt.sessionoptions = "blank,buffers,curdir,folds,help,tabpages,terminal,winp
 vim.opt.foldcolumn = "1"
 vim.opt.foldlevelstart = 99
 
+-- diffing
+vim.opt.diffopt:append("vertical")
+vim.opt.diffopt:append("context:3")
+
 require("commands")
 require("autocommands")
 require("plugins")
