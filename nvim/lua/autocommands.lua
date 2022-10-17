@@ -11,10 +11,15 @@ local default_opts = {
 local M = {}
 
 local function create(evt, opts)
-  vim.api.nvim_create_autocmd(evt, vim.tbl_extend("force", default_opts, opts))
+  return vim.api.nvim_create_autocmd(evt, vim.tbl_extend("force", default_opts, opts))
+end
+
+local function remove(id)
+  vim.api.nvim_del_autocmd(id)
 end
 
 M.create = create
+M.remove = remove
 
 -- Show absolute line numbers in insert mode
 create("InsertEnter", { pattern = { "*" }, command = ":set norelativenumber" })

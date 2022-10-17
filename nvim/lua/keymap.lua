@@ -36,6 +36,9 @@ local function bindopts(opts)
     label = function(lhs, label)
       return register({ [lhs] = label }, opts)
     end,
+    delete = function(lhs)
+      vim.keymap.del(opts.mode, lhs, { buffer = opts.buffer })
+    end,
   })
 end
 
