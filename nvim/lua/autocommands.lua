@@ -40,12 +40,4 @@ create("CmdwinEnter", {
   end,
 })
 
--- Automatically format on save
-create("BufWritePre", {
-  pattern = { "*" },
-  callback = function()
-    vim.lsp.buf.format()
-  end,
-})
-
 return M

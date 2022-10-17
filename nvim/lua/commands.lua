@@ -47,8 +47,6 @@ create("UnloadModule", unload_module, {
 })
 
 local function reload_config(sync_plugins)
-  print("reloading config... sync? ")
-  print(vim.inspect(sync_plugins))
   if type(sync_plugins) == "table" and sync_plugins.args then
     sync_plugins = sync_plugins.args == "true"
   end
