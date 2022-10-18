@@ -2,8 +2,9 @@ local location = require("config.location")
 
 local window_width_limit = 70
 
-local function visible_for_width()
-  return vim.fn.winwidth(0) > window_width_limit
+local function visible_for_width(limit)
+  limit = limit == nil and window_width_limit or limit
+  return vim.fn.winwidth(0) > limit
 end
 
 local excluded_filetypes = {
@@ -25,10 +26,38 @@ local function visible_for_filetype()
   return not vim.tbl_contains(excluded_filetypes, vim.bo.filetype)
 end
 
+-- Only show tabline if we have more than one tab open.
+local function tabline_active()
+  return #vim.api.nvim_list_tabpages() > 1
+end
+
 local tabs = {
   "tabs",
-  mode = 1,
-  cond = visible_for_filetype,
+  mode = 0,
+  cond = function()
+    return visible_for_filetype() and tabline_active()
+  end,
+}
+
+local filetype = { "filetype", colored = false, icon_only = true }
+
+local filename = { "filename" }
+
+local filepath = {
+  "filename",
+  file_status = false,
+  path = 3, -- 3: Absolute path, with tilde as the home directory
+  shorting_target = 20, -- Shortens path to leave 40 spaces in the window for other components.
+  cond = function()
+    return visible_for_width(140) and visible_for_filetype()
+  end,
+}
+
+local filepath_inactive = {
+  "filename",
+  file_status = true,
+  path = 3, -- 3: Absolute path, with tilde as the home directory
+  shorting_target = 20, -- Shortens path to leave 40 spaces in the window for other components.
 }
 
 local branch = {
@@ -39,7 +68,12 @@ local branch = {
   cond = visible_for_width,
 }
 
-local filetype = { "filetype", cond = visible_for_width }
+local breadcrumbs = {
+  location.get_location,
+  cond = function()
+    return location.is_available() and visible_for_filetype()
+  end,
+}
 
 local diff = { "diff", symbols = { added = "  ", modified = " ", removed = " " }, cond = nil }
 
@@ -109,22 +143,6 @@ local lsp = {
   end,
 }
 
-local filepath = {
-  "filename",
-  file_status = false,
-  path = 3, -- 3: Absolute path, with tilde as the home directory
-  shorting_target = 20, -- Shortens path to leave 40 spaces in the window for other components.
-  cond = function()
-    return visible_for_width() and visible_for_filetype()
-  end,
-}
-
--- If we have only one tab open, we will be showing location in the tabline.
--- If we have more than one tab open, we will be showing location in the winbar.
-local function winbar_active()
-  return vim.fn.tabpagenr("$") > 1
-end
-
 require("lualine").setup({
   options = {
     component_separators = { left = "", right = "" },
@@ -133,10 +151,10 @@ require("lualine").setup({
     globalstatus = true,
   },
   sections = {
-    lualine_a = { "mode" },
+    lualine_a = { tabs, "mode" },
     lualine_b = { branch },
     lualine_c = {},
-    lualine_x = { diff, diagnostics, lsp, filetype },
+    lualine_x = { diff, diagnostics, lsp },
     lualine_y = {},
     lualine_z = { treesitter, persisting },
   },
@@ -148,32 +166,19 @@ require("lualine").setup({
     lualine_y = {},
     lualine_z = {},
   },
-  tabline = {
-    lualine_a = { tabs },
+  tabline = {},
+  winbar = {
+    lualine_a = { filetype, filename },
     lualine_b = {},
-    lualine_c = {
-      {
-        location.get_location,
-        cond = function()
-          return not winbar_active() and location.is_available()
-        end,
-      },
-    },
+    lualine_c = { breadcrumbs },
     lualine_x = {},
     lualine_y = { filepath },
     lualine_z = {},
   },
-  winbar = {
+  inactive_winbar = {
     lualine_a = {},
-    lualine_b = {},
-    lualine_c = {
-      {
-        location.get_location,
-        cond = function()
-          return winbar_active() and location.is_available()
-        end,
-      },
-    },
+    lualine_b = { filetype, filepath_inactive },
+    lualine_c = {},
     lualine_x = {},
     lualine_y = {},
     lualine_z = {},

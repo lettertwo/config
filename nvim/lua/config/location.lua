@@ -140,11 +140,8 @@ local function get_filename()
   local extension = vim.fn.expand("%:e")
 
   if not isempty(filename) then
-    local file_icon, file_icon_color = require("nvim-web-devicons").get_icon_color(
-      filename,
-      extension,
-      { default = true }
-    )
+    local file_icon, file_icon_color =
+      require("nvim-web-devicons").get_icon_color(filename, extension, { default = true })
 
     local hl_group = "FileIconColor" .. extension
 
@@ -170,6 +167,8 @@ local function is_available()
   return not excludes() and (navic.is_available() or gps.is_available())
 end
 
+-- TODO: Implement symbol cache.
+-- See https://github.com/glepnir/lspsaga.nvim/blob/main/lua/lspsaga/symbolwinbar.lua
 local function get_location()
   if excludes() then
     return
@@ -203,7 +202,7 @@ local function get_location()
     location = location .. " " .. format_highlight("", "diffChanged")
   end
 
-  return location
+  return isempty(location) and nil or location
 end
 
 return { get_location = get_location, is_available = is_available }
