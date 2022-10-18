@@ -75,47 +75,50 @@ local breadcrumbs = {
   end,
 }
 
-local diff = { "diff", symbols = { added = "  ", modified = " ", removed = " " }, cond = nil }
-
-local persisting = {
-  function()
-    if vim.g.persisting then
-      return " "
-    else
-      return " "
-    end
-  end,
-  cond = visible_for_width,
+local icons = {
+  added = " ",
+  modified = " ",
+  removed = " ",
+  error = " ",
+  warn = " ",
+  info = " ",
+  hint = " ",
+  treesitter = " ",
+  diagnostics = " ",
+  formatting = " ",
+  persisting = " ",
+  not_persisting = " ",
+  copilot = " ",
 }
 
-local treesitter = {
-  function()
-    local b = vim.api.nvim_get_current_buf()
-    if next(vim.treesitter.highlighter.active[b]) then
-      return ""
-    end
-    return ""
-  end,
-  cond = visible_for_width,
+local diff = {
+  "diff",
+  symbols = { added = icons.added, modified = icons.modified, removed = icons.removed },
+  cond = nil,
 }
 
 local diagnostics = {
   "diagnostics",
   sources = { "nvim_diagnostic" },
-  symbols = { error = " ", warn = " ", info = " ", hint = " " },
+  symbols = { error = icons.error, warn = icons.warn, info = icons.info, hint = icons.hint },
 }
 
 -- Adapted from https://github.com/LunarVim/LunarVim/blob/48320e/lua/lvim/core/lualine/components.lua#L82
-local lsp = {
+local services = {
   function()
     local buf_clients = vim.lsp.buf_get_clients()
     local buf_ft = vim.bo.filetype
-    local buf_client_names = {}
+    local diagnostic_providers = {}
+    local formatting_providers = {}
+    local copilot_active = false
 
-    -- add client
+    -- add lsp clients
     for _, client in pairs(buf_clients) do
-      if client.name ~= "null-ls" then
-        table.insert(buf_client_names, client.name)
+      if client.name ~= "null-ls" and client.name ~= "copilot" then
+        table.insert(diagnostic_providers, client.name)
+      end
+      if client.name == "copilot" then
+        copilot_active = true
       end
     end
 
@@ -126,20 +129,43 @@ local lsp = {
 
       -- add formatter
       for _, formatter in pairs(sources.get_available(buf_ft, methods.FORMATTING)) do
-        table.insert(buf_client_names, formatter.name)
+        table.insert(formatting_providers, formatter.name)
       end
 
       -- add linter/diagnostics
       for _, linter in pairs(sources.get_available(buf_ft, methods.DIAGNOSTICS)) do
-        table.insert(buf_client_names, linter.name)
+        table.insert(diagnostic_providers, linter.name)
       end
     end
 
-    return "[" .. table.concat(vim.fn.uniq(buf_client_names), ", ") .. "]"
-  end,
-  color = { gui = "bold" },
-  cond = function()
-    return visible_for_width() or vim.lsp.buf_get_clients() == nil
+    local display = {}
+    if #diagnostic_providers > 0 then
+      table.insert(display, icons.diagnostics .. table.concat(vim.fn.uniq(diagnostic_providers), ", "))
+    end
+
+    -- add formatters
+    if #formatting_providers > 0 then
+      table.insert(display, icons.formatting)
+    end
+
+    -- add copilot
+    if copilot_active then
+      table.insert(display, icons.copilot)
+    end
+
+    -- add treesitter
+    if next(vim.treesitter.highlighter.active[vim.api.nvim_get_current_buf()]) then
+      table.insert(display, icons.treesitter)
+    end
+
+    -- add persisting
+    if vim.g.persisting then
+      table.insert(display, icons.persisting)
+    else
+      table.insert(display, icons.not_persisting)
+    end
+
+    return table.concat(display, " ")
   end,
 }
 
@@ -154,9 +180,9 @@ require("lualine").setup({
     lualine_a = { tabs, "mode" },
     lualine_b = { branch },
     lualine_c = {},
-    lualine_x = { diff, diagnostics, lsp },
+    lualine_x = { diff, diagnostics },
     lualine_y = {},
-    lualine_z = { treesitter, persisting },
+    lualine_z = { services },
   },
   inactive_sections = {
     lualine_a = { filepath },
