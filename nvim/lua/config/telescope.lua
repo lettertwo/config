@@ -118,12 +118,14 @@ end
 
 require("keymap").normal.leader({
   p = { "<cmd>Telescope<CR>", "Telescope" },
-  k = { "<cmd>Telescope keymaps<CR>", "Keymaps" },
   e = { "<cmd>Telescope file_browser<CR>", "File Explorer" },
   t = { "<cmd>Telescope buffers<CR>", "Buffers" },
   bb = { "<cmd>Telescope buffers<CR>", "Buffers" },
   f = { "<cmd>Telescope find_files<CR>", "Files" },
-  r = { "<cmd>Telescope oldfiles<CR>", "Recent File" },
+  r = { "<cmd>Telescope oldfiles<CR>", "Recent Files" },
+  ["/"] = { "<cmd>Telescope current_buffer_fuzzy_find<CR>", "Text in file" },
+  ["*"] = { "<cmd>Telescope grep_string<CR>", "Word under cursor" },
+
   s = {
     name = "Search",
     f = { "<cmd>Telescope find_files<CR>", "Files" },
@@ -136,6 +138,7 @@ require("keymap").normal.leader({
     m = { "<cmd>Telescope man_pages<CR>", "Manpages" },
     o = { "<cmd>Telescope vim_options<CR>", "Vim options" },
     H = { "<cmd>Telescope highlights<CR>", "Highlights" },
+    k = { "<cmd>Telescope keymaps<CR>", "Keymaps" },
     c = { "<cmd>Telescope command_history<CR>", "Command history" },
     s = { "<cmd>Telescope lsp_document_symbols<CR>", "Document Symbols" },
     S = { "<cmd>Telescope lsp_dynamic_workspace_symbols<CR>", "Workspace Symbols" },
