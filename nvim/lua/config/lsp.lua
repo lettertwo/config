@@ -47,22 +47,23 @@ local servers = {
 local function lsp_keymaps(_, bufnr)
   local keymap = require("keymap").buffer(bufnr)
   keymap.normal.leader({
-    ["."] = { ":lua vim.lsp.buf.code_action()<CR>", "Show code actions" },
-    ["="] = { ":lua vim.lsp.buf.format({ async = true })<CR>", "Format document" },
-    R = { ":lua vim.lsp.buf.rename()<CR>", "Rename" },
+
+    ["."] = { vim.lsp.buf.code_action, "Show code actions" },
+    ["="] = { vim.lsp.buf.format, "Format document" },
+    R = { vim.lsp.buf.rename, "Rename" },
     l = {
       name = "LSP",
-      f = { ":lua vim.lsp.buf.format({ async = true })<CR>", "Format document" },
-      a = { ":lua vim.lsp.buf.code_action()<CR>", "Show code actions" },
-      h = { ":lua vim.lsp.buf.hover()<CR>", "Show hover" },
-      r = { ":lua vim.lsp.buf.rename()<CR>", "Rename" },
-      s = { ":lua vim.lsp.buf.signature_help()<CR>", "Show signature help" },
+      f = { vim.lsp.buf.format, "Format document" },
+      a = { vim.lsp.buf.code_action, "Show code actions" },
+      h = { vim.lsp.buf.hover, "Show hover" },
+      r = { vim.lsp.buf.rename, "Rename" },
+      s = { vim.lsp.buf.signature_help, "Show signature help" },
       S = { ":LspInfo<CR>", "Show LSP status" },
       I = { ":LspInstallInfo<CR>", "Show LSP install info" },
     },
   })
 
-  keymap.normal("K", ":lua vim.lsp.buf.hover()<CR>", "Show hover")
+  keymap.normal("K", vim.lsp.buf.hover, "Show hover")
 
   keymap.normal.register({
     gd = { ":TroubleToggle lsp_definitions<CR>", "Go to definition" },

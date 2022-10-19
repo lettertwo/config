@@ -41,8 +41,8 @@ local keymap = require("keymap")
 keymap.normal.leader({
   d = {
     name = "Diagnostics",
-    j = { ":lua vim.diagnostic.goto_next({buffer=0})<CR>", "Next diagnostic" },
-    k = { ":lua vim.diagnostic.goto_prev({buffer=0})<CR>", "Previous diagnostic" },
+    j = { vim.diagnostic.goto_next, "Next diagnostic" },
+    k = { vim.diagnostic.goto_prev, "Previous diagnostic" },
     q = { ":TroubleToggle quickfix<cr>", "QuickFix" },
     l = { ":TroubleToggle loclist<cr>", "Locationlist" },
     t = { ":TroubleToggle telescope<cr>", "Telescope" },
@@ -52,8 +52,8 @@ keymap.normal.leader({
 })
 
 keymap.normal.register({
-  ["]d"] = { ":lua vim.diagnostic.goto_next({buffer=0})<CR>", "Next diagnostic" },
-  ["[d"] = { ":lua vim.diagnostic.goto_prev({buffer=0})<CR>", "Previous diagnostic" },
+  ["]d"] = { vim.diagnostic.goto_next, "Next diagnostic" },
+  ["[d"] = { vim.diagnostic.goto_prev, "Previous diagnostic" },
 })
 
 local function hover()
