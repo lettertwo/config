@@ -94,7 +94,7 @@ vim.opt.number = true -- show line numbers
 vim.opt.relativenumber = true -- relative normally, nonrelative in insert mode (see `config.autocommands`).
 
 -- Completions
-vim.opt.completeopt = { "menu", "menuone", "noselect" } -- insert mode completion setting
+vim.opt.completeopt = { "menuone", "noselect", "noinsert" } -- insert mode completion setting
 vim.opt.wildmenu = true -- visual autocomplete for command menu
 vim.opt.wildmode = "longest:full,full" -- autocomplete full on first tab, full on second tab
 
@@ -108,6 +108,9 @@ vim.opt.sessionoptions = "blank,buffers,curdir,folds,help,tabpages,terminal,winp
 -- folding
 vim.opt.foldcolumn = "1"
 vim.opt.foldlevelstart = 99
+-- treesitter folding
+vim.wo.foldmethod = "expr"
+vim.wo.foldexpr = "nvim_treesitter#foldexpr()"
 
 -- diffing
 vim.opt.diffopt:append("vertical")

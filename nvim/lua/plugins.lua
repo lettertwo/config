@@ -52,6 +52,8 @@ use({
   config = [[ require("config.lualine") ]],
 })
 
+use({ "j-hui/fidget.nvim", config = [[ require("fidget").setup({}) ]] })
+
 -- Copilot (RIP my job)
 use({
   "github/copilot.vim",
@@ -144,8 +146,17 @@ use({
     "NvimTree",
     "Outline",
     "Trouble",
+    "terminal",
+    "toggleterm",
   }
 ]],
+})
+
+-- Highlighting for TODO, FIXME, etc.
+use({
+  "folke/todo-comments.nvim",
+  requires = "nvim-lua/plenary.nvim",
+  config = [[ require("todo-comments").setup({}) ]],
 })
 
 -- Git, SCM
