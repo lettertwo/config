@@ -1,6 +1,7 @@
 local lspconfig = require("lspconfig")
 local cmd = require("commands")
 local autocmd = require("autocommands")
+local rt = require("rust-tools")
 
 require("mason-lspconfig").setup({ automatic_installation = true })
 
@@ -136,6 +137,18 @@ for server, opts in pairs(servers) do
 
   lspconfig[server].setup(vim.tbl_deep_extend("error", default_opts, opts))
 end
+
+-- Rust tools setup
+rt.setup({
+  server = {
+    on_attach = function(_, bufnr)
+      -- Hover actions
+      vim.keymap.set("n", "<C-space>", rt.hover_actions.hover_actions, { buffer = bufnr })
+      -- Code action groups
+      vim.keymap.set("n", "<Leader>a", rt.code_action_group.code_action_group, { buffer = bufnr })
+    end,
+  },
+})
 
 vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, {
   border = "rounded",

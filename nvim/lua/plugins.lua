@@ -87,7 +87,7 @@ use({
 -- LSP
 use({
   "neovim/nvim-lspconfig",
-  requires = { "williamboman/mason-lspconfig.nvim", "folke/lua-dev.nvim" },
+  requires = { "williamboman/mason-lspconfig.nvim", "folke/lua-dev.nvim", "simrat39/rust-tools.nvim" },
   after = { "mason.nvim", "cmp-nvim-lsp" },
   config = [[ require("config.lsp") ]],
 })
