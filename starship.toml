@@ -34,7 +34,12 @@ vimcmd_symbol = "[](blue) [❮](yellow)"
 read_only = " "
 truncation_length = 8
 style = 'black'
+truncate_to_repo = false
 repo_root_style = 'bold cyan'
+
+[directory.substitutions]
+"~/Code/" = ""
+"~/" = ""
 
 [git_branch]
 symbol = " "

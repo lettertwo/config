@@ -11,7 +11,7 @@ tab_title() {
   else
     BETTER_PWD=$(PWD)
   fi
-  print -Pn "\e]0;${BETTER_PWD##*/}\a"
+  print -Pn "\e]0;${BETTER_PWD##$HOME(/Code|/.local/share|)/}\a"
 }
 add-zsh-hook precmd tab_title
 
