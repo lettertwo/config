@@ -85,6 +85,26 @@ visual("L", ">gv", "Indent selected lines")
 visual("J", ":move '>+1<CR>gv-gv", "Move selected lines down")
 visual("K", ":move '<-2<CR>gv-gv", "Move selected lines up")
 
+-- TODO: Add some bindings for doing diff stuff, e.g.:
+-- :windo diffthis -- diff buffers in all windows
+-- :windo diffoff -- turn off diffing for all windows
+-- :diffoff! -- alternative version of above?
+-- :windo diffupdate -- update diffs for all windows
+
+-- :[range]diffget [buf] -- same as [count]do
+-- :[range]diffput [buf] -- same as [count]dp
+
+-- :vert diffsplit %~ -- diff current buffer with previous version
+-- :vert diffpatch /path/to/patch -- diff current buffer with patch from file
+
+-- Add a way to change the diff algorithm.
+-- Currently supported algorithms are:
+-- myers      the default algorithm
+-- minimal    spend extra time to generate the smallest possible diff
+-- patience   patience diff algorithm
+-- histogram  histogram diff algorithm
+-- vim.opt.diffopt:append(algorithm:{text})
+
 -- Buffer management
 normal.leader({
   -- TODO: Look at lvim's smart quit
@@ -124,6 +144,7 @@ normal.leader({
     S = { ":PackerStatus<CR>", "Status" },
   },
 })
+
 -- Mason
 normal.leader({
   M = {

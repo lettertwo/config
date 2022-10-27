@@ -4,6 +4,18 @@ local builtin = require("telescope.builtin")
 local themes = require("telescope.themes")
 local trouble = require("trouble.providers.telescope")
 
+-- TODO: Add a way to open file explorer with current file selected
+-- alternatively, add a keymap to find current file in file explorer.
+
+-- TODO: Create two types of telescope pickers:
+-- 1. A 'quick' picker that starts in insert mode and expects the user to accept the current match with <CR>
+-- 2. A 'slow' picker that starts in normal mode and expects the user to use / to search and <CR> to go 'accept' the
+-- search and go back to normal mode.
+
+local function setnormal()
+  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "n", false)
+end
+
 telescope.setup({
   defaults = vim.tbl_deep_extend("force", themes.get_ivy(), {
     entry_prefix = "  ",
@@ -12,6 +24,8 @@ telescope.setup({
     color_devicons = true,
     mappings = {
       i = {
+        ["<cr>"] = setnormal,
+        ["<esc>"] = telescope_actions.close,
         ["<C-j>"] = telescope_actions.move_selection_next,
         ["<C-k>"] = telescope_actions.move_selection_previous,
         ["<C-n>"] = telescope_actions.cycle_history_next,
