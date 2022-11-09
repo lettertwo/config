@@ -68,6 +68,10 @@ local kind_icons = {
 }
 
 cmp.setup({
+  -- view = {
+  -- TODO: Figure out how to get this to work with noice.
+  --   entries = "native",
+  -- },
   snippet = {
     -- REQUIRED - you must specify a snippet engine :(
     -- See https://github.com/hrsh7th/nvim-cmp/issues/373

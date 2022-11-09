@@ -52,7 +52,12 @@ use({
   config = [[ require("config.lualine") ]],
 })
 
-use({ "j-hui/fidget.nvim", config = [[ require("fidget").setup({}) ]] })
+-- UI for notifications, messages, cmdline, LSP status, etc. --
+use({
+  "folke/noice.nvim",
+  requires = { "MunifTanjim/nui.nvim", "rcarriga/nvim-notify" },
+  config = [[ require("config.noice") ]],
+})
 
 -- Copilot (RIP my job)
 use({

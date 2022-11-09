@@ -1,5 +1,7 @@
 local location = require("config.location")
 
+local _, noice = pcall(require, "noice")
+
 local window_width_limit = 70
 
 local function visible_for_width(limit)
@@ -177,7 +179,14 @@ require("lualine").setup({
     globalstatus = true,
   },
   sections = {
-    lualine_a = { tabs, "mode" },
+    lualine_a = {
+      tabs,
+      "mode",
+      noice and {
+        noice.api.statusline.mode.get,
+        cond = noice.api.statusline.mode.has,
+      } or nil,
+    },
     lualine_b = { branch },
     lualine_c = {},
     lualine_x = { diff, diagnostics },
