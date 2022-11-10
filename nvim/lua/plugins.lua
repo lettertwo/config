@@ -18,7 +18,6 @@ packer.reset()
 use("wbthomason/packer.nvim") -- Packer can manage itself
 use({ "lewis6991/impatient.nvim", config = [[ require("impatient") ]] }) -- Gotta go fast
 use("nvim-lua/plenary.nvim") -- A common dependency in lua plugins
-use("antoinemadec/FixCursorHold.nvim") -- Workaround for bugs with neovim cursorhold autocmds
 use({
   "TaDaa/vimade", -- Fade inactive windows while preserving syntax highlights.
   setup = [[
