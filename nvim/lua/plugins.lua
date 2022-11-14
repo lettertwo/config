@@ -106,7 +106,12 @@ use({
 })
 
 -- Linting
-use({ "jose-elias-alvarez/null-ls.nvim", after = "nvim-lspconfig", config = [[ require("config.null-ls") ]] })
+use({
+  "jose-elias-alvarez/null-ls.nvim",
+  requires = { "jayp0521/mason-null-ls.nvim" },
+  after = { "mason.nvim", "nvim-lspconfig" },
+  config = [[ require("config.null-ls") ]],
+})
 
 -- Diagnostics
 use({ "folke/trouble.nvim", after = "nvim-lspconfig", config = [[ require("config.diagnostics") ]] })

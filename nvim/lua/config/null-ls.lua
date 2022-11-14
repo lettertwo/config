@@ -20,13 +20,11 @@ local eslint_config_file_formats = {
 }
 
 local eslint_opts = {
-  prefer_local = "node_modules/.bin",
   extra_filetypes = { "flowtype", "flowtypereact" },
   condition = function(utils)
     return utils.root_has_file(eslint_config_file_formats)
   end,
   cwd = h.cache.by_bufnr(function(params)
-    ---@diagnostic disable-next-line: deprecated
     return u.root_pattern(unpack(eslint_config_file_formats))(params.bufname)
   end),
 }
@@ -34,19 +32,22 @@ local eslint_opts = {
 null_ls.setup({
   debug = false,
   sources = {
-    formatting.prettier.with({
-      prefer_local = "node_modules/.bin",
+    formatting.prettierd.with({
       extra_filetypes = { "toml", "flowtype", "flowtypereact" },
     }),
     formatting.black.with({ extrargs = { "fast" } }),
     formatting.stylua,
     formatting.google_java_format,
-    diagnostics.eslint.with(eslint_opts),
+    diagnostics.eslint_d.with(eslint_opts),
     diagnostics.flake8,
-    code_actions.eslint.with(eslint_opts),
+    code_actions.eslint_d.with(eslint_opts),
     code_actions.gitsigns,
     code_actions.gitrebase,
     completion.spell,
     hover.dictionary,
   },
+})
+
+require("mason-null-ls").setup({
+  automatic_installation = true,
 })
