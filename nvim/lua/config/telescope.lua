@@ -7,21 +7,51 @@ local trouble = require("trouble.providers.telescope")
 -- TODO: Add a way to open file explorer with current file selected
 -- alternatively, add a keymap to find current file in file explorer.
 
--- TODO: Create two types of telescope pickers:
--- 1. A 'quick' picker that starts in insert mode and expects the user to accept the current match with <CR>
--- 2. A 'slow' picker that starts in normal mode and expects the user to use / to search and <CR> to go 'accept' the
--- search and go back to normal mode.
-
 local function setnormal()
   vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "n", false)
 end
 
-telescope.setup({
-  defaults = vim.tbl_deep_extend("force", themes.get_ivy(), {
-    entry_prefix = "  ",
-    prompt_prefix = "   ",
-    selection_caret = "  ",
-    color_devicons = true,
+local function setinsert()
+  vim.cmd([[startinsert]])
+end
+
+local function noop()
+  -- print("BOOP!")
+end
+
+-- A 'quick' picker that starts in insert mode and expects the user to accept the current match with <CR>
+local function quick_picker(opts)
+  return vim.tbl_deep_extend("force", {
+    initial_mode = "insert",
+    mappings = {
+      i = {
+        ["<esc>"] = telescope_actions.close,
+        ["<C-j>"] = telescope_actions.move_selection_next,
+        ["<C-k>"] = telescope_actions.move_selection_previous,
+        ["<C-n>"] = telescope_actions.cycle_history_next,
+        ["<C-p>"] = telescope_actions.cycle_history_prev,
+        ["<C-t>"] = trouble.open_with_trouble,
+        ["<C-q>"] = false,
+        ["<M-q>"] = false,
+      },
+      n = {
+        ["<C-j>"] = telescope_actions.move_selection_next,
+        ["<C-k>"] = telescope_actions.move_selection_previous,
+        ["<C-n>"] = telescope_actions.cycle_history_next,
+        ["<C-p>"] = telescope_actions.cycle_history_prev,
+        ["<C-t>"] = trouble.open_with_trouble,
+        ["<C-q>"] = false,
+        ["<M-q>"] = false,
+      },
+    },
+  }, opts or {})
+end
+
+-- A 'slow' picker that starts in normal mode and expects the user to use / to search
+-- and <CR> to 'accept' the search and go back to normal mode.
+local function slow_picker(opts)
+  return vim.tbl_deep_extend("force", {
+    initial_mode = "normal",
     mappings = {
       i = {
         ["<cr>"] = setnormal,
@@ -35,9 +65,12 @@ telescope.setup({
         ["<M-q>"] = false,
       },
       n = {
-        ["/"] = function()
-          vim.cmd([[startinsert]])
-        end,
+        ["/"] = setinsert,
+        i = noop,
+        a = noop,
+        I = noop,
+        A = noop,
+        R = noop,
         ["<C-j>"] = telescope_actions.move_selection_next,
         ["<C-k>"] = telescope_actions.move_selection_previous,
         ["<C-n>"] = telescope_actions.cycle_history_next,
@@ -47,7 +80,16 @@ telescope.setup({
         ["<M-q>"] = false,
       },
     },
-  }),
+  }, opts or {})
+end
+
+telescope.setup({
+  defaults = quick_picker(vim.tbl_deep_extend("force", themes.get_ivy(), {
+    entry_prefix = "  ",
+    prompt_prefix = "   ",
+    selection_caret = "  ",
+    color_devicons = true,
+  })),
   extensions = {
     fzf = {
       fuzzy = true,
@@ -58,13 +100,12 @@ telescope.setup({
     ["ui-select"] = {
       themes.get_dropdown({}),
     },
-    file_browser = {
-      initial_mode = "normal",
+    file_browser = slow_picker({
       hijack_netrw = true,
       path = "%:p:h",
       cwd_to_path = false,
       respect_gitignore = false,
-    },
+    }),
   },
   pickers = {
     find_files = {
@@ -75,7 +116,7 @@ telescope.setup({
       only_cwd = true,
       -- TODO: add mapping to toggle only_cwd
     },
-    buffers = {
+    buffers = quick_picker({
       theme = "dropdown",
       ignore_current_buffer = false,
       sort_mru = true,
@@ -90,16 +131,10 @@ telescope.setup({
           ["<C-d>"] = telescope_actions.delete_buffer,
         },
       },
-    },
-    git_branches = {
-      initial_mode = "normal",
-    },
-    git_status = {
-      initial_mode = "normal",
-    },
-    git_stash = {
-      initial_mode = "normal",
-    },
+    }),
+    git_branches = slow_picker(),
+    git_status = slow_picker(),
+    git_stash = slow_picker(),
   },
 })
 
