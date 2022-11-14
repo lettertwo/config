@@ -5,25 +5,12 @@ local rt = require("rust-tools")
 
 require("mason-lspconfig").setup({ automatic_installation = true })
 
+require("neodev").setup({})
+
 local servers = {
   sumneko_lua = {
     settings = {
       Lua = {
-        runtime = {
-          version = "LuaJIT",
-          path = vim.split(package.path, ";"),
-        },
-        diagnostics = {
-          globals = { "vim", "packer_plugins" },
-        },
-        workspaces = {
-          library = {
-            [vim.fn.expand("$VIMRUNTIME/lua")] = true,
-            [vim.fn.stdpath("config") .. "/lua"] = true,
-          },
-          maxPreload = 100000,
-          preloadFileSize = 10000,
-        },
         telemetery = {
           enabled = false,
         },

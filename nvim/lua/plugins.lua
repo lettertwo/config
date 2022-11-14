@@ -17,7 +17,6 @@ packer.reset()
 -- "always on" plugins; no setup necessary! --
 use("wbthomason/packer.nvim") -- Packer can manage itself
 use({ "lewis6991/impatient.nvim", config = [[ require("impatient") ]] }) -- Gotta go fast
-use("nvim-lua/plenary.nvim") -- A common dependency in lua plugins
 use({
   "TaDaa/vimade", -- Fade inactive windows while preserving syntax highlights.
   setup = [[
@@ -37,6 +36,16 @@ use({ "kyazdani42/nvim-web-devicons", config = [[ require("nvim-web-devicons").s
 
 -- Colorscheme --
 use({ "~/.local/share/laserwave", requires = { "rktjmp/lush.nvim", "rktjmp/shipwright.nvim" } })
+
+-- Lua plugin development --
+use("nvim-lua/plenary.nvim") -- A common dependency in lua plugins. Also useful for testing plugins.
+use("nanotee/luv-vimdocs")
+use("milisims/nvim-luaref")
+use("bfredl/nvim-luadev")
+use("folke/neodev.nvim")
+
+-- Occurrence operator --
+use({ "~/.local/share/occurrency.nvim", config = [[ require("occurrency.dev").setup({}) ]] })
 
 -- some assembly required --
 use({ "goolord/alpha-nvim", config = [[ require("config.dashboard") ]] })
