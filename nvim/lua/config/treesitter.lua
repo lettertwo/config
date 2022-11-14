@@ -3,6 +3,8 @@ if not status_ok then
   return
 end
 
+require("treesitter-context").setup({})
+
 local keymap = require("keymap")
 
 keymap.operator.label("af", "a function")
