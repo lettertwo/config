@@ -45,6 +45,12 @@ local servers = {
   "yamlls",
 }
 
+local function hover()
+  if vim.diagnostic.open_float() == nil then
+    vim.lsp.buf.hover()
+  end
+end
+
 local function lsp_keymaps(_, bufnr)
   local keymap = require("keymap").buffer(bufnr)
   keymap.normal.leader({
@@ -56,7 +62,7 @@ local function lsp_keymaps(_, bufnr)
       name = "LSP",
       f = { vim.lsp.buf.format, "Format document" },
       a = { vim.lsp.buf.code_action, "Show code actions" },
-      h = { vim.lsp.buf.hover, "Show hover" },
+      h = { hover, "Show hover" },
       r = { vim.lsp.buf.rename, "Rename" },
       s = { vim.lsp.buf.signature_help, "Show signature help" },
       S = { ":LspInfo<CR>", "Show LSP status" },
@@ -64,7 +70,7 @@ local function lsp_keymaps(_, bufnr)
     },
   })
 
-  keymap.normal("K", vim.lsp.buf.hover, "Show hover")
+  keymap.normal("K", hover, "Show hover")
 
   keymap.normal.register({
     gd = { ":TroubleToggle lsp_definitions<CR>", "Go to definition" },

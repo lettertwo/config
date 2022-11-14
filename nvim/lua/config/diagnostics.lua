@@ -55,21 +55,3 @@ keymap.normal.register({
   ["]d"] = { vim.diagnostic.goto_next, "Next diagnostic" },
   ["[d"] = { vim.diagnostic.goto_prev, "Previous diagnostic" },
 })
-
-local function hover()
-  if vim.lsp.buf.is_active and vim.lsp.buf.is_active() then
-    vim.lsp.buf.signature()
-  else
-    vim.diagnostic.open_float()
-  end
-end
-
-local function setup_buffer()
-  local bufnr = vim.api.nvim_buf_get_number(0)
-  local buf_group = vim.api.nvim_create_augroup("lsp_hover_" .. bufnr, { clear = true })
-  -- Show diagnostic on hover
-  vim.api.nvim_create_autocmd("CursorHold", { buffer = bufnr, group = buf_group, callback = hover })
-end
-
-local group = vim.api.nvim_create_augroup("diagnostics", { clear = true })
-vim.api.nvim_create_autocmd("BufEnter", { group = group, callback = setup_buffer })
