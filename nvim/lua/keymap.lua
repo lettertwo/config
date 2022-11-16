@@ -7,6 +7,8 @@ vim.g.maplocalleader = " "
 wk.setup({
   window = { border = "single" },
   operators = { gs = "Surround", gS = "Surround" },
+  show_help = false,
+  show_keys = false,
 })
 -- TODO: Figure out how to reset bindings on reload
 -- wk.reset()
