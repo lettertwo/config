@@ -42,7 +42,7 @@ local button = require("alpha.themes.dashboard").button
 ---@field val Element[] | fun(): Element[]
 ---@field opts { spacing: integer }
 
-local version = vim.version()
+local version = assert(vim.version())
 local alpha_win = vim.fn.winnr()
 
 -- font: https://famfonts.com/metallica/
@@ -72,20 +72,20 @@ local header_lines = {
 }
 
 -- Performs a deep copy of a table.
----@see :h vim.deepcopy
+---@see vim.deepcopy
 ---@type fun(tbl: table): table
 local deepcopy = vim.deepcopy
 
 -- Performs a deep merge of `tbl` into `into`.
 -- Note that this does not modify either table.
----@see :h vim.tbl_deep_extend
+---@see vim.tbl_deep_extend
 ---@type fun(into: table, tbl: table): table
 local function deepmerge(into, tbl)
   return vim.tbl_deep_extend("force", into, tbl)
 end
 
 -- Get the character length of string.
----@see :help strchars
+---@see strchars
 ---@type fun(str: string): integer
 local len = vim.fn.strchars
 
@@ -338,7 +338,7 @@ local function embed_section_line(header_line, section_line, winwidth)
     local hl = {}
     table.insert(hl, { header_opts.hl, 0, start_byte })
     if type(button_opts.hl) == "table" then
-      for _, b in ipairs(button_opts.hl) do
+      for _, b in ipairs(button_opts.hl) do ---@diagnostic disable-line: param-type-mismatch
         table.insert(hl, { b[1], b[2] + start_byte, b[3] + start_byte })
       end
     end

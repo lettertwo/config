@@ -108,7 +108,7 @@ local diagnostics = {
 -- Adapted from https://github.com/LunarVim/LunarVim/blob/48320e/lua/lvim/core/lualine/components.lua#L82
 local services = {
   function()
-    local buf_clients = vim.lsp.buf_get_clients()
+    local buf_clients = vim.lsp.get_active_clients()
     local buf_ft = vim.bo.filetype
     local diagnostic_providers = {}
     local formatting_providers = {}
@@ -183,8 +183,8 @@ require("lualine").setup({
       tabs,
       "mode",
       noice and {
-        noice.api.statusline.mode.get,
-        cond = noice.api.statusline.mode.has,
+        noice.api.status.mode.get,
+        cond = noice.api.status.mode.has,
       } or nil,
     },
     lualine_b = { branch },

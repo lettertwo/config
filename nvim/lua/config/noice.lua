@@ -6,13 +6,13 @@ require("noice").setup({
       ["vim.lsp.util.stylize_markdown"] = true,
       ["cmp.entry.get_documentation"] = true,
     },
+    hover = { enabled = false }, -- Using a custom hover handler. See `config.lsp`.
   },
   presets = {
     long_message_to_split = true, -- long messages will be sent to a split
     command_palette = true, -- position the cmdline and popupmenu together
     lsp_doc_border = true, -- add a border to hover docs and signature help
   },
-  lsp = { hover = { enabled = false } }, -- Using a custom hover handler. See `config.lsp`.
   routes = {
     {
       view = "notify",

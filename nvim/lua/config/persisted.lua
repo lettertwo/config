@@ -10,7 +10,7 @@ persisted.setup({
   },
   after_source = function()
     -- Reload the LSP servers
-    vim.lsp.stop_client(vim.lsp.get_active_clients())
+    vim.lsp.stop_client(vim.lsp.get_active_clients(), true)
   end,
   telescope = {
     before_source = function()

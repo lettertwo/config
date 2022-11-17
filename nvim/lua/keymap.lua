@@ -121,7 +121,7 @@ normal.leader({
     D = { ":bw!<CR>", "Wipe current buffer" },
     s = {
       function()
-        local fname = vim.fn.input("Save as: ", vim.fn.bufname(), "file")
+        local fname = vim.fn.input({ prompt = "Save as: ", default = vim.fn.bufname(), completion = "file" })
         if fname ~= "" then
           vim.cmd(":saveas! " .. fname)
         end
