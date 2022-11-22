@@ -45,7 +45,7 @@ export HISTSIZE=10200
 export SAVEHIST=10000
 
 # fzf
-export FZF_DEFAULT_OPTS="--layout reverse --info inline --height 40%"
+export FZF_DEFAULT_OPTS="--layout reverse --info inline --height 40% --no-bold"
 export FZF_CTRL_T_OPTS="--preview \"bat --style=numbers --color=always --line-range :500 {}\""
 export FZF_DEFAULT_COMMAND='rg --files --no-ignore --hidden --follow --glob "!.git/*"'
 export FZF_CTRL_T_OPTS="--preview \"bat --style=numbers --color=always --line-range :500 {}\""
