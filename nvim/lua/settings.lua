@@ -69,6 +69,7 @@ vim.opt.shortmess:append("c") -- hide messaging about completions
 -- Window management
 vim.opt.splitbelow = true -- force all horizontal splits to go below current window
 vim.opt.splitright = true -- force all vertical splits to go to the right of current window
+vim.opt.equalalways = true -- always equalize window sizes
 
 -- Cursor behavior
 vim.opt.wrap = false -- Disable line wrapping

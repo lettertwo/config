@@ -40,4 +40,11 @@ create("CmdwinEnter", {
   end,
 })
 
+-- Automatically equalize window sizes.
+create("VimResized", {
+  callback = function()
+    vim.cmd([[ wincmd = ]])
+  end,
+})
+
 return M
