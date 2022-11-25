@@ -84,6 +84,9 @@ export NNN_TRASH=1 # use trash-cli when deleting
 # poetry
 export POETRY_CACHE_DIR="$XDG_CACHE_HOME/pypoetry"
 
+# qmk
+export QMK_HOME="$XDG_DATA_HOME/qmk_firmware"
+
 # initialize zsh-vi-mode immediately to avoid clobbering plugins that come afterward (e.g., syntax-highlight).
 export ZVM_INIT_MODE="sourcing"
 

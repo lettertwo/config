@@ -5,10 +5,10 @@
 tap "homebrew/core"
 tap "homebrew/bundle"
 tap "homebrew/cask"
+tap "homebrew/cask-drivers"
 tap "homebrew/services"
 tap "withgraphite/tap"
 tap "lettertwo/brew"
-tap "qmk/qmk"
 
 # CLI Tools
 brew "zsh"
@@ -66,5 +66,4 @@ brew "python"
 cask "syntax-highlight" # https://github.com/sbarex/SourceCodeSyntaxHighlight
 
 # QMK
-brew "qmk/qmk/qmk"
-cask "qmk-toolbox"
+cask "qmk-toolbox" # https://github.com/qmk/qmk_toolbox

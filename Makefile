@@ -145,7 +145,6 @@ ifndef KITTY
 	$(call done)
 endif
 
-
 .PHONY: update-kitty
 update-kitty:
 ifndef KITTY
@@ -157,6 +156,30 @@ endif
 	$(call run,curl -L https://sw.kovidgoyal.net/kitty/installer.sh | zsh /dev/stdin)
 	$(call run,ln -sf /Applications/kitty.app/Contents/MacOS/kitty "$$HOME/.local/bin/kitty")
 	$(call run,ln -sf "$$HOME/.local/share/laserwave/dist/kitty/laserwave.conf" "$$HOME/.config/kitty/laserwave.conf")
+	$(call done)
+
+### qmk
+
+~/Library/Application\ Support/qmk/qmk.ini:
+	$(call err,"qmk config not found!")
+	$(call log,"Linking qmk config...")
+	$(call run,mkdir -p ~/Library/Application\ Support/qmk/)
+	$(call run,ln -sf "$$HOME/.config/qmk/qmk.ini" "$@")
+	$(call done)
+
+~/.local/share/qmk_firmware: ~/Library/Application\ Support/qmk/qmk.ini
+	$(call err,"qmk_firmware not found!")
+	$(call log,"Cloning qmk_firmware...")
+	$(call run,qmk setup lettertwo/qmk_firmware)
+	$(call done)
+
+.PHONY: qmk
+qmk: ~/.local/share/qmk_firmware
+
+.PHONY: update-qmk
+update-qmk: qmk
+	$(call log,"Updating qmk_firmware...")
+	$(call run,qmk setup lettertwo/qmk_firmware)
 	$(call done)
 
 ### config
@@ -171,7 +194,7 @@ update-config:
 mkdirs: ~/.cache/zsh ~/.local/bin ~/.local/share ~/.local/state/zsh/completions
 
 .PHONY: install
-install: mkdirs /etc/zshenv ~/.local/share/laserwave brew sheldon nvim kitty
+install: mkdirs /etc/zshenv ~/.local/share/laserwave brew sheldon nvim kitty qmk
 	@echo ""
 	$(call done)
 	@echo ""
@@ -194,4 +217,4 @@ install: mkdirs /etc/zshenv ~/.local/share/laserwave brew sheldon nvim kitty
 	@echo "    It'll take a while. Afterward, just drag them into Font Book!"
 
 .PHONY: update
-update: update-config update-laserwave update-brew update-sheldon update-nvim update-kitty
+update: update-config update-laserwave update-brew update-sheldon update-nvim update-kitty update-qmk
