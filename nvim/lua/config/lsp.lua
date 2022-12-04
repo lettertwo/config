@@ -24,6 +24,7 @@ local servers = {
   flow = {
     filetypes = { "javascript", "javascriptreact", "javascript.jsx", "flowtype", "flowtypereact" },
   },
+  "eslint",
   "html",
   "jsonls",
   "cssls",
