@@ -111,10 +111,10 @@ visual("K", ":move '<-2<CR>gv-gv", "Move selected lines up")
 normal.leader({
   -- TODO: Look at lvim's smart quit
   q = { ":quit!<CR>", "Quit" },
-  w = { ":write!<CR>", "Save" },
-  W = { ":noautocmd write!<CR>", "Save (no autocmd)" },
+  W = { ":write!<CR>", "Save" },
+  w = { ":noautocmd write!<CR>", "Save (no autocmd)" },
   u = { ":update!<CR>", "Save, if changed" },
-  ["<cr>"] = { ":update!<CR>", "Save, if changed" },
+  ["<cr>"] = { ":noautocmd update!<CR>", "Save, if changed" },
   b = {
     name = "Buffer",
     d = { ":bd!<CR>", "Close current buffer" },
