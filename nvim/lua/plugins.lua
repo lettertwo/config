@@ -69,12 +69,13 @@ use({
 
 -- Copilot (RIP my job)
 use({
-  "github/copilot.vim",
-  setup = [[
-  -- Accepting copilot suggestions is managed via nvim-cmp config.
-  vim.g.copilot_no_tab_map = true -- Don't use default <Tab> binding.
-  vim.g.copilot_assume_mapped = true -- A key is mapped (via cmp config) to accept copilot suggestions.
-]],
+  "zbirenbaum/copilot.lua",
+  event = { "VimEnter" },
+  config = function()
+    vim.defer_fn(function()
+      require("config.copilot")
+    end, 100)
+  end,
 })
 
 -- Completion
@@ -93,6 +94,7 @@ use({
     { "dmitmel/cmp-cmdline-history" },
     { "petertriho/cmp-git" },
     { "L3MON4D3/LuaSnip" },
+    { "zbirenbaum/copilot-cmp" },
   },
   config = [[require('config.cmp')]],
 })

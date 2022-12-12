@@ -174,6 +174,9 @@ local function lsp_location(client, bufnr)
 end
 
 local function on_attach(client, bufnr)
+  if (client.name == "copilot") then
+    return
+  end
   lsp_location(client, bufnr)
   lsp_formatting(client, bufnr)
   lsp_keymaps(client, bufnr)
