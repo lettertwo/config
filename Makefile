@@ -142,6 +142,7 @@ ifndef KITTY
 	$(call run,curl -L https://sw.kovidgoyal.net/kitty/installer.sh | zsh /dev/stdin)
 	$(call run,ln -sf /Applications/kitty.app/Contents/MacOS/kitty "$$HOME/.local/bin/kitty")
 	$(call run,ln -sf "$$HOME/.local/share/laserwave/dist/kitty/laserwave.conf" "$$HOME/.config/kitty/laserwave.conf")
+	$(call run,rm /var/folders/*/*/*/com.apple.dock.iconcache; killall Dock) # force refresh of dock icons.
 	$(call done)
 endif
 
@@ -156,6 +157,7 @@ endif
 	$(call run,curl -L https://sw.kovidgoyal.net/kitty/installer.sh | zsh /dev/stdin)
 	$(call run,ln -sf /Applications/kitty.app/Contents/MacOS/kitty "$$HOME/.local/bin/kitty")
 	$(call run,ln -sf "$$HOME/.local/share/laserwave/dist/kitty/laserwave.conf" "$$HOME/.config/kitty/laserwave.conf")
+	$(call run,rm /var/folders/*/*/*/com.apple.dock.iconcache; killall Dock) #force refresh of dock icons.
 	$(call done)
 
 ### qmk
