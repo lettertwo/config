@@ -218,6 +218,7 @@ require("keymap").normal.leader({
     ["n"] = { nvim_config_files, "Neovim Config Files" },
     ["f"] = { xdg_config_files, "Find Config Files" },
     ["s"] = { xdg_config_grep, "Search Config Dir" },
+    ["r"] = { ":ReloadConfig<CR>", "Reload Config" },
   },
   -- TODO: implement something like lvim's info: https://github.com/LunarVim/LunarVim/blob/rolling/lua/lvim/core/info.lua
   -- TODO: implement something like lvim's log: https://github.com/LunarVim/LunarVim/blob/rolling/lua/lvim/core/which-key.lua#L211-L236
