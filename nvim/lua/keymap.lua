@@ -77,6 +77,7 @@ normal("<C-Left>", ":vertical resize -2<CR>", "Decrease width")
 normal("<C-Right>", ":vertical resize +2<CR>", "Increase width")
 normal("]q", ":cnext<CR>", "Next quickfix")
 normal("[q", ":cprev<CR>", "Previous quickfix")
+normal("gp", "`[v`]", "Switch to VISUAL using the last changed or yanked text")
 
 -- Visual --
 visual("p", '"_dP', "Paste over selection (without yanking)")
