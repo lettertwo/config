@@ -32,9 +32,9 @@ alias ip="dig +short myip.opendns.com @resolver1.opendns.com"
 alias localip="ipconfig getifaddr en1"
 alias ips="ifconfig -a | grep -o 'inet6\? \(\([0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+\)\|[a-fA-F0-9:]\+\)' | sed -e 's/inet6* //'"
 
-# Use glances instead of top/htop
-alias top='glances'
-alias htop='glances'
+# Use bottom instead of top/htop
+alias top='btm'
+alias htop='btm'
 
 # Use trash instead of rm
 alias rm='trash'

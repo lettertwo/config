@@ -30,7 +30,7 @@ brew "exa" # ogham/exa, replacement for ls
 brew "git-delta" # dandavison/delta, replacement for diff
 brew "dust" # bootandy/dust, replacement for du
 brew "duf" # muesli/duf, replacement for df
-brew "glances" # nicolargo/glances, replacement for top
+brew "bottom" # ClementTsang/bottom, replacement for top
 brew "broot" # canop/broot, replacement for tree
 brew "zoxide" # ajeetdsouza/zoxide, smarter cd
 brew "nnn-nerdfont", args: ["HEAD"] # tapped to enable nerdfont icons
