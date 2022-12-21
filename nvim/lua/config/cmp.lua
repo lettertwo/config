@@ -8,24 +8,21 @@ if not luasnip_status_ok then
   return
 end
 
-local copilot_status_ok, copilot_cmp = pcall(require, "copilot_cmp")
-if not copilot_status_ok then
-  return
-end
-
-copilot_cmp.setup({
-  method = "getCompletionsCycling",
-  label = require("copilot_cmp.format").format_label_text,
-  insert_text = require("copilot_cmp.format").format_insert_text,
-  preview = require("copilot_cmp.format").deindent,
-})
-
 local has_words_before = function()
   if vim.api.nvim_buf_get_option(0, "buftype") == "prompt" then
     return false
   end
   local line, col = unpack(vim.api.nvim_win_get_cursor(0))
   return col ~= 0 and vim.api.nvim_buf_get_text(0, line - 1, 0, line - 1, col, {})[1]:match("^%s*$") == nil
+end
+
+-- Accept copilot suggestion if present.
+local function confirm_copilot_or_fallback(fallback)
+  local copilot_status_ok, copilot_keys = pcall(vim.fn["copilot#Accept"], "")
+  if copilot_status_ok and copilot_keys ~= "" then
+    return vim.api.nvim_feedkeys(copilot_keys, "i", true)
+  end
+  fallback()
 end
 
 local function enter(fallback)
@@ -46,17 +43,7 @@ local function space()
 end
 
 local function right(fallback)
-  if cmp.visible() then
-    local entry = cmp.get_selected_entry()
-    if not entry then
-      cmp.select_next_item({ behavior = cmp.SelectBehavior.Select })
-    else
-      cmp.confirm()
-    end
-  else
-    fallback()
-  end
-  fallback()
+  confirm_copilot_or_fallback(fallback)
 end
 
 local function tab(fallback)
@@ -120,7 +107,6 @@ local source_labels = {
   cmdline = "[Cmd]",
   cmdline_history = "[History]",
   git = "[Git]",
-  copilot = "[Copilot]",
 }
 
 cmp.setup({
@@ -150,7 +136,7 @@ cmp.setup({
     select = false,
   },
   experimental = {
-    ghost_text = true,
+    ghost_text = false, -- let copilot haunt us instead
   },
   mapping = cmp.mapping.preset.insert({
     ["<C-k>"] = cmp.mapping.select_prev_item(),
@@ -170,7 +156,6 @@ cmp.setup({
     ["<S-Tab>"] = cmp.mapping(stab, { "i", "c" }),
   }),
   sources = cmp.config.sources({
-    { name = "copilot" },
     { name = "nvim_lsp" },
     { name = "nvim_lsp_document_symbol" },
     { name = "nvim_lsp_signature_help" },

@@ -68,14 +68,16 @@ use({
   config = [[ require("config.noice") ]],
 })
 
+-- TODO: explore https://github.com/folke/neoconf.nvim
+
 -- Copilot (RIP my job)
 use({
-  "zbirenbaum/copilot.lua",
-  config = function()
-    vim.defer_fn(function()
-      require("config.copilot")
-    end, 100)
-  end,
+  "github/copilot.vim",
+  setup = [[
+    -- Accepting copilot suggestions is managged via nvim-cmp config.
+    vim.g.copilot_no_tab_map = true
+    vim.g.copilot_assume_mapped = true
+  ]],
 })
 
 -- Completion
@@ -94,7 +96,6 @@ use({
     { "dmitmel/cmp-cmdline-history" },
     { "petertriho/cmp-git" },
     { "L3MON4D3/LuaSnip" },
-    { "zbirenbaum/copilot-cmp" },
   },
   config = [[require('config.cmp')]],
 })
