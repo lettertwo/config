@@ -183,6 +183,16 @@ use({
 -- Git, SCM
 use({ "lewis6991/gitsigns.nvim", config = [[ require("config.gitsigns") ]] })
 
+-- Scrollbar
+use({
+  "petertriho/nvim-scrollbar",
+  after = { "gitsigns.nvim" },
+  config = [[
+    require('scrollbar').setup()
+    require("scrollbar.handlers.gitsigns").setup()
+  ]],
+})
+
 -- TODO: Configure this
 -- use { "sindrets/diffview.nvim", event = "BufRead" }
 
