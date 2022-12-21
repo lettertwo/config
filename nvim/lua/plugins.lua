@@ -95,9 +95,16 @@ use({
     { "hrsh7th/cmp-cmdline" },
     { "dmitmel/cmp-cmdline-history" },
     { "petertriho/cmp-git" },
-    { "L3MON4D3/LuaSnip" },
+    { "saadparwaiz1/cmp_luasnip" },
   },
   config = [[require('config.cmp')]],
+})
+
+-- Snippets
+use({
+  "L3MON4D3/LuaSnip",
+  requires = { "rafamadriz/friendly-snippets" },
+  config = [[ require("config.luasnip") ]],
 })
 
 -- LSP

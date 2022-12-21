@@ -47,20 +47,23 @@ local function right(fallback)
 end
 
 local function tab(fallback)
-  -- If a cmp selection is active, confirm it.
-  if cmp.visible() and has_words_before() then -- cmp.get_selected_entry() ~= nil and cmp.confirm() then
-    cmp.select_next_item({ behavior = cmp.SelectBehavior.Select })
+  if cmp.visible() then
+    cmp.select_next_item()
     return
+  elseif luasnip.expand_or_jumpable() then
+    luasnip.expand_or_jump()
+  elseif has_words_before() then
+    cmp.complete()
   else
     fallback()
   end
 end
 
 local function stab(fallback)
-  -- If a cmp selection is active, confirm it.
-  if cmp.visible() and has_words_before() then -- cmp.get_selected_entry() ~= nil and cmp.confirm() then
-    cmp.select_prev_item({ behavior = cmp.SelectBehavior.Select })
-    return
+  if cmp.visible() then
+    cmp.select_prev_item()
+  elseif luasnip.jumpable(-1) then
+    luasnip.jump(-1)
   else
     fallback()
   end
@@ -107,6 +110,7 @@ local source_labels = {
   cmdline = "[Cmd]",
   cmdline_history = "[History]",
   git = "[Git]",
+  luasnip = "[Snip]",
 }
 
 cmp.setup({
