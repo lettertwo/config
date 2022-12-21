@@ -13,7 +13,12 @@ if not copilot_status_ok then
   return
 end
 
-copilot_cmp.setup()
+copilot_cmp.setup({
+  method = "getCompletionsCycling",
+  label = require("copilot_cmp.format").format_label_text,
+  insert_text = require("copilot_cmp.format").format_insert_text,
+  preview = require("copilot_cmp.format").deindent,
+})
 
 local has_words_before = function()
   if vim.api.nvim_buf_get_option(0, "buftype") == "prompt" then
@@ -140,6 +145,10 @@ cmp.setup({
     completion = cmp.config.window.bordered(),
     documentation = cmp.config.window.bordered(),
   },
+  confirm_opts = {
+    behavior = cmp.ConfirmBehavior.Replace,
+    select = false,
+  },
   experimental = {
     ghost_text = true,
   },
@@ -161,12 +170,13 @@ cmp.setup({
     ["<S-Tab>"] = cmp.mapping(stab, { "i", "c" }),
   }),
   sources = cmp.config.sources({
-    { name = "copilot", max_item_count = 3 },
+    { name = "copilot" },
     { name = "nvim_lsp" },
     { name = "nvim_lsp_document_symbol" },
     { name = "nvim_lsp_signature_help" },
     { name = "nvim_lua", dup = 0 },
     { name = "under_comparator" },
+    { name = "luasnip" },
   }, {
     { name = "buffer" },
     { name = "path" },

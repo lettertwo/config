@@ -71,7 +71,6 @@ use({
 -- Copilot (RIP my job)
 use({
   "zbirenbaum/copilot.lua",
-  event = { "VimEnter" },
   config = function()
     vim.defer_fn(function()
       require("config.copilot")
