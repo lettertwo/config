@@ -143,6 +143,7 @@ telescope.load_extension("ui-select")
 telescope.load_extension("file_browser")
 telescope.load_extension("persisted")
 telescope.load_extension("projects")
+telescope.load_extension("live_grep_args")
 
 local function nvim_config_files()
   builtin.find_files({
@@ -181,7 +182,7 @@ require("keymap").normal.leader({
     r = { "<cmd>Telescope oldfiles<CR>", "Recent File" },
     ["/"] = { "<cmd>Telescope current_buffer_fuzzy_find<CR>", "Text in file" },
     ["*"] = { "<cmd>Telescope grep_string<CR>", "Word under cursor" },
-    t = { "<cmd>Telescope live_grep<CR>", "Text" },
+    t = { "<cmd>Telescope live_grep_args<CR>", "Text" },
     C = { "<cmd>Telescope colorscheme<CR>", "Colorschemes" },
     h = { "<cmd>Telescope help_tags<CR>", "Help" },
     m = { "<cmd>Telescope man_pages<CR>", "Manpages" },

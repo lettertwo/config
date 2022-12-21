@@ -219,6 +219,7 @@ use({
   { "nvim-telescope/telescope-ui-select.nvim" },
   { "nvim-telescope/telescope-file-browser.nvim" },
   { "nvim-telescope/telescope-symbols.nvim" },
+  { "nvim-telescope/telescope-live-grep-args.nvim" },
 })
 
 -- Profiling
