@@ -160,6 +160,11 @@ endif
 	$(call run,rm /var/folders/*/*/*/com.apple.dock.iconcache; killall Dock) #force refresh of dock icons.
 	$(call done)
 
+.PHONY: update-dock-icons
+update-dock-icons:
+	$(call run,rm /var/folders/*/*/*/com.apple.dock.iconcache; killall Dock) #force refresh of dock icons.
+	$(call done)
+
 ### qmk
 
 ~/Library/Application\ Support/qmk/qmk.ini:
