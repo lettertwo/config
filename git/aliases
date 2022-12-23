@@ -81,6 +81,7 @@
 	wd = !git d --no-ext-diff
 	id = !git wd --cached
 	p = push
+	ab = !git absorb --and-rebase
 	c = commit -v
 	ci = !git commit
 	cf = !git fixup
