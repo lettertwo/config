@@ -20,12 +20,7 @@
 	patch = !git --no-pager diff --no-color
 	pick = cherry-pick
 	push-tags = push --follow-tags
-	# TODO: how to get cwd url (instead of repo root url)
-	svnurl = !git svn info | grep URL | sed 's/URL: \\(.*\\)/\\1/'
-	svnroot = !git svn info | grep Root | sed 's/Repository Root: \\(.*\\)/\\1/'
 	whois = "!sh -c 'git log -i -1 --pretty=\"format:%an <%ae>\n\" --author=\"$1\"' -"
-	edit-unmerged = "!f() { git ls-files --unmerged | cut -f2 | sort -u ; }; vim `f`"
-	add-unmerged = "!f() { git ls-files --unmerged | cut -f2 | sort -u ; }; git add `f`"
 	incoming = !git l ..@{u}
 	outgoing = !git l @{u}..
 	stash-unstaged = stash -k
@@ -41,10 +36,6 @@
 	fast-forward = pull --ff-only
 	start = !git init && git commit --allow-empty -m 'Initial commit'
 	mkorphan = "!f() { if [ -z "$1" ] ; then echo 'Missing name for orphan branch. Usage: git mkorphan <branchname>'; exit 1; fi; git checkout --orphan $1 && git rm -rf . && git commit --allow-empty -m 'Initial commit'; }; f"
-	# Pull in remote changes for the current repository and all its submodules
-	pull-all = !"git pull; git submodule foreach git pull origin master"
-	# Clone a repository including all submodules
-	clone-all = clone --recursive
 	# Show verbose output about tags, branches or remotes
 	tags = tag -l
 	# List ignored files
@@ -63,14 +54,14 @@
 	# Shows changes made by a branch since the last common commit with another branch.
 	# Usage:
 	#   `git changes`
-	#      compares the current branch to master
+	#      compares the current branch to main
 	#   `git changes <branch_name>`
 	#      compares the current branch to branch_name
 	#   `git changes <branch_name> <branch_name>`
 	#      compares the first branch name to the second branch name
 	# TODO: Allow arguments to log to be passed through
-	changes = "!f() { git l `git merge-base ${1:-master} ${2:-@\\{u\\}}`..${2:-@\\{u\\}} ; }; f"
-	show-changes = "!f() { git log -p `git merge-base ${1:-master} ${2:-@\\{u\\}}`..${2:-@\\{u\\}} ; }; f"
+	changes = "!f() { git l `git merge-base ${1:-main} ${2:-@\\{u\\}}`..${2:-@\\{u\\}} ; }; f"
+	show-changes = "!f() { git log -p `git merge-base ${1:-main} ${2:-@\\{u\\}}`..${2:-@\\{u\\}} ; }; f"
 
 	# Shows the commits that are unique to the current branch (not in any other branches.)
 	unique = "!f() { local branch=${1:-$(git symbolic-ref --short HEAD)} ; git l --no-merges $branch --not $(git for-each-ref --format='%(refname)' refs/heads | grep -Fv refs/heads/$branch) ; }; f"
