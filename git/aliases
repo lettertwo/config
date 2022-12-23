@@ -19,6 +19,7 @@
 	diffstat = diff --stat -r
 	patch = !git --no-pager diff --no-color
 	pick = cherry-pick
+	push-tags = push --follow-tags
 	# TODO: how to get cwd url (instead of repo root url)
 	svnurl = !git svn info | grep URL | sed 's/URL: \\(.*\\)/\\1/'
 	svnroot = !git svn info | grep Root | sed 's/Repository Root: \\(.*\\)/\\1/'
@@ -81,6 +82,7 @@
 	wd = !git d --no-ext-diff
 	id = !git wd --cached
 	p = push
+	pt = push-tags
 	ab = !git absorb --and-rebase
 	c = commit -v
 	ci = !git commit

@@ -15,7 +15,7 @@
 	rebase = true
 [push]
 	default = tracking
-	followTags = true
+	followTags = false
 [rerere]
 	enabled = false
 [help]
