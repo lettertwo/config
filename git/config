@@ -35,8 +35,11 @@
 [rebase]
 	autoStash = true
 	autoSquash = true
+	updateRefs = true
 [diff]
 	compactionHeuristic = true
+[worktree]
+	guessRemote = true
 
 # color config
 [color]

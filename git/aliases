@@ -50,6 +50,8 @@
 	stash-recover = !"f() { if [ -z "$1" ] ; then echo 'Missing commit hash.'; exit 1; fi; git update-ref -m \"$(git log -1 --pretty="format:%s" "$1")\" refs/stash "$1"; }; f"
 	# Show the list of files changed in a commit
 	show-files = !git show --pretty="" --name-status
+	# List worktrees
+	worktrees = worktree list
 
 	# Shows changes made by a branch since the last common commit with another branch.
 	# Usage:
