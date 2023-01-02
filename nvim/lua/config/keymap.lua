@@ -1,9 +1,5 @@
 local wk = require("which-key")
 
--- Space is leader
-vim.g.mapleader = " "
-vim.g.maplocalleader = " "
-
 wk.setup({
   window = { border = "single" },
   operators = { gs = "Surround", gS = "Surround" },
@@ -136,15 +132,16 @@ normal.leader({
   },
 })
 
--- Packer
+-- Lazy
 normal.leader({
-  P = {
-    name = "Packer",
-    c = { ":PackerCompile<cr>", "Compile" },
-    i = { ":PackerInstall<CR>", "Install" },
-    u = { ":PackerUpdate<CR>", "Update" },
-    s = { ":PackerSync<CR>", "Sync" },
-    S = { ":PackerStatus<CR>", "Status" },
+  L = {
+    name = "Lazy",
+    L = { ":Lazy show<CR>", "Status" },
+    c = { ":Lazy check<cr>", "Check" },
+    i = { ":Lazy install<CR>", "Install" },
+    u = { ":Lazy update<CR>", "Update" },
+    s = { ":Lazy sync<CR>", "Sync" },
+    h = { ":checkhealth lazy<CR>", "Check health" },
   },
 })
 

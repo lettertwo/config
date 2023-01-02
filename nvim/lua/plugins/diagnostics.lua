@@ -27,31 +27,39 @@ vim.diagnostic.config({
   },
 })
 
-require("trouble").setup({
-  use_diagnostic_signs = true,
-  auto_jump = { "lsp_definitions", "lsp_references", "lsp_type_definitions", "lsp_implementations" },
-  action_keys = {
-    jump = { "<S-CR>" },
-    jump_close = { "<CR>" },
+return {
+  {
+    "folke/trouble.nvim",
+    event = "VeryLazy",
+    config = function()
+      require("trouble").setup({
+        use_diagnostic_signs = true,
+        auto_jump = { "lsp_definitions", "lsp_references", "lsp_type_definitions", "lsp_implementations" },
+        action_keys = {
+          jump = { "<S-CR>" },
+          jump_close = { "<CR>" },
+        },
+      })
+
+      local keymap = require("config.keymap")
+
+      keymap.normal.leader({
+        d = {
+          name = "Diagnostics",
+          j = { vim.diagnostic.goto_next, "Next diagnostic" },
+          k = { vim.diagnostic.goto_prev, "Previous diagnostic" },
+          q = { ":TroubleToggle quickfix<cr>", "QuickFix" },
+          l = { ":TroubleToggle loclist<cr>", "Locationlist" },
+          t = { ":TroubleToggle telescope<cr>", "Telescope" },
+          d = { ":TroubleToggle document_diagnostics<cr>", "Diagnostics" },
+          w = { ":TroubleToggle workspace_diagnostics<cr>", "Workspace Diagnostics" },
+        },
+      })
+
+      keymap.normal.register({
+        ["]d"] = { vim.diagnostic.goto_next, "Next diagnostic" },
+        ["[d"] = { vim.diagnostic.goto_prev, "Previous diagnostic" },
+      })
+    end,
   },
-})
-
-local keymap = require("config.keymap")
-
-keymap.normal.leader({
-  d = {
-    name = "Diagnostics",
-    j = { vim.diagnostic.goto_next, "Next diagnostic" },
-    k = { vim.diagnostic.goto_prev, "Previous diagnostic" },
-    q = { ":TroubleToggle quickfix<cr>", "QuickFix" },
-    l = { ":TroubleToggle loclist<cr>", "Locationlist" },
-    t = { ":TroubleToggle telescope<cr>", "Telescope" },
-    d = { ":TroubleToggle document_diagnostics<cr>", "Diagnostics" },
-    w = { ":TroubleToggle workspace_diagnostics<cr>", "Workspace Diagnostics" },
-  },
-})
-
-keymap.normal.register({
-  ["]d"] = { vim.diagnostic.goto_next, "Next diagnostic" },
-  ["[d"] = { vim.diagnostic.goto_prev, "Previous diagnostic" },
-})
+}

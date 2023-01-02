@@ -1,7 +1,3 @@
-local alpha = require("alpha")
-local theta = require("alpha.themes.theta")
-local button = require("alpha.themes.dashboard").button
-
 ---@alias Position "left" | "center" | "right"
 ---@alias Alignment "left" | "right"
 ---@alias HighlightGroup string | [string, integer, integer][]
@@ -130,64 +126,6 @@ local function find(tbl, predicate)
   end
   return nil
 end
-
----@type Group
-local section_mru = assert(find(theta.config.layout, function(tbl)
-  return tbl.type == "group"
-    and find(tbl.val, function(v)
-      return v.type == "text" and v.val == "Recent files"
-    end) ~= nil
-end))
-
----@type Group
-local section_links = {
-  type = "group",
-  val = {
-    { type = "text", val = "Find Stuff", opts = { hl = "SpecialComment", position = "center" } },
-    { type = "padding", val = 1 },
-    button("l", "  Load Session", "<CMD>SessionLoad<CR>"),
-    button("s", "  Recent Sessions", "<CMD>Telescope persisted<CR>"),
-    button("p", "  Recent Projects", "<CMD>Telescope projects<CR>"),
-    button("e", "פּ  Explore", "<CMD>Telescope file_browser<CR>"),
-    button("f", "  Find File", "<CMD>Telescope find_files<CR>"),
-    button("r", "  Find Recent", "<CMD>Telescope oldfiles<CR>"),
-    button("a", "  Find Text", "<CMD>Telescope live_grep<CR>"),
-  },
-}
-
----@type Group
-local section_stats = {
-  type = "group",
-  val = {
-    {
-      type = "text",
-      val = "Neovim  " .. version.major .. "." .. version.minor .. "." .. version.patch,
-      opts = { hl = "SpecialComment", position = "center" },
-    },
-    { type = "padding", val = 1 },
-    button(
-      "c",
-      "  Configuration",
-      "<CMD>Telescope find_files cwd=$NVIM_CONFIG_DIR prompt_title=Nvim\\ Config\\ Files<CR>"
-    ),
-    button("U", "  Sync " .. #vim.tbl_keys(packer_plugins) .. " Plugins", "<CMD>PackerSync<CR>"),
-    -- Default cursor alignment is off by 1 with these icons (maybe they use an extra byte?)
-    deepmerge(button("C", "律 Checkhealth", "<CMD>checkhealth<CR>"), { opts = { cursor = 4 } }),
-    deepmerge(button("S", "祥 Profile startup", "<CMD>StartupTime<CR>"), { opts = { cursor = 4 } }),
-  },
-}
-
----@type Element[]
-local sections = {
-  section_mru,
-  { type = "padding", val = 2 },
-  section_links,
-  { type = "padding", val = 2 },
-  section_stats,
-  { type = "padding", val = 2 },
-  button("n", "  New File", "<CMD>ene!<CR>"),
-  button(";", "  Close", "<CMD>Alpha<CR>"),
-}
 
 -- Given an index and a count, generates a highlight
 -- group name in the range "StartLogo1...StartLogo20"
@@ -362,54 +300,123 @@ local function embed_section_line(header_line, section_line, winwidth)
   return { type = "text", val = header_val, opts = header_opts }
 end
 
----@return Element[]
-local function create_layout()
-  local winwidth = vim.fn.winwidth(alpha_win)
+return {
+  {
+    "goolord/alpha-nvim",
+    lazy = false,
+    config = function()
+      local theta = require("alpha.themes.theta")
+      local button = require("alpha.themes.dashboard").button
 
-  ---@type Element[]
-  local layout = {
-    { type = "padding", val = 1 },
-  }
+      ---@type Group
+      local section_mru = assert(find(theta.config.layout, function(tbl)
+        return tbl.type == "group"
+            and find(tbl.val, function(v)
+              return v.type == "text" and v.val == "Recent files"
+            end) ~= nil
+      end))
 
-  local next_section_line = iterate_line_elements(sections)
+      ---@type Group
+      local section_links = {
+        type = "group",
+        val = {
+          { type = "text", val = "Find Stuff", opts = { hl = "SpecialComment", position = "center" } },
+          { type = "padding", val = 1 },
+          button("l", "  Load Session", "<CMD>SessionLoad<CR>"),
+          button("s", "  Recent Sessions", "<CMD>Telescope persisted<CR>"),
+          button("p", "  Recent Projects", "<CMD>Telescope projects<CR>"),
+          button("e", "פּ  Explore", "<CMD>Telescope file_browser<CR>"),
+          button("f", "  Find File", "<CMD>Telescope find_files<CR>"),
+          button("r", "  Find Recent", "<CMD>Telescope oldfiles<CR>"),
+          button("a", "  Find Text", "<CMD>Telescope live_grep<CR>"),
+        },
+      }
 
-  -- Build the header section, embedding as many section lines as possible.
-  for i, val in ipairs(header_lines) do
-    --- @type FlatText
-    local header_line = {
-      type = "text",
-      val = center(val),
-      opts = { hl = header_highlight_group(i, #header_lines) },
-    }
-    -- After line 11 we can start embedding section lines in the header.
-    -- TODO: Detect when the header has room to start embedding.
-    if i > 12 then
-      local section_line = next_section_line()
-      if section_line ~= nil then
-        table.insert(layout, embed_section_line(header_line, section_line, winwidth))
-      else
-        table.insert(layout, header_line)
+      ---@type Group
+      local section_stats = {
+        type = "group",
+        val = {
+          {
+            type = "text",
+            val = "Neovim  " .. version.major .. "." .. version.minor .. "." .. version.patch,
+            opts = { hl = "SpecialComment", position = "center" },
+          },
+          { type = "padding", val = 1 },
+          button(
+            "c",
+            "  Configuration",
+            "<CMD>Telescope find_files cwd=$NVIM_CONFIG_DIR prompt_title=Nvim\\ Config\\ Files<CR>"
+          ),
+          button("U", "  Sync " .. require("lazy").stats().count .. " Plugins", "<CMD>Lazy sync<CR>"),
+          -- Default cursor alignment is off by 1 with these icons (maybe they use an extra byte?)
+          deepmerge(button("C", "律 Checkhealth", "<CMD>checkhealth<CR>"), { opts = { cursor = 4 } }),
+          deepmerge(button("S", "祥 Profile startup", "<CMD>Lazy profile<CR>"), { opts = { cursor = 4 } }),
+        },
+      }
+
+      ---@type Element[]
+      local sections = {
+        section_mru,
+        { type = "padding", val = 2 },
+        section_links,
+        { type = "padding", val = 2 },
+        section_stats,
+        { type = "padding", val = 2 },
+        button("n", "  New File", "<CMD>ene!<CR>"),
+        button(";", "  Close", "<CMD>Alpha<CR>"),
+      }
+
+      ---@return Element[]
+      local function create_layout()
+        local winwidth = vim.fn.winwidth(alpha_win)
+
+        ---@type Element[]
+        local layout = {
+          { type = "padding", val = 1 },
+        }
+
+        local next_section_line = iterate_line_elements(sections)
+
+        -- Build the header section, embedding as many section lines as possible.
+        for i, val in ipairs(header_lines) do
+          --- @type FlatText
+          local header_line = {
+            type = "text",
+            val = center(val),
+            opts = { hl = header_highlight_group(i, #header_lines) },
+          }
+          -- After line 11 we can start embedding section lines in the header.
+          -- TODO: Detect when the header has room to start embedding.
+          if i > 12 then
+            local section_line = next_section_line()
+            if section_line ~= nil then
+              table.insert(layout, embed_section_line(header_line, section_line, winwidth))
+            else
+              table.insert(layout, header_line)
+            end
+          else
+            table.insert(layout, header_line)
+          end
+        end
+
+        -- Insert the remaining section lines into the layout.
+        for section_line in next_section_line do
+          table.insert(layout, section_line)
+        end
+        return layout
       end
-    else
-      table.insert(layout, header_line)
-    end
-  end
 
-  -- Insert the remaining section lines into the layout.
-  for section_line in next_section_line do
-    table.insert(layout, section_line)
-  end
-  return layout
-end
+      require("alpha").setup({
+        layout = { { type = "group", val = create_layout } },
+        opts = {
+          margin = 0,
+          setup = theta.config.opts.setup, -- Adds an autocmd to refresh on dir change.
+        },
+      })
 
-alpha.setup({
-  layout = { { type = "group", val = create_layout } },
-  opts = {
-    margin = 0,
-    setup = theta.config.opts.setup, -- Adds an autocmd to refresh on dir change.
-  },
-})
-
-require("config.keymap").normal.leader({
-  [";"] = { "<cmd>Alpha<CR>", "Dashboard" },
-})
+      require("config.keymap").normal.leader({
+        [";"] = { "<cmd>Alpha<CR>", "Dashboard" },
+      })
+    end,
+  }
+}

@@ -1,6 +1,10 @@
 -- Set $NVIM_CONFIG_DIR to the directory containing this file.
 vim.env.NVIM_CONFIG_DIR = vim.fn.stdpath("config")
 
+-- Space is leader
+vim.g.mapleader = " "
+vim.g.maplocalleader = " "
+
 -- Disable some builtins
 vim.g.loaded_gzip = 1
 vim.g.loaded_zip = 1
@@ -16,6 +20,28 @@ vim.g.loaded_matchit = 1
 vim.g.loaded_matchparen = 1
 vim.g.loaded_logiPat = 1
 vim.g.loaded_rrhelper = 1
+
+-- filetypes that represent UI elements.
+vim.g.ui_filetypes = {
+  "lazy",
+  "mason",
+  "NvimTree",
+  "Outline",
+  "TelescopePrompt",
+  "Trouble",
+  "alpha",
+  "dashboard",
+  "fugitive",
+  "help",
+  "neogitstatus",
+  "packer",
+  "qf",
+  "spectre_panel",
+  "startify",
+  "terminal",
+  "toggleterm",
+  "unite",
+}
 
 -- Magic files
 vim.opt.backup = false -- don't create backup files
@@ -42,12 +68,6 @@ vim.opt.smartcase = true
 
 -- Allow mouse interactivity
 vim.opt.mouse = "a"
-
--- colorscheme
-vim.g.colors_name = "laserwave"
-vim.opt.termguicolors = true
-vim.opt.background = "dark"
-vim.cmd([[ colorscheme laserwave ]])
 
 -- UI settings
 -- vim.opt.pumheight = 10 -- reasonable popup menu height
@@ -87,7 +107,7 @@ vim.opt.scrolloff = 10 -- keep lines below cursor when scrolling
 vim.opt.sidescrolloff = 15 -- keep columns after cursor when scrolling
 
 vim.opt.number = true -- show line numbers
-vim.opt.relativenumber = true -- relative normally, nonrelative in insert mode (see `config.autocommands`).
+vim.opt.relativenumber = true -- relative normally, nonrelative in insert mode (see `config.autocmd`).
 
 -- Completions
 vim.opt.completeopt = { "menuone", "noselect", "noinsert" } -- insert mode completion setting

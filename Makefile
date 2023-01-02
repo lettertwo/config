@@ -40,16 +40,16 @@ endif
 
 ### laserwave
 
-~/.local/share/laserwave:
+~/.local/share/laserwave.nvim:
 	$(call err,"laserwave not found!")
 	$(call log,"Installing laserwave...")
 	$(call run,git clone https://github.com/lettertwo/laserwave.nvim.git $@)
 	$(call done)
 
 .PHONY: update-laserwave
-update-laserwave: ~/.local/share/laserwave
+update-laserwave: ~/.local/share/laserwave.nvim
 	$(call log,"Updating laserwave...")
-	$(call run,cd ~/.local/share/laserwave && git pull)
+	$(call run,cd ~/.local/share/laserwave.nvim && git pull)
 	$(call done)
 
 ### homebrew
@@ -120,14 +120,13 @@ ifndef NVIM
 endif
 
 .PHONY: update-nvim
-NVIM_OUT := $(shell mktemp)
 update-nvim: nvim
 	$(call log,"Updating neovim...")
 	$(call run,brew reinstall neovim)
 	$(call log,"Updating pynvim...")
 	$(call run,pip3 install --user --upgrade pynvim)
 	$(call log,"Updating Plugins...")
-	$(call run,nvim +'autocmd User PackerComplete sleep 100m | write! ${NVIM_OUT} | qall' +PackerUpdate ; cat ${NVIM_OUT} | rg -v 'Press')
+	$(call run,nvim --headless "+Lazy! sync" "+silent w! /dev/stdout" +qa)
 	$(call done)
 
 ### kitty
@@ -141,7 +140,7 @@ ifndef KITTY
 	$(call log,"Installing kitty...")
 	$(call run,curl -L https://sw.kovidgoyal.net/kitty/installer.sh | zsh /dev/stdin)
 	$(call run,ln -sf /Applications/kitty.app/Contents/MacOS/kitty "$$HOME/.local/bin/kitty")
-	$(call run,ln -sf "$$HOME/.local/share/laserwave/dist/kitty/laserwave.conf" "$$HOME/.config/kitty/laserwave.conf")
+	$(call run,ln -sf "$$HOME/.local/share/laserwave.nvim/dist/kitty/laserwave.conf" "$$HOME/.config/kitty/laserwave.conf")
 	$(call run,rm /var/folders/*/*/*/com.apple.dock.iconcache; killall Dock) # force refresh of dock icons.
 	$(call done)
 endif
@@ -156,7 +155,7 @@ else
 endif
 	$(call run,curl -L https://sw.kovidgoyal.net/kitty/installer.sh | zsh /dev/stdin)
 	$(call run,ln -sf /Applications/kitty.app/Contents/MacOS/kitty "$$HOME/.local/bin/kitty")
-	$(call run,ln -sf "$$HOME/.local/share/laserwave/dist/kitty/laserwave.conf" "$$HOME/.config/kitty/laserwave.conf")
+	$(call run,ln -sf "$$HOME/.local/share/laserwave.nvim/dist/kitty/laserwave.conf" "$$HOME/.config/kitty/laserwave.conf")
 	$(call run,rm /var/folders/*/*/*/com.apple.dock.iconcache; killall Dock) #force refresh of dock icons.
 	$(call done)
 
@@ -201,7 +200,7 @@ update-config:
 mkdirs: ~/.cache/zsh ~/.local/bin ~/.local/share ~/.local/state/zsh/completions
 
 .PHONY: install
-install: mkdirs /etc/zshenv ~/.local/share/laserwave brew sheldon nvim kitty qmk
+install: mkdirs /etc/zshenv ~/.local/share/laserwave.nvim brew sheldon nvim nvimpager kitty qmk
 	@echo ""
 	$(call done)
 	@echo ""

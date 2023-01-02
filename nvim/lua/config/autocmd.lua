@@ -1,9 +1,3 @@
-local join_paths = require("fs").join_paths
-local commands = require("config.commands")
-
-local configpath = vim.fn.stdpath("config")
-local init_file = join_paths(configpath, "init.lua")
-
 local default_opts = {
   group = vim.api.nvim_create_augroup("config", { clear = true }),
 }
@@ -24,14 +18,6 @@ M.remove = remove
 -- Show absolute line numbers in insert mode
 create("InsertEnter", { pattern = { "*" }, command = ":set norelativenumber" })
 create("InsertLeave", { pattern = { "*" }, command = ":set relativenumber" })
-
--- Reload config files
-create("BufWritePost", {
-  pattern = { init_file, "*/nvim/lua/*.lua", "*/nvim/lua/*/*.lua" },
-  callback = function(evt)
-    commands.ReloadConfig(evt.file:match("plugins.lua") ~= nil)
-  end,
-})
 
 -- Close cmdwin with <Esc>
 create("CmdwinEnter", {
