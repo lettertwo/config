@@ -1,4 +1,4 @@
-local location = require("config.location")
+local location = require("plugins.location")
 
 local _, noice = pcall(require, "noice")
 

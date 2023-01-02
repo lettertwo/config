@@ -49,23 +49,23 @@ use("folke/neodev.nvim")
 use({ "~/.local/share/occurrency.nvim", config = [[ require("occurrency.dev").setup({}) ]] })
 
 -- some assembly required --
-use({ "goolord/alpha-nvim", config = [[ require("config.dashboard") ]] })
+use({ "goolord/alpha-nvim", config = [[ require("plugins.dashboard") ]] })
 use({ "folke/which-key.nvim", config = [[ require("keymap") ]] })
-use({ "numToStr/Comment.nvim", config = [[ require("config.comment") ]] })
+use({ "numToStr/Comment.nvim", config = [[ require("plugins.comment") ]] })
 
 -- Status bar, Tab bar, location --
 use({
   "nvim-lualine/lualine.nvim",
   requires = { "SmiteshP/nvim-navic", "SmiteshP/nvim-gps" },
   after = { "nvim-lspconfig", "nvim-treesitter" },
-  config = [[ require("config.lualine") ]],
+  config = [[ require("plugins.lualine") ]],
 })
 
 -- UI for notifications, messages, cmdline, LSP status, etc. --
 use({
   "folke/noice.nvim",
   requires = { "MunifTanjim/nui.nvim", "rcarriga/nvim-notify" },
-  config = [[ require("config.noice") ]],
+  config = [[ require("plugins.noice") ]],
 })
 
 -- TODO: explore https://github.com/folke/neoconf.nvim
@@ -74,7 +74,7 @@ use({
 use({
   "github/copilot.vim",
   setup = [[
-    -- Accepting copilot suggestions is managged via nvim-cmp config.
+    -- Accepting copilot suggestions is managged via nvim-cmp plugins.
     vim.g.copilot_no_tab_map = true
     vim.g.copilot_assume_mapped = true
   ]],
@@ -97,22 +97,22 @@ use({
     { "petertriho/cmp-git" },
     { "saadparwaiz1/cmp_luasnip" },
   },
-  config = [[require('config.cmp')]],
+  config = [[require('plugins.cmp')]],
 })
 
 -- Snippets
 use({
   "L3MON4D3/LuaSnip",
   requires = { "rafamadriz/friendly-snippets" },
-  config = [[ require("config.luasnip") ]],
+  config = [[ require("plugins.luasnip") ]],
 })
 
 -- LSP
 use({
   "neovim/nvim-lspconfig",
-  requires = { "williamboman/mason-lspconfig.nvim", "folke/lua-dev.nvim", "simrat39/rust-tools.nvim" },
+  requires = { "williamboman/mason-lspplugins.nvim", "folke/lua-dev.nvim", "simrat39/rust-tools.nvim" },
   after = { "mason.nvim", "cmp-nvim-lsp" },
-  config = [[ require("config.lsp") ]],
+  config = [[ require("plugins.lsp") ]],
 })
 
 -- Linting
@@ -120,11 +120,11 @@ use({
   "jose-elias-alvarez/null-ls.nvim",
   requires = { "jayp0521/mason-null-ls.nvim" },
   after = { "mason.nvim", "nvim-lspconfig" },
-  config = [[ require("config.null-ls") ]],
+  config = [[ require("plugins.null-ls") ]],
 })
 
 -- Diagnostics
-use({ "folke/trouble.nvim", after = "nvim-lspconfig", config = [[ require("config.diagnostics") ]] })
+use({ "folke/trouble.nvim", after = "nvim-lspconfig", config = [[ require("plugins.diagnostics") ]] })
 
 -- Treesitter and Highlighting
 use({
@@ -138,7 +138,7 @@ use({
     "JoosepAlviste/nvim-ts-context-commentstring",
   },
   run = ":TSUpdate",
-  config = [[ require("config.treesitter") ]],
+  config = [[ require("plugins.treesitter") ]],
 })
 -- Highlight colors
 use({
@@ -189,7 +189,7 @@ use({
 })
 
 -- Git, SCM
-use({ "lewis6991/gitsigns.nvim", config = [[ require("config.gitsigns") ]] })
+use({ "lewis6991/gitsigns.nvim", config = [[ require("plugins.gitsigns") ]] })
 
 -- Scrollbar
 use({
@@ -205,7 +205,7 @@ use({
 -- use { "sindrets/diffview.nvim", event = "BufRead" }
 
 -- Wrapping/delimiters
-use({ "kylechui/nvim-surround", config = [[ require("config.surround") ]] })
+use({ "kylechui/nvim-surround", config = [[ require("plugins.surround") ]] })
 
 -- Telescope, Search
 use({
@@ -213,7 +213,7 @@ use({
     "nvim-telescope/telescope.nvim",
     requires = { "nvim-lua/plenary.nvim" },
     after = { "trouble.nvim", "persisted.nvim", "project.nvim" },
-    config = [[require('config.telescope')]],
+    config = [[require('plugins.telescope')]],
   },
   { "nvim-telescope/telescope-fzf-native.nvim", run = "make" },
   { "nvim-telescope/telescope-ui-select.nvim" },
@@ -226,8 +226,8 @@ use({
 use({ "dstein64/vim-startuptime", cmd = "StartupTime", config = [[vim.g.startuptime_tries = 10]] })
 
 -- Project Management/Sessions
-use({ "olimorris/persisted.nvim", config = [[ require("config.persisted") ]] })
-use({ "ahmedkhalf/project.nvim", config = [[ require("config.project") ]] })
+use({ "olimorris/persisted.nvim", config = [[ require("plugins.persisted") ]] })
+use({ "ahmedkhalf/project.nvim", config = [[ require("plugins.project") ]] })
 
 -- Navigate seamlessly between kitty and nvim windows.
 use({ "knubie/vim-kitty-navigator", run = [[ cp ./*.py $XDG_CONFIG_HOME/kitty/ ]] })
