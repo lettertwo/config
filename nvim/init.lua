@@ -2,7 +2,7 @@ if require("first_run")() then
   return
 end
 
-require("config.settings")
+require("config.options")
 require("config.commands")
 require("config.autocommands")
 require("plugins")
