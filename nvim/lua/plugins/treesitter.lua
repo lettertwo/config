@@ -5,7 +5,7 @@ end
 
 require("treesitter-context").setup({})
 
-local keymap = require("keymap")
+local keymap = require("config.keymap")
 
 keymap.operator.label("af", "a function")
 keymap.operator.label("if", "inner function")

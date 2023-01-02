@@ -2,9 +2,9 @@ if require("first_run")() then
   return
 end
 
-require("settings")
-require("commands")
-require("autocommands")
+require("config.settings")
+require("config.commands")
+require("config.autocommands")
 require("plugins")
 
 if vim.g.CONFIG_LOADED then

@@ -410,6 +410,6 @@ alpha.setup({
   },
 })
 
-require("keymap").normal.leader({
+require("config.keymap").normal.leader({
   [";"] = { "<cmd>Alpha<CR>", "Dashboard" },
 })

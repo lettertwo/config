@@ -1,5 +1,5 @@
 local join_paths = require("fs").join_paths
-local commands = require("commands")
+local commands = require("config.commands")
 
 local configpath = vim.fn.stdpath("config")
 local init_file = join_paths(configpath, "init.lua")
@@ -36,7 +36,7 @@ create("BufWritePost", {
 -- Close cmdwin with <Esc>
 create("CmdwinEnter", {
   callback = function()
-    require("keymap").buffer().normal("<Esc>", "<C-c><C-c>", "Exit Command")
+    require("config.keymap").buffer().normal("<Esc>", "<C-c><C-c>", "Exit Command")
   end,
 })
 

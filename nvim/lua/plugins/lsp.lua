@@ -1,6 +1,6 @@
 local lspconfig = require("lspconfig")
-local cmd = require("commands")
-local autocmd = require("autocommands")
+local cmd = require("config.commands")
+local autocmd = require("config.autocommands")
 local rt = require("rust-tools")
 
 require("mason-lspconfig").setup({ automatic_installation = true })
@@ -101,7 +101,7 @@ vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(function(_, result, ctx, o
 end, {})
 
 local function lsp_keymaps(_, bufnr)
-  local keymap = require("keymap").buffer(bufnr)
+  local keymap = require("config.keymap").buffer(bufnr)
   keymap.normal.leader({
 
     ["."] = { vim.lsp.buf.code_action, "Show code actions" },

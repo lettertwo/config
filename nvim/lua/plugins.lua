@@ -50,7 +50,7 @@ use({ "~/.local/share/occurrency.nvim", config = [[ require("occurrency.dev").se
 
 -- some assembly required --
 use({ "goolord/alpha-nvim", config = [[ require("plugins.dashboard") ]] })
-use({ "folke/which-key.nvim", config = [[ require("keymap") ]] })
+use({ "folke/which-key.nvim", config = [[ require("config.keymap") ]] })
 use({ "numToStr/Comment.nvim", config = [[ require("plugins.comment") ]] })
 
 -- Status bar, Tab bar, location --

@@ -22,7 +22,7 @@ local buffer_setup_group = vim.api.nvim_create_augroup("nvimSurroundBufferSetup"
 -- See which-key setup in `keymap.lua` for surround operators.
 vim.api.nvim_create_autocmd("BufEnter", {
   callback = function()
-    local keymap = require("keymap").buffer(0)
+    local keymap = require("config.keymap").buffer(0)
     keymap.normal.register({
       gs = {
         name = "Surround",

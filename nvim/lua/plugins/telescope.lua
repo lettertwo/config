@@ -166,7 +166,7 @@ local function xdg_config_grep()
   })
 end
 
-require("keymap").normal.leader({
+require("config.keymap").normal.leader({
   p = { "<cmd>Telescope<CR>", "Telescope" },
   e = { "<cmd>Telescope file_browser<CR>", "File Explorer" },
   t = { "<cmd>Telescope buffers<CR>", "Buffers" },

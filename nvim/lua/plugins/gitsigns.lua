@@ -17,7 +17,7 @@ gitsigns.setup({
     col = 1,
   },
   on_attach = function(bufnr)
-    local keymap = require("keymap").buffer(bufnr)
+    local keymap = require("config.keymap").buffer(bufnr)
 
     keymap.normal.leader({
       g = {

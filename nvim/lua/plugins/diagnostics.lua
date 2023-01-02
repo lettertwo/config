@@ -36,7 +36,7 @@ require("trouble").setup({
   },
 })
 
-local keymap = require("keymap")
+local keymap = require("config.keymap")
 
 keymap.normal.leader({
   d = {
