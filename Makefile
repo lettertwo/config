@@ -108,21 +108,27 @@ endif
 
 NVIM := $(shell command -v nvim 2> /dev/null)
 
+~/.local/share/neovim:
+	$(call err,"neovim source not found!")
+	$(call log,"Cloning neovim...")
+	$(call run,git clone git@github.com:neovim/neovim.git $@)
+	$(call done)
+
 .PHONY: nvim
-nvim: brew pip3
+nvim: ~/.local/share/neovim pip3
 ifndef NVIM
-	$(call err,"nvim not found!")
 	$(call log,"Installing neovim...")
-	$(call run,brew install --HEAD neovim)
+	$(call run,cd ~/.local/share/neovim && make CMAKE_BUILD_TYPE=RelWithDebInfo && make install)
 	$(call log,"Installing pynvim...")
 	$(call run,pip3 install --user --upgrade pynvim)
 	$(call done)
 endif
 
 .PHONY: update-nvim
-update-nvim: nvim
+update-nvim: ~/.local/share/neovim
 	$(call log,"Updating neovim...")
-	$(call run,brew reinstall neovim)
+	$(call run,cd ~/.local/share/neovim && git pull)
+	$(call run,cd ~/.local/share/neovim && make CMAKE_BUILD_TYPE=RelWithDebInfo && make install)
 	$(call log,"Updating pynvim...")
 	$(call run,pip3 install --user --upgrade pynvim)
 	$(call log,"Updating Plugins...")

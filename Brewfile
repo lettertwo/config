@@ -43,9 +43,15 @@ brew "hyperfine"
 # lua
 brew "lua-language-server"
 
-# neovim
-brew "neovim", args: ["HEAD"]
-brew "nvr", args: ["HEAD"]
+# neovim dependencies
+# See https://github.com/neovim/neovim/wiki/Building-Neovim#macos--homebrew
+brew "ninja"
+brew "libtool"
+brew "automake"
+brew "cmake"
+brew "pkg-config"
+brew "gettext"
+brew "curl"
 
 # git
 brew "gh"
