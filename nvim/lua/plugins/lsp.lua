@@ -1,38 +1,21 @@
 return {
-  -- neodev
-  {
-    "folke/neodev.nvim",
-    disabled = true,
-    event = "BufReadPre",
-    -- config = {
-    --   debug = true,
-    --   experimental = {
-    --     pathStrict = true,
-    --   },
-    -- },
-  },
-
-  -- Project-local config
-  {
-    "folke/neoconf.nvim",
-    event = "BufReadPre",
-    config = true,
-  },
-
-  -- json schemas
-  "b0o/SchemaStore.nvim",
-
-  -- LSP
   {
     "neovim/nvim-lspconfig",
-    event = "BufReadPre",
-    dependencies = { "williamboman/mason-lspconfig.nvim", "simrat39/rust-tools.nvim" },
+    event = "VeryLazy",
+    dependencies = {
+      "williamboman/mason-lspconfig.nvim",
+      "simrat39/rust-tools.nvim",
+      "folke/neodev.nvim",
+      "folke/neoconf.nvim",
+      "b0o/SchemaStore.nvim",
+    },
     config = function()
       local lspconfig = require("lspconfig")
       local rt = require("rust-tools")
 
       require("mason-lspconfig").setup({ automatic_installation = true })
 
+      require("neoconf").setup({})
       require("neodev").setup({})
 
       local servers = {
@@ -52,9 +35,16 @@ return {
         flow = {
           filetypes = { "javascript", "javascriptreact", "javascript.jsx", "flowtype", "flowtypereact" },
         },
+        jsonls = {
+          settings = {
+            json = {
+              schemas = require("schemastore").json.schemas(),
+              validate = { enable = true },
+            },
+          },
+        },
         "eslint",
         "html",
-        "jsonls",
         "cssls",
         "pyright",
         "bashls",

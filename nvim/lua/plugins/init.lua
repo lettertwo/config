@@ -98,11 +98,10 @@ return {
     end,
   },
 
-  -- TODO:: Lua plugin development --
-  -- use("nanotee/luv-vimdocs")
-  -- use("milisims/nvim-luaref")
-  -- use("bfredl/nvim-luadev")
-  -- use("folke/neodev.nvim")
+  -- Lua plugin development --
+  "nanotee/luv-vimdocs",
+  "milisims/nvim-luaref",
+  "bfredl/nvim-luadev",
 
   -- Occurrence operator --
   -- use({ "~/.local/share/occurrency.nvim", config = [[ require("occurrency.dev").setup({}) ]] })
