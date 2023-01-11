@@ -38,7 +38,7 @@
 ---@field val Element[] | fun(): Element[]
 ---@field opts { spacing: integer }
 
-local version = assert(vim.version())
+local version = assert(vim.fn.execute('version'):gsub(".*%sv([%w%p]+)\n.*", "%1"))
 local alpha_win = vim.fn.winnr()
 
 -- font: https://famfonts.com/metallica/
@@ -313,7 +313,8 @@ return {
         return tbl.type == "group"
             and find(tbl.val, function(v)
               return v.type == "text" and v.val == "Recent files"
-            end) ~= nil
+            end)
+            ~= nil
       end))
 
       ---@type Group
@@ -338,7 +339,7 @@ return {
         val = {
           {
             type = "text",
-            val = "Neovim  " .. version.major .. "." .. version.minor .. "." .. version.patch,
+            val = "Neovim  " .. version,
             opts = { hl = "SpecialComment", position = "center" },
           },
           { type = "padding", val = 1 },
@@ -418,5 +419,5 @@ return {
         [";"] = { "<cmd>Alpha<CR>", "Dashboard" },
       })
     end,
-  }
+  },
 }
