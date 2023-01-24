@@ -1,19 +1,11 @@
-local signs = {
-  { name = "DiagnosticSignError", text = "" },
-  { name = "DiagnosticSignWarn", text = "" },
-  { name = "DiagnosticSignHint", text = "" },
-  { name = "DiagnosticSignInfo", text = "" },
-}
+local capcase = require("util").capcase
 
-for _, sign in ipairs(signs) do
-  vim.fn.sign_define(sign.name, { texthl = sign.name, text = sign.text, numhl = "" })
+for key, icon in pairs(require("config").icons.diagnostics) do
+  local name = "DiagnosticSign" .. capcase(key)
+  vim.fn.sign_define(name, { text = icon, texthl = name, numhl = "" })
 end
 
 vim.diagnostic.config({
-  virtual_text = true,
-  signs = {
-    active = signs,
-  },
   update_in_insert = true,
   underline = true,
   severity_sort = true,
@@ -28,38 +20,28 @@ vim.diagnostic.config({
 })
 
 return {
+  -- better diagnostics list and others
   {
     "folke/trouble.nvim",
-    event = "VeryLazy",
-    config = function()
-      require("trouble").setup({
-        use_diagnostic_signs = true,
-        auto_jump = { "lsp_definitions", "lsp_references", "lsp_type_definitions", "lsp_implementations" },
-        action_keys = {
-          jump = { "<S-CR>" },
-          jump_close = { "<CR>" },
-        },
-      })
-
-      local keymap = require("config.keymap")
-
-      keymap.normal.leader({
-        d = {
-          name = "Diagnostics",
-          j = { vim.diagnostic.goto_next, "Next diagnostic" },
-          k = { vim.diagnostic.goto_prev, "Previous diagnostic" },
-          q = { ":TroubleToggle quickfix<cr>", "QuickFix" },
-          l = { ":TroubleToggle loclist<cr>", "Locationlist" },
-          t = { ":TroubleToggle telescope<cr>", "Telescope" },
-          d = { ":TroubleToggle document_diagnostics<cr>", "Diagnostics" },
-          w = { ":TroubleToggle workspace_diagnostics<cr>", "Workspace Diagnostics" },
-        },
-      })
-
-      keymap.normal.register({
-        ["]d"] = { vim.diagnostic.goto_next, "Next diagnostic" },
-        ["[d"] = { vim.diagnostic.goto_prev, "Previous diagnostic" },
-      })
-    end,
+    cmd = { "TroubleToggle", "Trouble" },
+    opts = {
+      use_diagnostic_signs = true,
+      auto_jump = { "lsp_definitions", "lsp_references", "lsp_type_definitions", "lsp_implementations" },
+      action_keys = {
+        jump = { "<S-CR>" },
+        jump_close = { "<CR>" },
+      },
+    },
+    keys = {
+      { "]d", vim.diagnostic.goto_next, desc = "Next diagnostic" },
+      { "[d", vim.diagnostic.goto_prev, desc = "Previous diagnostic" },
+      { "<leader>xj", vim.diagnostic.goto_next, desc = "Next diagnostic" },
+      { "<leader>xk", vim.diagnostic.goto_prev, desc = "Previous diagnostic" },
+      { "<leader>xq", ":TroubleToggle quickfix<cr>", desc = "QuickFix" },
+      { "<leader>xl", ":TroubleToggle loclist<cr>", desc = "Locationlist" },
+      { "<leader>xt", ":TroubleToggle telescope<cr>", desc = "Telescope" },
+      { "<leader>xd", ":TroubleToggle document_diagnostics<cr>", desc = "Diagnostics" },
+      { "<leader>xw", ":TroubleToggle workspace_diagnostics<cr>", desc = "Workspace Diagnostics" },
+    },
   },
 }

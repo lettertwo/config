@@ -38,8 +38,10 @@
 ---@field val Element[] | fun(): Element[]
 ---@field opts { spacing: integer }
 
-local version = assert(vim.fn.execute('version'):gsub(".*%sv([%w%p]+)\n.*", "%1"))
+local version, commit = unpack(vim.split(vim.fn.execute("version"):gsub(".*%sv([%w%p]+)\n.*", "%1"), "+"))
+
 local alpha_win = vim.fn.winnr()
+local alpha_buf = vim.fn.bufnr()
 
 -- font: https://famfonts.com/metallica/
 -- generator: https://www.twitchquotes.com/ascii-art-generator
@@ -303,65 +305,65 @@ end
 return {
   {
     "goolord/alpha-nvim",
-    lazy = false,
-    config = function()
+    event = "VimEnter",
+    keys = {
+      { "<leader>;", "<cmd>Alpha<CR>", desc = "Dashboard" },
+    },
+    opts = function()
       local theta = require("alpha.themes.theta")
       local button = require("alpha.themes.dashboard").button
 
       ---@type Group
       local section_mru = assert(find(theta.config.layout, function(tbl)
         return tbl.type == "group"
-            and find(tbl.val, function(v)
+          and find(tbl.val, function(v)
               return v.type == "text" and v.val == "Recent files"
             end)
             ~= nil
       end))
 
-      ---@type Group
-      local section_links = {
-        type = "group",
-        val = {
-          { type = "text", val = "Find Stuff", opts = { hl = "SpecialComment", position = "center" } },
-          { type = "padding", val = 1 },
-          button("l", "  Load Session", "<CMD>SessionLoad<CR>"),
-          button("s", "  Recent Sessions", "<CMD>Telescope persisted<CR>"),
-          button("p", "  Recent Projects", "<CMD>Telescope projects<CR>"),
-          button("e", "פּ  Explore", "<CMD>Telescope file_browser<CR>"),
-          button("f", "  Find File", "<CMD>Telescope find_files<CR>"),
-          button("r", "  Find Recent", "<CMD>Telescope oldfiles<CR>"),
-          button("a", "  Find Text", "<CMD>Telescope live_grep<CR>"),
-        },
-      }
-
-      ---@type Group
-      local section_stats = {
-        type = "group",
-        val = {
-          {
-            type = "text",
-            val = "Neovim  " .. version,
-            opts = { hl = "SpecialComment", position = "center" },
-          },
-          { type = "padding", val = 1 },
-          button(
-            "c",
-            "  Configuration",
-            "<CMD>Telescope find_files cwd=$NVIM_CONFIG_DIR prompt_title=Nvim\\ Config\\ Files<CR>"
-          ),
-          button("U", "  Sync " .. require("lazy").stats().count .. " Plugins", "<CMD>Lazy sync<CR>"),
-          -- Default cursor alignment is off by 1 with these icons (maybe they use an extra byte?)
-          deepmerge(button("C", "律 Checkhealth", "<CMD>checkhealth<CR>"), { opts = { cursor = 4 } }),
-          deepmerge(button("S", "祥 Profile startup", "<CMD>Lazy profile<CR>"), { opts = { cursor = 4 } }),
-        },
-      }
-
       ---@type Element[]
       local sections = {
         section_mru,
         { type = "padding", val = 2 },
-        section_links,
+        {
+          type = "group",
+          val = {
+            { type = "text", val = "Find Stuff", opts = { hl = "SpecialComment", position = "center" } },
+            { type = "padding", val = 1 },
+            button("l", "  Load Session", [[:lua require("persistence").load() <cr>]]),
+            button("e", "פּ  Explore", "<CMD>Telescope file_browser<CR>"),
+            button("f", "  Find File", "<CMD>Telescope find_files<CR>"),
+            button("r", "  Find Recent", "<CMD>Telescope oldfiles<CR>"),
+            button("g", "  Find Text", "<CMD>Telescope live_grep<CR>"),
+          },
+        },
         { type = "padding", val = 2 },
-        section_stats,
+        {
+          type = "group",
+          val = {
+            {
+              type = "text",
+              val = "Neovim  " .. version,
+              opts = { hl = "SpecialComment", position = "center" },
+            },
+            {
+              type = "text",
+              val = commit,
+              opts = { hl = "Comment", position = "center" },
+            },
+            { type = "padding", val = 1 },
+            button(
+              "c",
+              "  Configuration",
+              "<CMD>Telescope find_files cwd=" .. vim.fn.stdpath("config") .. " prompt_title=Nvim\\ Config\\ Files<CR>"
+            ),
+            button("L", "鈴" .. " Lazy", ":Lazy<CR>"),
+            -- Default cursor alignment is off by 1 with these icons (maybe they use an extra byte?)
+            deepmerge(button("C", "律 Checkhealth", "<CMD>checkhealth<CR>"), { opts = { cursor = 4 } }),
+            deepmerge(button("S", "祥 Profile startup", "<CMD>Lazy profile<CR>"), { opts = { cursor = 4 } }),
+          },
+        },
         { type = "padding", val = 2 },
         button("n", "  New File", "<CMD>ene!<CR>"),
         button(";", "  Close", "<CMD>Alpha<CR>"),
@@ -407,16 +409,53 @@ return {
         return layout
       end
 
-      require("alpha").setup({
+      return {
+        sections = sections,
         layout = { { type = "group", val = create_layout } },
         opts = {
           margin = 0,
           setup = theta.config.opts.setup, -- Adds an autocmd to refresh on dir change.
+          redraw_on_resize = false,
         },
+      }
+    end,
+    config = function(_, dashboard)
+      -- close Lazy and re-open when the dashboard is ready
+      if vim.o.filetype == "lazy" then
+        vim.cmd.close()
+        vim.api.nvim_create_autocmd("User", {
+          pattern = "AlphaReady",
+          callback = function()
+            require("lazy").show()
+          end,
+        })
+      end
+
+      require("alpha").setup(dashboard)
+
+      vim.api.nvim_create_autocmd("VimResized", {
+        pattern = "*",
+        callback = function()
+          require("alpha").redraw()
+        end,
       })
 
-      require("config.keymap").normal.leader({
-        [";"] = { "<cmd>Alpha<CR>", "Dashboard" },
+      vim.api.nvim_create_autocmd("User", {
+        pattern = "LazyVimStarted",
+        callback = function()
+          local stats = require("lazy").stats()
+          local ms = (math.floor(stats.startuptime * 100 + 0.5) / 100)
+
+          table.insert(dashboard.sections, { type = "padding", val = 2 })
+          table.insert(dashboard.sections, {
+            type = "text",
+            val = "⚡ Loaded " .. stats.count .. " plugins in " .. ms .. "ms",
+            opts = { hl = "SpecialComment", position = "center" },
+          })
+          if vim.o.filetype == "alpha" then
+            require("alpha").redraw()
+          end
+        end,
       })
     end,
   },

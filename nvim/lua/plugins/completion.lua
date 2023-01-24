@@ -1,31 +1,3 @@
-local kind_icons = {
-  Text = "  ",
-  Method = "  ",
-  Function = "  ",
-  Constructor = "  ",
-  Field = " [] ",
-  Variable = "  ",
-  Class = "  ",
-  Interface = "  ",
-  Module = "  ",
-  Property = "  ",
-  Unit = "  ",
-  Value = "  ",
-  Enum = "  ",
-  Keyword = "  ",
-  Snippet = "  ",
-  Color = "  ",
-  File = "  ",
-  Reference = "  ",
-  Folder = "  ",
-  EnumMember = "  ",
-  Constant = "  ",
-  Struct = "  ",
-  Event = "  ",
-  Operator = "  ",
-  TypeParameter = "  ",
-}
-
 local source_labels = {
   nvim_lsp = "[LSP]",
   nvim_lsp_signature_help = "[Sig]",
@@ -63,14 +35,32 @@ return {
   {
     "L3MON4D3/LuaSnip",
     event = "BufReadPost",
-    dependencies = { "rafamadriz/friendly-snippets" },
-    config = function()
-      require("luasnip.loaders.from_vscode").lazy_load()
-    end,
+    dependencies = {
+      "rafamadriz/friendly-snippets",
+      config = function()
+        require("luasnip.loaders.from_vscode").lazy_load()
+      end,
+    },
+    opts = {
+      history = true,
+      delete_check_events = "TextChanged",
+    },
+    -- stylua: ignore
+    keys = {
+      {
+        "<tab>",
+        function()
+          return require("luasnip").jumpable(1) and "<Plug>luasnip-jump-next" or "<tab>"
+        end,
+        expr = true, silent = true, mode = "i",
+      },
+      { "<tab>", function() require("luasnip").jump(1) end, mode = "s" },
+      { "<s-tab>", function() require("luasnip").jump(-1) end, mode = { "i", "s" } },
+    },
   },
   {
     "github/copilot.vim",
-    event = "BufReadPost",
+    event = "InsertEnter",
     init = function()
       -- Accepting copilot suggestions is managged via nvim-cmp plugins.
       vim.g.copilot_no_tab_map = true
@@ -79,15 +69,15 @@ return {
   },
   {
     "hrsh7th/nvim-cmp",
-    event = "BufReadPost",
+    version = false,
+    event = "InsertEnter",
     dependencies = {
       { "hrsh7th/cmp-buffer" },
       { "hrsh7th/cmp-nvim-lsp" },
       { "hrsh7th/cmp-nvim-lsp-signature-help" },
+      { "hrsh7th/cmp-nvim-lsp-document-symbol" },
       { "hrsh7th/cmp-path" },
       { "hrsh7th/cmp-nvim-lua" },
-      { "lukas-reineke/cmp-under-comparator" },
-      { "hrsh7th/cmp-nvim-lsp-document-symbol" },
       { "hrsh7th/cmp-calc" },
       { "hrsh7th/cmp-cmdline" },
       { "dmitmel/cmp-cmdline-history" },
@@ -193,7 +183,6 @@ return {
           { name = "nvim_lsp_document_symbol" },
           { name = "nvim_lsp_signature_help" },
           { name = "nvim_lua", dup = 0 },
-          { name = "under_comparator" },
           { name = "luasnip" },
         }, {
           { name = "buffer" },
@@ -209,27 +198,12 @@ return {
             cmp.ItemField.Abbr,
             cmp.ItemField.Menu,
           },
-          format = function(entry, vim_item)
-            vim_item.kind = kind_icons[vim_item.kind]
-            vim_item.menu = source_labels[entry.source.name]
-            return vim_item
+          format = function(entry, item)
+            local icons = require("config").icons.kinds
+            item.kind = icons[item.kind]
+            item.menu = source_labels[entry.source.name]
+            return item
           end,
-        },
-        sorting = {
-          priority_weight = 2,
-          comparators = {
-            cmp.config.compare.offset,
-            cmp.config.compare.exact,
-            cmp.config.compare.scopes,
-            cmp.config.compare.score,
-            require("cmp-under-comparator").under,
-            cmp.config.compare.recently_used,
-            cmp.config.compare.locality,
-            cmp.config.compare.kind,
-            cmp.config.compare.sort_text,
-            cmp.config.compare.length,
-            cmp.config.compare.order,
-          },
         },
       })
 

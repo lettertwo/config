@@ -1,8 +1,9 @@
 return {
   {
-    "laserwave.nvim",
     dev = true,
     priority = 1000,
+    dir = "~/.local/share/laserwave.nvim",
+    name = "laserwave.nvim",
     dependencies = { "rktjmp/lush.nvim", "rktjmp/shipwright.nvim" },
     config = function()
       vim.g.colors_name = "laserwave"
