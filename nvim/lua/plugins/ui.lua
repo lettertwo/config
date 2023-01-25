@@ -75,6 +75,21 @@ return {
       show_trailing_blankline_indent = false,
       show_current_context = false,
     },
+    keys = {
+      { "zo", "zo<CMD>IndentBlanklineRefresh<CR>" },
+      { "zO", "zO<CMD>IndentBlanklineRefresh<CR>" },
+      { "zc", "zc<CMD>IndentBlanklineRefresh<CR>" },
+      { "zC", "zC<CMD>IndentBlanklineRefresh<CR>" },
+      { "za", "za<CMD>IndentBlanklineRefresh<CR>" },
+      { "zA", "zA<CMD>IndentBlanklineRefresh<CR>" },
+      { "zv", "zv<CMD>IndentBlanklineRefresh<CR>" },
+      { "zx", "zx<CMD>IndentBlanklineRefresh<CR>" },
+      { "zX", "zX<CMD>IndentBlanklineRefresh<CR>" },
+      { "zm", "zm<CMD>IndentBlanklineRefresh<CR>" },
+      { "zM", "zM<CMD>IndentBlanklineRefresh<CR>" },
+      { "zr", "zr<CMD>IndentBlanklineRefresh<CR>" },
+      { "zR", "zR<CMD>IndentBlanklineRefresh<CR>" },
+    },
   },
 
   -- active indent guide and indent text objects
