@@ -106,7 +106,6 @@ return {
     opts = {
       default_component_configs = { git_status = { symbols = icons.git } },
       filesystem = { follow_current_file = true },
-      window = { position = "right" },
     },
   },
 
