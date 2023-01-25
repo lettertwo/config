@@ -121,10 +121,12 @@ return {
       },
     },
     ---@param opts TSConfig
-    config = function(plugin, opts)
-      if plugin.ensure_installed then
-        require("lazyvim.util").deprecate("treesitter.ensure_installed", "treesitter.opts.ensure_installed")
-      end
+    config = function(_, opts)
+      local parsers = require("nvim-treesitter.parsers")
+      -- Associate the flowtype filetypes with the typescript parser.
+      parsers.filetype_to_parsername.flowtype = "typescript"
+      parsers.filetype_to_parsername.flowtypereact = "tsx"
+
       require("nvim-treesitter.configs").setup(opts)
     end,
   },
