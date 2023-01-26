@@ -89,7 +89,6 @@ opt.fillchars = {
   foldclose = icons.fold.foldclose,
   foldsep = icons.fold.foldsep,
   fold = icons.fold.fold,
-  diff = icons.diff,
   eob = icons.eob,
 }
 opt.colorcolumn:append("+1") -- color column at textwidth so I know when my line's too long

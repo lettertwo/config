@@ -63,7 +63,6 @@ local config = {
       fold = " ",
       foldsep = " ",
     },
-    diff = "╱",
     eob = " ",
 
     diagnostics = {
@@ -72,16 +71,18 @@ local config = {
       Hint = " ",
       Info = " ",
     },
+    diff = {
+      added = " ",
+      modified = " ",
+      removed = " ",
+    },
     git = {
-      added = "",
-      modified = "",
-      removed = "",
-      renamed = "",
-      untracked = "",
+      renamed = " ",
+      untracked = " ",
       ignored = "",
       unstaged = "",
-      staged = "",
-      conflict = "",
+      staged = " ",
+      conflict = " ",
     },
     services = {
       copilot = " ",

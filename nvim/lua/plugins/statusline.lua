@@ -71,9 +71,9 @@ local filepath = {
 local diff = {
   "diff",
   symbols = {
-    added = icons.git.added,
-    modified = icons.git.modified,
-    removed = icons.git.removed,
+    added = icons.diff.added,
+    modified = icons.diff.modified,
+    removed = icons.diff.removed,
   },
   cond = nil,
 }
