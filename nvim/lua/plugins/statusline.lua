@@ -92,11 +92,11 @@ local diagnostics = {
 -- Adapted from https://github.com/LunarVim/LunarVim/blob/48320e/lua/lvim/core/lualine/components.lua#L82
 local services = {
   function()
-    local status = Util.service_status()
     local display = {}
+    local status = Util.service_status()
 
     if #status.diagnostic_providers > 0 then
-      table.insert(display, icons.diagnostics .. table.concat(vim.fn.uniq(status.diagnostic_providers), ", "))
+      table.insert(display, icons.services.diagnostics .. table.concat(vim.fn.uniq(status.diagnostic_providers), ", "))
     end
 
     -- add formatters
