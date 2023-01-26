@@ -90,22 +90,25 @@ return {
       local default_opts = { capabilities = capabilities }
 
       local servers = opts.servers
-      for server, opts in pairs(servers) do
-        if type(server) == "number" then
-          server = opts
-          opts = {}
+      local ensure_installed = {}
+      for server, server_opts in pairs(servers) do
+        if type(server) == "number" and type(server_opts) == "string" then
+          server = server_opts
+          server_opts = {}
         end
 
-        lspconfig[server].setup(vim.tbl_deep_extend("error", default_opts, opts))
+        if server ~= "flow" then -- apparently flow is not a valid lsp server name (any more?).
+          table.insert(ensure_installed, server)
+        end
+        lspconfig[server].setup(vim.tbl_deep_extend("error", default_opts, server_opts))
       end
 
-      require("mason-lspconfig").setup({ autoinstall = true })
+      require("mason-lspconfig").setup({ ensure_installed = ensure_installed, autoinstall = true })
 
       -- Rust tools setup
       rt.setup({
         server = {
           on_attach = function(client, bufnr)
-            on_attach(client, bufnr)
             -- Hover actions
             vim.keymap.set("n", "K", rt.hover_actions.hover_actions, { buffer = bufnr })
           end,
@@ -148,7 +151,6 @@ return {
           }),
           formatting.black.with({ extrargs = { "fast" } }),
           formatting.stylua,
-          formatting.google_java_format,
           diagnostics.flake8,
           code_actions.gitsigns,
           code_actions.gitrebase,
@@ -158,6 +160,12 @@ return {
       })
 
       require("mason-null-ls").setup({
+        ensure_installed = {
+          "prettierd",
+          "black",
+          "stylua",
+          "flake8",
+        },
         automatic_installation = true,
       })
     end,
