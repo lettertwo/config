@@ -117,7 +117,9 @@ return {
 
       vim.api.nvim_create_autocmd("FileType", {
         pattern = require("config").filetypes.ui,
-        callback = require("ufo").detach,
+        callback = function()
+          pcall(require("ufo").detach)
+        end,
       })
     end,
   },
