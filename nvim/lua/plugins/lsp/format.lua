@@ -13,14 +13,27 @@ function M.toggle()
   end
 end
 
-function M.format()
-  local bufnr = vim.api.nvim_get_current_buf()
+function M.format(bufnr)
+  if type(bufnr) == "table" then
+    bufnr = bufnr.args or nil
+  end
+
+  if type(bufnr) == "string" then
+    local ok, result = pcall(tonumber, bufnr)
+    bufnr = ok and result or nil
+  end
+
+  if bufnr == nil then
+    bufnr = vim.api.nvim_get_current_buf()
+  end
+
   local ft = vim.bo[bufnr].filetype
   local have_nls = #require("null-ls.sources").get_available(ft, "NULL_LS_FORMATTING") > 0
 
   vim.lsp.buf.format({
     bufnr = bufnr,
     filter = function(client)
+      -- Prefer null-ls formatting if available.
       if have_nls then
         return client.name == "null-ls"
       end
