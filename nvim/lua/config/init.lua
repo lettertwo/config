@@ -58,8 +58,8 @@ local config = {
     caret = " ",
     multi = " ",
     fold = {
-      foldopen = "",
-      foldclose = "",
+      foldopen = "",
+      foldclose = "",
       fold = " ",
       foldsep = " ",
     },
