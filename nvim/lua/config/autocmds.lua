@@ -63,6 +63,6 @@ vim.api.nvim_create_autocmd("ModeChanged", { pattern = { "*:[vV\x16]*" }, comman
 -- Close cmdwin with <Esc>
 vim.api.nvim_create_autocmd("CmdwinEnter", {
   callback = function()
-    require("config.keymap").buffer().normal("<Esc>", "<C-c><C-c>", "Exit Command")
+    vim.keymap.set("n", "<Esc>", "<C-c><C-c>", { buffer = 0 })
   end,
 })
