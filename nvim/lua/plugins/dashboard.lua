@@ -453,7 +453,7 @@ return {
             opts = { hl = "SpecialComment", position = "center" },
           })
           if vim.o.filetype == "alpha" then
-            require("alpha").redraw()
+            vim.schedule_wrap(vim.api.nvim_command)("AlphaRedraw")
           end
         end,
       })
