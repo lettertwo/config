@@ -303,36 +303,39 @@ return {
   {
     "ggandor/leap.nvim",
     event = "VeryLazy",
-    dependencies = {
-      { "ggandor/flit.nvim", opts = { labeled_modes = "nv" } },
-      {
-        "ggandor/leap-spooky.nvim",
-        opts = {
-          affixes = {
-            -- These will generate mappings for all native text objects, like:
-            -- (ir|ar|iR|aR|im|am|iM|aM){obj}.
-            -- Special line objects will also be added, by repeating the affixes.
-            -- E.g. `yrr<leap>` and `ymm<leap>` will yank a line in the current
-            -- window.
-            -- You can also use 'rest' & 'move' as mnemonics.
-            remote = { window = "r", cross_window = "R" },
-            magnetic = { window = "m", cross_window = "M" },
-          },
-          -- If this option is set to true, the yanked text will automatically be pasted
-          -- at the cursor position if the unnamed register is in use.
-          paste_on_remote_yank = false,
-        },
+    opts = {
+      -- max_phase_one_targets = 0,
+      highlight_unlabeled_phase_one_targets = true,
+      equivalence_classes = {
+        " \t\r\n",
+        "([{<",
+        ")]}>",
+        ".,;:!?'",
+        "`'\"",
+      },
+      special_keys = {
+        repeat_search = "<enter>",
+        next_phase_one_target = "<enter>",
+        next_target = "<enter>",
+        prev_target = "<s-enter>",
+        next_group = "<space>",
+        prev_group = "<s-space>",
+        multi_accept = "<enter>",
+        multi_revert = "<backspace>",
       },
     },
-    opts = {
-      highlight_unlabeled_phase_one_targets = true,
+    keys = {
+      { "f", "<Plug>(leap-forward-to)", mode = { "n", "x", "o" }, desc = "Leap forward to" },
+      { "F", "<Plug>(leap-backward-to)", mode = { "n", "x", "o" }, desc = "Leap backward to" },
+      { "t", "<Plug>(leap-forward-till)", mode = { "n", "x", "o" }, desc = "Leap forward till" },
+      { "T", "<Plug>(leap-backward-till)", mode = { "n", "x", "o" }, desc = "Leap backward till" },
+      { "gw", "<Plug>(leap-from-window)", mode = { "n", "x", "o" }, desc = "Leap from window" },
     },
     config = function(_, opts)
       local leap = require("leap")
       for k, v in pairs(opts) do
         leap.opts[k] = v
       end
-      leap.add_default_mappings(true)
     end,
   },
 
