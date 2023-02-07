@@ -104,7 +104,7 @@ return {
       end
     end,
     opts = {
-      default_component_configs = { git_status = { symbols = vim.tbl_extend("force", {}, icons.git, icons.diff) } },
+      default_component_configs = { git_status = { symbols = vim.tbl_extend("force", {}, icons.diff, icons.git) } },
       filesystem = { follow_current_file = true },
     },
   },

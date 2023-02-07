@@ -80,11 +80,14 @@ local config = {
       Info = " ",
     },
     diff = {
+      added = " ",
+      modified = " ",
+      removed = " ",
+    },
+    git = {
       added = " ",
       modified = " ",
       removed = " ",
-    },
-    git = {
       renamed = " ",
       untracked = " ",
       ignored = "",
