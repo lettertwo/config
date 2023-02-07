@@ -433,10 +433,13 @@ return {
 
       require("alpha").setup(dashboard)
 
+      -- TODO: Clean this up when alpha is closed
       vim.api.nvim_create_autocmd("VimResized", {
         pattern = "*",
         callback = function()
-          require("alpha").redraw()
+          if vim.o.filetype == "alpha" then
+            vim.schedule_wrap(vim.api.nvim_command)("AlphaRedraw")
+          end
         end,
       })
 
