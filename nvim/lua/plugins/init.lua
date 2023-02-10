@@ -47,4 +47,6 @@ return {
       { "<leader>qd", function() require("persistence").stop() end, desc = "Don't Save Current Session" },
     },
   },
+
+  { "sindrets/diffview.nvim", event = "BufReadPost" },
 }
