@@ -2,6 +2,7 @@ local M = {}
 local format = require("plugins.lsp.format").format
 
 M.keys = {
+  { "<leader>uf", require("plugins.lsp.format").toggle, desc = "Toggle format on Save" },
   { "gd", ":TroubleToggle lsp_definitions<CR>", desc = "Go to definition", requires = "trouble" },
   { "gr", ":TroubleToggle lsp_references<CR>", desc = "Find references", requires = "trouble" },
   { "gD", vim.lsp.buf.declaration, desc = "Go to declaration" },
