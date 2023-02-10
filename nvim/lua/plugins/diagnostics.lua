@@ -37,6 +37,7 @@ return {
       { "[d", vim.diagnostic.goto_prev, desc = "Previous diagnostic" },
       { "<leader>xj", vim.diagnostic.goto_next, desc = "Next diagnostic" },
       { "<leader>xk", vim.diagnostic.goto_prev, desc = "Previous diagnostic" },
+      { "<leader>xx", ":TroubleToggle<cr>", desc = "Trouble" },
       { "<leader>xq", ":TroubleToggle quickfix<cr>", desc = "QuickFix" },
       { "<leader>xl", ":TroubleToggle loclist<cr>", desc = "Locationlist" },
       { "<leader>xt", ":TroubleToggle telescope<cr>", desc = "Telescope" },
