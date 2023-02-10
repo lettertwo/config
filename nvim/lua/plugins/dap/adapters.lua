@@ -19,7 +19,7 @@ M.js = {
   opts = {
     debugger_cmd = { "js-debug-adapter" },
     debugger_path = vim.fn.stdpath("data") .. "/mason/bin/js-debug-adapter",
-    log_file_level = vim.log.levels.TRACE,
+    -- log_file_level = vim.log.levels.TRACE,
     adapters = {
       "pwa-node",
       "pwa-chrome",

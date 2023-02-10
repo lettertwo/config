@@ -7,6 +7,7 @@ M.attached_keys = nil
 M.get_keys = function(dap, ui)
   return {
     { "<leader>d<cr>", "<cmd>DapStart<cr>", desc = "Start debugger session" },
+    { "<leader>dd", "<cmd>DapToggle<cr>", desc = "Toggle debugger" },
     { "<leader>dL", "<cmd>DapShowLog<cr>", desc = "Show Log" },
     { "<Leader>db", dap.toggle_breakpoint, desc = "Toggle breakpoint" },
     -- { "<Leader>dB", dap.list_breakpoints, desc = "List breakpoints" },

@@ -14,7 +14,7 @@ return {
       local dap = require("dap")
       local ui = require("dapui")
 
-      dap.set_log_level("TRACE")
+      -- dap.set_log_level("TRACE")
 
       -- local telescope = require("telescope")
       -- telescope.load_extension("dap")

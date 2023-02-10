@@ -22,7 +22,7 @@ function M.setup(dap, ui)
       },
       {
         elements = {
-          "repl",
+          "watches",
           "breakpoints",
         },
         size = 0.3,
