@@ -22,6 +22,10 @@
 	autocorrect = 1
 [difftool]
 	prompt = true
+[difftool "nvimdiff"]
+  cmd = nvim -d $LOCAL $REMOTE
+[difftool "ksdiff"]
+  cmd = ksdiff --diff $LOCAL $REMOTE
 [merge]
 	log = true
 	tool = nvimdiff2
@@ -32,6 +36,9 @@
 	hideResolved = true
 [mergetool "nvimdiff2"]
 	cmd = nvim -f -d -c 'wincmd l' $LOCAL $MERGED $REMOTE
+[mergetool "ksdiff"]
+  trustExitCode = true
+  cmd = ksdiff --merge --base $BASE --output $MERGED $LOCAL $REMOTE
 [rebase]
 	autoStash = true
 	autoSquash = true
