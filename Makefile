@@ -128,7 +128,7 @@ endif
 update-nvim: ~/.local/share/neovim
 	$(call log,"Updating neovim...")
 	$(call run,cd ~/.local/share/neovim && git pull)
-	$(call run,cd ~/.local/share/neovim && make CMAKE_BUILD_TYPE=RelWithDebInfo && make install)
+	$(call run,cd ~/.local/share/neovim && make clean && make distclean && make CMAKE_BUILD_TYPE=RelWithDebInfo && make install)
 	$(call log,"Updating pynvim...")
 	$(call run,pip3 install --user --upgrade pynvim)
 	$(call log,"Updating Plugins...")
