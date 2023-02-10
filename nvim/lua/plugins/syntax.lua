@@ -79,6 +79,7 @@ return {
       autopairs = { enable = true },
       endwise = { enable = true },
       indent = { enable = false },
+      illuminate = { enable = false },
       context_commentstring = { enable = true, enable_autocmd = false },
       ensure_installed = {
         "bash",
