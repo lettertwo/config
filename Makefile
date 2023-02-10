@@ -229,4 +229,10 @@ install: mkdirs /etc/zshenv ~/.local/share/laserwave.nvim brew sheldon nvim nvim
 	@echo "    It'll take a while. Afterward, just drag them into Font Book!"
 
 .PHONY: update
-update: update-config update-laserwave update-brew update-sheldon update-nvim update-kitty update-qmk
+update: update-config \
+	update-laserwave \
+	update-brew \
+	update-sheldon \
+	update-nvim \
+	update-kitty \
+	update-qmk
