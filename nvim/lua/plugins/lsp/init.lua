@@ -16,7 +16,6 @@ return {
       },
       "williamboman/mason-lspconfig.nvim",
       "hrsh7th/cmp-nvim-lsp",
-      "simrat39/rust-tools.nvim",
       "b0o/SchemaStore.nvim",
     },
     ---@class PluginLspOpts
@@ -76,7 +75,6 @@ return {
     ---@param opts PluginLspOpts
     config = function(_, opts)
       local lspconfig = require("lspconfig")
-      local rt = require("rust-tools")
 
       vim.lsp.handlers["textDocument/hover"] = require("plugins.lsp.hover").hover
 
@@ -113,27 +111,6 @@ return {
       end
 
       require("mason-lspconfig").setup({ ensure_installed = ensure_installed, autoinstall = true })
-
-      -- Rust tools setup
-      rt.setup({
-        server = {
-          on_attach = function(client, bufnr)
-            -- Hover actions
-            vim.keymap.set("n", "K", rt.hover_actions.hover_actions, { buffer = bufnr })
-          end,
-          checkOnSave = {
-            allFeatures = true,
-            overrideCommand = {
-              "cargo",
-              "clippy",
-              "--workspace",
-              "--message-format=json",
-              "--all-targets",
-              "--all-features",
-            },
-          },
-        },
-      })
     end,
   },
 
