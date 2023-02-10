@@ -38,7 +38,7 @@ return {
   -- session management
   {
     "folke/persistence.nvim",
-    event = "BufReadPre",
+    event = "BufReadPost",
     opts = { options = { "buffers", "curdir", "tabpages", "winsize", "help" } },
     -- stylua: ignore
     keys = {

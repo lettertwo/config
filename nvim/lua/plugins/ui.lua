@@ -60,14 +60,14 @@ return {
 
   {
     "nvim-treesitter/nvim-treesitter-context",
-    event = "BufReadPre",
+    event = "BufReadPost",
     config = true,
   },
 
   -- indent guides for Neovim
   {
     "lukas-reineke/indent-blankline.nvim",
-    event = "BufReadPre",
+    event = "BufReadPost",
     opts = {
       char = "╎",
       filetype_exclude = filetypes.ui,
@@ -95,7 +95,7 @@ return {
   {
     "echasnovski/mini.indentscope",
     version = false,
-    event = "BufReadPre",
+    event = "BufReadPost",
     opts = {
       symbol = "╎",
       --stylua: ignore

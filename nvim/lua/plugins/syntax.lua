@@ -17,7 +17,7 @@ return {
   -- comments
   {
     "numToStr/Comment.nvim",
-    event = "BufReadPre",
+    event = "BufReadPost",
     opts = function()
       return {
         mappings = {

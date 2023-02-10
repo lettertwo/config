@@ -1,7 +1,7 @@
 return {
   {
     "neovim/nvim-lspconfig",
-    event = "BufReadPre",
+    event = "BufReadPost",
     dependencies = {
       { "folke/neoconf.nvim", cmd = "Neoconf", config = true },
       {
@@ -140,7 +140,7 @@ return {
   -- Linting
   {
     "jose-elias-alvarez/null-ls.nvim",
-    event = "BufReadPre",
+    event = "BufReadPost",
     dependencies = { "jayp0521/mason-null-ls.nvim" },
     config = function()
       local null_ls = require("null-ls")
