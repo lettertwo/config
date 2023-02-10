@@ -1,4 +1,4 @@
-# vim:fileencoding=utf-8:ft=config
+# vim:fileencoding=utf-8:ft=gitignore
 
 .DS_Store
 *.log
