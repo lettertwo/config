@@ -83,7 +83,6 @@ return {
     opts = {
       plugins = { spelling = true },
       window = { border = "single" },
-      operators = { gs = "Surround", gS = "Surround" },
       show_help = false,
       show_keys = false,
       key_labels = { ["<leader>"] = "SPC" },
@@ -93,20 +92,8 @@ return {
       wk.setup(opts)
 
       wk.register({
-        mode = "n",
-        ["gbc"] = "Toggle block comment",
-        ["gcc"] = "Toggle line comment",
-        ["gco"] = "Comment next line",
-        ["gcO"] = "Comment prev line",
-        ["gcA"] = "Comment end of line",
-      })
-
-      wk.register({
         mode = { "n", "v" },
         ["g"] = { name = "+goto" },
-        ["gs"] = { name = "+surround" },
-        ["gb"] = "Toggle block comment",
-        ["gc"] = "Toggle line comment",
         ["]"] = { name = "+next" },
         ["["] = { name = "+prev" },
         ["<leader><tab>"] = { name = "+tabs" },

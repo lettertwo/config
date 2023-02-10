@@ -16,28 +16,50 @@ return {
 
   -- comments
   {
-    "numToStr/Comment.nvim",
-    event = "BufReadPost",
-    opts = function()
-      return {
-        mappings = {
-          ---Operator-pending mapping
-          ---Includes `gcc`, `gbc`, `gc[count]{motion}` and `gb[count]{motion}`
-          ---NOTE: These mappings can be changed individually by `opleader` and `toggler` config
-          basic = true,
-          ---Extra mapping
-          ---Includes `gco`, `gcO`, `gcA`
-          extra = true,
-          ---Extended mapping
-          ---Includes `g>`, `g<`, `g>[count]{motion}` and `g<[count]{motion}`
-          extended = false,
-        },
-        -- From https://github.com/JoosepAlviste/nvim-ts-context-commentstring#commentnvim
-        pre_hook = require("ts_context_commentstring.integrations.comment_nvim").create_pre_hook(),
-      }
-    end,
+    "echasnovski/mini.comment",
+    event = "VeryLazy",
+    opts = {
+      hooks = {
+        pre = function()
+          -- from https://github.com/JoosepAlviste/nvim-ts-context-commentstring#minicomment
+          require("ts_context_commentstring.internal").update_commentstring({})
+        end,
+      },
+    },
     config = function(_, opts)
-      require("Comment").setup(opts)
+      require("mini.comment").setup(opts)
+    end,
+  },
+
+  -- surround
+  {
+    "echasnovski/mini.surround",
+    event = "VeryLazy",
+    opts = {
+      mappings = {
+        add = "gs", -- Add surrounding in Normal and Visual modes
+        delete = "ds", -- Delete surrounding
+        replace = "cs", -- Replace surrounding
+
+        find = "", -- Find surrounding kto the rightk
+        find_left = "", -- Find surrounding (to the left)
+        highlight = "", -- Highlight surrounding
+        suffix_last = "l", -- Suffix to search with "prev" method
+        suffix_next = "n", -- Suffix to search with "next" method
+        update_n_lines = "", -- Update `n_lines`
+      },
+      n_lines = 20,
+      search_method = "cover_or_next",
+    },
+    config = function(_, opts)
+      require("mini.surround").setup(opts)
+
+      -- Remap adding surrounding to Visual mode selection
+      vim.api.nvim_del_keymap("x", "gs")
+      vim.api.nvim_set_keymap("x", "S", [[:<C-u>lua MiniSurround.add("visual")<CR>]], { noremap = true })
+
+      -- Make special mapping for "add surrounding for line"
+      vim.api.nvim_set_keymap("n", "gss", "gs_", { desc = "Add surrounding to line", noremap = false })
     end,
   },
 
