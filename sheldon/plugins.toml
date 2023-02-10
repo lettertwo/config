@@ -82,4 +82,6 @@ local = "~/.config/sheldon/local/compinit"
 local = "~/.config/sheldon/local/tab-title"
 
 [templates]
-install-yarn-completions = { value = "install-completions {{ name }} <<-EOF\n#compdef yarn\nsource {{ file }}\nEOF", each = true }
+install-yarn-completions = """{% for file in files %}
+install-completions {{ name }} <<-EOF\n#compdef yarn\nsource {{ file }}\nEOF
+{% endfor %}"""
