@@ -86,6 +86,7 @@ export POETRY_CACHE_DIR="$XDG_CACHE_HOME/pypoetry"
 
 # qmk
 export QMK_HOME="$XDG_DATA_HOME/qmk_firmware"
+export QMK_CONFIG_FILE="$XDG_CONFIG_HOME/qmk/qmk.ini"
 
 # initialize zsh-vi-mode immediately to avoid clobbering plugins that come afterward (e.g., syntax-highlight).
 export ZVM_INIT_MODE="sourcing"
