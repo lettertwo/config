@@ -26,7 +26,7 @@ return {
         timeout_ms = nil,
       },
       servers = {
-        sumneko_lua = {
+        lua_ls = {
           settings = {
             Lua = {
               telemetery = {

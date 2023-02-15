@@ -7,10 +7,12 @@ return {
     opts = {
       separator = " ",
       relculright = true,
-      setopt = false,
+      setopt = true,
       order = "SsNsFs",
+      ft_ignore = require("config").filetypes.ui,
 
-      foldfunc = function()
+      foldfunc = function(foldinfo, width)
+
         if vim.v.wrap then
           return ""
         end
@@ -36,55 +38,10 @@ return {
 
         return icon
       end,
-
       FoldToggle = function(args)
         vim.notify("toggling fold on line " .. args.mousepos.line)
       end,
     },
-    config = function(_, opts)
-      require("statuscol").setup(opts)
-      local reeval = opts.reeval or opts.relculright
-      local stc = ""
-
-      _G.ScFi = opts.foldfunc
-      -- TODO: make this work
-      _G.ScFa = opts.FoldToggle
-
-      for i = 1, #opts.order do
-        local segment = opts.order:sub(i, i)
-        if segment == "F" then
-          stc = stc .. "%@v:lua.ScFa@"
-          stc = stc .. "%{%v:lua.ScFi()%}"
-          -- End the click execute label if separator is not next
-          if opts.order:sub(i + 1, i + 1) ~= "s" then
-            stc = stc .. "%T"
-          end
-        elseif segment == "S" then
-          stc = stc .. "%@v:lua.ScSa@%s%T"
-        elseif segment == "N" then
-          stc = stc .. "%@v:lua.ScLa@"
-          stc = stc .. (reeval and "%=%{v:lua.ScLn()}" or "%{%v:lua.ScLn()%}")
-          -- End the click execute label if separator is not next
-          if opts.order:sub(i + 1, i + 1) ~= "s" then
-            stc = stc .. "%T"
-          end
-        elseif segment == "s" then
-          -- Add click execute label if line number was not previous
-          if opts.order:sub(i - 1, i - 1) == "N" then
-            stc = stc .. "%{v:lua.ScSp()}%T"
-          else
-            stc = stc .. "%@v:lua.ScLa@%{v:lua.ScSp()}%T"
-          end
-        end
-      end
-
-      vim.opt.statuscolumn = stc
-      vim.api.nvim_create_autocmd("FileType", {
-        pattern = require("config").filetypes.ui,
-        -- stylua: ignore
-        callback = function() vim.opt.statuscolumn = "" end,
-      })
-    end,
   },
   {
     "kevinhwang91/nvim-ufo",
