@@ -6,11 +6,17 @@ return {
     "nvim-neo-tree/neo-tree.nvim",
     cmd = "Neotree",
     keys = {
-      { "<leader>fE", ":Neotree toggle<cr>", desc = "File tree (root)" },
-      { "<leader>E", "<leader>fE", desc = "File tree (root)", remap = true },
-      { "<leader>T", ":Neotree float buffers<cr>", desc = "Buffer tree" },
-      { "<leader>gg", ":Neotree float git_status<cr>", desc = "Git tree (cwd)" },
-      { "<leader>gG", ":Neotree float git_status<cr>", desc = "Git tree (root)" },
+      {
+        "<leader>fE",
+        function()
+          require("neo-tree.command").execute({ toggle = true, dir = vim.loop.cwd() })
+        end,
+        desc = "File tree (cwd)",
+      },
+      { "<leader>E", "<leader>fE", desc = "File tree (cwd)", remap = true },
+      -- { "<leader>T", "<cmd>Neotree float buffers<cr>", desc = "Buffer tree" },
+      { "<leader>gg", "<cmd>Neotree float git_status<cr>", desc = "Git tree (cwd)" },
+      { "<leader>gG", "<cmd>Neotree float git_status<cr>", desc = "Git tree (root)" },
     },
     init = function()
       vim.g.neo_tree_remove_legacy_commands = 1

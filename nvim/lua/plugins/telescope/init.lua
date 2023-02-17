@@ -1,5 +1,41 @@
 local icons = require("config").icons
 
+local function live_grep_cbd()
+  require("telescope.builtin").live_grep({
+    cwd = require("telescope.utils").buffer_dir(),
+  })
+end
+
+local function live_grep_cwd()
+  require("telescope.builtin").live_grep({
+    cwd = vim.fn.getcwd(),
+  })
+end
+
+local function live_grep_files()
+  require("telescope.builtin").live_grep({
+    grep_open_files = true,
+  })
+end
+
+local function grep_string_cwd()
+  require("telescope.builtin").grep_string({
+    cwd = vim.fn.getcwd(),
+  })
+end
+
+local function grep_string_cbd()
+  require("telescope.builtin").grep_string({
+    cwd = require("telescope.utils").buffer_dir(),
+  })
+end
+
+local function grep_string_files()
+  require("telescope.builtin").grep_string({
+    grep_open_files = true,
+  })
+end
+
 return {
   {
     "nvim-telescope/telescope.nvim",
@@ -27,8 +63,10 @@ return {
       -- find / files
       { "<leader>fb", "<cmd>Telescope buffers show_all_buffers=true<cr>", desc = "Buffers (all)" },
       { "<leader>ff", "<cmd>Telescope find_files<cr>", desc = "Find Files (root dir)" },
-      { "<leader>fF", "<cmd>Telescope find_files cwd=false<cr>", desc = "Find Files (cwd)" },
+      { "<leader>fF", "<cmd>Telescope find_files cwd=true<cr>", desc = "Find Files (cwd)" },
       { "<leader>fr", "<cmd>Telescope oldfiles<cr>", desc = "Recent" },
+      { "<leader>fg", live_grep_files, desc = "Grep in open files" },
+      { "<leader>fw", grep_string_files, desc = "Search word in open files" },
 
       -- search
       { "<leader>sa", "<cmd>Telescope autocommands<cr>", desc = "Auto Commands" },
@@ -36,8 +74,8 @@ return {
       { "<leader>sc", "<cmd>Telescope command_history<cr>", desc = "Command History" },
       { "<leader>sC", "<cmd>Telescope commands<cr>", desc = "Commands" },
       { "<leader>sd", "<cmd>Telescope diagnostics<cr>", desc = "Diagnostics" },
-      { "<leader>sg", "<cmd>Telescope live_grep<cr>", desc = "Grep (root dir)" },
-      { "<leader>sG", "<cmd>Telescope live_grep cwd=false<cr>", desc = "Grep (cwd)" },
+      { "<leader>sg", live_grep_cwd, desc = "Grep (cwd dir)" },
+      { "<leader>sG", live_grep_cbd, desc = "Grep (buffer dir)" },
       { "<leader>sh", "<cmd>Telescope help_tags<CR>", desc = "Help" },
       { "<leader>sH", "<cmd>Telescope highlights<CR>", desc = "Highlights" },
       { "<leader>sj", "<cmd>Telescope jumplist<CR>", desc = "Jumplist" },
@@ -48,8 +86,8 @@ return {
       { "<leader>sq", "<cmd>Telescope quickfix<CR>", desc = "Quickfix" },
       { "<leader>ss", "<cmd>Telescope lsp_document_symbols<CR>", desc = "Document Symbols" },
       { "<leader>sS", "<cmd>Telescope lsp_dynamic_workspace_symbols<CR>", desc = "Workspace Symbols" },
-      { "<leader>sw", "<cmd>Telescope grep_string<cr>", desc = "Word (root dir)" },
-      { "<leader>sW", "<cmd>Telescope grep_string cwd=false<cr>", desc = "Word (cwd)" },
+      { "<leader>sw", grep_string_cwd, desc = "Word (cwd)" },
+      { "<leader>sW", grep_string_cbd, desc = "Word (buffer dir)" },
 
       -- emoji
       { "<leader>see", "<cmd>lua require'telescope.builtin'.symbols({sources={'emoji'}})<CR>", desc = "Emoji 😀" },
@@ -117,6 +155,20 @@ return {
             cwd_to_path = false,
             respect_gitignore = false,
           }),
+          live_grep_args = {
+            auto_quoting = true, -- enable/disable auto-quoting
+            -- define mappings, e.g.
+            mappings = { -- extend mappings
+              i = {
+                ["<C-k>"] = require("telescope-live-grep-args.actions").quote_prompt(),
+                ["<C-i>"] = require("telescope-live-grep-args.actions").quote_prompt({ postfix = " --iglob " }),
+              },
+            },
+            -- ... also accepts theme settings, for example:
+            -- theme = "dropdown", -- use dropdown theme
+            -- theme = { }, -- use own theme spec
+            -- layout_config = { mirror=true }, -- mirror preview pane
+          },
         },
         pickers = {
           find_files = {
