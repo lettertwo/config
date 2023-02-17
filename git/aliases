@@ -43,7 +43,7 @@
 	# List conflicted files
 	conflicted = !git status | sed -n "\"s/^.*both [a-z]*ed: *//p\""
 	# Record removal of missing files to the index.
-	index-removed = !git ls-files -z --deleted | xargs -0 git rm
+	add-removed = !git ls-files -z --deleted | xargs -0 git rm
 	# Show dropped stashes
 	stash-dropped = !"git fsck --unreachable 2> /dev/null | grep 'commit' | awk '{print $3}' | git log --extended-regexp --grep=\"${1:-(WIP )?[Oo]n [^:]+:}\" --merges --no-walk --stdin"
 	# Recover a dropped stash
@@ -69,12 +69,13 @@
 	unique = "!f() { local branch=${1:-$(git symbolic-ref --short HEAD)} ; git l --no-merges $branch --not $(git for-each-ref --format='%(refname)' refs/heads | grep -Fv refs/heads/$branch) ; }; f"
 
 	# shortcuts
-	i = add
-	ip = add -p
-	ir = !git index-removed
+	a = add
+	ai = add -i
+	ap = add -p
+	ar = !git add-removed
 	d = diff
 	wd = !git d --no-ext-diff
-	id = !git wd --cached
+	ad = !git wd --cached
 	p = push
 	pt = push-tags
 	ab = !git absorb --and-rebase
