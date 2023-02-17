@@ -19,10 +19,6 @@ return {
       -- local telescope = require("telescope")
       -- telescope.load_extension("dap")
 
-      -- HACK: Trick mason-nvim-dap into autoinstalling js debug adapter.
-      -- See: https://github.com/jay-babu/mason-nvim-dap.nvim/issues/17
-      require("mason-nvim-dap.mappings.source").nvim_dap_to_package["js"] = "js-debug-adapter"
-
       local adapters = require("plugins.dap.adapters")
 
       require("mason-nvim-dap").setup({
