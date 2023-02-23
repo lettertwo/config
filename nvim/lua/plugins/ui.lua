@@ -141,27 +141,19 @@ return {
           filter = { event = "msg_showmode" },
         },
         {
-          filter = {
-            event = "msg_show",
-            kind = "",
-            find = "written",
-          },
+          filter = { event = "msg_show", kind = "", find = "written" },
           opts = { skip = true },
         },
         {
-          filter = {
-            event = "msg_show",
-            kind = "",
-            find = "lines",
-          },
+          filter = { event = "msg_show", kind = "", find = "lines" },
           opts = { skip = true },
         },
         {
-          filter = {
-            event = "msg_show",
-            kind = "",
-            find = "line",
-          },
+          filter = { event = "msg_show", kind = "", find = "line" },
+          opts = { skip = true },
+        },
+        {
+          filter = { event = "msg_show", kind = "", find = "change" },
           opts = { skip = true },
         },
       },
