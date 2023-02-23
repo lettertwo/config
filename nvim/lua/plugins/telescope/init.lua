@@ -49,7 +49,7 @@ return {
       { "nvim-telescope/telescope-live-grep-args.nvim" },
     },
     keys = {
-      { "<leader>p", "<cmd>Telescope<CR>", desc = "Telescope" },
+      { "<leader>p", "<cmd>Telescope commands<CR>", desc = "Commands" },
       { "<leader>e", "<cmd>Telescope file_browser<CR>", desc = "File Explorer" },
       { "<leader>t", "<cmd>Telescope buffers<CR>", desc = "Buffers" },
       { "<leader>bb", "<cmd>Telescope buffers<CR>", "Buffers" },
@@ -84,6 +84,7 @@ return {
       { "<leader>sM", "<cmd>Telescope man_pages<cr>", desc = "Man Pages" },
       { "<leader>so", "<cmd>Telescope vim_options<CR>", desc = "Vim options" },
       { "<leader>sq", "<cmd>Telescope quickfix<CR>", desc = "Quickfix" },
+      { "<leader>st", "<cmd>Telescope<CR>", desc = "Telescope Builtins" },
       { "<leader>ss", "<cmd>Telescope lsp_document_symbols<CR>", desc = "Document Symbols" },
       { "<leader>sS", "<cmd>Telescope lsp_dynamic_workspace_symbols<CR>", desc = "Workspace Symbols" },
       { "<leader>sw", grep_string_cwd, desc = "Word (cwd)" },
@@ -194,6 +195,11 @@ return {
                 ["<C-d>"] = telescope_actions.delete_buffer,
               },
             },
+          }),
+          commands = pickers.quick_picker({
+            theme = "dropdown",
+            sort_mru = true,
+            sort_lastused = true,
           }),
           git_branches = pickers.slow_picker(),
           git_status = pickers.slow_picker(),
