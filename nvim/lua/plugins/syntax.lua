@@ -55,11 +55,16 @@ return {
       require("mini.surround").setup(opts)
 
       -- Remap adding surrounding to Visual mode selection
-      vim.api.nvim_del_keymap("x", "gs")
-      vim.api.nvim_set_keymap("x", "S", [[:<C-u>lua MiniSurround.add("visual")<CR>]], { noremap = true })
+      vim.keymap.del("x", "gs")
+      vim.keymap.set(
+        "x",
+        "S",
+        [[:<C-u>lua MiniSurround.add("visual")<CR>]],
+        { desc = "Add surrounding to selection", silent = true }
+      )
 
       -- Make special mapping for "add surrounding for line"
-      vim.api.nvim_set_keymap("n", "gss", "gs_", { desc = "Add surrounding to line", noremap = false })
+      vim.keymap.set("n", "gss", "gs_", { desc = "Add surrounding to line", remap = true })
     end,
   },
 
