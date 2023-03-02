@@ -53,7 +53,6 @@ return {
       { "<leader>e", "<cmd>Telescope file_browser<CR>", desc = "File Explorer" },
       { "<leader>t", "<cmd>Telescope buffers<CR>", desc = "Buffers" },
       { "<leader>bb", "<cmd>Telescope buffers<CR>", "Buffers" },
-      { "<leader>f", "<cmd>Telescope find_files<CR>", desc = "Files" },
       { "<leader>r", "<cmd>Telescope oldfiles<CR>", desc = "Recent Files" },
       { "<leader>/", "<cmd>Telescope current_buffer_fuzzy_find<CR>", desc = "Text in file" },
       { "<leader>*", "<cmd>Telescope grep_string<CR>", desc = "Word under cursor" },
