@@ -1,47 +1,36 @@
 local icons = require("config").icons
 
+local printed = false
+
 return {
   {
     "luukvbaal/statuscol.nvim",
     event = "VeryLazy",
-    opts = {
-      separator = " ",
-      relculright = true,
-      setopt = true,
-      order = "SsNsFs",
-      ft_ignore = require("config").filetypes.ui,
-
-      foldfunc = function(foldinfo, width)
-
-        if vim.v.wrap then
-          return ""
-        end
-
-        local lnum = vim.v.lnum
-        local icon = icons.fold.fold
-
-        -- Line isn't in folding range
-        if vim.fn.foldlevel(lnum) <= 0 then
-          return icon
-        end
-
-        -- Not the first line of folding range
-        if vim.fn.foldlevel(lnum) <= vim.fn.foldlevel(lnum - 1) then
-          return icon
-        end
-
-        if vim.fn.foldclosed(lnum) == -1 then
-          icon = icons.fold.foldclose
-        else
-          icon = icons.fold.foldopen
-        end
-
-        return icon
-      end,
-      FoldToggle = function(args)
-        vim.notify("toggling fold on line " .. args.mousepos.line)
-      end,
-    },
+    opts = function()
+      local builtin = require("statuscol.builtin")
+      return {
+        separator = " ",
+        relculright = true,
+        setopt = true,
+        ft_ignore = require("config").filetypes.ui,
+        segments = {
+          -- sign
+          { text = { "%s" }, click = "v:lua.ScSa" },
+          -- line number
+          {
+            text = { builtin.lnumfunc, " " },
+            condition = { true, builtin.not_empty },
+            click = "v:lua.ScLa",
+          },
+          -- fold
+          {
+            text = { builtin.foldfunc, " " },
+            condition = { true, builtin.not_empty },
+            click = "v:lua.ScFa",
+          },
+        },
+      }
+    end,
   },
   {
     "kevinhwang91/nvim-ufo",
