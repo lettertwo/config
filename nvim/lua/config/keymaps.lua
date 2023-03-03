@@ -13,12 +13,12 @@ vim.keymap.set("n", "<C-Left>", "<cmd>vertical resize -2<cr>", { desc = "Decreas
 vim.keymap.set("n", "<C-Right>", "<cmd>vertical resize +2<cr>", { desc = "Increase window width" })
 
 -- Move Lines
-vim.keymap.set("n", "<A-j>", ":m .+1<cr>==", { desc = "Move down" })
-vim.keymap.set("v", "<A-j>", ":m '>+1<cr>gv=gv", { desc = "Move down" })
-vim.keymap.set("i", "<A-j>", "<Esc>:m .+1<cr>==gi", { desc = "Move down" })
-vim.keymap.set("n", "<A-k>", ":m .-2<cr>==", { desc = "Move up" })
-vim.keymap.set("v", "<A-k>", ":m '<-2<cr>gv=gv", { desc = "Move up" })
-vim.keymap.set("i", "<A-k>", "<Esc>:m .-2<cr>==gi", { desc = "Move up" })
+vim.keymap.set("n", "<A-j>", ":m .+1<cr>==", { desc = "Move down", silent = true })
+vim.keymap.set("v", "<A-j>", ":m '>+1<cr>gv=gv", { desc = "Move down", silent = true })
+vim.keymap.set("i", "<A-j>", "<Esc>:m .+1<cr>==gi", { desc = "Move down", silent = true })
+vim.keymap.set("n", "<A-k>", ":m .-2<cr>==", { desc = "Move up", silent = true })
+vim.keymap.set("v", "<A-k>", ":m '<-2<cr>gv=gv", { desc = "Move up", silent = true })
+vim.keymap.set("i", "<A-k>", "<Esc>:m .-2<cr>==gi", { desc = "Move up", silent = true })
 
 -- buffers
 vim.keymap.set("n", "<S-h>", "<cmd>bprevious<cr>", { desc = "Prev buffer" })
@@ -96,8 +96,8 @@ vim.keymap.set("n", "<leader><tab>d", "<cmd>tabclose<cr>", { desc = "Close" })
 vim.keymap.set("n", "<leader><tab>[", "<cmd>tabprevious<cr>", { desc = "Previous" })
 
 -- Normal --
-vim.keymap.set("n", "]q", ":cnext<CR>", { desc = "Next quickfix" })
-vim.keymap.set("n", "[q", ":cprev<CR>", { desc = "Previous quickfix" })
+vim.keymap.set("n", "]q", "<cmd>cnext<CR>", { desc = "Next quickfix" })
+vim.keymap.set("n", "[q", "<cmd>cprev<CR>", { desc = "Previous quickfix" })
 vim.keymap.set("n", "gp", "`[v`]", { desc = "Switch to VISUAL using the last changed or yanked text" })
 
 -- Visual --
@@ -139,7 +139,7 @@ vim.keymap.set("n", "<leader>bC", "<cmd>%bd|e#|bd#<CR>", { desc = "Close all buf
 vim.keymap.set("n", "<leader>bs", function()
   local fname = vim.fn.input({ prompt = "Save as: ", default = vim.fn.bufname(), completion = "file" })
   if fname ~= "" then
-    vim.cmd(":saveas! " .. fname)
+    vim.cmd("<cmd>saveas! " .. fname)
   end
 end, { desc = "Save current buffer as" })
 
@@ -147,7 +147,7 @@ vim.keymap.set("n", "<leader>b%", "<cmd>source %<CR>", { desc = "Source current 
 vim.keymap.set("n", "<leader>f%", "<cmd>source %<CR>", { desc = "Source current file" })
 
 -- Mason
-vim.keymap.set("n", "<leader>M", ":Mason<cr>", { desc = "Mason" })
+vim.keymap.set("n", "<leader>M", "<cmd>Mason<cr>", { desc = "Mason" })
 
 
 local function toggle_profile()
