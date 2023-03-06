@@ -17,36 +17,47 @@ shell = "zsh"
 [plugins.powerlevel10k]
 github = "romkatv/powerlevel10k"
 
+[plugins.zsh-defer]
+github = "romkatv/zsh-defer"
+
 [plugins.smartdots]
 local = "~/.config/sheldon/local/smartdots"
 
+[plugins.workon]
+local = "~/.config/sheldon/local/workon"
+
 [plugins.alias-tips]
 github = 'djui/alias-tips'
+apply = ["defer"]
 
 [plugins.zsh-autopair]
 github = "hlissner/zsh-autopair"
+apply = ["defer"]
 
 [plugins.fnm]
-inline = 'eval "$(fnm env --use-on-cd)"'
+inline = 'zsh-defer eval "$(fnm env --use-on-cd)"'
 
 [plugins.zoxide]
 inline = 'eval "$(zoxide init zsh)"'
 
 [plugins.nnn-nerdfont]
 # TODO: Also install nnn plugins (~/.config/nnn/plugins)
-inline = 'source /usr/local/share/nnn-nerdfont/quitcd/quitcd.bash_zsh'
+inline = 'zsh-defer source /usr/local/share/nnn-nerdfont/quitcd/quitcd.bash_zsh'
 
 [plugins.rust]
 github = "cowboyd/zsh-rust"
+apply = ["defer"]
 
 [plugins.pyenv]
-inline = 'eval "$(pyenv init --path --no-rehash)"'
+inline = 'zsh-defer eval "$(pyenv init --path --no-rehash)"'
 
 [plugins.poetry]
 github = "darvid/zsh-poetry"
+apply = ["defer"]
 
 [plugins.luaver]
 github = "DhavalKapil/luaver"
+apply = ["defer"]
 
 # NOTE: fzf-tab needs to be loaded before plugins which will wrap widgets,
 # such as zsh-autosuggestions or fast-syntax-highlighting!!
@@ -62,6 +73,7 @@ github = "zsh-users/zsh-syntax-highlighting"
 [plugins.zsh-autosuggestions]
 github = "zsh-users/zsh-autosuggestions"
 use = ["{{ name }}.zsh"]
+apply = ["defer"]
 
 ### completion
 
@@ -79,12 +91,14 @@ apply = ["install-yarn-completions"]
 
 [plugins.compinit]
 local = "~/.config/sheldon/local/compinit"
+apply = ["defer"]
 
 ### tab title
 [plugins.tab-title]
 local = "~/.config/sheldon/local/tab-title"
 
 [templates]
+defer = "{% for file in files %}zsh-defer source \"{{ file }}\"\n{% endfor %}"
 install-yarn-completions = """{% for file in files %}
 install-completions {{ name }} <<-EOF\n#compdef yarn\nsource {{ file }}\nEOF
 {% endfor %}"""
