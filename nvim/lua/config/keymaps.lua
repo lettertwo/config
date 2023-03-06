@@ -63,9 +63,6 @@ vim.keymap.set("v", ">", ">gv")
 -- lazy
 vim.keymap.set("n", "<leader>L", "<cmd>:Lazy<cr>", { desc = "Lazy" })
 
--- new file
-vim.keymap.set("n", "<leader>fn", "<cmd>enew<cr>", { desc = "New File" })
-
 vim.keymap.set("n", "<leader>xl", "<cmd>lopen<cr>", { desc = "Open Location List" })
 vim.keymap.set("n", "<leader>xq", "<cmd>copen<cr>", { desc = "Open Quickfix List" })
 
@@ -145,6 +142,10 @@ end, { desc = "Save current buffer as" })
 
 vim.keymap.set("n", "<leader>b%", "<cmd>source %<CR>", { desc = "Source current file" })
 vim.keymap.set("n", "<leader>f%", "<cmd>source %<CR>", { desc = "Source current file" })
+
+-- new file
+vim.keymap.set("n", "<leader>bn", "<cmd>enew<cr>", { desc = "New file" })
+vim.keymap.set("n", "<leader>fn", "<cmd>enew<cr>", { desc = "New file" })
 
 -- Mason
 vim.keymap.set("n", "<leader>M", "<cmd>Mason<cr>", { desc = "Mason" })
