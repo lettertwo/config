@@ -367,6 +367,7 @@ return {
         { type = "padding", val = 2 },
         button("n", "  New File", "<CMD>ene!<CR>"),
         button(";", "  Close", "<CMD>Alpha<CR>"),
+        button("q", "  Quit", "<CMD>qa<CR>"),
       }
 
       ---@return Element[]
