@@ -98,3 +98,5 @@ path=(
   /opt/X11/bin
 )
 fpath+=$XDG_STATE_HOME/zsh/completions
+
+# export ZPROF=true

@@ -14,6 +14,9 @@ shell = "zsh"
 
 [plugins]
 
+[plugins.powerlevel10k]
+github = "romkatv/powerlevel10k"
+
 [plugins.smartdots]
 local = "~/.config/sheldon/local/smartdots"
 

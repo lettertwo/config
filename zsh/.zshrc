@@ -91,8 +91,12 @@ export QMK_CONFIG_FILE="$XDG_CONFIG_HOME/qmk/qmk.ini"
 # initialize zsh-vi-mode immediately to avoid clobbering plugins that come afterward (e.g., syntax-highlight).
 export ZVM_INIT_MODE="sourcing"
 
-# Initialize starship
-eval "$(starship init zsh)"
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.config/zsh/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
 
 # Initialize aliases
 for file in $ZDOTDIR/aliases/*.zsh; do
@@ -114,3 +118,6 @@ source "$BREW_PREFIX/opt/fzf/shell/key-bindings.zsh"
 if [[ "$ZPROF" = true ]]; then
   zprof
 fi
+
+# To customize prompt, run `p10k configure` or edit ~/.config/zsh/.p10k.zsh.
+[[ ! -f ~/.config/zsh/.p10k.zsh ]] || source ~/.config/zsh/.p10k.zsh
