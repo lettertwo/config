@@ -1,7 +1,7 @@
 -- Adapted from: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/util/init.lua
 
 ---@type LazyUtil
-local Util = vim.tbl_extend("error", require("lazy.util"), {})
+local Util = vim.tbl_extend("error", require("lazy.core.util"), {})
 
 Util.root_patterns = { ".git", "lua" }
 
@@ -84,25 +84,29 @@ function Util.get_root()
 end
 
 ---@param option string
----@param silent boolean?
----@param values {[1]: any, [2]: any}
+---@param silent? boolean?
+---@param values? {[1]:any, [2]:any}
 function Util.toggle(option, silent, values)
   if values then
     if vim.opt_local[option]:get() == values[1] then
-      vim.opt_local[option]:set(values[2])
+      vim.opt_local[option] = values[2]
     else
-      vim.opt_local[option]:set(values[1])
+      vim.opt_local[option] = values[1]
     end
-    if not silent then
-      Util.info("Set " .. option .. " to " .. vim.opt_local[option]:get())
+    return Util.info("Set " .. option .. " to " .. vim.opt_local[option]:get(), { title = "Option" })
+  end
+  vim.opt_local[option] = not vim.opt_local[option]:get()
+  if not silent then
+    if vim.opt_local[option]:get() then
+      Util.info("Enabled " .. option, { title = "Option" })
+    else
+      Util.warn("Disabled " .. option, { title = "Option" })
     end
   end
 end
 
-local diagnostics_enabled = true
 function Util.toggle_diagnostics()
-  diagnostics_enabled = not diagnostics_enabled
-  if diagnostics_enabled then
+  if vim.diagnostic.is_disabled() then
     vim.diagnostic.enable()
     Util.info("Enabled diagnostics", { title = "Diagnostics" })
   else
