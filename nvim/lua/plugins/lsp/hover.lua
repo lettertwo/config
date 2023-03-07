@@ -13,8 +13,9 @@ function M.get_formatted_diagnostics()
   local highlights = {}
   -- TODO: Add grouping by source and severity.
   if not vim.tbl_isempty(diagnostics) then
-    for i, diagnostic in ipairs(diagnostics) do
-      local prefix = string.format("%s[%s]: ", diagnostic.source, diagnostic.code)
+    for _, diagnostic in ipairs(diagnostics) do
+      local prefix = diagnostic.code ~= nil and string.format("[%s] ", diagnostic.code) or ""
+      prefix = string.format("%s%s: ", prefix, diagnostic.source)
       local severity = vim.diagnostic.severity[diagnostic.severity]
       local highlight = "Diagnostic" .. severity:sub(1, 1) .. severity:sub(2):lower()
       -- TODO: Decide how to highlight prefix.

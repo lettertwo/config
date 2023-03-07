@@ -28,8 +28,17 @@ vim.keymap.set("n", "b]", "<cmd>bnext<cr>", { desc = "Next" })
 vim.keymap.set("n", "<leader>bb", "<cmd>e #<cr>", { desc = "Switch to Other Buffer" })
 vim.keymap.set("n", "<leader>`", "<cmd>e #<cr>", { desc = "Switch to Other Buffer" })
 
--- Clear search with <esc>
-vim.keymap.set({ "i", "n" }, "<esc>", "<cmd>noh<cr><esc>", { desc = "Escape and clear hlsearch" })
+-- Close floats, and clear highlights with <Esc>
+vim.keymap.set("n", "<Esc>", function()
+  Util.close_floats()
+  if vim.bo.modifiable then
+    Util.clear_highlights()
+  else
+    if #vim.api.nvim_list_wins() > 1 then
+      return Util.feedkeys("<C-w>c")
+    end
+  end
+end, { desc = "Close floats, clear highlights" })
 
 -- Clear search, diff update and redraw
 -- taken from runtime/lua/_editor.lua

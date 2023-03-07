@@ -9,14 +9,37 @@ vim.diagnostic.config({
   update_in_insert = true,
   underline = true,
   severity_sort = true,
+  virtual_text = true,
+  virtual_lines = false,
   float = {
     focusable = false,
+    close_events = { "BufLeave", "CursorMoved", "InsertEnter", "FocusLost" },
     style = "minimal",
     border = "rounded",
     source = "always",
     header = "",
     prefix = "",
   },
+})
+
+vim.api.nvim_create_autocmd("BufReadPost", {
+  group = vim.api.nvim_create_augroup("Diagnostics", {}),
+  callback = function()
+    local bufnr = vim.api.nvim_get_current_buf()
+    local line = vim.api.nvim_win_get_cursor(0)[1]
+    vim.api.nvim_create_autocmd("CursorHold", {
+      group = vim.api.nvim_create_augroup("Diagnostics" .. bufnr, {}),
+      buffer = bufnr,
+      callback = function()
+        -- TODO: Make float show again if moved to another diagnostic on same line
+        if line ~= vim.api.nvim_win_get_cursor(0)[1] then
+          line = vim.api.nvim_win_get_cursor(0)[1]
+          -- TODO: Make float for diagnostics show lsp_lines
+          vim.diagnostic.open_float()
+        end
+      end,
+    })
+  end,
 })
 
 return {
@@ -37,12 +60,14 @@ return {
       { "[d", vim.diagnostic.goto_prev, desc = "Previous diagnostic" },
       { "<leader>xj", vim.diagnostic.goto_next, desc = "Next diagnostic" },
       { "<leader>xk", vim.diagnostic.goto_prev, desc = "Previous diagnostic" },
-      { "<leader>xx", ":TroubleToggle<cr>", desc = "Trouble" },
-      { "<leader>xq", ":TroubleToggle quickfix<cr>", desc = "QuickFix" },
-      { "<leader>xl", ":TroubleToggle loclist<cr>", desc = "Locationlist" },
-      { "<leader>xt", ":TroubleToggle telescope<cr>", desc = "Telescope" },
-      { "<leader>xd", ":TroubleToggle document_diagnostics<cr>", desc = "Diagnostics" },
-      { "<leader>xw", ":TroubleToggle workspace_diagnostics<cr>", desc = "Workspace Diagnostics" },
+      { "<leader>xx", "<cmd>TroubleToggle<cr>", desc = "Trouble: Show" },
+      { "<leader>xq", "<cmd>TroubleToggle quickfix<cr>", desc = "Trouble: Show QuickFix" },
+      { "<leader>xl", "<cmd>TroubleToggle loclist<cr>", desc = "Trouble: Show Locationlist" },
+      { "<leader>xt", "<cmd>TroubleToggle telescope<cr>", desc = "Trouble: Show Telescope" },
+      { "<leader>xd", "<cmd>TroubleToggle document_diagnostics<cr>", desc = "Trouble: Show Diagnostics" },
+      { "<leader>xw", "<cmd>TroubleToggle workspace_diagnostics<cr>", desc = "Trouble: Show Workspace Diagnostics" },
+      { "<leader>xD", require("util").toggle_diagnostics, desc = "Toggle Diagnostics" },
+      { "<leader>ux", require("util").toggle_diagnostics, desc = "Toggle Diagnostics" },
     },
   },
 }
