@@ -131,6 +131,7 @@ return {
       local telescope_actions = require("telescope.actions")
       local themes = require("telescope.themes")
       local pickers = require("plugins.telescope.pickers")
+      local actions = require("plugins.telescope.actions")
       return {
         defaults = pickers.quick_picker(vim.tbl_deep_extend("force", themes.get_ivy(), {
           entry_prefix = "  ",
@@ -187,11 +188,10 @@ return {
             previewer = false,
             mappings = {
               i = {
-                -- TODO: Fix case for deleting current buffer (doesn't delete)
-                ["<C-d>"] = telescope_actions.delete_buffer,
+                ["<C-d>"] = actions.delete_buffer,
               },
               n = {
-                ["<C-d>"] = telescope_actions.delete_buffer,
+                ["d"] = actions.delete_buffer,
               },
             },
           }),

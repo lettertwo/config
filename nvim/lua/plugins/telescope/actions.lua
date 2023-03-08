@@ -77,4 +77,18 @@ return transform_mod({
       vim.cmd([[lopen]])
     end
   end,
+  delete_buffer = function(prompt_bufnr)
+    local current_picker = action_state.get_current_picker(prompt_bufnr)
+    current_picker:delete_selection(function(selection)
+      local force = vim.api.nvim_buf_get_option(selection.bufnr, "buftype") == "terminal"
+      local bufremove_ok, bufremove = pcall(require, "mini.bufremove")
+      if bufremove_ok and bufremove then
+        local ok = pcall(bufremove.delete, selection.bufnr, force)
+        return ok
+      else
+        local ok = pcall(vim.api.nvim_buf_delete, selection.bufnr, { force = force })
+        return ok
+      end
+    end)
+  end,
 })
