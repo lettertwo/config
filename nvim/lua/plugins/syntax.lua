@@ -172,6 +172,7 @@ return {
       local parsers = require("nvim-treesitter.parsers")
       -- Associate the flowtype filetypes with the typescript parser.
       vim.treesitter.language.register("tsx", "flowtypereact")
+      vim.treesitter.language.register("tsx", "flowtype")
 
       require("nvim-treesitter.configs").setup(opts)
     end,
