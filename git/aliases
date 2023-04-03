@@ -32,8 +32,9 @@
   fixup = !git log --no-merges --oneline $(git rev-parse --abbrev-ref @{upstream} 2>/dev/null || >&2 echo 'upstream branch not found! using first parent...' && git rev-list --first-parent HEAD | tail -1)..HEAD | fzf --prompt='which commit? > ' | cut -d' ' -f1 | xargs -ot git commit --fixup
 	staged = diff --staged --name-status
 	unstaged = diff --name-status
-	update = pull --rebase
-	fast-forward = pull --ff-only
+	update = !git pull --rebase $(git upstream | cut -d '/' -f1) $(git upstream | cut -d '/' -f2-)
+	update-all = !git pull --rebase
+	fast-forward = !git update --ff-only
 	start = !git init && git commit --allow-empty -m 'Initial commit'
 	mkorphan = "!f() { if [ -z "$1" ] ; then echo 'Missing name for orphan branch. Usage: git mkorphan <branchname>'; exit 1; fi; git checkout --orphan $1 && git rm -rf . && git commit --allow-empty -m 'Initial commit'; }; f"
 	# Show verbose output about tags, branches or remotes
@@ -103,6 +104,7 @@
 	lme = !git logme
 	ff = !git fast-forward
 	up = !git update
+	upall = !git update-all
 	in = !git incoming
 	out = !git outgoing
 	ls = ls-files
