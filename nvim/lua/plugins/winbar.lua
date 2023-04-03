@@ -50,42 +50,9 @@ return {
     },
   },
   {
-    "SmiteshP/nvim-gps",
-    event = "VeryLazy",
-    opts = {
-      separator = icons.separator,
-      icons = {
-        ["array-name"] = icons.kinds.Array,
-        ["boolean-name"] = icons.kinds.Boolean,
-        ["class-name"] = icons.kinds.Class,
-        ["container-name"] = icons.kinds.Container,
-        ["date-name"] = icons.kinds.Date,
-        ["date-time-name"] = icons.kinds.DateTime,
-        ["float-name"] = icons.kinds.Number,
-        ["function-name"] = icons.kinds.Function,
-        ["inline-table-name"] = icons.kinds.Object,
-        ["integer-name"] = icons.kinds.Number,
-        ["label-name"] = icons.kinds.Label,
-        ["mapping-name"] = icons.kinds.Object,
-        ["method-name"] = icons.kinds.Method,
-        ["module-name"] = icons.kinds.Module,
-        ["null-name"] = icons.kinds.Null,
-        ["number-name"] = icons.kinds.Number,
-        ["object-name"] = icons.kinds.Object,
-        ["sequence-name"] = icons.kinds.Array,
-        ["string-name"] = icons.kinds.String,
-        ["table-name"] = icons.kinds.Object,
-        ["tag-name"] = icons.kinds.Tag,
-        ["time-name"] = icons.kinds.Time,
-        ["title-name"] = icons.kinds.Title,
-      },
-    },
-  },
-  {
     "nvim-lualine/lualine.nvim",
     event = "VeryLazy",
     opts = function(_, opts)
-      local gps = require("nvim-gps")
       local navic = require("nvim-navic")
       -- local grapple = {
       --   function()
@@ -95,7 +62,7 @@ return {
       -- }
 
       local function is_available()
-        return not excludes() and (navic.is_available() or gps.is_available())
+        return not excludes() and navic.is_available()
       end
 
       local breadcrumbs = {
@@ -114,16 +81,6 @@ return {
               for i, data in ipairs(navic_data) do
                 location = location .. data.icon .. format_highlight(data.name, highlights.Text)
                 if i < #navic_data then
-                  location = location .. icons.separator
-                end
-              end
-            end
-          elseif gps.is_available() then
-            local status_ok, gps_data = pcall(gps.get_data)
-            if status_ok and gps_data then
-              for i, data in ipairs(gps_data) do
-                location = location .. data.icon .. format_highlight(data.text, highlights.Text)
-                if i < #gps_data then
                   location = location .. icons.separator
                 end
               end
