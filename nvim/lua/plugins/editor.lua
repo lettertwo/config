@@ -14,9 +14,6 @@ return {
         desc = "File tree (cwd)",
       },
       { "<leader>E", "<leader>fE", desc = "File tree (cwd)", remap = true },
-      -- { "<leader>T", "<cmd>Neotree float buffers<cr>", desc = "Buffer tree" },
-      { "<leader>gg", "<cmd>Neotree float git_status<cr>", desc = "Git tree (cwd)" },
-      { "<leader>gG", "<cmd>Neotree float git_status<cr>", desc = "Git tree (root)" },
     },
     init = function()
       vim.g.neo_tree_remove_legacy_commands = 1

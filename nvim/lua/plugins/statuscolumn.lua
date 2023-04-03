@@ -114,10 +114,6 @@ return {
         vim.keymap.set("n", "<leader>gl", function()
           gitsigns.blame_line({ full = true })
         end, { buffer = buffer, desc = "Blame" })
-        vim.keymap.set("n", "<leader>gd", gitsigns.diffthis, { buffer = buffer, desc = "Diff" })
-        vim.keymap.set("n", "<leader>gD", function()
-          gitsigns.diffthis("~")
-        end, { buffer = buffer, desc = "Diff this file" })
         vim.keymap.set("n", "<leader>gt", gitsigns.toggle_deleted, { buffer = buffer, desc = "Toggle deleted files" })
 
         vim.keymap.set("n", "]c", function()
