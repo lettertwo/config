@@ -103,11 +103,7 @@ return {
         enable = true, -- false will disable the whole extension
         additional_vim_regex_highlighting = false,
       },
-      matchup = { enable = true },
-      autopairs = { enable = true },
       endwise = { enable = true },
-      indent = { enable = false },
-      illuminate = { enable = false },
       context_commentstring = { enable = true, enable_autocmd = false },
       ensure_installed = {
         "bash",
@@ -175,8 +171,7 @@ return {
     config = function(_, opts)
       local parsers = require("nvim-treesitter.parsers")
       -- Associate the flowtype filetypes with the typescript parser.
-      parsers.filetype_to_parsername.flowtype = "typescript"
-      parsers.filetype_to_parsername.flowtypereact = "tsx"
+      vim.treesitter.language.register("tsx", "flowtypereact")
 
       require("nvim-treesitter.configs").setup(opts)
     end,
