@@ -43,6 +43,22 @@ vim.api.nvim_create_autocmd("BufReadPost", {
 })
 
 return {
+  {
+    "https://git.sr.ht/~whynothugo/lsp_lines.nvim",
+    cmd = { "LspLinesToggle" },
+    event = "VeryLazy",
+    keys = {
+      { "<leader>ud", "<cmd>LspLinesToggle<cr>", desc = "Toggle LSP Lines" },
+      { "<leader>xL", "<cmd>LspLinesToggle<cr>", desc = "Toggle LSP Lines" },
+    },
+    config = function()
+      require("lsp_lines").setup()
+      vim.api.nvim_create_user_command("LspLinesToggle", function()
+        vim.diagnostic.config({ virtual_text = not require("lsp_lines").toggle() })
+      end, { desc = "Toggle LspLines" })
+    end,
+  },
+
   -- better diagnostics list and others
   {
     "folke/trouble.nvim",
