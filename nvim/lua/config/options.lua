@@ -5,27 +5,6 @@ local icons = require("config").icons
 vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 
--- filetypes that represent UI elements.
-vim.g.ui_filetypes = {
-  "NvimTree",
-  "Outline",
-  "TelescopePrompt",
-  "Trouble",
-  "alpha",
-  "dashboard",
-  "fugitive",
-  "help",
-  "lazy",
-  "mason",
-  "neogitstatus",
-  "packer",
-  "qf",
-  "spectre_panel",
-  "startify",
-  "terminal",
-  "toggleterm",
-  "unite",
-}
 -- fix markdown indentation settings
 vim.g.markdown_recommended_style = 0
 

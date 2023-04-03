@@ -1,4 +1,5 @@
 ---@class Config
+
 local config = {
   ---@class Filetypes
   filetypes = {
@@ -9,6 +10,7 @@ local config = {
       "TelescopePrompt",
       "Trouble",
       "alpha",
+      "cmp_menu",
       "dashboard",
       "fugitive",
       "help",
@@ -20,6 +22,7 @@ local config = {
       "neo-tree-popup",
       "neogitstatus",
       "notify",
+      "noice",
       "packer",
       "qf",
       "spectre_panel",
@@ -29,6 +32,7 @@ local config = {
       "toggleterm",
       "tsplayground",
       "unite",
+      "WhichKey",
     },
   },
   highlights = {
