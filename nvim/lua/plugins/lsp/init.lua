@@ -65,6 +65,7 @@ return {
           },
         },
         eslint = {
+          filetypes = { "javascript", "javascriptreact", "javascript.jsx", "flowtype", "flowtypereact" },
           on_attach = function(client, bufnr)
             vim.api.nvim_create_autocmd("BufWritePre", {
               buffer = bufnr,
@@ -139,7 +140,9 @@ return {
       null_ls.setup({
         debug = false,
         sources = {
-          formatting.prettierd.with({
+          -- TODO: Look into switching back to eslint via null-ls, since eslint-lsp seems to lack many features like
+          -- code actions and formatting.
+          formatting.prettier.with({
             extra_filetypes = { "toml", "flowtype", "flowtypereact" },
           }),
           formatting.black.with({ extrargs = { "fast" } }),
@@ -154,7 +157,7 @@ return {
 
       require("mason-null-ls").setup({
         ensure_installed = {
-          "prettierd",
+          "prettier",
           "black",
           "stylua",
           "flake8",
