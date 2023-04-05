@@ -56,7 +56,7 @@ vim.api.nvim_create_autocmd("CmdwinEnter", {
   end,
 })
 
-local LARGE_BUF = 100000
+local LARGE_BUF = 1000000
 
 -- Disable some sources of slowdown in large buffers.
 vim.api.nvim_create_autocmd({ "BufReadPost" }, {
