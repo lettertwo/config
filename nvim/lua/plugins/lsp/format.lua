@@ -32,6 +32,7 @@ function M.format(bufnr)
 
   vim.lsp.buf.format({
     bufnr = bufnr,
+    timeout_ms = 15000,
     filter = function(client)
       -- Prefer null-ls formatting if available.
       if have_nls then
