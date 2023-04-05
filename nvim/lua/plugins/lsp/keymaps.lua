@@ -22,11 +22,11 @@ M.keys = {
   { "<leader>lS", ":LspInfo<CR>", desc = "Show LSP status", requires = "lspconfig" },
 }
 
-function M.on_attach(client, bufnr)
+function M.apply(client, bufnr, spec)
   local Keys = require("lazy.core.handler.keys")
   local keymaps = {}
 
-  for _, value in ipairs(M.keys) do
+  for _, value in ipairs(spec) do
     local keys = Keys.parse(value)
     keymaps[keys.id] = keys
   end
@@ -44,6 +44,10 @@ function M.on_attach(client, bufnr)
       vim.keymap.set(keys.mode or "n", keys[1], keys[2], opts)
     end
   end
+end
+
+function M.on_attach(client, bufnr)
+  M.apply(client, bufnr, M.keys)
 end
 
 return M

@@ -17,6 +17,48 @@ return {
       "williamboman/mason-lspconfig.nvim",
       "hrsh7th/cmp-nvim-lsp",
       "b0o/SchemaStore.nvim",
+      {
+        "simrat39/rust-tools.nvim",
+        opts = {
+          tools = {
+            runnables = {
+              use_telescope = true,
+            },
+            inlay_hints = {
+              auto = false,
+            },
+          },
+          server = {
+            standalone = false,
+          },
+        },
+      },
+      {
+        "lvimuser/lsp-inlayhints.nvim",
+        opts = {
+          inlay_hints = {
+            parameter_hints = {
+              show = false,
+            },
+            type_hints = {
+              show = true,
+            },
+          },
+        },
+        config = function(_, opts)
+          local inlay_hints = require("lsp-inlayhints")
+          inlay_hints.setup(opts)
+          require("util").on_attach(function(client, bufnr)
+            inlay_hints.on_attach(client, bufnr, false)
+
+            require("plugins.lsp.keymaps").apply(client, bufnr, {
+              { "<leader>li", inlay_hints.toggle, desc = "Toggle inlay hints" },
+              { "<leader>ul", inlay_hints.toggle, desc = "Toggle inlay hints" },
+              { "<leader>lI", inlay_hints.reset, desc = "Reset inlay hints" },
+            })
+          end)
+        end,
+      },
     },
     ---@class PluginLspOpts
     opts = {
@@ -73,6 +115,31 @@ return {
             })
           end,
         },
+        ["rust_analyzer"] = {
+          checkOnSave = {
+            command = "clippy",
+          },
+          on_attach = function(client, bufnr)
+            local rt = require("rust-tools")
+
+            -- stylua: ignore
+            require("plugins.lsp.keymaps").apply(client, bufnr, {
+              { "<leader>le", rt.expand_macro.expand_macro, desc = "Expand macro" },
+              { "<leader>lp", rt.parent_module.parent_module, desc = "Parent module" },
+              -- { "<leader>lu", rt.move_item.move_item, desc = "Move item up" },
+              -- { "<leader>ld", rt.move_item.move_item, desc = "Move item down" },
+              { "<leader>lj", rt.join_lines.join_lines, desc = "Join lines" },
+              { "<leader>l/", rt.ssr.ssr, desc = "Structural search replace" },
+
+              { "<leader>dr", rt.debuggables.debuggables, desc = "Debuggables" },
+
+              { "<leader>cr", rt.runnables.runnables, desc = "Runnables" },
+              { "<leader>co", rt.open_cargo_toml.open_cargo_toml, desc = "Open cargo.toml" },
+              -- { "<leader>cg", function() rt.crate_graph.view_crate_graph('bmp') end, desc = "View crate graph" },
+            })
+          end,
+        },
+
         "html",
         "cssls",
         "pyright",

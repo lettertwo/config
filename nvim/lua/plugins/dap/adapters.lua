@@ -33,4 +33,24 @@ M.js = {
   end,
 }
 
+M.codelldb = {
+  opts = {
+    type = "server",
+    port = "${port}",
+    host = "12.0.0.1",
+    executable = {
+      command = vim.fn.stdpath("data") .. "/mason/packages/codelldb/extension/adapter/codelldb",
+      args = {
+        "--liblldb",
+        vim.fn.stdpath("data") .. "/mason/packages/codelldb/extension/lldb/lib/liblldb.dylib",
+        "--port",
+        "${port}",
+      },
+    },
+  },
+  setup = function(dap)
+    dap.adapters.codelldb = M.codelldb.opts
+  end,
+}
+
 return M
