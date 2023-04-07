@@ -110,6 +110,7 @@ return {
         ["g"] = { name = "+goto" },
         ["]"] = { name = "+next" },
         ["["] = { name = "+prev" },
+        ["<leader>\\"] = { name = "+terminals" },
         ["<leader><tab>"] = { name = "+tabs" },
         ["<leader>b"] = { name = "+buffer" },
         ["<leader>bp"] = { name = "+pin" },
