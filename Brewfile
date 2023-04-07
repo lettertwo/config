@@ -58,6 +58,7 @@ brew "gh"
 brew "git-absorb"
 brew "git-lfs"
 brew "graphite"
+brew "lazygit", args: ["HEAD"]
 
 # node
 brew "node"
