@@ -182,7 +182,7 @@ update-dock-icons:
 ~/.local/share/qmk_firmware: ~/Library/Application\ Support/qmk/qmk.ini
 	$(call err,"qmk_firmware not found!")
 	$(call log,"Cloning qmk_firmware...")
-	$(call run,qmk setup lettertwo/qmk_firmware)
+	$(call run,qmk setup lettertwo/qmk_firmware --branch lettertwo)
 	$(call done)
 
 .PHONY: qmk
