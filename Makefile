@@ -218,15 +218,7 @@ install: mkdirs /etc/zshenv ~/.local/share/laserwave.nvim brew sheldon nvim kitt
 	@echo "  rectangle: $(CYAN)https://rectangleapp.com/pro$(END)"
 	@echo "  clover:    $(CYAN)https://cloverapp.com/download$(END)"
 	@echo "  MonoLisa:  $(CYAN)https://www.monolisa.dev/orders$(END)"
-	@echo ""
-	@echo "    Add nerdfonts to MonoLisa after download (example):"
-	@echo "    $(BLUE)mkdir ~/Downloads/MonoLisa/nerdfonts"
-	@echo "    $(BLUE)docker run --rm \\"
-	@echo "      -v ~/Downloads/MonoLisa/ttf:/in \\"
-	@echo "      -v ~/Downloads/MonoLisa/nerdfonts:/out \\"
-	@echo "      nerdfonts/patcher -c$(END)"
-	@echo ""
-	@echo "    It'll take a while. Afterward, just drag them into Font Book!"
+	@echo "  NerdFonts (Symbols Only):  $(CYAN)https://github.com/ryanoasis/nerd-fonts/releases/$(END)"
 
 .PHONY: update
 update: update-config \
