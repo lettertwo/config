@@ -72,8 +72,8 @@ return {
       },
     },
     keys = {
-      { "]d", vim.diagnostic.goto_next, desc = "Next diagnostic" },
-      { "[d", vim.diagnostic.goto_prev, desc = "Previous diagnostic" },
+      { "]x", vim.diagnostic.goto_next, desc = "Next diagnostic" },
+      { "[x", vim.diagnostic.goto_prev, desc = "Previous diagnostic" },
       { "<leader>xj", vim.diagnostic.goto_next, desc = "Next diagnostic" },
       { "<leader>xk", vim.diagnostic.goto_prev, desc = "Previous diagnostic" },
       { "<leader>xx", "<cmd>TroubleToggle<cr>", desc = "Trouble: Show" },
@@ -84,6 +84,10 @@ return {
       { "<leader>xw", "<cmd>TroubleToggle workspace_diagnostics<cr>", desc = "Trouble: Show Workspace Diagnostics" },
       { "<leader>xD", require("util").toggle_diagnostics, desc = "Toggle Diagnostics" },
       { "<leader>ux", require("util").toggle_diagnostics, desc = "Toggle Diagnostics" },
+      { "<leader>xs", "<cmd>Telescope diagnostics bufnr=0<cr>", desc = "Search Diagnostics" },
+      { "<leader>sx", "<cmd>Telescope diagnostics bufnr=0<cr>", desc = "Diagnostics" },
+      { "<leader>xS", "<cmd>Telescope diagnostics<cr>", desc = "Search Workspace Diagnostics" },
+      { "<leader>sX", "<cmd>Telescope diagnostics<cr>", desc = "Workspace Diagnostics" },
     },
   },
 }

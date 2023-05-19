@@ -72,7 +72,6 @@ return {
       { "<leader>sb", "<cmd>Telescope current_buffer_fuzzy_find<cr>", desc = "Buffer" },
       { "<leader>sc", "<cmd>Telescope command_history<cr>", desc = "Command History" },
       { "<leader>sC", "<cmd>Telescope commands<cr>", desc = "Commands" },
-      { "<leader>sd", "<cmd>Telescope diagnostics<cr>", desc = "Diagnostics" },
       { "<leader>sg", live_grep_cwd, desc = "Grep (cwd dir)" },
       { "<leader>sG", live_grep_cbd, desc = "Grep (buffer dir)" },
       { "<leader>sh", "<cmd>Telescope help_tags<CR>", desc = "Help" },

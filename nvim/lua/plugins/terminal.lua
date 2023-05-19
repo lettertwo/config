@@ -28,13 +28,13 @@ return {
     event = "VeryLazy",
     cmd = "ToggleTerm",
     keys = {
-      { "<leader>\\\\", "<cmd>ToggleTerm<cr>", desc = "Toggle terminal" },
-      { "<leader>\\.", "<cmd>ToggleTerm dir=%:p:h<cr>", desc = "Toggle terminal at file" },
-      { "<leader>\\g", toggle_cmd("lazygit"), desc = "Toggle lazygit" },
-      { "<leader>\\n", toggle_cmd("node"), desc = "Toggle node repl" },
+      { "<leader>\\\\", "<cmd>ToggleTerm<cr>", desc = "terminal" },
+      { "<leader>\\.", "<cmd>ToggleTerm dir=%:p:h<cr>", desc = "terminal at file" },
+      { "<leader>\\g", toggle_cmd("lazygit"), desc = "lazygit" },
+      { "<leader>\\n", toggle_cmd("node"), desc = "node repl" },
       -- remaps
-      { "\\", "<leader>\\\\", remap = true, desc = "Toggle terminal" },
-      { "<leader>gg", "<leader>\\g", remap = true, desc = "Toggle lazygit" },
+      { "\\", "<leader>\\\\", remap = true, desc = "terminal" },
+      { "<leader>gg", "<leader>\\g", remap = true, desc = "lazygit" },
     },
     opts = {
       autochdir = true,
