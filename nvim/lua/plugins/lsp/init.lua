@@ -35,6 +35,7 @@ return {
       },
       {
         "lvimuser/lsp-inlayhints.nvim",
+        branch = "anticonceal",
         opts = {
           inlay_hints = {
             parameter_hints = {
@@ -83,12 +84,36 @@ return {
             },
           },
         },
-        -- tsserver = {
-        --   -- Only activate tsserver if the project has config for it.
-        --   root_dir = function(...)
-        --     return require("lspconfig.util").root_pattern("tsconfig.json", "jsconfig.json")(...)
-        --   end,
-        -- },
+        tsserver = {
+          -- Only activate tsserver if the project has config for it.
+          root_dir = function(...)
+            return require("lspconfig.util").root_pattern("tsconfig.json", "jsconfig.json")(...)
+          end,
+          typescript = {
+            inlayHints = {
+              includeInlayParameterNameHints = "all",
+              includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+              includeInlayFunctionParameterTypeHints = true,
+              includeInlayVariableTypeHints = true,
+              includeInlayVariableTypeHintsWhenTypeMatchesName = false,
+              includeInlayPropertyDeclarationTypeHints = true,
+              includeInlayFunctionLikeReturnTypeHints = true,
+              includeInlayEnumMemberValueHints = true,
+            },
+          },
+          javascript = {
+            inlayHints = {
+              includeInlayParameterNameHints = "all",
+              includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+              includeInlayFunctionParameterTypeHints = true,
+              includeInlayVariableTypeHints = true,
+              includeInlayVariableTypeHintsWhenTypeMatchesName = false,
+              includeInlayPropertyDeclarationTypeHints = true,
+              includeInlayFunctionLikeReturnTypeHints = true,
+              includeInlayEnumMemberValueHints = true,
+            },
+          },
+        },
         flow = {
           filetypes = { "javascript", "javascriptreact", "javascript.jsx", "flowtype", "flowtypereact" },
         },
