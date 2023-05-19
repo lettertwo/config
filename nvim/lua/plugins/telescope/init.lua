@@ -36,6 +36,14 @@ local function grep_string_files()
   })
 end
 
+local function git_hunks()
+  require("plugins.telescope.pickers").git_hunks({ bufnr = 0 })
+end
+
+local function git_all_hunks()
+  require("plugins.telescope.pickers").git_hunks()
+end
+
 return {
   {
     "nvim-telescope/telescope.nvim",
@@ -113,6 +121,8 @@ return {
       { "<leader>gb", "<cmd>Telescope git_branches<CR>", desc = "Branches" },
       { "<leader>gs", "<cmd>Telescope git_status<CR>", desc = "Status" },
       { "<leader>gS", "<cmd>Telescope git_stash<CR>", desc = "Stash" },
+      { "<leader>gh", git_hunks, desc = "Hunks" },
+      { "<leader>gH", git_all_hunks, desc = "Workspace Hunks" },
 
       -- TODO: config
       -- {"<leader>cc", nvim_config_files, desc = "Neovim Config Files" },
