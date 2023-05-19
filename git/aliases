@@ -53,6 +53,7 @@
 	show-files = !git show --pretty="" --name-status
 	# List worktrees
 	worktrees = worktree list
+  jump = "!$(brew --prefix git)/share/git-core/contrib/git-jump/git-jump"
 
 	# Shows changes made by a branch since the last common commit with another branch.
 	# Usage:
