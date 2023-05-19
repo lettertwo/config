@@ -23,8 +23,8 @@ vim.api.nvim_create_user_command("DapToggle", function() M.toggle() end, { desc 
 
 function M.setup(dap, ui)
   function M.start()
-    dap.continue()
     ui.open()
+    dap.continue()
     vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<C-w>=", false, true, true), "n", false)
     vim.notify("Debugger session started", "warn")
   end
@@ -38,8 +38,8 @@ function M.setup(dap, ui)
 
   function M.stop()
     dap.clear_breakpoints()
-    ui.close()
     dap.terminate()
+    ui.close()
     vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<C-w>=", false, true, true), "n", false)
     vim.notify("Debugger session ended", "warn")
   end

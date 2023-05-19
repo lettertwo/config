@@ -13,13 +13,25 @@ M.javascript = {
   },
   {
     type = "node2",
-    name = "Attach",
+    name = "Attach (node2)",
     request = "attach",
     program = "${file}",
     cwd = vim.fn.getcwd(),
     sourceMaps = true,
     protocol = "inspector",
     console = "integratedTerminal",
+  },
+  {
+    type = "pwa-node",
+    name = "Attach (js-debug)",
+    request = "attach",
+    processId = require("dap.utils").pick_process,
+    cwd = vim.fn.getcwd(),
+    sourceMaps = true,
+    resolveSourceMapLocations = {
+      "${workspaceFolder}/**",
+      "!**/node_modules/**",
+    },
   },
 }
 
