@@ -16,14 +16,6 @@ function Util.format_highlight(str, group)
   return "%#" .. group .. "#" .. str .. "%*"
 end
 
-function Util.close_floats()
-  for _, win in ipairs(vim.api.nvim_list_wins()) do
-    if vim.api.nvim_win_get_config(win).relative == "win" then
-      vim.api.nvim_win_close(win, false)
-    end
-  end
-end
-
 --- Gets the buffer number of every visible buffer
 --- @return integer[]
 function Util.visible_buffers()
@@ -39,12 +31,31 @@ function Util.lsp_active()
   return false
 end
 
+function Util.close_floats()
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    if vim.api.nvim_win_get_config(win).relative ~= "" then
+      vim.api.nvim_win_close(win, false)
+    end
+  end
+end
+
 function Util.clear_highlights()
   vim.cmd("nohlsearch")
   if Util.lsp_active() then
     vim.lsp.buf.clear_references()
     for _, buffer in pairs(Util.visible_buffers()) do
       vim.lsp.util.buf_clear_references(buffer)
+    end
+  end
+end
+
+function Util.close_floats_and_clear_highlights()
+  Util.close_floats()
+  if vim.bo.modifiable then
+    Util.clear_highlights()
+  else
+    if #vim.api.nvim_list_wins() > 1 then
+      return Util.feedkeys("<C-w>c")
     end
   end
 end
@@ -67,6 +78,9 @@ end
 function Util.on_attach(cb)
   vim.api.nvim_create_autocmd("LspAttach", {
     callback = function(args)
+      if not (args.data and args.data.client_id) then
+        return
+      end
       local buffer = args.buf
       local client = vim.lsp.get_client_by_id(args.data.client_id)
       cb(client, buffer)
@@ -109,8 +123,10 @@ function Util.get_root()
       end, workspace) or client.config.root_dir and { client.config.root_dir } or {}
       for _, p in ipairs(paths) do
         local r = vim.loop.fs_realpath(p)
-        if path:find(r, 1, true) then
-          roots[#roots + 1] = r
+        if r ~= nil then
+          if path:find(r, 1, true) then
+            roots[#roots + 1] = r
+          end
         end
       end
     end
@@ -133,24 +149,33 @@ end
 ---@param option string
 ---@param silent? boolean?
 ---@param values? {[1]:any, [2]:any}
-function Util.toggle(option, silent, values)
+function Util.createOptionToggle(option, silent, values)
   if values then
-    if vim.opt_local[option]:get() == values[1] then
-      vim.opt_local[option] = values[2]
-    else
-      vim.opt_local[option] = values[1]
+    return function()
+      if vim.opt_local[option]:get() == values[1] then
+        vim.opt_local[option] = values[2]
+      else
+        vim.opt_local[option] = values[1]
+      end
+      if not silent then
+        Util.info("Set " .. option .. " to " .. vim.opt_local[option]:get(), { title = "Option" })
+      end
     end
-    return Util.info("Set " .. option .. " to " .. vim.opt_local[option]:get(), { title = "Option" })
-  end
-  vim.opt_local[option] = not vim.opt_local[option]:get()
-  if not silent then
-    if vim.opt_local[option]:get() then
-      Util.info("Enabled " .. option, { title = "Option" })
-    else
-      Util.warn("Disabled " .. option, { title = "Option" })
+  else
+    return function()
+      vim.opt_local[option] = not vim.opt_local[option]:get()
+      if not silent then
+        if vim.opt_local[option]:get() then
+          Util.info("Enabled " .. option, { title = "Option" })
+        else
+          Util.warn("Disabled " .. option, { title = "Option" })
+        end
+      end
     end
   end
 end
+
+function Util.createToggle(name, handle) end
 
 function Util.toggle_diagnostics()
   if vim.diagnostic.is_disabled() then

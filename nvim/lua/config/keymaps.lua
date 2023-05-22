@@ -29,16 +29,7 @@ vim.keymap.set("n", "<leader>bb", "<cmd>e #<cr>", { desc = "Switch to Other Buff
 vim.keymap.set("n", "<leader>`", "<cmd>e #<cr>", { desc = "Switch to Other Buffer" })
 
 -- Close floats, and clear highlights with <Esc>
-vim.keymap.set("n", "<Esc>", function()
-  Util.close_floats()
-  if vim.bo.modifiable then
-    Util.clear_highlights()
-  else
-    if #vim.api.nvim_list_wins() > 1 then
-      return Util.feedkeys("<C-w>c")
-    end
-  end
-end, { desc = "Close floats, clear highlights" })
+vim.keymap.set("n", "<Esc>", Util.close_floats_and_clear_highlights, { desc = "Close floats, clear highlights" })
 
 -- Clear search, diff update and redraw
 -- taken from runtime/lua/_editor.lua
