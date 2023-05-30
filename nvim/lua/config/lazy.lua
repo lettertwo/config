@@ -28,7 +28,14 @@ require("lazy").setup({
   dev = { path = "~/.local/share/" },
   install = { colorscheme = { "laserwave", "habamax" } },
   ui = { border = "rounded" },
-  checker = { enabled = true }, -- automatically check for plugin updates
+  checker = {
+    enabled = true, -- automatically check for plugin updates
+    notify = false, -- get a notification when updates are found
+  },
+  change_detection = {
+    enabled = true, -- automatically check for config file changes and reload the ui
+    notify = false, -- get a notification when changes are found
+  },
   performance = {
     rtp = {
       -- disable some rtp plugins
