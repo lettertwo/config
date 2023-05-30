@@ -302,6 +302,13 @@ local function embed_section_line(header_line, section_line, winwidth)
   return { type = "text", val = header_val, opts = header_opts }
 end
 
+local section_lazy = {
+  type = "group",
+  val = {
+    { type = "padding", val = 2 },
+  },
+}
+
 return {
   {
     "goolord/alpha-nvim",
@@ -368,6 +375,7 @@ return {
         button("n", "  New File", "<CMD>ene!<CR>"),
         button(";", "  Close", "<CMD>Alpha<CR>"),
         button("q", "  Quit", "<CMD>qa<CR>"),
+        section_lazy,
       }
 
       ---@return Element[]
@@ -444,19 +452,56 @@ return {
         end,
       })
 
-      vim.api.nvim_create_autocmd("User", {
-        pattern = "LazyVimStarted",
-        callback = function()
+      local section_lazy_stats = nil
+      local section_lazy_status = nil
+
+      local function add_lazy_stats()
+        if section_lazy_stats == nil then
           local stats = require("lazy").stats()
           local ms = (math.floor(stats.startuptime * 100 + 0.5) / 100)
-
-          table.insert(dashboard.sections, { type = "padding", val = 2 })
-          table.insert(dashboard.sections, {
+          section_lazy_stats = {
             type = "text",
             val = "⚡ Loaded " .. stats.count .. " plugins in " .. ms .. "ms",
             opts = { hl = "SpecialComment", position = "center" },
-          })
+          }
+
+          table.insert(section_lazy.val, section_lazy_stats)
+        end
+      end
+
+      local function update_lazy_status()
+        local lazy_status = require("lazy.status")
+        if lazy_status.has_updates() then
+          if section_lazy_status == nil then
+            section_lazy_status = {
+              type = "text",
+              opts = { hl = "SpecialComment", position = "center" },
+            }
+            table.insert(section_lazy.val, section_lazy_status)
+          end
+
+          section_lazy_status.val = lazy_status.updates() .. " plugin updates available"
+          return true
+        end
+      end
+
+      vim.api.nvim_create_autocmd("User", {
+        pattern = "LazyVimStarted",
+        callback = function()
+          add_lazy_stats()
+          update_lazy_status()
+
           if vim.o.filetype == "alpha" then
+            vim.schedule_wrap(vim.api.nvim_command)("AlphaRedraw")
+          end
+        end,
+      })
+
+      vim.api.nvim_create_autocmd("User", {
+        pattern = "Lazy*",
+        callback = function(e)
+          local updated = update_lazy_status()
+          if vim.o.filetype == "alpha" and updated then
             vim.schedule_wrap(vim.api.nvim_command)("AlphaRedraw")
           end
         end,
