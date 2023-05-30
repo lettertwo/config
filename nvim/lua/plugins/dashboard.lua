@@ -41,7 +41,6 @@
 local version, commit = unpack(vim.split(vim.fn.execute("version"):gsub(".*%sv([%w%p]+)\n.*", "%1"), "+"))
 
 local alpha_win = vim.fn.winnr()
-local alpha_buf = vim.fn.bufnr()
 
 -- font: https://famfonts.com/metallica/
 -- generator: https://www.twitchquotes.com/ascii-art-generator
@@ -284,18 +283,12 @@ local function embed_section_line(header_line, section_line, winwidth)
     end
     table.insert(hl, { button_opts.hl_shortcut, start_byte + #button_val - 1, start_byte + #button_val })
     table.insert(hl, { header_opts.hl, start_byte + #button_val, #val })
-    -- Alpha computes the cursor jump location by counting leading spaces on the line
-    -- and adding them to `cursor`, so we offset our button's cursor
-    -- by the bytes of the header content minus the leading whitespace.
-    -- (like with hl, cursor ranges seem to be based on bytes, not cells or characters.)
-    local _, count_spaces = string.find(val, "%s*")
-    local cursor = button_opts.cursor + start_byte - count_spaces
 
     return {
       type = "button",
       val = val,
       on_press = on_press,
-      opts = { hl = hl, cursor = cursor, keymap = button_opts.keymap },
+      opts = { hl = hl, cursor = button_opts.cursor + start, keymap = button_opts.keymap },
     }
   end
 
@@ -366,9 +359,8 @@ return {
               "<CMD>Telescope find_files cwd=" .. vim.fn.stdpath("config") .. " prompt_title=Nvim\\ Config\\ Files<CR>"
             ),
             button("L", "鈴" .. " Lazy", ":Lazy<CR>"),
-            -- Default cursor alignment is off by 1 with these icons (maybe they use an extra byte?)
-            deepmerge(button("C", "律 Checkhealth", "<CMD>checkhealth<CR>"), { opts = { cursor = 4 } }),
-            deepmerge(button("S", "祥 Profile startup", "<CMD>Lazy profile<CR>"), { opts = { cursor = 4 } }),
+            button("C", "律 Checkhealth", "<CMD>checkhealth<CR>"),
+            button("S", "祥 Profile startup", "<CMD>Lazy profile<CR>"),
           },
         },
         { type = "padding", val = 2 },
