@@ -464,6 +464,11 @@ return {
       local function update_lazy_status()
         local lazy_status = require("lazy.status")
         if lazy_status.has_updates() then
+          local updates = lazy_status.updates()
+          if updates == false then
+            return false
+          end
+
           if section_lazy_status == nil then
             section_lazy_status = {
               type = "text",
@@ -472,7 +477,8 @@ return {
             table.insert(section_lazy.val, section_lazy_status)
           end
 
-          section_lazy_status.val = lazy_status.updates() .. " plugin updates available"
+          local icon, count = unpack(vim.split(updates, "%s+"))
+          section_lazy_status.val = icon .. "  " .. count .. " updates available"
           return true
         end
       end
