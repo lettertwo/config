@@ -12,6 +12,8 @@ INFO := $(BLUE)
 WARN := $(YELLOW)
 ERROR := $(RED)
 
+MACOS := $(shell uname -s | grep Darwin 2> /dev/null)
+
 log = @echo "$(INFO)$(1)$(END)"
 err = @>&2 echo "$(ERROR)$(1)$(END)"
 done = $(call log,"Done!")
@@ -145,9 +147,11 @@ ifndef KITTY
 	$(call err,"kitty not found!")
 	$(call log,"Installing kitty...")
 	$(call run,curl -L https://sw.kovidgoyal.net/kitty/installer.sh | zsh /dev/stdin)
-	$(call run,ln -sf /Applications/kitty.app/Contents/MacOS/kitty "$$HOME/.local/bin/kitty")
 	$(call run,ln -sf "$$HOME/.local/share/laserwave.nvim/dist/kitty/laserwave.conf" "$$HOME/.config/kitty/laserwave.conf")
+ifdef MACOS
+	$(call run,ln -sf /Applications/kitty.app/Contents/MacOS/kitty "$$HOME/.local/bin/kitty")
 	$(call run,rm /var/folders/*/*/*/com.apple.dock.iconcache; killall Dock) # force refresh of dock icons.
+endif
 	$(call done)
 endif
 
@@ -160,24 +164,32 @@ else
 	$(call log,"Updating kitty...")
 endif
 	$(call run,curl -L https://sw.kovidgoyal.net/kitty/installer.sh | zsh /dev/stdin)
-	$(call run,ln -sf /Applications/kitty.app/Contents/MacOS/kitty "$$HOME/.local/bin/kitty")
 	$(call run,ln -sf "$$HOME/.local/share/laserwave.nvim/dist/kitty/laserwave.conf" "$$HOME/.config/kitty/laserwave.conf")
+ifdef MACOS
+	$(call run,ln -sf /Applications/kitty.app/Contents/MacOS/kitty "$$HOME/.local/bin/kitty")
 	$(call run,rm /var/folders/*/*/*/com.apple.dock.iconcache; killall Dock) #force refresh of dock icons.
+endif
 	$(call done)
 
 .PHONY: update-dock-icons
 update-dock-icons:
+ifdef MACOS
 	$(call run,rm /var/folders/*/*/*/com.apple.dock.iconcache; killall Dock) #force refresh of dock icons.
 	$(call done)
+else
+	$(call err,"Not on macOS!")
+endif
 
 ### qmk
 
 ~/Library/Application\ Support/qmk/qmk.ini:
+ifdef MACOS
 	$(call err,"qmk config not found!")
 	$(call log,"Linking qmk config...")
 	$(call run,mkdir -p ~/Library/Application\ Support/qmk/)
 	$(call run,ln -sf "$$HOME/.config/qmk/qmk.ini" "$@")
 	$(call done)
+endif
 
 ~/.local/share/qmk_firmware: ~/Library/Application\ Support/qmk/qmk.ini
 	$(call err,"qmk_firmware not found!")
@@ -211,6 +223,7 @@ install: mkdirs /etc/zshenv ~/.local/share/laserwave.nvim brew sheldon nvim kitt
 	$(call done)
 	@echo ""
 	@echo "Be sure to run $(BLUE)make update$(END) to fetch the latest stuff."
+ifdef MACOS
 	@echo ""
 	@echo "Other useful things to install:"
 	@echo "  1password: $(CYAN)https://1password.com/downloads/mac/$(END)"
@@ -219,6 +232,7 @@ install: mkdirs /etc/zshenv ~/.local/share/laserwave.nvim brew sheldon nvim kitt
 	@echo "  clover:    $(CYAN)https://cloverapp.com/download$(END)"
 	@echo "  MonoLisa:  $(CYAN)https://www.monolisa.dev/orders$(END)"
 	@echo "  NerdFonts (Symbols Only):  $(CYAN)https://github.com/ryanoasis/nerd-fonts/releases/$(END)"
+endif
 
 .PHONY: update
 update: update-config \
