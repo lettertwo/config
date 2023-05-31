@@ -26,11 +26,12 @@ export ZDOTDIR="$$HOME/.config/zsh"
 endef
 
 export ZDOTDIR
-/etc/zshenv:
+~/.zshenv:
 ifneq ($(ZDOTDIR), "$$HOME/.config/zsh")
 	$(call err,"ZDOTDIR misconfigured!")
 	$(call log,"Configuring ZDOTDIR...")
-	$(call run,echo "$$ZDOTDIR" | sudo tee -a $@ > /dev/null)
+	$(call run,echo "$$ZDOTDIR" | tee -a $@ > /dev/null)
+	$(call run,echo 'source $$ZDOTDIR/.zshenv' | tee -a $@ > /dev/null)
 	$(call done)
 endif
 
@@ -222,7 +223,7 @@ update-config:
 mkdirs: ~/.cache/zsh ~/.local/bin ~/.local/share ~/.local/state/zsh/completions
 
 .PHONY: install
-install: mkdirs /etc/zshenv ~/.local/share/laserwave.nvim brew
+install: mkdirs ~/.zshenv ~/.local/share/laserwave.nvim brew
 	@echo ""
 	$(call done)
 	@echo ""
