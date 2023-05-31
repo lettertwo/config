@@ -206,7 +206,7 @@ update-config:
 mkdirs: ~/.cache/zsh ~/.local/bin ~/.local/share ~/.local/state/zsh/completions
 
 .PHONY: install
-install: mkdirs /etc/zshenv ~/.local/share/laserwave.nvim brew sheldon nvim kitty qmk
+install: mkdirs /etc/zshenv ~/.local/share/laserwave.nvim brew sheldon nvim kitty
 	@echo ""
 	$(call done)
 	@echo ""
@@ -226,5 +226,4 @@ update: update-config \
 	update-brew \
 	update-sheldon \
 	update-nvim \
-	update-kitty \
-	update-qmk
+	update-kitty
