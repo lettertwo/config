@@ -1,6 +1,4 @@
-# Minimal brewfile for remote dev environment
-#
-# Homebrew Bundle
+# Minimal Homebrew bundle for remote dev environment
 # https://github.com/Homebrew/homebrew-bundle
 
 # CLI Tools
@@ -22,23 +20,11 @@ brew "graphviz"
 brew "hyperfine"
 
 # neovim dependencies
-# See https://github.com/neovim/neovim/wiki/Building-Neovim#ubuntu--debian
 brew "ninja"
-brew "gettext"
 brew "cmake"
-brew "unzip"
-brew "curl"
 
 # git
 brew "git-absorb"
 brew "git-lfs"
 brew "lazygit", args: ["HEAD"]
 
-# node
-brew "node"
-brew "fnm" # fast node version manager
-
-# python
-brew "pyenv"
-brew "pyenv-virtualenv"
-brew "python"
