@@ -63,14 +63,18 @@ brew:
 ifndef BREW
 	$(call err,"brew not found!")
 	$(call log,"Installing brew...")
-	$(call run,curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)
+	$(call run,curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh | /bin/bash /dev/stdin)
 	$(call done)
 endif
 
 .PHONY: update-brew
 update-brew: brew
 	$(call log,"Updating brew bundle...")
+ifdef MACOS
 	$(call run,brew bundle)
+else
+	$(call run,brew bundle --file=Brewfile-minimal)
+endif
 	$(call log,"Cleaning up...")
 	$(call run,brew cleanup)
 	$(call done)
@@ -218,11 +222,11 @@ update-config:
 mkdirs: ~/.cache/zsh ~/.local/bin ~/.local/share ~/.local/state/zsh/completions
 
 .PHONY: install
-install: mkdirs /etc/zshenv ~/.local/share/laserwave.nvim brew sheldon nvim kitty
+install: mkdirs /etc/zshenv ~/.local/share/laserwave.nvim brew
 	@echo ""
 	$(call done)
 	@echo ""
-	@echo "Be sure to run $(BLUE)make update$(END) to fetch the latest stuff."
+	@echo "Restart your shell and run $(BLUE)make update$(END) to fetch the latest stuff."
 ifdef MACOS
 	@echo ""
 	@echo "Other useful things to install:"
