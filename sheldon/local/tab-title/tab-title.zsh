@@ -4,14 +4,23 @@
 is_git() {
   [[ $(git rev-parse --is-inside-work-tree 2>/dev/null) == true ]]
 }
+
+is_ssh() {
+  [[ -n "$SSH_CLIENT" || -n "$SSH_TTY" ]]
+}
+
 tab_title() {
-  local "BETTER_PWD"
+  local TITLE
   if is_git; then
-   BETTER_PWD=$(git rev-parse --show-toplevel)
+   TITLE=$(git rev-parse --show-toplevel)
   else
-    BETTER_PWD=$(PWD)
+    TITLE=$(PWD)
   fi
-  print -Pn "\e]0;${BETTER_PWD##$HOME(/Code|/.local/share|)/}\a"
+
+  if is_ssh; then
+    print -Pn "\e]0;%n@${${(%):-%2m}#ip-*.} ${TITLE##$HOME(/Code|/.local/share|)/}\a"
+  else
+    print -Pn "\e]0;${TITLE##$HOME(/Code|/.local/share|)/}\a"
+  fi
 }
 add-zsh-hook precmd tab_title
-
