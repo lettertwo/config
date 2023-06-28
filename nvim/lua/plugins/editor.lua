@@ -50,44 +50,20 @@ return {
     },
   },
 
-  -- easily jump to any location and enhanced f/t motions for Leap
+  -- easily jump to any location and enhanced /, ?, f, t, F, T motions
   {
-    "ggandor/leap.nvim",
+    "folke/flash.nvim",
     event = "VeryLazy",
-    opts = {
-      -- max_phase_one_targets = 0,
-      highlight_unlabeled_phase_one_targets = true,
-      equivalence_classes = {
-        " \t\r\n",
-        "([{<",
-        ")]}>",
-        ".,;:!?'",
-        "`'\"",
-      },
-      special_keys = {
-        repeat_search = "<enter>",
-        next_phase_one_target = "<enter>",
-        next_target = "<enter>",
-        prev_target = "<s-enter>",
-        next_group = "<space>",
-        prev_group = "<s-space>",
-        multi_accept = "<enter>",
-        multi_revert = "<backspace>",
-      },
-    },
+    opts = { label = { current = false } },
+    -- stylua: ignore
     keys = {
-      { "f", "<Plug>(leap-forward-to)", mode = { "n", "x", "o" }, desc = "Leap forward to" },
-      { "F", "<Plug>(leap-backward-to)", mode = { "n", "x", "o" }, desc = "Leap backward to" },
-      { "t", "<Plug>(leap-forward-till)", mode = { "n", "x", "o" }, desc = "Leap forward till" },
-      { "T", "<Plug>(leap-backward-till)", mode = { "n", "x", "o" }, desc = "Leap backward till" },
-      { "gw", "<Plug>(leap-from-window)", mode = { "n", "x", "o" }, desc = "Leap from window" },
+      -- default options: exact mode, multi window, all directions, with a backdrop
+      { "s", mode = { "n", "x", "o" }, function() require("flash").jump() end, desc = "Flash" },
+      -- show labeled treesitter nodes around the search matches
+      { "S", mode = { "n", "o", "x" }, function() require("flash").treesitter_search() end, desc = "treesitter search" },
+      -- show labeled treesitter nodes around the cursor
+      { "v", mode = "x", function() require("flash").treesitter_search() end, desc = "Flash Treesitter" },
     },
-    config = function(_, opts)
-      local leap = require("leap")
-      for k, v in pairs(opts) do
-        leap.opts[k] = v
-      end
-    end,
   },
 
   -- which-key
