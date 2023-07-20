@@ -60,15 +60,13 @@ return {
   {
     "folke/flash.nvim",
     event = "VeryLazy",
-    opts = { label = { current = false } },
+    opts = {},
     -- stylua: ignore
     keys = {
-      -- default options: exact mode, multi window, all directions, with a backdrop
-      { "s", mode = { "n", "x", "o" }, function() require("flash").jump() end, desc = "Flash" },
-      -- show labeled treesitter nodes around the search matches
-      { "S", mode = { "n", "o", "x" }, function() require("flash").treesitter_search() end, desc = "treesitter search" },
-      -- show labeled treesitter nodes around the cursor
-      { "v", mode = "x", function() require("flash").treesitter_search() end, desc = "Flash Treesitter" },
+      { "s", mode = { "o", "x" }, function() require("flash").jump() end, desc = "Flash" },
+      { "R", mode = { "o", "x" }, function() require("flash").treesitter_search() end, desc = "Treesitter Search" },
+      { "r", mode = "o", function() require("flash").remote() end, desc = "Remote Flash" },
+      { "<c-s>", mode = { "c" }, function() require("flash").toggle() end, desc = "Toggle Flash Search" },
     },
   },
 
