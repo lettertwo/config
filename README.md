@@ -1,4 +1,4 @@
-# Config Directory 
+# Config Directory
 
 AKA "dotfiles"
 
@@ -6,7 +6,6 @@ This repo is designed to be checked out to `$XDG_CONFIG_HOME`.
 See [XDG Base Directory Specification] for more.
 
 I try to follow XDG conventions, but this _is_ a mac-centric config.
-
 
 ## Prerequisites and Dependencies
 
@@ -16,9 +15,8 @@ The install task will attempt to bootstrap these things if they are missing.
 
 - [Homebrew] for most things
 - [Sheldon] for zsh things
-- [LunarVim] for vim things
+- [Neovim] for vim things
 - [Kitty] for term things
-
 
 ## Installation
 
@@ -43,7 +41,7 @@ If you have stuff in `~/.config` already:
 ```shell
 cd ~/.config
 git init
-git remote add origin git@github.com:lettertwo/config.git 
+git remote add origin git@github.com:lettertwo/config.git
 git fetch
 git reset origin/main
 git checkout -t origin/main
@@ -53,10 +51,11 @@ make install
 ## Updating
 
 An update will do the following:
+
 - pull the latest from lettertwo/config
-- update [Homebrew] and installed dependencies 
+- update [Homebrew] and installed dependencies
 - update [Sheldon] and installed dependencies
-- update [LunarVim] and installed dependencies
+- update [Neovim] and installed dependencies
 - update [Kitty]
 
 ```shell
@@ -82,5 +81,5 @@ git config --file ~/.config/git/user credential.helper osxkeychain
 [XDG Base Directory Specification]: https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
 [Homebrew]: https://brew.sh
 [Sheldon]: https://sheldon.cli.rs
-[LunarVim]: https://www.lunarvim.org/
+[Neovim]: https://neovim.io/
 [Kitty]: https://sw.kovidgoyal.net/kitty/
