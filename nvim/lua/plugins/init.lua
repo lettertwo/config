@@ -46,6 +46,18 @@ return {
       { "<leader>ql", function() require("persistence").load({ last = true }) end, desc = "Restore Last Session" },
       { "<leader>qd", function() require("persistence").stop() end, desc = "Don't Save Current Session" },
     },
+    config = function(_, opts)
+      require("persistence").setup(opts)
+      -- autocmd to disable session saving for git operations
+      -- FIXME: This will cause session saving to be disabled for the rest of the session,
+      -- which is ok in the case where nvim is started via a git command,
+      -- but not ok if nvim was already running.
+      vim.api.nvim_create_autocmd("FileType", {
+        group = vim.api.nvim_create_augroup("persistence", { clear = true }),
+        pattern = { "gitcommit", "gitrebase", "gitconfig" },
+        callback = require("persistence").stop,
+      })
+    end,
   },
 
   -- crate management
