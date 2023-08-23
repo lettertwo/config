@@ -61,7 +61,9 @@ return {
   {
     "nvim-treesitter/nvim-treesitter-context",
     event = "BufReadPost",
-    config = true,
+    opts = {
+      mode = "topline",
+    },
   },
 
   -- indent guides for Neovim
