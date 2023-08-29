@@ -90,6 +90,7 @@ typeset -gU cdpath fpath mailpath path
 path=(
   {.,$HOME}/node_modules/.bin
   $HOME/.local/{bin,sbin}
+  $HOME/.yarn/bin
   /usr/local/share/npm/bin
   $HOME/{bin,sbin}
   /usr/local/{bin,sbin}
