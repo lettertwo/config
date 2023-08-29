@@ -1,5 +1,6 @@
 # Minimal Homebrew bundle for remote dev environment
 # https://github.com/Homebrew/homebrew-bundle
+tap "jesseduffield/lazygit"
 
 # CLI Tools
 brew "fzf"

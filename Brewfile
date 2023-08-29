@@ -9,6 +9,7 @@ tap "homebrew/cask-drivers"
 tap "homebrew/services"
 tap "withgraphite/tap"
 tap "lettertwo/brew"
+tap "jesseduffield/lazygit"
 
 # CLI Tools
 brew "zsh"
