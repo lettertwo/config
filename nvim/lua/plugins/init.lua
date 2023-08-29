@@ -53,7 +53,7 @@ return {
       -- which is ok in the case where nvim is started via a git command,
       -- but not ok if nvim was already running.
       vim.api.nvim_create_autocmd("FileType", {
-        group = vim.api.nvim_create_augroup("persistence", { clear = true }),
+        group = vim.api.nvim_create_augroup("persistence", { clear = false }),
         pattern = { "gitcommit", "gitrebase", "gitconfig" },
         callback = require("persistence").stop,
       })

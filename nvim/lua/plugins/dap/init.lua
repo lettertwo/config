@@ -40,7 +40,6 @@ return {
       require("plugins.dap.keymaps").setup(dap, ui)
       require("plugins.dap.ui").setup(dap, ui)
       require("nvim-dap-virtual-text").setup({})
-      vim.notify("DAP INITIALIZED")
     end,
   },
 }
