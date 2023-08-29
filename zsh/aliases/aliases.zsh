@@ -36,8 +36,10 @@ alias ips="ifconfig -a | grep -o 'inet6\? \(\([0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+
 alias top='btm'
 alias htop='btm'
 
-# Use trash instead of rm
-alias rm='trash'
+# Use trash instead of rm (macOS only)
+if [[ "$OSTYPE" == darwin* ]]; then
+  alias rm='trash'
+fi
 
 # Use delta instead of diff
 alias diff='delta'
