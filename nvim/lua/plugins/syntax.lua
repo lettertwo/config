@@ -117,7 +117,6 @@ return {
         "gitignore",
         "git_rebase",
         "graphql",
-        "help",
         "html",
         "java",
         "javascript",
@@ -137,6 +136,7 @@ return {
         "tsx",
         "typescript",
         "vim",
+        "vimdoc",
         "yaml",
       },
       incremental_selection = {
