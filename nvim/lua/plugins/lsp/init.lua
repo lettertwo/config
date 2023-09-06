@@ -3,7 +3,18 @@ return {
     "neovim/nvim-lspconfig",
     event = "BufReadPost",
     dependencies = {
-      { "folke/neoconf.nvim", cmd = "Neoconf", config = true },
+      {
+        "folke/neoconf.nvim",
+        cmd = "Neoconf",
+        keys = {
+          { "<leader>cc", "<cmd>Neoconf local<CR>", desc = "Edit (local)" },
+          { "<leader>cg", "<cmd>Neoconf local<CR>", desc = "Edit (global)" },
+          { "<leader>ce", "<cmd>Neoconf<CR>", desc = "Edit conf" },
+          { "<leader>cl", "<cmd>Neoconf lsp<CR>", desc = "Show lsp" },
+          { "<leader>cs", "<cmd>Neoconf show<CR>", desc = "Show conf" },
+        },
+        config = true,
+      },
       {
         "folke/neodev.nvim",
         opts = {

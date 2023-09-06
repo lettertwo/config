@@ -94,6 +94,8 @@ return {
         ["<leader><tab>"] = { name = "+tabs" },
         ["<leader>b"] = { name = "+buffer" },
         ["<leader>bp"] = { name = "+pin" },
+        ["<leader>C"] = { name = "+cargo" },
+        ["<leader>c"] = { name = "+neoconf" },
         ["<leader>d"] = { name = "+debug" },
         ["<leader>f"] = { name = "+file/find" },
         ["<leader>g"] = { name = "+git" },
