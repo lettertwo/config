@@ -183,7 +183,6 @@ return {
         "cssls",
         "pyright",
         "bashls",
-        "yamlls",
       },
     },
     ---@param opts PluginLspOpts
