@@ -112,8 +112,8 @@ keybinding:
     scrollRight: L
     gotoTop: g
     gotoBottom: "G"
-    prevBlock: "<backtab>"
-    nextBlock: "<tab>"
+    prevBlock: null
+    nextBlock: null
     prevBlock-alt: <up>
     nextBlock-alt: <down>
     nextBlock-alt2: ""
