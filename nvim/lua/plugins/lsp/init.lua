@@ -25,6 +25,12 @@ return {
           },
         },
       },
+      {
+        "smjonas/inc-rename.nvim",
+        cmd = "IncRename",
+        event = "BufReadPost",
+        config = true,
+      },
       "williamboman/mason-lspconfig.nvim",
       "hrsh7th/cmp-nvim-lsp",
       "b0o/SchemaStore.nvim",

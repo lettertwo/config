@@ -1,6 +1,14 @@
 local M = {}
 local format = require("plugins.lsp.format").format
 
+local function rename()
+  if vim.fn.exists(":IncRename") == 2 then
+    return ":IncRename "
+  else
+    return ":lua vim.lsp.buf.rename()<cr>"
+  end
+end
+
 M.keys = {
   { "<leader>uf", require("plugins.lsp.format").toggle, desc = "Toggle format on Save" },
   { "gd", ":TroubleToggle lsp_definitions<CR>", desc = "Go to definition", requires = "trouble" },
@@ -13,11 +21,11 @@ M.keys = {
   { "<leader>.", vim.lsp.buf.code_action, mode = { "n", "x" }, desc = "Show code actions", has = "codeAction" },
   { "<leader>=", format, desc = "Format document", has = "documentFormatting" },
   { "<leader>=", format, desc = "Format Range", mode = "x", has = "documentRangeFormatting" },
-  { "<leader>R", vim.lsp.buf.rename, desc = "Rename", has = "rename" },
+  { "<leader>R", rename, desc = "Rename", expr = true, has = "rename" },
   { "<leader>lf", format, desc = "Format document" },
   { "<leader>la", vim.lsp.buf.code_action, desc = "Show code actions" },
   { "<leader>lh", vim.lsp.buf.hover, desc = "Show hover" },
-  { "<leader>lr", vim.lsp.buf.rename, desc = "Rename" },
+  { "<leader>lr", rename, desc = "Rename", expr = true, has = "rename" },
   { "<leader>ls", vim.lsp.buf.signature_help, desc = "Show signature help" },
   { "<leader>lS", ":LspInfo<CR>", desc = "Show LSP status", requires = "lspconfig" },
 }
