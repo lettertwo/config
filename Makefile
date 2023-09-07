@@ -1,4 +1,4 @@
-BLACK := \033[0;30m
+
 RED := \033[0;31m
 GREEN := \033[0;32m
 YELLOW := \033[0;33m
@@ -134,7 +134,7 @@ endif
 .PHONY: update-nvim
 update-nvim: ~/.local/share/neovim
 	$(call log,"Updating neovim...")
-	$(call run,cd ~/.local/share/neovim && git pull)
+	$(call run,cd ~/.local/share/neovim && git fetch --tags --force && git reset --hard tags/nightly)
 	$(call run,cd ~/.local/share/neovim && make clean && make distclean && make CMAKE_BUILD_TYPE=RelWithDebInfo && make install)
 	$(call log,"Updating pynvim...")
 	$(call run,pip3 install --user --upgrade pynvim)
