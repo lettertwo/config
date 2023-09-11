@@ -202,6 +202,19 @@ return {
     end,
   },
 
+  -- split/join
+  {
+    "Wansmer/treesj",
+    cmd = { "TSJToggle" },
+    keys = {
+      { "<leader>j", "<cmd>TSJToggle<CR>", mode = { "n", "x" }, desc = "Toggle split/join" },
+    },
+    dependencies = { "nvim-treesitter/nvim-treesitter" },
+    opts = {
+      use_default_keymaps = false,
+    },
+  },
+
   -- better text-objects
   {
     "echasnovski/mini.ai",
