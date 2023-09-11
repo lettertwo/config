@@ -128,6 +128,18 @@ local services = {
   end,
 }
 
+local searchcount = {
+  "searchcount",
+  timeout = 200,
+}
+
+local tabstop = {
+  function()
+    return "󰯉 " .. vim.bo.tabstop
+  end,
+  cond = visible_for_width,
+}
+
 return {
   {
     "nvim-lualine/lualine.nvim",
@@ -140,11 +152,11 @@ return {
         globalstatus = true,
       },
       sections = {
-        lualine_a = { tabs, mode, macro },
+        lualine_a = { tabs, mode, macro, searchcount },
         lualine_b = { branch },
         lualine_c = { filepath },
         lualine_x = { diff, diagnostics },
-        lualine_y = {},
+        lualine_y = { tabstop },
         lualine_z = { services },
       },
       inactive_sections = {
