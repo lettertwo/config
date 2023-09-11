@@ -51,6 +51,19 @@ return {
         },
       },
       {
+        "aznhe21/actions-preview.nvim",
+        config = function(_, opts)
+          local actions_preview = require("actions-preview")
+          actions_preview.setup(opts)
+          require("util").on_attach(function(client, bufnr)
+            require("plugins.lsp.keymaps").apply({ bufnr = bufnr, client = client }, {
+              { "<leader>.", actions_preview.code_actions, desc = "Show code actions" },
+              { "<leader>la", actions_preview.code_actions, desc = "Show code actions" },
+            })
+          end)
+        end,
+      },
+      {
         "lvimuser/lsp-inlayhints.nvim",
         branch = "anticonceal",
         opts = {
