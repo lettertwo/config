@@ -63,14 +63,214 @@ vim.keymap.set("v", ">", ">gv")
 -- lazy
 vim.keymap.set("n", "<leader>L", "<cmd>:Lazy<cr>", { desc = "Lazy" })
 
+-- quickfix, location list
 vim.keymap.set("n", "<leader>xl", "<cmd>lopen<cr>", { desc = "Open Location List" })
-vim.keymap.set("n", "<leader>xq", "<cmd>copen<cr>", { desc = "Open Quickfix List" })
+vim.keymap.set("n", "<leadr>xq", "<cmd>copen<cr>", { desc = "Open Quickfix List" })
+
+--- @param type 'qf' | 'quickfix' | 'lf' | 'loclist'
+--- @param opts? { bufnr: number, lnum: number, col: number }
+local function add_location_to_list(type, opts)
+  local new_entry = {
+    bufnr = opts and opts.bufnr ~= 0 and opts.bufnr or vim.api.nvim_get_current_buf(),
+    lnum = opts and opts.lnum or vim.api.nvim_win_get_cursor(0)[1],
+    col = opts and opts.col or vim.api.nvim_win_get_cursor(0)[2],
+  }
+
+  new_entry.text = vim.api.nvim_buf_get_lines(new_entry.bufnr, new_entry.lnum - 1, new_entry.lnum, true)[1]
+
+  if type == "qf" or type == "quickfix" then
+    -- check if location is already in the list
+    for _, entry in ipairs(vim.fn.getqflist()) do
+      if entry.bufnr == new_entry.bufnr and entry.lnum == new_entry.lnum and entry.col == new_entry.col then
+        vim.notify("location already in list", vim.log.levels.DEBUG)
+        return
+      end
+    end
+    vim.notify("adding to quickfix", vim.log.levels.DEBUG)
+    vim.fn.setqflist({ new_entry }, "a")
+  elseif type == "lf" or type == "loclist" then
+    -- check if location is already in the list
+    for _, entry in ipairs(vim.fn.getloclist(0)) do
+      if entry.bufnr == new_entry.bufnr and entry.lnum == new_entry.lnum and entry.col == new_entry.col then
+        vim.notify("location already in list", vim.log.levels.DEBUG)
+        return
+      end
+    end
+    vim.notify("adding to loclist", vim.log.levels.DEBUG)
+    vim.fn.setloclist(0, { new_entry }, "a")
+  else
+    error("unknown list type " .. type)
+  end
+end
+
+--- @param type 'qf' | 'quickfix' | 'lf' | 'loclist'
+--- @param opts? { bufnr: number, lnum: number, col: number }
+local function remove_location_from_list(type, opts)
+  local bufnr = opts and opts.bufnr ~= 0 and opts.bufnr or vim.api.nvim_get_current_buf()
+  local lnum = opts and opts.lnum or vim.api.nvim_win_get_cursor(0)[1]
+  local col = opts and opts.col or vim.api.nvim_win_get_cursor(0)[2]
+
+  if type == "qf" or type == "quickfix" then
+    local list = vim.fn.getqflist()
+    -- if location is in the list, remove it
+    for i, entry in ipairs(list) do
+      if entry.bufnr == bufnr and entry.lnum == lnum and entry.col == col then
+        table.remove(list, i)
+        vim.notify("removing from quickfix", vim.log.levels.DEBUG)
+        vim.fn.setqflist(list, "r")
+        return
+      end
+    end
+  elseif type == "lf" or type == "loclist" then
+    local list = vim.fn.getloclist(0)
+    -- if location is in the list, remove it
+    for i, entry in ipairs(list) do
+      if entry.bufnr == bufnr and entry.lnum == lnum and entry.col == col then
+        table.remove(list, i)
+        vim.notify("removing from loclist", vim.log.levels.DEBUG)
+        vim.fn.setloclist(0, list, "r")
+        return
+      end
+    end
+  else
+    error("unknown list type " .. type)
+  end
+end
+
+-- stylua: ignore start
+vim.keymap.set("n", "<leader>xa", function() add_location_to_list("lf") end, { desc = "Add to Location List" })
+vim.keymap.set("n", "<leader>xA", function() add_location_to_list("qf") end, { desc = "Add to Quickfix List" })
+vim.keymap.set("n", "<leader>xr", function() remove_location_from_list("lf") end, { desc = "Remove from Location List" })
+vim.keymap.set("n", "<leader>xR", function() remove_location_from_list("qf") end, { desc = "Remove from Quickfix List" })
+-- stylua: ignore end
+
+---@return string | nil
+local function get_trouble_provider()
+  local trouble_ok, cfg = pcall(require, "trouble.config")
+  if not trouble_ok or not cfg.options then
+    return nil
+  end
+  return cfg.options.mode
+end
+
+--- @param type? 'qf' | 'quickfix' | 'lf' | 'loclist'
+--- @return table[] | nil
+local function current_trouble_items_to_list_items(type)
+  local trouble_ok, trouble = pcall(require, "trouble")
+  if not trouble_ok or not trouble or vim.bo.filetype ~= "Trouble" then
+    return nil
+  end
+
+  if type == nil then
+    type = get_trouble_provider()
+  end
+
+  local result = {}
+  local list
+  if type == "qf" or type == "quickfix" then
+    list = vim.fn.getqflist()
+  elseif type == "lf" or type == "loclist" then
+    list = vim.fn.getloclist(0)
+  else
+    return nil
+  end
+
+  local trouble_items = trouble.get_items()
+  local line = vim.api.nvim_win_get_cursor(0)[1]
+
+  local trouble_items_to_map = {}
+  if trouble_items[line] and trouble_items[line].is_file then
+    -- get all entries from this file to the next file
+    for i = line + 1, #trouble_items do
+      local next_item = trouble_items[i]
+      if next_item.is_file then
+        break
+      end
+      table.insert(trouble_items_to_map, next_item)
+    end
+  elseif trouble_items[line] then
+    trouble_items_to_map = { trouble_items[line] }
+  end
+
+  for _, trouble_item in ipairs(trouble_items_to_map) do
+    for _, list_item in ipairs(list) do
+      if
+        list_item.bufnr == trouble_item.bufnr
+        and list_item.lnum == trouble_item.lnum
+        and list_item.col == trouble_item.col
+      then
+        table.insert(result, list_item)
+      end
+    end
+  end
+
+  return #result > 0 and result or nil
+end
+
+--- @param type? 'qf' | 'quickfix' | 'lf' | 'loclist'
+--- @return table | nil
+local function current_list_item(type)
+  if type == nil then
+    if vim.bo.filetype == "qf" then
+      type = "qf"
+    elseif vim.bo.filetype == "lf" then
+      type = "lf"
+    end
+  end
+
+  if type == "qf" or type == "quickfix" then
+    if vim.bo.filetype ~= "qf" then
+      return nil
+    end
+    local list = vim.fn.getqflist()
+    local line = vim.api.nvim_win_get_cursor(0)[1]
+    return list[line]
+  elseif type == "lf" or type == "loclist" then
+    if vim.bo.filetype ~= "lf" then
+      return nil
+    end
+    local list = vim.fn.getloclist(0)
+    local line = vim.api.nvim_win_get_cursor(0)[1]
+    return list[line]
+  else
+    error("unknown list type " .. type)
+  end
+end
+
+-- Add keybindings to qflist and loclist buffers
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = { "qf", "lf", "Trouble" },
+  callback = function(event)
+    local keyopts = { buffer = event.buf, desc = "Remove from list" }
+    if event.match == "Trouble" then
+      local provider = get_trouble_provider()
+      if provider == "quickfix" or provider == "loclist" then
+        vim.keymap.set("n", "dd", function()
+          local to_remove = current_trouble_items_to_list_items(provider)
+          if to_remove ~= nil then
+            for _, entry in ipairs(to_remove) do
+              remove_location_from_list(provider, entry)
+            end
+            local trouble_ok, trouble = require("trouble")
+            if trouble_ok and trouble then
+              trouble.refresh()
+            end
+          end
+        end, keyopts)
+      end
+    else
+      vim.keymap.set("n", "dd", function()
+        remove_location_from_list(event.match, current_list_item(event.match))
+      end, keyopts)
+    end
+  end,
+})
 
 -- stylua: ignore start
 
 -- toggle options
-vim.keymap.set("n", "<leader>us", function() Util.toggle("spell") end, { desc = "Toggle Spelling" })
-vim.keymap.set("n", "<leader>uw", function() Util.toggle("wrap") end, { desc = "Toggle Word Wrap" })
+vim.keymap.set("n", "<leader>us", Util.create_option_toggle("spell"), { desc = "Toggle Spelling" })
+vim.keymap.set("n", "<leader>uw", Util.create_option_toggle("wrap"), { desc = "Toggle Word Wrap" })
 
 -- quit
 vim.keymap.set("n", "<leader>qq", "<cmd>qa<cr>", { desc = "Quit all" })

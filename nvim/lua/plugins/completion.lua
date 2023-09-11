@@ -72,11 +72,11 @@ return {
     version = false,
     event = "InsertEnter",
     dependencies = {
-      { "hrsh7th/cmp-buffer" },
+      { "tzachar/cmp-fuzzy-buffer", dependencies = { "tzachar/fuzzy.nvim" } },
       { "hrsh7th/cmp-nvim-lsp" },
       { "hrsh7th/cmp-nvim-lsp-signature-help" },
       { "hrsh7th/cmp-nvim-lsp-document-symbol" },
-      { "hrsh7th/cmp-path" },
+      { "tzachar/cmp-fuzzy-path", dependencies = { "tzachar/fuzzy.nvim" } },
       { "hrsh7th/cmp-nvim-lua" },
       { "hrsh7th/cmp-calc" },
       { "hrsh7th/cmp-cmdline" },
@@ -132,6 +132,7 @@ return {
         end
       end
 
+      ---@diagnostic disable-next-line: missing-fields
       cmp.setup({
         enabled = function()
           if vim.bo.ft == "TelescopePrompt" then
@@ -185,14 +186,15 @@ return {
           { name = "nvim_lua", dup = 0 },
           { name = "luasnip" },
         }, {
-          { name = "buffer" },
-          { name = "path" },
+          { name = "fuzzy_buffer" },
+          { name = "fuzzy_path" },
           { name = "calc" },
           { name = "emoji" },
           { name = "treesitter" },
           { name = "crates" },
         }),
         formatting = {
+          expandable_indicator = true,
           fields = {
             cmp.ItemField.Kind,
             cmp.ItemField.Abbr,
@@ -208,38 +210,42 @@ return {
       })
 
       -- Configuration for specific filetypes
+      ---@diagnostic disable-next-line: missing-fields
       cmp.setup.filetype("gitcommit", {
         sources = cmp.config.sources({
           { name = "cmp_git" },
         }, {
-          { name = "buffer" },
+          { name = "fuzzy_buffer" },
         }),
       })
 
+      ---@diagnostic disable-next-line: missing-fields
       cmp.setup.filetype("zsh", {
         sources = cmp.config.sources({
           { name = "zsh" },
         }, {
-          { name = "buffer" },
+          { name = "fuzzy_buffer" },
         }),
       })
 
+      ---@diagnostic disable-next-line: missing-fields
       cmp.setup.filetype("dap-repl", {
         sources = cmp.config.sources({
           { name = "dap" },
         }, {
-          { name = "buffer" },
+          { name = "fuzzy_buffer" },
         }),
       })
 
       -- cmdline completion
+      ---@diagnostic disable-next-line: missing-fields
       cmp.setup.cmdline(":", {
         mapping = cmp.mapping.preset.cmdline({
           ["<C-k>"] = cmp.mapping(cmp.mapping.select_prev_item(), { "c" }),
           ["<C-j>"] = cmp.mapping(cmp.mapping.select_next_item(), { "c" }),
         }),
         sources = cmp.config.sources({
-          { name = "path" },
+          { name = "fuzzy_path" },
         }, {
           { name = "cmdline" },
           { name = "cmdline_history" },
@@ -247,12 +253,13 @@ return {
       })
 
       -- search completion
+      ---@diagnostic disable-next-line: missing-fields
       cmp.setup.cmdline({ "/", "?" }, {
         mapping = cmp.mapping.preset.cmdline({
           ["<C-k>"] = cmp.mapping(cmp.mapping.select_prev_item(), { "c" }),
           ["<C-j>"] = cmp.mapping(cmp.mapping.select_next_item(), { "c" }),
         }),
-        sources = { { name = "buffer" } },
+        sources = { { name = "fuzzy_buffer" } },
       })
     end,
   },
