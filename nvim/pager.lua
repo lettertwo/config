@@ -116,8 +116,8 @@ vim.keymap.set("x", "N", "'nN'[v:searchforward]", { expr = true, desc = "Prev se
 vim.keymap.set("o", "N", "'nN'[v:searchforward]", { expr = true, desc = "Prev search result" })
 
 -- toggle options
-vim.keymap.set("n", "<leader>us", Util.createOptionToggle("spell"), { desc = "Toggle Spelling" })
-vim.keymap.set("n", "<leader>uw", Util.createOptionToggle("wrap"), { desc = "Toggle Word Wrap" })
+vim.keymap.set("n", "<leader>us", Util.create_option_toggle("spell"), { desc = "Toggle Spelling" })
+vim.keymap.set("n", "<leader>uw", Util.create_option_toggle("wrap"), { desc = "Toggle Word Wrap" })
 
 -- quit
 vim.keymap.set("n", "q", "<cmd>qa!<cr>", { desc = "Quit" })

@@ -66,10 +66,10 @@ return {
         config = function(_, opts)
           local inlay_hints = require("lsp-inlayhints")
           inlay_hints.setup(opts)
-          require("util").on_attach(function(client, bufnr)
-            inlay_hints.on_attach(client, bufnr, false)
+          require("util").on_attach(function(client, buffer)
+            inlay_hints.on_attach(client, buffer, false)
 
-            require("plugins.lsp.keymaps").apply(client, bufnr, {
+            require("plugins.lsp.keymaps").apply({ buffer = buffer, client = client }, {
               { "<leader>li", inlay_hints.toggle, desc = "Toggle inlay hints" },
               { "<leader>ul", inlay_hints.toggle, desc = "Toggle inlay hints" },
               { "<leader>lI", inlay_hints.reset, desc = "Reset inlay hints" },
@@ -164,9 +164,9 @@ return {
         },
         eslint = {
           filetypes = { "javascript", "javascriptreact", "javascript.jsx", "flowtype", "flowtypereact" },
-          on_attach = function(client, bufnr)
+          on_attach = function(client, buffer)
             vim.api.nvim_create_autocmd("BufWritePre", {
-              buffer = bufnr,
+              buffer = buffer,
               command = "EslintFixAll",
             })
           end,
@@ -175,11 +175,11 @@ return {
           checkOnSave = {
             command = "clippy",
           },
-          on_attach = function(client, bufnr)
+          on_attach = function(client, buffer)
             local rt = require("rust-tools")
 
             -- stylua: ignore
-            require("plugins.lsp.keymaps").apply(client, bufnr, {
+            require("plugins.lsp.keymaps").apply({buffer = buffer, client = client}, {
               { "<leader>le", rt.expand_macro.expand_macro, desc = "Expand macro" },
               { "<leader>lp", rt.parent_module.parent_module, desc = "Parent module" },
               -- { "<leader>lu", rt.move_item.move_item, desc = "Move item up" },
@@ -208,13 +208,13 @@ return {
 
       vim.lsp.handlers["textDocument/hover"] = require("plugins.lsp.hover").hover
 
-      require("util").on_attach(function(client, bufnr)
+      require("util").on_attach(function(client, buffer)
         if client.name == "copilot" then
           return
         end
-        require("plugins.lsp.location").on_attach(client, bufnr)
-        require("plugins.lsp.format").on_attach(client, bufnr)
-        require("plugins.lsp.keymaps").on_attach(client, bufnr)
+        require("plugins.lsp.location").on_attach(client, buffer)
+        require("plugins.lsp.format").on_attach(client, buffer)
+        require("plugins.lsp.keymaps").on_attach(client, buffer)
       end)
 
       local capabilities = vim.lsp.protocol.make_client_capabilities()

@@ -1,4 +1,4 @@
-local M = {}
+local create_buffer_keymap = require("util").create_buffer_keymap
 local format = require("plugins.lsp.format").format
 
 local function rename()
@@ -9,7 +9,8 @@ local function rename()
   end
 end
 
-M.keys = {
+---@type LspKeySpec[]
+local keys = {
   { "<leader>uf", require("plugins.lsp.format").toggle, desc = "Toggle format on Save" },
   { "gd", ":TroubleToggle lsp_definitions<CR>", desc = "Go to definition", requires = "trouble" },
   { "gr", ":TroubleToggle lsp_references<CR>", desc = "Find references", requires = "trouble" },
@@ -18,44 +19,48 @@ M.keys = {
   { "gt", ":TroubleToggle lsp_type_definitions<CR>", desc = "Go to type", requires = "trouble" },
   { "K", vim.lsp.buf.hover, desc = "Show hover" },
   { "gK", vim.lsp.buf.signature_help, desc = "Show signature help", has = "signatureHelp" },
-  { "<leader>.", vim.lsp.buf.code_action, mode = { "n", "x" }, desc = "Show code actions", has = "codeAction" },
   { "<leader>=", format, desc = "Format document", has = "documentFormatting" },
   { "<leader>=", format, desc = "Format Range", mode = "x", has = "documentRangeFormatting" },
   { "<leader>R", rename, desc = "Rename", expr = true, has = "rename" },
   { "<leader>lf", format, desc = "Format document" },
-  { "<leader>la", vim.lsp.buf.code_action, desc = "Show code actions" },
   { "<leader>lh", vim.lsp.buf.hover, desc = "Show hover" },
   { "<leader>lr", rename, desc = "Rename", expr = true, has = "rename" },
   { "<leader>ls", vim.lsp.buf.signature_help, desc = "Show signature help" },
   { "<leader>lS", ":LspInfo<CR>", desc = "Show LSP status", requires = "lspconfig" },
 }
 
-function M.apply(client, bufnr, spec)
-  local Keys = require("lazy.core.handler.keys")
-  local keymaps = {}
+---@class LspKeySpec: BufferKeySpec
+---@field has? string Only if the LSP client and has the given capability.
 
-  for _, value in ipairs(spec) do
-    local keys = Keys.parse(value)
-    keymaps[keys.id] = keys
+---@class LspKeyCtx: BufferKeyCtx
+---@field client table
+
+---@class LspBufferKeymap: BufferKeymap
+---@field apply fun(ctx: LspKeyCtx, specs?: LspKeySpec[])
+local M = create_buffer_keymap({
+  keys = keys,
+  ---@param spec LspKeySpec
+  ---@param ctx LspKeyCtx
+  filter = function(spec, ctx)
+    -- stylua: ignore start
+    if not spec.has then return true end
+    if not ctx.client then return false end
+    if not ctx.client.server_capabilities then return false end
+    if ctx.client.server_capabilities[spec.has] then return true end
+    if ctx.client.server_capabilities[spec.has .. "Provider"] then return true end
+    return false
+    -- stylua: ignore end
+  end,
+  get_opts = function(opts)
+    opts.has = nil
+    return opts
+  end,
+})
+
+function M.on_attach(client, buffer)
+  if client.server_capabilities then
+    M.apply({ buffer = buffer, client = client })
   end
-
-  for _, keys in pairs(keymaps) do
-    if
-      (not keys.requires or package.loaded[keys.requires] ~= nil)
-      or (not keys.has or client.server_capabilities[keys.has .. "Provider"])
-    then
-      local opts = Keys.opts(keys)
-      opts.has = nil
-      opts.requires = nil
-      opts.silent = true
-      opts.buffer = bufnr
-      vim.keymap.set(keys.mode or "n", keys[1], keys[2], opts)
-    end
-  end
-end
-
-function M.on_attach(client, bufnr)
-  M.apply(client, bufnr, M.keys)
 end
 
 return M

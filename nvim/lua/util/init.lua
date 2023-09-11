@@ -1,28 +1,28 @@
 -- Adapted from: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/util/init.lua
 
----@type LazyUtil
-local Util = vim.tbl_extend("error", require("lazy.core.util"), {})
+---@class ConfigUtil: LazyUtilCore, BufferKeymapUtil
+local ConfigUtil = vim.tbl_extend("error", require("lazy.core.util"), require("util.buffer_keymap"))
 
-Util.root_patterns = { ".git", "lua" }
+ConfigUtil.root_patterns = { ".git", "lua" }
 
 ---@param str string
-function Util.capcase(str)
+function ConfigUtil.capcase(str)
   return str:sub(1, 1):upper() .. str:sub(2)
 end
 
 ---@param str string
 ---@param group string
-function Util.format_highlight(str, group)
+function ConfigUtil.format_highlight(str, group)
   return "%#" .. group .. "#" .. str .. "%*"
 end
 
 --- Gets the buffer number of every visible buffer
 --- @return integer[]
-function Util.visible_buffers()
+function ConfigUtil.visible_buffers()
   return vim.tbl_map(vim.api.nvim_win_get_buf, vim.api.nvim_list_wins())
 end
 
-function Util.lsp_active()
+function ConfigUtil.lsp_active()
   for _, client in pairs(vim.lsp.get_active_clients()) do
     if client.server_capabilities then
       return true
@@ -31,7 +31,7 @@ function Util.lsp_active()
   return false
 end
 
-function Util.close_floats()
+function ConfigUtil.close_floats()
   for _, win in ipairs(vim.api.nvim_list_wins()) do
     if vim.api.nvim_win_get_config(win).relative ~= "" then
       vim.api.nvim_win_close(win, false)
@@ -39,43 +39,43 @@ function Util.close_floats()
   end
 end
 
-function Util.clear_highlights()
+function ConfigUtil.clear_highlights()
   vim.cmd("nohlsearch")
-  if Util.lsp_active() then
+  if ConfigUtil.lsp_active() then
     vim.lsp.buf.clear_references()
-    for _, buffer in pairs(Util.visible_buffers()) do
+    for _, buffer in pairs(ConfigUtil.visible_buffers()) do
       vim.lsp.util.buf_clear_references(buffer)
     end
   end
 end
 
-function Util.close_floats_and_clear_highlights()
-  Util.close_floats()
+function ConfigUtil.close_floats_and_clear_highlights()
+  ConfigUtil.close_floats()
   if vim.bo.modifiable then
-    Util.clear_highlights()
+    ConfigUtil.clear_highlights()
   else
     if #vim.api.nvim_list_wins() > 1 then
-      return Util.feedkeys("<C-w>c")
+      return ConfigUtil.feedkeys("<C-w>c")
     end
   end
 end
 
 ---@param str string
-function Util.termcodes(str)
+function ConfigUtil.termcodes(str)
   return vim.api.nvim_replace_termcodes(str, true, true, true)
 end
 
 ---@param keys string
 ---@param mode? string
-function Util.feedkeys(keys, mode)
+function ConfigUtil.feedkeys(keys, mode)
   if mode == nil then
     mode = "in"
   end
-  return vim.api.nvim_feedkeys(Util.termcodes(keys), mode, true)
+  return vim.api.nvim_feedkeys(ConfigUtil.termcodes(keys), mode, true)
 end
 
 ---@param cb fun(client, buffer)
-function Util.on_attach(cb)
+function ConfigUtil.on_attach(cb)
   vim.api.nvim_create_autocmd("LspAttach", {
     callback = function(args)
       if not (args.data and args.data.client_id) then
@@ -89,12 +89,12 @@ function Util.on_attach(cb)
 end
 
 ---@param plugin string
-function Util.has(plugin)
+function ConfigUtil.has(plugin)
   return require("lazy.core.config").plugins[plugin] ~= nil
 end
 
 ---@param name string
-function Util.opts(name)
+function ConfigUtil.opts(name)
   local plugin = require("lazy.core.config").plugins[name]
   if not plugin then
     return {}
@@ -109,7 +109,7 @@ end
 -- * root pattern of filename of the current buffer
 -- * root pattern of cwd
 ---@return string
-function Util.get_root()
+function ConfigUtil.get_root()
   ---@type string?
   local path = vim.api.nvim_buf_get_name(0)
   path = path ~= "" and vim.loop.fs_realpath(path) or nil
@@ -139,7 +139,7 @@ function Util.get_root()
   if not root then
     path = path and vim.fs.dirname(path) or vim.loop.cwd()
     ---@type string?
-    root = vim.fs.find(Util.root_patterns, { path = path, upward = true })[1]
+    root = vim.fs.find(ConfigUtil.root_patterns, { path = path, upward = true })[1]
     root = root and vim.fs.dirname(root) or vim.loop.cwd()
   end
   ---@cast root string
@@ -149,7 +149,7 @@ end
 ---@param option string
 ---@param silent? boolean?
 ---@param values? {[1]:any, [2]:any}
-function Util.createOptionToggle(option, silent, values)
+function ConfigUtil.create_option_toggle(option, silent, values)
   if values then
     return function()
       if vim.opt_local[option]:get() == values[1] then
@@ -158,7 +158,7 @@ function Util.createOptionToggle(option, silent, values)
         vim.opt_local[option] = values[1]
       end
       if not silent then
-        Util.info("Set " .. option .. " to " .. vim.opt_local[option]:get(), { title = "Option" })
+        ConfigUtil.info("Set " .. option .. " to " .. vim.opt_local[option]:get(), { title = "Option" })
       end
     end
   else
@@ -166,28 +166,28 @@ function Util.createOptionToggle(option, silent, values)
       vim.opt_local[option] = not vim.opt_local[option]:get()
       if not silent then
         if vim.opt_local[option]:get() then
-          Util.info("Enabled " .. option, { title = "Option" })
+          ConfigUtil.info("Enabled " .. option, { title = "Option" })
         else
-          Util.warn("Disabled " .. option, { title = "Option" })
+          ConfigUtil.warn("Disabled " .. option, { title = "Option" })
         end
       end
     end
   end
 end
 
-function Util.createToggle(name, handle) end
+function ConfigUtil.create_toggle(name, handle) end
 
-function Util.toggle_diagnostics()
+function ConfigUtil.toggle_diagnostics()
   if vim.diagnostic.is_disabled() then
     vim.diagnostic.enable()
-    Util.info("Enabled diagnostics", { title = "Diagnostics" })
+    ConfigUtil.info("Enabled diagnostics", { title = "Diagnostics" })
   else
     vim.diagnostic.disable()
-    Util.warn("Disabled diagnostics", { title = "Diagnostics" })
+    ConfigUtil.warn("Disabled diagnostics", { title = "Diagnostics" })
   end
 end
 
-function Util.service_status()
+function ConfigUtil.service_status()
   local buf_clients = vim.lsp.get_active_clients()
   local buf = vim.api.nvim_get_current_buf()
   local buf_ft = vim.bo.filetype
@@ -240,4 +240,4 @@ function Util.service_status()
   return status
 end
 
-return Util
+return ConfigUtil
