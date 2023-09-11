@@ -1,9 +1,14 @@
+local filetypes = require("config").filetypes
+
 return {
   -- references
   {
     "RRethy/vim-illuminate",
     event = "BufReadPost",
-    opts = { delay = 200 },
+    opts = {
+      filetypes_denylist = filetypes.ui,
+      delay = 100,
+    },
     config = function(_, opts)
       require("illuminate").configure(opts)
     end,
@@ -11,6 +16,16 @@ return {
     keys = {
       { "]]", function() require("illuminate").goto_next_reference(false) end, desc = "Next Reference", },
       { "[[", function() require("illuminate").goto_prev_reference(false) end, desc = "Prev Reference" },
+    },
+  },
+
+  -- indentation detection
+  {
+    "Darazaki/indent-o-matic",
+    event = "BufReadPre",
+    cmd = { "IndentOMatic" },
+    opts = {
+      standard_widths = { 2, 4 },
     },
   },
 
