@@ -52,13 +52,11 @@ return {
     dependencies = {
       { "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
       { "nvim-telescope/telescope-ui-select.nvim" },
-      { "nvim-telescope/telescope-file-browser.nvim" },
       { "nvim-telescope/telescope-symbols.nvim" },
       { "nvim-telescope/telescope-live-grep-args.nvim" },
     },
     keys = {
       { "<leader>p", "<cmd>Telescope commands<CR>", desc = "Commands" },
-      { "<leader>e", "<cmd>Telescope file_browser<CR>", desc = "File Explorer" },
       { "<leader>t", "<cmd>Telescope buffers<CR>", desc = "Buffers" },
       { "<leader>bb", "<cmd>Telescope buffers<CR>", "Buffers" },
       { "<leader>r", "<cmd>Telescope oldfiles<CR>", desc = "Recent Files" },
@@ -159,12 +157,6 @@ return {
           ["ui-select"] = {
             themes.get_dropdown({}),
           },
-          file_browser = pickers.slow_picker({
-            hijack_netrw = true,
-            path = "%:p:h",
-            cwd_to_path = false,
-            respect_gitignore = false,
-          }),
           live_grep_args = {
             auto_quoting = true, -- enable/disable auto-quoting
             -- define mappings, e.g.
@@ -220,7 +212,6 @@ return {
       telescope.setup(opts)
       telescope.load_extension("fzf")
       telescope.load_extension("ui-select")
-      telescope.load_extension("file_browser")
       telescope.load_extension("live_grep_args")
 
       -- local function nvim_config_files()
