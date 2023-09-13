@@ -32,16 +32,15 @@ return {
   -- comments
   {
     "echasnovski/mini.comment",
-    event = "VeryLazy",
-    opts = {
-      hooks = {
-        pre = function()
-          -- from https://github.com/JoosepAlviste/nvim-ts-context-commentstring#minicomment
-          require("ts_context_commentstring.internal").update_commentstring({})
-        end,
-      },
-    },
+    event = "BufReadPost",
     config = function(_, opts)
+      local ok, ts_context_commentstring = pcall(require, "ts_context_commentstring")
+      if ok and ts_context_commentstring then
+        opts.options = vim.tbl_extend("force", opts.options or {}, {
+          custom_commentstring = ts_context_commentstring.calculate_commentstring,
+        })
+      end
+
       require("mini.comment").setup(opts)
     end,
   },
