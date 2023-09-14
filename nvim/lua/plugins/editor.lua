@@ -58,6 +58,7 @@ return {
         ["<leader>b"] = { name = "+buffer" },
         ["<leader>bp"] = { name = "+pin" },
         ["<leader>C"] = { name = "+cargo" },
+        ["<leader>n"] = { name = "+npm" },
         ["<leader>c"] = { name = "+neoconf" },
         ["<leader>d"] = { name = "+debug" },
         ["<leader>f"] = { name = "+file/find" },
