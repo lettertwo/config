@@ -32,6 +32,17 @@ function M.get_formatted_diagnostics()
   return lines, highlights
 end
 
+local function isempty(lines)
+  if not vim.tbl_isempty(lines) then
+    for _, line in ipairs(lines) do
+      if line ~= "" then
+        return false
+      end
+    end
+  end
+  return true
+end
+
 M.hover = vim.lsp.with(function(_, result, ctx, opts)
   local lines, highlights = M.get_formatted_diagnostics()
   local util = vim.lsp.util
@@ -45,7 +56,7 @@ M.hover = vim.lsp.with(function(_, result, ctx, opts)
 
   lines = util.trim_empty_lines(lines)
 
-  if vim.tbl_isempty(lines) then
+  if isempty(lines) then
     return
   end
 
