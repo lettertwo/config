@@ -43,10 +43,10 @@ return {
       -- Use `''` (empty string) to not create one.
       mappings = {
         close = "q",
-        go_in = "<Right>",
+        go_in = "l",
         go_in_plus = "<CR>",
-        go_out = "<Left>",
-        go_out_plus = "<BS>",
+        go_out = "<BS>",
+        go_out_plus = "h",
         reset = "!",
         reveal_cwd = "@",
         show_help = "g?",
@@ -64,7 +64,7 @@ return {
         preview = true,
         width_focus = 50,
         width_nofocus = 15,
-        width_preview = 50,
+        width_preview = 70,
       },
     },
     config = function(_, opts)
