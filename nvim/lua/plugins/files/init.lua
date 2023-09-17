@@ -11,15 +11,12 @@ return {
       "nvim-tree/nvim-web-devicons",
       "MunifTanjim/nui.nvim",
     },
+    -- stylua: ignore start
     keys = {
-      {
-        "<leader>fE",
-        function()
-          require("neo-tree.command").execute({ toggle = true, dir = vim.loop.cwd() })
-        end,
-        desc = "File tree (cwd)",
-      },
+      { "<leader>fE", function() require("neo-tree.command").execute({ toggle = true, dir = vim.loop.cwd() }) end, desc = "File tree (cwd)" },
+      { "<leader>E", "<leader>fE", remap = true, desc = "File tree (cwd)" },
     },
+    -- stylua: ignore end
     init = function()
       vim.g.neo_tree_remove_legacy_commands = 1
       if vim.fn.argc() == 1 then
@@ -76,7 +73,7 @@ return {
 
       MiniFiles.setup(opts)
 
-      vim.keymap.set("n", "<leader>E", actions.open_cwd, { desc = "File explorer (cwd)" })
+      vim.keymap.set("n", "<leader>fe", actions.open_buffer, { desc = "File explorer (buffer)" })
       vim.keymap.set("n", "<leader>e", actions.open_buffer, { desc = "File explorer (buffer)" })
 
       vim.api.nvim_create_autocmd("User", {
