@@ -55,6 +55,12 @@ update-laserwave: ~/.local/share/laserwave.nvim
 	$(call run,cd ~/.local/share/laserwave.nvim && git pull)
 	$(call done)
 
+~/.config/kitty/laserwave.conf: ~/.config/kitty
+	$(call run,ln -sf "$$HOME/.local/share/laserwave.nvim/dist/kitty/laserwave.conf" "$$HOME/.config/kitty/laserwave.conf")
+
+~/.config/alacritty/laserwave.yml: ~/.config/alacritty
+	$(call run,ln -sf "$$HOME/.local/share/laserwave.nvim/dist/alacritty/laserwave.yml" "$$HOME/.config/alacritty/laserwave.yml")
+
 ### homebrew
 
 BREW := $(shell command -v brew 2> /dev/null)
@@ -147,7 +153,7 @@ update-nvim: ~/.local/share/neovim
 KITTY := $(shell command -v kitty 2> /dev/null)
 
 .PHONY: kitty
-kitty:
+kitty: ~/.config/kitty/laserwave.conf
 ifndef KITTY
 	$(call err,"kitty not found!")
 	$(call log,"Installing kitty...")
@@ -161,7 +167,7 @@ endif
 endif
 
 .PHONY: update-kitty
-update-kitty:
+update-kitty: ~/.config/kitty/laserwave.
 ifndef KITTY
 	$(call err,"kitty not found!")
 	$(call log,"Installing kitty...")
@@ -169,7 +175,6 @@ else
 	$(call log,"Updating kitty...")
 endif
 	$(call run,curl -L https://sw.kovidgoyal.net/kitty/installer.sh | zsh /dev/stdin)
-	$(call run,ln -sf "$$HOME/.local/share/laserwave.nvim/dist/kitty/laserwave.conf" "$$HOME/.config/kitty/laserwave.conf")
 ifdef MACOS
 	$(call run,ln -sf /Applications/kitty.app/Contents/MacOS/kitty "$$HOME/.local/bin/kitty")
 	$(call run,rm /var/folders/*/*/*/com.apple.dock.iconcache; killall Dock) #force refresh of dock icons.

@@ -112,16 +112,16 @@ import:
 font:
   size: 14.0
   normal:
-    family: MonoLisa Nerd Font
+    family: MonoLisa Variable
     style: Regular
   bold:
-    family: MonoLisa Nerd Font
+    family: MonoLisa Variable
     style: Bold
   italic:
-    family: MonoLisa Nerd Font
+    family: MonoLisa Variable
     style: Regular Italic
   bold_italic:
-    family: MonoLisa Nerd Font
+    family: MonoLisa Variable
     style: Bold Italic
 
   # Offset is the extra space around each character. `offset.y` can be thought
