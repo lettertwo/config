@@ -72,27 +72,13 @@ return {
   -- indent guides for Neovim
   {
     "lukas-reineke/indent-blankline.nvim",
+    main = "ibl",
     event = "BufReadPost",
     opts = {
-      char = "╎",
-      filetype_exclude = filetypes.ui,
-      show_trailing_blankline_indent = false,
-      show_current_context = false,
-    },
-    keys = {
-      { "zo", "zo<CMD>IndentBlanklineRefresh<CR>" },
-      { "zO", "zO<CMD>IndentBlanklineRefresh<CR>" },
-      { "zc", "zc<CMD>IndentBlanklineRefresh<CR>" },
-      { "zC", "zC<CMD>IndentBlanklineRefresh<CR>" },
-      { "za", "za<CMD>IndentBlanklineRefresh<CR>" },
-      { "zA", "zA<CMD>IndentBlanklineRefresh<CR>" },
-      { "zv", "zv<CMD>IndentBlanklineRefresh<CR>" },
-      { "zx", "zx<CMD>IndentBlanklineRefresh<CR>" },
-      { "zX", "zX<CMD>IndentBlanklineRefresh<CR>" },
-      { "zm", "zm<CMD>IndentBlanklineRefresh<CR>" },
-      { "zM", "zM<CMD>IndentBlanklineRefresh<CR>" },
-      { "zr", "zr<CMD>IndentBlanklineRefresh<CR>" },
-      { "zR", "zR<CMD>IndentBlanklineRefresh<CR>" },
+      indent = { char = "┆" },
+      whitespace = { remove_blankline_trail = false },
+      scope = { enabled = false },
+      exclude = { filetypes = filetypes.ui },
     },
   },
 
@@ -102,7 +88,7 @@ return {
     version = false,
     event = "BufReadPost",
     opts = {
-      symbol = "╎",
+      symbol = "┆",
       --stylua: ignore
       draw = { delay = 0, animation = function() return 0 end },
       options = {
