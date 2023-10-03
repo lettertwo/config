@@ -1,4 +1,3 @@
-
 RED := \033[0;31m
 GREEN := \033[0;32m
 YELLOW := \033[0;33m
@@ -227,7 +226,6 @@ ifdef MACOS
 	@echo "  1password: $(CYAN)https://1password.com/downloads/mac/$(END)"
 	@echo "  raycast:   $(CYAN)https://www.raycast.com/$(END)"
 	@echo "  rectangle: $(CYAN)https://rectangleapp.com/pro$(END)"
-	@echo "  clover:    $(CYAN)https://cloverapp.com/download$(END)"
 	@echo "  MonoLisa:  $(CYAN)https://www.monolisa.dev/orders$(END)"
 	@echo "  NerdFonts (Symbols Only):  $(CYAN)https://github.com/ryanoasis/nerd-fonts/releases/$(END)"
 endif
