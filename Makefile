@@ -105,18 +105,6 @@ update-sheldon: sheldon
 	$(call run,sheldon lock)
 	$(call done)
 
-### pip3
-PIP3 := $(shell command -v pip3 2> /dev/null)
-
-.PHONY: pip3
-pip3: brew
-ifndef PIP3
-	$(call err,"pip3 not found!")
-	$(call log,"Installing python...")
-	$(call run,brew install python)
-	$(call done)
-endif
-
 ### neovim
 
 NVIM := $(shell command -v nvim 2> /dev/null)
@@ -128,12 +116,10 @@ NVIM := $(shell command -v nvim 2> /dev/null)
 	$(call done)
 
 .PHONY: nvim
-nvim: ~/.local/share/neovim pip3
+nvim: ~/.local/share/neovim
 ifndef NVIM
 	$(call log,"Installing neovim...")
 	$(call run,cd ~/.local/share/neovim && make CMAKE_BUILD_TYPE=RelWithDebInfo && make install)
-	$(call log,"Installing pynvim...")
-	$(call run,pip3 install --user --upgrade pynvim)
 	$(call done)
 endif
 
@@ -142,10 +128,23 @@ update-nvim: ~/.local/share/neovim
 	$(call log,"Updating neovim...")
 	$(call run,cd ~/.local/share/neovim && git fetch --tags --force && git reset --hard tags/nightly)
 	$(call run,cd ~/.local/share/neovim && make clean && make distclean && make CMAKE_BUILD_TYPE=RelWithDebInfo && make install)
-	$(call log,"Updating pynvim...")
-	$(call run,pip3 install --user --upgrade pynvim)
 	$(call log,"Updating Plugins...")
 	$(call run,nvim --headless "+Lazy! sync" "+silent w! /dev/stdout" +qa)
+	$(call log,"Updating Parsers...")
+	$(call run,nvim --headless "+TSUpdateSync" "+silent w! /dev/stdout" +qa)
+	$(call log,"Updating Packages...")
+	$(call run,nvim --headless "+MasonInstallAll" "+silent w! /dev/stdout" +qa)
+	$(call done)
+
+
+.PHONY update-nvim-plugins:
+update-nvim-plugins: nvim
+	$(call log,"Updating Plugins...")
+	$(call run,nvim --headless "+Lazy! sync" "+silent w! /dev/stdout" +qa)
+	$(call log,"Updating Parsers...")
+	$(call run,nvim --headless "+TSUpdateSync" "+silent w! /dev/stdout" +qa)
+	$(call log,"Updating Packages...")
+	$(call run,nvim --headless "+MasonInstallAll" "+silent w! /dev/stdout" +qa)
 	$(call done)
 
 ### kitty

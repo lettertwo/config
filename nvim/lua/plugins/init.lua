@@ -20,6 +20,7 @@ return {
   -- Package manager for LSP, DAP, Linting, Formatting, etc.
   {
     "williamboman/mason.nvim",
+    cmd = { "Mason", "MasonInstall", "MasonInstallAll", "MasonUpdate" },
     event = "VeryLazy",
     config = function()
       require("mason").setup({
@@ -32,6 +33,12 @@ return {
           },
         },
       })
+
+      -- TODO: define user command to install all packages
+      local function install_all()
+        vim.notify_once("Not Implemented!", vim.log.levels.WARN, { title = "MasonInstallAll" })
+      end
+      vim.api.nvim_create_user_command("MasonInstallAll", install_all, { desc = "Install All configured Packages" })
     end,
   },
 
@@ -89,7 +96,7 @@ return {
         name = "crates.nvim",
       },
     },
-    -- stylua: ignore
+    -- stylua: ignore start
     keys = {
       { "<leader>Ct", function() require("crates").toggle() end, desc = "toggle" },
       { "<leader>Cr", function() require("crates").reload() end, desc = "reload" },
@@ -107,6 +114,7 @@ return {
       { "<leader>CC", function() require("crates").open_crates_io() end, desc = "open_crates_io" },
       -- {'v', '<leader>cU', crates.upgrade_crates, opts)
     },
+    -- stylua: ignore end
   },
 
   {

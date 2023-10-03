@@ -100,8 +100,13 @@ return {
   {
     "nvim-treesitter/nvim-treesitter",
     version = false, -- last release is way too old and doesn't work on Windows
-    build = ":TSUpdate",
+    build = function()
+      if #vim.api.nvim_list_uis() then
+        vim.cmd([[ TSUpdate ]])
+      end
+    end,
     event = "BufReadPost",
+    cmd = { "TSUpdateSync" },
     dependencies = {
       "RRethy/nvim-treesitter-endwise",
       "JoosepAlviste/nvim-ts-context-commentstring",
