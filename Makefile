@@ -156,20 +156,6 @@ kitty: ~/.config/kitty/laserwave.conf
 ifndef KITTY
 	$(call err,"kitty not found!")
 	$(call log,"Installing kitty...")
-	$(call run,curl -L https://sw.kovidgoyal.net/kitty/installer.sh | zsh /dev/stdin)
-	$(call run,ln -sf "$$HOME/.local/share/laserwave.nvim/dist/kitty/laserwave.conf" "$$HOME/.config/kitty/laserwave.conf")
-ifdef MACOS
-	$(call run,ln -sf /Applications/kitty.app/Contents/MacOS/kitty "$$HOME/.local/bin/kitty")
-	$(call run,rm /var/folders/*/*/*/com.apple.dock.iconcache; killall Dock) # force refresh of dock icons.
-endif
-	$(call done)
-endif
-
-.PHONY: update-kitty
-update-kitty: ~/.config/kitty/laserwave.
-ifndef KITTY
-	$(call err,"kitty not found!")
-	$(call log,"Installing kitty...")
 else
 	$(call log,"Updating kitty...")
 endif
@@ -179,6 +165,9 @@ ifdef MACOS
 	$(call run,rm /var/folders/*/*/*/com.apple.dock.iconcache; killall Dock) #force refresh of dock icons.
 endif
 	$(call done)
+
+.PHONY: update-kitty
+update-kitty: kitty
 
 .PHONY: update-dock-icons
 update-dock-icons:
