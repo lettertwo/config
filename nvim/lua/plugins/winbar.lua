@@ -32,6 +32,8 @@ local filetype = { "filetype", colored = false, icon_only = true }
 
 local filename = { "filename" }
 
+-- TODO: add exception for DAP windows; maybe look at the included extension,
+-- or otherwise figure out a way to conditionally configure filename.
 local filepath_inactive = {
   "filename",
   file_status = true,
@@ -39,62 +41,132 @@ local filepath_inactive = {
   shorting_target = 20, -- Shortens path to leave 40 spaces in the window for other components.
 }
 
+-- TODO: Implement dropbar-native version of the first lualine winbar segment
+local path = {
+  get_symbols = function(buf, win, _)
+    local bar = require("dropbar.bar")
+    local devicons = require("nvim-web-devicons")
+
+    local symbols = {} ---@type dropbar_symbol_t[]
+
+    local current_path = vim.fn.fnamemodify((vim.api.nvim_buf_get_name(buf)), ":p")
+    if current_path == nil then
+      vim.notify("filename is empty", vim.log.levels.ERROR, { title = "dropbar.nvim" })
+      return symbols
+    end
+    current_path = vim.fs.normalize(current_path)
+
+    local icon, icon_hl = devicons.get_icon(current_path, vim.fn.fnamemodify(current_path, ":e"), { default = true })
+
+    local symbols = {
+      bar.dropbar_symbol_t:new({
+        buf = buf,
+        win = win,
+        icon = " " .. icon .. " ",
+        icon_hl = "lualine_a_normal",
+        name_hl = "lualine_a_normal",
+        name = vim.fs.basename(current_path),
+        -- on_click = function(self)
+        --   vim.notify("Have you smiled today? " .. self.icon)
+        -- end,
+      }),
+      -- bar.dropbar_symbol_t:new({
+      --   buf = buf,
+      --   win = win,
+      --   icon = icon .. "",
+      --   icon_hl = "lualine_a_normal",
+      --   -- on_click = function(self)
+      --   --   vim.notify("Have you smiled today? " .. self.icon)
+      --   -- end,
+      -- }),
+    }
+
+    -- if vim.bo[buf].mod then
+    --   symbols[#symbols] = configs.opts.sources.path.modified(symbols[#symbols])
+    -- end
+
+    return symbols
+  end,
+}
+
+-- TODO: Create two dropbar sources, one for the current path and one for the current lsp/treesitter
+-- the idea is to recreate the current lualine config that has { filetype, filename } in one section
+-- and { breadcrumbs } in another, and they are visually separated.
 return {
   {
-    "SmiteshP/nvim-navic",
+    "Bekaboo/dropbar.nvim",
     event = "VeryLazy",
     opts = {
-      icons = icons,
-      separator = icons.separator,
-      highlight = false,
+      general = {
+        enable = false,
+      },
+      icons = {
+        ui = {
+          bar = {
+            separator = icons.separator,
+          },
+        },
+        kinds = {
+          symbols = icons,
+        },
+      },
+      bar = {
+        padding = { left = 0, right = 0 },
+        truncate = false,
+        sources = function(buf, _)
+          local sources = require("dropbar.sources")
+          local utils = require("dropbar.utils")
+
+          if vim.bo[buf].ft == "markdown" then
+            return {
+              -- path,
+              utils.source.fallback({
+                sources.treesitter,
+                sources.markdown,
+                sources.lsp,
+              }),
+            }
+          end
+          return {
+            -- path,
+            utils.source.fallback({
+              sources.lsp,
+              sources.treesitter,
+            }),
+          }
+        end,
+      },
+      -- menu = {
+      --   win_configs = {
+      --     border = "single",
+      --   },
+      -- },
+      sources = {
+        path = {
+          relative_to = function(bufno)
+            -- get dirname of current buffer
+            return vim.fn.fnamemodify(vim.api.nvim_buf_get_name(bufno), ":p:h")
+          end,
+        },
+      },
     },
   },
   {
     "nvim-lualine/lualine.nvim",
     event = "VeryLazy",
     opts = function(_, opts)
-      local navic = require("nvim-navic")
-      -- local grapple = {
-      --   function()
-      --     return " "
-      --   end,
-      --   cond = require("grapple").exists,
-      -- }
-
-      local function is_available()
-        return not excludes() and navic.is_available()
-      end
-
       local breadcrumbs = {
-        -- TODO: Implement symbol cache.
-        -- See https://github.com/glepnir/lspsaga.nvim/blob/main/lua/lspsaga/symbolwinbar.lua
         function()
           if excludes() then
             return
           end
 
-          local location = ""
-
-          if navic.is_available() then
-            local status_ok, navic_data = pcall(navic.get_data)
-            if status_ok and navic_data then
-              for i, data in ipairs(navic_data) do
-                location = location .. data.icon .. format_highlight(data.name, highlights.Text)
-                if i < #navic_data then
-                  location = location .. icons.separator
-                end
-              end
-            end
-          end
-
-          if not isempty(location) and get_buf_option("mod") then
-            location = location .. " " .. format_highlight("", "diffChanged")
-          end
-
-          return isempty(location) and nil or location
+          -- TODO: update opts.menu.win_configs.col to match the size of the filepath section.
+          -- from https://github.com/Bekaboo/dropbar.nvim/issues/19#issuecomment-1574760272
+          return "%{%v:lua.dropbar.get_dropbar_str()%}"
         end,
         cond = function()
-          return is_available() and visible_for_filetype()
+          return visible_for_filetype()
         end,
       }
 
