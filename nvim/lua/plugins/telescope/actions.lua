@@ -91,4 +91,9 @@ return transform_mod({
       end
     end)
   end,
+  open_in_diffview = function(prompt_bufnr)
+    local entry = action_state.get_selected_entry()
+    telescope_actions.close(prompt_bufnr)
+    vim.cmd(("DiffviewOpen %s"):format(entry.value))
+  end,
 })

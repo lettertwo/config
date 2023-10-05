@@ -201,7 +201,26 @@ return {
             sort_mru = true,
             sort_lastused = true,
           }),
-          git_branches = pickers.slow_picker(),
+          git_commits = pickers.quick_picker({
+            mappings = {
+              i = {
+                ["<C-d>"] = actions.open_in_diffview,
+              },
+              n = {
+                ["d"] = actions.open_in_diffview,
+              },
+            },
+          }),
+          git_branches = pickers.slow_picker({
+            mappings = {
+              i = {
+                ["<C-d>"] = actions.open_in_diffview,
+              },
+              n = {
+                ["d"] = actions.open_in_diffview,
+              },
+            },
+          }),
           git_status = pickers.slow_picker(),
           git_stash = pickers.slow_picker(),
         },
