@@ -65,7 +65,6 @@ return {
       },
     },
     config = function(_, opts)
-      vim.notify("init files")
       local MiniFiles = require("mini.files")
       local win_close = require("plugins.files.win_close")
       local actions = require("plugins.files.actions")
