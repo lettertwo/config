@@ -46,8 +46,8 @@ vim.api.nvim_create_autocmd("FileType", {
 })
 
 -- Show relative line numbers in visual modes
-vim.api.nvim_create_autocmd("ModeChanged", { pattern = { "[vV\x16]*:*" }, command = ":set norelativenumber" })
-vim.api.nvim_create_autocmd("ModeChanged", { pattern = { "*:[vV\x16]*" }, command = ":set relativenumber" })
+vim.api.nvim_create_autocmd("ModeChanged", { pattern = { "[vV\x16]*:*" }, command = ":setlocal norelativenumber" })
+vim.api.nvim_create_autocmd("ModeChanged", { pattern = { "*:[vV\x16]*" }, command = ":setlocal relativenumber" })
 
 -- Close cmdwin with <Esc>
 vim.api.nvim_create_autocmd("CmdwinEnter", {
