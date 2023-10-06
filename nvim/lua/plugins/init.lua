@@ -54,6 +54,9 @@ return {
       { "<leader>qd", function() require("persistence").stop() end, desc = "Don't Save Current Session" },
     },
     config = function(_, opts)
+      -- TODO: Implement telescope integration like:
+      -- https://github.com/olimorris/persisted.nvim/tree/main/lua/telescope/_extensions/persisted
+      -- maybe using https://github.com/folke/persistence.nvim/blob/main/lua/persistence/init.lua#L53C12-L53C16
       require("persistence").setup(opts)
       -- autocmd to disable session saving for git operations
       -- FIXME: This will cause session saving to be disabled for the rest of the session,
@@ -115,15 +118,5 @@ return {
       -- {'v', '<leader>cU', crates.upgrade_crates, opts)
     },
     -- stylua: ignore end
-  },
-
-  {
-    dev = true,
-    event = "BufReadPost",
-    dir = "~/.local/share/occurrency.nvim",
-    name = "occurrency.nvim",
-    config = function()
-      require("occurrency.dev").setup()
-    end,
   },
 }
