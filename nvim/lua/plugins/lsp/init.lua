@@ -225,7 +225,6 @@ return {
         if client.name == "copilot" then
           return
         end
-        require("plugins.lsp.location").on_attach(client, buffer)
         require("plugins.lsp.format").on_attach(client, buffer)
         require("plugins.lsp.keymaps").on_attach(client, buffer)
       end)
