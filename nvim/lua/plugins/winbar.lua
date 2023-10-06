@@ -3,6 +3,15 @@ local filetypes = require("config").filetypes
 local highlights = require("config").highlights
 local format_highlight = require("util").format_highlight
 
+local get_ft_icon = function(buf)
+  local devicons = require("nvim-web-devicons")
+  local current_path = vim.fs.normalize(
+    ---@diagnostic disable-next-line: param-type-mismatch
+    vim.fn.fnamemodify((vim.api.nvim_buf_get_name(buf)), ":p")
+  )
+  return devicons.get_icon(current_path, vim.fn.fnamemodify(current_path, ":e"), { default = true })
+end
+
 local function visible_for_filetype()
   return not vim.tbl_contains(filetypes.ui, vim.bo.filetype)
 end
@@ -28,9 +37,27 @@ local function get_buf_option(opt)
   end
 end
 
-local filetype = { "filetype", colored = false, icon_only = true }
-
 local filename = { "filename" }
+
+local filetype = {
+  function()
+    if excludes() then
+      return
+    end
+
+    local buf = vim.api.nvim_get_current_buf()
+    local win = vim.api.nvim_get_current_win()
+
+    local icon = get_ft_icon(buf)
+
+    if vim.w[win].sticky_win ~= nil then
+      icon = "󰐃 " .. icon
+    end
+
+    return icon
+  end,
+  cond = visible_for_filetype,
+}
 
 -- TODO: add exception for DAP windows; maybe look at the included extension,
 -- or otherwise figure out a way to conditionally configure filename.
@@ -173,7 +200,6 @@ return {
       return vim.tbl_extend("force", opts, {
         winbar = {
           lualine_a = { filetype, filename },
-          -- lualine_a = { grapple, filetype, filename },
           lualine_b = {},
           lualine_c = { breadcrumbs },
           lualine_x = {},
