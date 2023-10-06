@@ -95,7 +95,18 @@ return {
       { "<leader>bpf", "<cmd>PinFiletype<cr>", desc = "Pin fileytype" },
       { "<leader>bpu", "<cmd>Unpin<cr>", desc = "Unpin buffer" },
     },
-    -- TODO: configure sticky buffers for symbols outline, neotree, toggleterm, trouble, etc.
     opts = {},
+    config = function(_, opts)
+      require("stickybuf").setup(opts)
+
+      vim.api.nvim_create_autocmd("BufEnter", {
+        desc = "Pin the buffer to any window that is fixed width or height",
+        callback = function()
+          if (vim.wo.winfixwidth or vim.wo.winfixheight) and vim.w.sticky_win == nil then
+            require("stickybuf").pin()
+          end
+        end,
+      })
+    end,
   },
 }
