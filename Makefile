@@ -203,6 +203,41 @@ update-qmk: qmk
 	$(call run,qmk setup lettertwo/qmk_firmware)
 	$(call done)
 
+### rust
+
+RUSTC := $(shell command -v rustc 2> /dev/null)
+
+~/.cargo/bin/rustup:
+	$(call err,"rustup not found!")
+	$(call log,"Installing rustup...")
+	$(call run,curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh)
+	$(call done)
+
+~/.cargo/bin/cargo-binstall:
+	$(call err,"cargo-binstall not found!")
+	$(call log,"Installing cargo-binstall...")
+	$(call run,curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | sh)
+	$(call done)
+
+~/.cargo/bin/cargo-nextest:
+	$(call err,"cargo-nextest not found!")
+	$(call log,"Installing cargo-nextest...")
+	$(call run,cargo binstall cargo-nextest --secure --no-confirm)
+	$(call done)
+
+.PHONY: rust
+rust: ~/.cargo/bin/rustup ~/.cargo/bin/cargo-binstall ~/.cargo/bin/cargo-nextest
+ifndef RUSTC
+	$(call err,"rustc not found!")
+	$(call log,"Installing rust stable...")
+	$(call run,rustup toolchain install stable)
+	$(call log,"Setting default toolchain to stable...")
+	$(call run,rustup default stable)
+	$(call log,"Installing rust nightly...")
+	$(call run,rustup toolchain install nightly)
+	$(call done)
+endif
+
 ### config
 
 .PHONY: update-config
