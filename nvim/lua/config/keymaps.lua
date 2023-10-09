@@ -23,10 +23,11 @@ vim.keymap.set("i", "<A-k>", "<Esc>:m .-2<cr>==gi", { desc = "Move up", silent =
 -- buffers
 vim.keymap.set("n", "<S-h>", "<cmd>bprevious<cr>", { desc = "Prev buffer" })
 vim.keymap.set("n", "<S-l>", "<cmd>bnext<cr>", { desc = "Next buffer" })
-vim.keymap.set("n", "b[", "<cmd>bprevious<cr>", { desc = "Previous" })
-vim.keymap.set("n", "b]", "<cmd>bnext<cr>", { desc = "Next" })
+vim.keymap.set("n", "bh", "<cmd>bprevious<cr>", { desc = "Previous" })
+vim.keymap.set("n", "bl", "<cmd>bnext<cr>", { desc = "Next" })
 vim.keymap.set("n", "<leader>bb", "<cmd>e #<cr>", { desc = "Switch to Other Buffer" })
 vim.keymap.set("n", "<leader>`", "<cmd>e #<cr>", { desc = "Switch to Other Buffer" })
+vim.keymap.set("n", "<leader>br", "<cmd>e %<cr>", { desc = "Reopen buffer" })
 
 -- Close floats, and clear highlights with <Esc>
 vim.keymap.set("n", "<Esc>", Util.close_floats_and_clear_highlights, { desc = "Close floats, clear highlights" })
