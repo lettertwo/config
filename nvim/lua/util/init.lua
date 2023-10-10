@@ -24,7 +24,7 @@ function ConfigUtil.visible_buffers()
 end
 
 function ConfigUtil.lsp_active()
-  for _, client in pairs(vim.lsp.get_active_clients()) do
+  for _, client in pairs(vim.lsp.get_clients()) do
     if client.server_capabilities then
       return true
     end
@@ -117,7 +117,7 @@ function ConfigUtil.get_root()
   ---@type string[]
   local roots = {}
   if path then
-    for _, client in pairs(vim.lsp.get_active_clients({ bufnr = 0 })) do
+    for _, client in pairs(vim.lsp.get_clients({ bufnr = 0 })) do
       local workspace = client.config.workspace_folders
       local paths = workspace and vim.tbl_map(function(ws)
         return vim.uri_to_fname(ws.uri)
@@ -176,8 +176,6 @@ function ConfigUtil.create_option_toggle(option, silent, values)
   end
 end
 
-function ConfigUtil.create_toggle(name, handle) end
-
 function ConfigUtil.toggle_diagnostics()
   if vim.diagnostic.is_disabled() then
     vim.diagnostic.enable()
@@ -189,7 +187,7 @@ function ConfigUtil.toggle_diagnostics()
 end
 
 function ConfigUtil.service_status()
-  local buf_clients = vim.lsp.get_active_clients()
+  local buf_clients = vim.lsp.get_clients()
   local buf = vim.api.nvim_get_current_buf()
   local buf_ft = vim.bo.filetype
 

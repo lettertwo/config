@@ -4,7 +4,7 @@ M.config = {
   name = "LSP",
   priority = 1,
   enabled = function()
-    for _, client in pairs(vim.lsp.get_active_clients()) do
+    for _, client in pairs(vim.lsp.get_clients()) do
       if client and client.supports_method("textDocument/hover") then
         return true
       end
