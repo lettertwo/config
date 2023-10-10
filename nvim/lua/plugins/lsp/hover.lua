@@ -40,7 +40,7 @@ M.config = {
 
 function M.on_attach(client, _)
   if client.supports_method("textDocument/hover") then
-    require("util.hover").register(M.config)
+    require("util").register_hover(M.config)
   end
 end
 

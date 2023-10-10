@@ -70,17 +70,12 @@ local function get_active_specs()
 end
 
 ---@param spec HoverSpec
-function HoverUtil.register(spec)
+function HoverUtil.register_hover(spec)
   if not spec.name then
     error("Hover spec must have a name")
   end
 
   registry[spec.name] = spec
-end
-
----@param name string
-function HoverUtil.has(name)
-  return registry[name] ~= nil
 end
 
 ---@param pipeline HoverSpec[]

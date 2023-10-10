@@ -190,7 +190,7 @@ vim.api.nvim_create_autocmd("BufReadPost", {
   end,
 })
 
-require("util.hover").register({
+require("util").register_hover({
   name = "Diagnostics",
   priority = 2,
   enabled = function()

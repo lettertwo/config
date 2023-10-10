@@ -1,7 +1,8 @@
 -- Adapted from: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/util/init.lua
 
----@class ConfigUtil: LazyUtilCore, BufferKeymapUtil
-local ConfigUtil = vim.tbl_extend("error", require("lazy.core.util"), require("util.buffer_keymap"))
+---@class ConfigUtil: LazyUtilCore, BufferKeymapUtil, HoverUtil
+local ConfigUtil =
+  vim.tbl_extend("error", require("lazy.core.util"), require("util.buffer_keymap"), require("util.hover"))
 
 ConfigUtil.root_patterns = { ".git", "lua" }
 
