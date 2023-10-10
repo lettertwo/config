@@ -21,6 +21,8 @@ local config = {
       "neo-tree",
       "neo-tree-popup",
       "neogitstatus",
+      "neotest-output-panel",
+      "neotest-summary",
       "notify",
       "noice",
       "packer",

@@ -20,7 +20,7 @@ return {
         opts = {
           experimental = { pathStrict = true },
           library = {
-            plugins = { "nvim-dap-ui" },
+            plugins = { "nvim-dap-ui", "neotest" },
             types = true,
           },
         },
