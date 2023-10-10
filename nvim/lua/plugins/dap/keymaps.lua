@@ -68,7 +68,7 @@ function M.activate_keys(config)
   for _, keys in pairs(keymaps) do
     local opts = Keys.opts(keys)
     opts.silent = true
-    vim.keymap.set(keys.mode or "n", keys[1], keys[2], opts)
+    vim.keymap.set(keys.mode or "n", keys.lhs or keys[1], keys.rhs or keys[2], opts)
   end
 
   return keymaps
@@ -80,7 +80,7 @@ function M.deactivate_keys(config)
   for _, keys in pairs(config) do
     local opts = Keys.opts(keys)
     opts.silent = true
-    vim.keymap.del(keys.mode or "n", keys[1], opts)
+    vim.keymap.del(keys.mode or "n", keys.lhs or keys[1], opts)
   end
 end
 

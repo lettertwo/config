@@ -99,13 +99,13 @@ function BufferKeymapUtil.create_buffer_keymap(desc)
     end
     if desc.keys ~= nil then
       for parsed, opts in iterate_parsed_keymap_specs(desc.keys, ctx, M.filter, M.get_opts) do
-        vim.keymap.set(parsed.mode or "n", parsed[1], parsed[2], opts)
+        vim.keymap.set(parsed.mode or "n", parsed.lhs or parsed[1], parsed.rhs or parsed[2], opts)
       end
     end
 
     if specs ~= nil then
       for parsed, opts in iterate_parsed_keymap_specs(specs, ctx, M.filter, M.get_opts) do
-        vim.keymap.set(parsed.mode or "n", parsed[1], parsed[2], opts)
+        vim.keymap.set(parsed.mode or "n", parsed.lhs or parsed[1], parsed.rhs or parsed[2], opts)
       end
     end
   end
