@@ -1,81 +1,47 @@
 local M = {}
 
-function M.get_formatted_diagnostics()
-  local lnum, col = unpack(vim.api.nvim_win_get_cursor(0))
-  lnum = lnum - 1
-  -- LSP servers can send diagnostics with `end_col` past the length of the line
-  local line_length = #vim.api.nvim_buf_get_lines(0, lnum, lnum + 1, true)[1]
-  local diagnostics = vim.tbl_filter(function(d)
-    return d.lnum == lnum and math.min(d.col, line_length - 1) <= col and (d.end_col >= col or d.end_lnum > lnum)
-  end, vim.diagnostic.get(0, { lnum = lnum }))
-
-  local lines = {}
-  local highlights = {}
-  -- TODO: Add grouping by source and severity.
-  if not vim.tbl_isempty(diagnostics) then
-    for _, diagnostic in ipairs(diagnostics) do
-      local prefix = diagnostic.code ~= nil and string.format("[%s] ", diagnostic.code) or ""
-      prefix = string.format("%s%s: ", prefix, diagnostic.source)
-      local severity = vim.diagnostic.severity[diagnostic.severity]
-      local highlight = "Diagnostic" .. severity:sub(1, 1) .. severity:sub(2):lower()
-      -- TODO: Decide how to highlight prefix.
-      local prefix_highlight = highlight
-      local message_lines = vim.split(diagnostic.message, "\n")
-      table.insert(lines, prefix .. message_lines[1])
-      table.insert(highlights, { #prefix, highlight, prefix_highlight })
-      for j = 2, #message_lines do
-        table.insert(lines, string.rep(" ", #prefix) .. message_lines[j])
-        table.insert(highlights, { 0, highlight })
+M.config = {
+  name = "LSP",
+  priority = 1,
+  enabled = function()
+    for _, client in pairs(vim.lsp.get_active_clients()) do
+      if client and client.supports_method("textDocument/hover") then
+        return true
       end
     end
-  end
-  return lines, highlights
-end
+    return false
+  end,
+  execute = function(done)
+    local util = require("vim.lsp.util")
+    local params = util.make_position_params()
+    local lines = {}
 
-local function isempty(lines)
-  if not vim.tbl_isempty(lines) then
-    for _, line in ipairs(lines) do
-      if line ~= "" then
-        return false
+    vim.lsp.buf_request_all(0, "textDocument/hover", params, function(responses)
+      for _, response in pairs(responses) do
+        if response.result and response.result.contents then
+          local markdown_lines = util.convert_input_to_markdown_lines(response.result.contents)
+          markdown_lines = util.trim_empty_lines(markdown_lines)
+          if not vim.tbl_isempty(markdown_lines) then
+            vim.list_extend(lines, markdown_lines)
+          end
+        end
       end
-    end
+
+      lines = util.trim_empty_lines(lines)
+
+      if not vim.tbl_isempty(lines) then
+        done({ lines = lines, filetype = "markdown" })
+      else
+        done()
+      end
+    end)
+  end,
+}
+
+function M.on_attach(client, _)
+  if client.supports_method("textDocument/hover") then
+    require("util.hover").register(M.config)
   end
-  return true
 end
-
-M.hover = vim.lsp.with(function(_, result, ctx, opts)
-  local lines, highlights = M.get_formatted_diagnostics()
-  local util = vim.lsp.util
-
-  if result and result.contents then
-    if not vim.tbl_isempty(lines) then
-      table.insert(lines, "---")
-    end
-    vim.list_extend(lines, util.convert_input_to_markdown_lines(result.contents, {}))
-  end
-
-  lines = util.trim_empty_lines(lines)
-
-  if isempty(lines) then
-    return
-  end
-
-  local float_opts = vim.tbl_extend("keep", opts, {
-    border = "rounded",
-    focusable = true,
-    focus_id = "hover",
-    close_events = { "CursorMoved", "BufHidden", "InsertCharPre" },
-  })
-
-  local bufnr, _ = util.open_floating_preview(lines, "markdown", float_opts)
-
-  for i, hi in ipairs(highlights) do
-    local prefixlen, hiname, prefix_hiname = unpack(hi)
-    if prefix_hiname then
-      vim.api.nvim_buf_add_highlight(bufnr, -1, prefix_hiname, i - 1, 0, prefixlen)
-    end
-    vim.api.nvim_buf_add_highlight(bufnr, -1, hiname, i - 1, prefixlen, -1)
-  end
-end, {})
 
 return M

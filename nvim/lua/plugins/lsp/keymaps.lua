@@ -17,7 +17,6 @@ local keys = {
   { "gD", vim.lsp.buf.declaration, desc = "Go to declaration" },
   { "gI", ":TroubleToggle lsp_implementations<CR>", desc = "Go to implementation", requires = "trouble" },
   { "gt", ":TroubleToggle lsp_type_definitions<CR>", desc = "Go to type", requires = "trouble" },
-  { "K", vim.lsp.buf.hover, desc = "Show hover" },
   { "gK", vim.lsp.buf.signature_help, desc = "Show signature help", has = "signatureHelp" },
   { "<leader>=", format, desc = "Format document", has = "documentFormatting" },
   { "<leader>=", format, desc = "Format Range", mode = "x", has = "documentRangeFormatting" },

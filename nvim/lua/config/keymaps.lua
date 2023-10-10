@@ -2,6 +2,10 @@
 
 local Util = require("util")
 
+-- hover
+vim.keymap.set("n", "K", require("util.hover").hover, { desc = "Hover" })
+vim.keymap.set("n", "gh", require("util.hover").hover, { desc = "Hover" })
+
 -- better up/down
 vim.keymap.set("n", "j", "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
 vim.keymap.set("n", "k", "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })

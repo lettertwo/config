@@ -219,7 +219,6 @@ return {
     config = function(_, opts)
       local lspconfig = require("lspconfig")
 
-      vim.lsp.handlers["textDocument/hover"] = require("plugins.lsp.hover").hover
 
       require("util").on_attach(function(client, buffer)
         if client.name == "copilot" then
@@ -227,6 +226,7 @@ return {
         end
         require("plugins.lsp.format").on_attach(client, buffer)
         require("plugins.lsp.keymaps").on_attach(client, buffer)
+        require("plugins.lsp.hover").on_attach(client, buffer)
       end)
 
       local capabilities = vim.lsp.protocol.make_client_capabilities()
