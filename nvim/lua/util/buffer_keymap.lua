@@ -3,44 +3,46 @@ local Keys = require("lazy.core.handler.keys")
 ---@class BufferKeymapUtil
 local BufferKeymapUtil = {}
 
----@class BufferKeySpec: LazyKeys
+---@class BufferKey: LazyKeys
+
+---@class BufferKeySpec: LazyKeysSpec
 ---@field requires? string Only if the given module is loaded.
 
 ---@class BufferKeyCtx
 ---@field buffer number
 
----@class BufferKeyOpts: table
+---@class BufferKeyOpts: LazyKeysBase
 
 ---@param spec BufferKeySpec
----@param ctx BufferKeyCtx
 ---@return boolean
-local function default_filter(spec, ctx)
+local function default_filter(spec)
   if spec.requires and not package.loaded[spec.requires] then
     return false
   end
   return true
 end
 
----@param spec BufferKeySpec
+---@param spec BufferKey
 ---@param ctx BufferKeyCtx
 ---@return BufferKeyOpts
 local function default_get_opts(spec, ctx)
+  ---@class LazyKeysBase
   local opts = Keys.opts(spec)
   opts.requires = nil
   opts.silent = true
   opts.buffer = ctx.buffer
-  return opts
+  return opts --[[@as BufferKeyOpts]]
 end
 
 ---@param specs BufferKeySpec[]
 ---@param ctx BufferKeyCtx
----@param filter fun(spec: BufferKeySpec, ctx: BufferKeyCtx): boolean
----@param get_opts fun(spec: BufferKeySpec, ctx: BufferKeyCtx): BufferKeyOpts
----@return fun(): BufferKeySpec | nil, BufferKeyOpts | nil
+---@param filter fun(spec: BufferKey, ctx: BufferKeyCtx): boolean
+---@param get_opts fun(spec: BufferKey, ctx: BufferKeyCtx): BufferKeyOpts
+---@return fun(): BufferKey | nil, BufferKeyOpts | nil
 local function iterate_parsed_keymap_specs(specs, ctx, filter, get_opts)
   local co = coroutine.create(function()
     for _, spec in ipairs(specs) do
-      local parsed = Keys.parse(spec) --[[@as BufferKeySpec]]
+      local parsed = Keys.parse(spec) --[[@as BufferKey]]
       if filter == nil or filter(parsed, ctx) then
         coroutine.yield(parsed, get_opts(parsed, ctx))
       end
@@ -62,15 +64,13 @@ end
 
 ---@param desc BufferKeymapDescriptor
 function BufferKeymapUtil.create_buffer_keymap(desc)
-  local keys = desc.keys
-
   ---@class BufferKeymap
   local M = {
     keys = desc.keys,
   }
 
   function M.filter(spec, ctx)
-    if default_filter(spec, ctx) then
+    if default_filter(spec) then
       if desc.filter then
         return desc.filter(spec, ctx)
       else
