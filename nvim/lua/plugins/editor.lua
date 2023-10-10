@@ -95,7 +95,18 @@ return {
       { "<leader>bpf", "<cmd>PinFiletype<cr>", desc = "Pin fileytype" },
       { "<leader>bpu", "<cmd>Unpin<cr>", desc = "Unpin buffer" },
     },
-    opts = {},
+    opts = {
+      get_auto_pin = function(buffer)
+        local should_pin = require("stickybuf").should_auto_pin(buffer)
+        if should_pin == nil then
+          local filetype = vim.bo[buffer].filetype
+          if vim.tbl_contains({ "noice" }, filetype) then
+            return "filetype"
+          end
+        end
+        return should_pin
+      end,
+    },
     config = function(_, opts)
       require("stickybuf").setup(opts)
 
