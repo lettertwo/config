@@ -54,12 +54,13 @@ return {
       { "nvim-telescope/telescope-ui-select.nvim" },
       { "nvim-telescope/telescope-symbols.nvim" },
       { "nvim-telescope/telescope-live-grep-args.nvim" },
+      { "nvim-telescope/telescope-frecency.nvim" },
     },
     keys = {
       { "<leader>p", "<cmd>Telescope commands<CR>", desc = "Commands" },
       { "<leader>t", "<cmd>Telescope buffers<CR>", desc = "Buffers" },
       { "<leader>bb", "<cmd>Telescope buffers<CR>", "Buffers" },
-      { "<leader>r", "<cmd>Telescope oldfiles<CR>", desc = "Recent Files" },
+      { "<leader>r", "<cmd>Telescope frecency workspace=CWD<CR>", desc = "Recent Files" },
       { "<leader>/", "<cmd>Telescope current_buffer_fuzzy_find<CR>", desc = "Text in file" },
       { "<leader>*", "<cmd>Telescope grep_string<CR>", desc = "Word under cursor" },
       { "<leader>:", "<cmd>Telescope command_history<cr>", desc = "Command History" },
@@ -69,7 +70,8 @@ return {
       { "<leader>fb", "<cmd>Telescope buffers show_all_buffers=true<cr>", desc = "Buffers (all)" },
       { "<leader>ff", "<cmd>Telescope find_files<cr>", desc = "Find Files (root dir)" },
       { "<leader>fF", "<cmd>Telescope find_files cwd=true<cr>", desc = "Find Files (cwd)" },
-      { "<leader>fr", "<cmd>Telescope oldfiles<cr>", desc = "Recent" },
+      { "<leader>fr", "<cmd>Telescope frecency workspace=CWD<cr>", desc = "Recent (cwd)" },
+      { "<leader>fR", "<cmd>Telescope frecency<cr>", desc = "Recent (all)" },
       { "<leader>fg", live_grep_files, desc = "Grep in open files" },
       { "<leader>fw", grep_string_files, desc = "Search word in open files" },
 
@@ -171,6 +173,17 @@ return {
             -- theme = { }, -- use own theme spec
             -- layout_config = { mirror=true }, -- mirror preview pane
           },
+          frecency = {
+            show_unindexed = true,
+            ignore_patterns = { "*.git/*", "*/tmp/*", "*/node_modules/*" },
+            workspaces = {
+              ["conf"] = vim.env.XDG_CONFIG_HOME,
+              ["data"] = vim.env.XDG_DATA_HOME,
+              ["cache"] = vim.env.XDG_CACHE_HOME,
+              ["home"] = vim.env.HOME,
+            },
+            sorter = require("telescope.config").values.file_sorter(),
+          },
         },
         pickers = {
           find_files = {
@@ -232,6 +245,7 @@ return {
       telescope.load_extension("fzf")
       telescope.load_extension("ui-select")
       telescope.load_extension("live_grep_args")
+      telescope.load_extension("frecency")
 
       -- local function nvim_config_files()
       --   builtin.find_files({
