@@ -16,7 +16,7 @@ local BufferKeymapUtil = {}
 ---@param spec BufferKeySpec
 ---@return boolean
 local function default_filter(spec)
-  if spec.requires and not package.loaded[spec.requires] then
+  if spec.requires and require("lazy.core.config").plugins[spec.requires] ~= nil then
     return false
   end
   return true
