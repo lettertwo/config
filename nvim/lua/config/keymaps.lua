@@ -10,6 +10,10 @@ vim.keymap.set("n", "gh", require("util.hover").hover, { desc = "Hover" })
 vim.keymap.set("n", "j", "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
 vim.keymap.set("n", "k", "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
 
+-- better scroll up/down
+vim.keymap.set("n", "<C-d>", "'<C-d>zz'", { expr = true, silent = true, desc = "Scroll down" })
+vim.keymap.set("n", "<C-u>", "'<C-u>zz'", { expr = true, silent = true, desc = "Scroll up" })
+
 -- Resize window using <ctrl> arrow keys
 vim.keymap.set("n", "<C-Up>", "<cmd>resize +2<cr>", { desc = "Increase window height" })
 vim.keymap.set("n", "<C-Down>", "<cmd>resize -2<cr>", { desc = "Decrease window height" })
