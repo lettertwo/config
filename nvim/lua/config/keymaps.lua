@@ -113,11 +113,14 @@ local function add_location_to_list(type, opts)
 end
 
 --- @param type 'qf' | 'quickfix' | 'lf' | 'loclist'
---- @param opts? { bufnr: number, lnum: number, col: number }
+--- @param opts? { win: number, bufnr: number, lnum: number, col: number }
 local function remove_location_from_list(type, opts)
+  local win = opts and opts.win ~= 0 and opts.win or vim.api.nvim_get_current_win()
   local bufnr = opts and opts.bufnr ~= 0 and opts.bufnr or vim.api.nvim_get_current_buf()
   local lnum = opts and opts.lnum or vim.api.nvim_win_get_cursor(0)[1]
   local col = opts and opts.col or vim.api.nvim_win_get_cursor(0)[2]
+
+  -- vim.print({ type = type, win = win, bufnr = bufnr, lnum = lnum, col = col })
 
   if type == "qf" or type == "quickfix" then
     local list = vim.fn.getqflist()
@@ -131,13 +134,15 @@ local function remove_location_from_list(type, opts)
       end
     end
   elseif type == "lf" or type == "loclist" then
-    local list = vim.fn.getloclist(0)
+    -- FIXME: The `win` needs to be the window that the location list belongs to or something...
+    -- This is currently the loclist window (or trouble window), which is why removal from loclist doens't work.
+    local list = vim.fn.getloclist(win)
     -- if location is in the list, remove it
     for i, entry in ipairs(list) do
       if entry.bufnr == bufnr and entry.lnum == lnum and entry.col == col then
-        table.remove(list, i)
+        list = table.remove(list, i)
         vim.notify("removing from loclist", vim.log.levels.DEBUG)
-        vim.fn.setloclist(0, list, "r")
+        vim.fn.setloclist(win, list, "r")
         return
       end
     end

@@ -195,7 +195,7 @@ endif
 	$(call done)
 
 .PHONY: qmk
-qmk: ~/.local/share/qmk_firmware
+qmk: ~/Library/Application\ Support/qmk/qmk.ini ~/.local/share/qmk_firmware
 
 .PHONY: update-qmk
 update-qmk: qmk
