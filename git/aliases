@@ -27,6 +27,7 @@
 	stash-staged = stash -S
 	logsmart = "log --graph --pretty=format:'commit: %C(bold red)%h%Creset %C(red)<%H>%Creset %C(bold magenta)%d %Creset%ndate: %C(bold yellow)%cd %Creset%C(yellow)%cr%Creset%nauthor: %C(bold blue)%an%Creset %C(blue)<%ae>%Creset%n%C(cyan)%s%n%Creset'"
 	logme = !git logsmart --author="\"`git config --get user.name`\""
+	logmain = !git logsmart --first-parent
 	loggraph = log --graph --pretty=format:'%C(bold red)%h%Creset %s %C(bold blue)%an%Creset %C(yellow)(%cr)%Creset%C(bold magenta)%d%Creset'
 	amend = !git log -n 1 --pretty=tformat:%s%n%n%b | git commit -F - --amend
   fixup = !git log --no-merges --oneline $(git rev-parse --abbrev-ref @{upstream} 2>/dev/null || >&2 echo 'upstream branch not found! using first parent...' && git rev-list --first-parent HEAD | tail -1)..HEAD | fzf --prompt='which commit? > ' | cut -d' ' -f1 | xargs -ot git commit --fixup
@@ -102,6 +103,7 @@
 	sf = !git show-files
 	l = !git logsmart
 	lg = !git loggraph
+	lm = !git logmain
 	lme = !git logme
 	ff = !git fast-forward
 	up = !git update
