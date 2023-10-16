@@ -283,8 +283,10 @@ vim.api.nvim_create_autocmd("FileType", {
 -- stylua: ignore start
 
 -- toggle options
-vim.keymap.set("n", "<leader>us", Util.create_option_toggle("spell"), { desc = "Toggle Spelling" })
-vim.keymap.set("n", "<leader>uw", Util.create_option_toggle("wrap"), { desc = "Toggle Word Wrap" })
+vim.keymap.set("n", "<leader>us", Util.create_toggle("spell", "wo"), { desc = "Toggle Spelling" })
+vim.keymap.set("n", "<leader>uw", Util.create_toggle("wrap", "wo"), { desc = "Toggle Word Wrap" })
+vim.keymap.set("n", "<leader>uh", Util.create_toggle("hlsearch", "o"), { desc = "Toggle Highlight Search" })
+vim.keymap.set("n", "<leader>uc", Util.create_toggle("cursorline", "wo"), { desc = "Toggle Cursorline" })
 
 -- quit
 vim.keymap.set("n", "<leader>qq", "<cmd>qa<cr>", { desc = "Quit all" })

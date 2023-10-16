@@ -147,31 +147,30 @@ function ConfigUtil.get_root()
   return root
 end
 
----@param option string
----@param silent? boolean?
----@param values? {[1]:any, [2]:any}
-function ConfigUtil.create_option_toggle(option, silent, values)
-  if values then
-    return function()
-      if vim.opt_local[option]:get() == values[1] then
-        vim.opt_local[option] = values[2]
-      else
-        vim.opt_local[option] = values[1]
-      end
-      if not silent then
-        ConfigUtil.info("Set " .. option .. " to " .. vim.opt_local[option]:get(), { title = "Option" })
-      end
+--- Create a toggle function for an option or variable.
+--- By default, the scope is assumed to be a buffer-local variable (`b`),
+---
+---@param name string
+---@param scope? string
+---|'bo'  # buffer-local option
+---|'b'   # buffer-local variable
+---|'wo'  # window-local option
+---|'w'   # window-local variable
+---|'o'   # global option
+---|'g'   # global variable
+function ConfigUtil.create_toggle(name, scope)
+  scope = scope or "b"
+  return function()
+    if vim[scope][name] == nil then
+      vim[scope][name] = false
+    else
+      vim[scope][name] = not vim[scope][name]
     end
-  else
-    return function()
-      vim.opt_local[option] = not vim.opt_local[option]:get()
-      if not silent then
-        if vim.opt_local[option]:get() then
-          ConfigUtil.info("Enabled " .. option, { title = "Option" })
-        else
-          ConfigUtil.warn("Disabled " .. option, { title = "Option" })
-        end
-      end
+
+    if vim[scope][name] then
+      ConfigUtil.info("Enabled " .. name, { title = scope })
+    else
+      ConfigUtil.warn("Disabled " .. name, { title = scope })
     end
   end
 end
