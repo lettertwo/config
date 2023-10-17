@@ -76,11 +76,7 @@ endif
 .PHONY: update-brew
 update-brew: brew
 	$(call log,"Updating brew bundle...")
-ifdef MACOS
 	$(call run,brew bundle)
-else
-	$(call run,brew bundle --file=Brewfile-minimal)
-endif
 	$(call log,"Cleaning up...")
 	$(call run,brew cleanup)
 	$(call done)
