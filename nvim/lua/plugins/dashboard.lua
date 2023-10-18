@@ -1,3 +1,5 @@
+local Util = require("util")
+
 ---@alias Position "left" | "center" | "right"
 ---@alias Alignment "left" | "right"
 ---@alias HighlightGroup string | [string, integer, integer][]
@@ -91,6 +93,7 @@ local len = vim.fn.strchars
 ---@param str string
 ---@param start integer
 ---@param count? integer
+---@return string
 local function substr(str, start, count)
   if count == nil then
     count = len(str) - start + 1
@@ -295,20 +298,15 @@ local function embed_section_line(header_line, section_line, winwidth)
   return { type = "text", val = header_val, opts = header_opts }
 end
 
-local section_lazy = {
-  type = "group",
-  val = {
-    { type = "padding", val = 2 },
-  },
-}
+local lazy_button
+local mason_button
 
 return {
   {
     "goolord/alpha-nvim",
     event = "VimEnter",
-    keys = {
-      { "<leader>;", "<cmd>Alpha<CR>", desc = "Dashboard" },
-    },
+    cmd = { "Alpha" },
+    keys = { { "<leader>;", "<cmd>Alpha<CR>", desc = "Dashboard" } },
     opts = function()
       local theta = require("alpha.themes.theta")
       local button = require("alpha.themes.dashboard").button
@@ -321,6 +319,9 @@ return {
             end)
             ~= nil
       end))
+
+      lazy_button = button("L", "鈴" .. " Lazy", "<CMD>Lazy<CR>")
+      mason_button = button("M", "鈴" .. " Mason", "<CMD>Mason<CR>")
 
       ---@type Element[]
       local sections = {
@@ -358,7 +359,8 @@ return {
               "  Configuration",
               "<CMD>Telescope find_files cwd=" .. vim.fn.stdpath("config") .. " prompt_title=Nvim\\ Config\\ Files<CR>"
             ),
-            button("L", "鈴" .. " Lazy", ":Lazy<CR>"),
+            lazy_button,
+            mason_button,
             button("C", "律 Checkhealth", "<CMD>checkhealth<CR>"),
             button("S", "祥 Profile startup", "<CMD>Lazy profile<CR>"),
           },
@@ -367,7 +369,25 @@ return {
         button("n", "  New File", "<CMD>ene!<CR>"),
         button(";", "  Close", "<CMD>Alpha<CR>"),
         button("q", "  Quit", "<CMD>qa<CR>"),
-        section_lazy,
+        {
+          type = "group",
+          val = {
+            { type = "padding", val = 2 },
+            {
+              type = "text",
+              val = function()
+                local stats = require("lazy").stats()
+                if stats.startuptime == 0 then
+                  return ""
+                end
+
+                local ms = (math.floor(stats.startuptime * 100 + 0.5) / 100)
+                return "⚡ Loaded " .. stats.count .. " plugins in " .. ms .. "ms"
+              end,
+              opts = { hl = "SpecialComment", position = "center" },
+            },
+          },
+        },
       }
 
       ---@return Element[]
@@ -421,87 +441,78 @@ return {
       }
     end,
     config = function(_, dashboard)
-      -- close Lazy and re-open when the dashboard is ready
-      if vim.o.filetype == "lazy" then
-        vim.cmd.close()
-        vim.api.nvim_create_autocmd("User", {
-          pattern = "AlphaReady",
-          callback = function()
-            require("lazy").show()
-          end,
-        })
-      end
+      local alpha = require("alpha")
 
-      require("alpha").setup(dashboard)
+      alpha.setup(dashboard)
 
-      -- TODO: Clean this up when alpha is closed
-      vim.api.nvim_create_autocmd("VimResized", {
-        pattern = "*",
-        callback = function()
-          if vim.o.filetype == "alpha" then
-            vim.schedule_wrap(vim.api.nvim_command)("AlphaRedraw")
-          end
-        end,
-      })
-
-      local section_lazy_stats = nil
-      local section_lazy_status = nil
-
-      local function add_lazy_stats()
-        if section_lazy_stats == nil then
-          local stats = require("lazy").stats()
-          local ms = (math.floor(stats.startuptime * 100 + 0.5) / 100)
-          section_lazy_stats = {
-            type = "text",
-            val = "⚡ Loaded " .. stats.count .. " plugins in " .. ms .. "ms",
-            opts = { hl = "SpecialComment", position = "center" },
-          }
-
-          table.insert(section_lazy.val, section_lazy_stats)
+      local render = Util.debounce(16, function()
+        if vim.o.filetype == "alpha" then
+          alpha.redraw()
         end
-      end
+      end)
 
-      local function update_lazy_status()
-        local lazy_status = require("lazy.status")
-        if lazy_status.has_updates() then
-          local updates = lazy_status.updates()
-          if updates == false then
-            return false
-          end
+      local group = vim.api.nvim_create_augroup("Dashboard", { clear = true })
 
-          if section_lazy_status == nil then
-            section_lazy_status = {
-              type = "text",
-              opts = { hl = "SpecialComment", position = "center" },
-            }
-            table.insert(section_lazy.val, section_lazy_status)
-          end
+      vim.api.nvim_create_autocmd("VimResized", { pattern = "*", group = group, callback = render })
+      vim.api.nvim_create_autocmd("User", { pattern = "LazyVimStarted", group = group, callback = render })
 
-          local icon, count = unpack(vim.split(updates, "%s+"))
-          section_lazy_status.val = icon .. "  " .. count .. " updates available"
-          return true
-        end
-      end
+      ---@type 'init' | 'done' | number
+      local mason_update_state = "init"
 
       vim.api.nvim_create_autocmd("User", {
-        pattern = "LazyVimStarted",
-        callback = function()
-          add_lazy_stats()
-          update_lazy_status()
+        group = group,
+        pattern = "LazyLoad",
+        callback = function(event)
+          local lazy_updates = #require("lazy.manage.checker").updated
+          if lazy_updates > 0 and lazy_button ~= nil then
+            local label = "  Lazy"
+            lazy_button.val = label .. " " .. lazy_updates .. " updates available"
+            lazy_button.opts.hl = "SpecialComment"
+            render()
+          end
 
-          if vim.o.filetype == "alpha" then
-            vim.schedule_wrap(vim.api.nvim_command)("AlphaRedraw")
+          if event.data == "mason.nvim" and mason_update_state == "init" then
+            local registry_ok, registry = pcall(require, "mason-registry")
+            if registry_ok then
+              local update_count = 0
+
+              local function render_mason_status()
+                if mason_update_state == 0 then
+                  mason_update_state = "done"
+                  if update_count > 0 then
+                    local label = "  Mason"
+                    mason_button.val = label .. " " .. update_count .. " updates available"
+                    mason_button.opts.hl = "SpecialComment"
+                    render()
+                  end
+                end
+              end
+
+              mason_update_state = 0
+              registry.refresh(function()
+                for _, name in ipairs(registry.get_installed_package_names()) do
+                  -- vim.notify("checking " .. name)
+                  mason_update_state = mason_update_state + 1
+                  registry.get_package(name):check_new_version(function(ok)
+                    mason_update_state = mason_update_state - 1
+                    if ok then
+                      update_count = update_count + 1
+                    end
+                    vim.schedule(render_mason_status)
+                  end)
+                end
+              end)
+            end
           end
         end,
       })
 
       vim.api.nvim_create_autocmd("User", {
-        pattern = "Lazy*",
-        callback = function(e)
-          local updated = update_lazy_status()
-          if vim.o.filetype == "alpha" and updated then
-            vim.schedule_wrap(vim.api.nvim_command)("AlphaRedraw")
-          end
+        group = group,
+        pattern = "AlphaClosed",
+        callback = function()
+          vim.api.nvim_clear_autocmds({ group = group })
+          -- TODO: unload the alpha plugin and config?
         end,
       })
     end,
