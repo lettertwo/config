@@ -12,7 +12,8 @@ return {
   {
     "dstein64/vim-startuptime",
     cmd = "StartupTime",
-    config = function()
+    config = true,
+    init = function()
       vim.g.startuptime_tries = 10
     end,
   },
@@ -48,7 +49,7 @@ return {
   -- package info
   {
     "vuki656/package-info.nvim",
-    cmds = { "PackageInfoShow" },
+    cmd = { "PackageInfoShow" },
     ft = { "json" },
     -- stylua: ignore start
     keys = {
