@@ -3,18 +3,21 @@ local icons = require("config").icons
 local function live_grep_cbd()
   require("telescope.builtin").live_grep({
     cwd = require("telescope.utils").buffer_dir(),
+    prompt_title = "Live Grep (buffer dir)",
   })
 end
 
 local function live_grep_cwd()
   require("telescope.builtin").live_grep({
     cwd = vim.fn.getcwd(),
+    prompt_title = "Live Grep (cwd)",
   })
 end
 
 local function live_grep_files()
   require("telescope.builtin").live_grep({
     grep_open_files = true,
+    prompt_title = "Live Grep (open files)",
   })
 end
 
@@ -60,7 +63,7 @@ return {
       { "<leader>p", "<cmd>Telescope commands<CR>", desc = "Commands" },
       { "<leader>t", "<cmd>Telescope buffers<CR>", desc = "Buffers" },
       { "<leader>bb", "<cmd>Telescope buffers<CR>", "Buffers" },
-      { "<leader>r", "<cmd>Telescope frecency workspace=CWD<CR>", desc = "Recent Files" },
+      { "<leader>r", "<cmd>Telescope frecency prompt_title=Recent(cwd) workspace=CWD<CR>", desc = "Recent Files" },
       { "<leader>/", "<cmd>Telescope current_buffer_fuzzy_find<CR>", desc = "Text in file" },
       { "<leader>*", "<cmd>Telescope grep_string<CR>", desc = "Word under cursor" },
       { "<leader>:", "<cmd>Telescope command_history<cr>", desc = "Command History" },
@@ -70,14 +73,15 @@ return {
       { "<leader>fb", "<cmd>Telescope buffers show_all_buffers=true<cr>", desc = "Buffers (all)" },
       { "<leader>ff", "<cmd>Telescope find_files<cr>", desc = "Find Files (root dir)" },
       { "<leader>fF", "<cmd>Telescope find_files cwd=true<cr>", desc = "Find Files (cwd)" },
-      { "<leader>fr", "<cmd>Telescope frecency workspace=CWD<cr>", desc = "Recent (cwd)" },
-      { "<leader>fR", "<cmd>Telescope frecency<cr>", desc = "Recent (all)" },
+      { "<leader>fr", "<cmd>Telescope frecency prompt_title=Recent(cwd) workspace=CWD<cr>", desc = "Recent (cwd)" },
+      { "<leader>fR", "<cmd>Telescope frecency prompt_Title=Recent(all)<cr>", desc = "Recent (all)" },
       { "<leader>fg", live_grep_files, desc = "Grep in open files" },
       { "<leader>fw", grep_string_files, desc = "Search word in open files" },
 
       -- search
       { "<leader>sa", "<cmd>Telescope autocommands<cr>", desc = "Auto Commands" },
       { "<leader>sb", "<cmd>Telescope current_buffer_fuzzy_find<cr>", desc = "Buffer" },
+      { "<leader>sB", live_grep_files, desc = "Grep (open buffers)" },
       { "<leader>sc", "<cmd>Telescope command_history<cr>", desc = "Command History" },
       { "<leader>sC", "<cmd>Telescope commands<cr>", desc = "Commands" },
       { "<leader>sg", live_grep_cwd, desc = "Grep (cwd dir)" },
