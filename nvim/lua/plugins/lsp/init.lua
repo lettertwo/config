@@ -176,15 +176,6 @@ return {
             },
           },
         },
-        eslint = {
-          filetypes = { "javascript", "javascriptreact", "javascript.jsx", "flowtype", "flowtypereact" },
-          on_attach = function(client, buffer)
-            vim.api.nvim_create_autocmd("BufWritePre", {
-              buffer = buffer,
-              command = "EslintFixAll",
-            })
-          end,
-        },
         ["rust_analyzer"] = {
           checkOnSave = {
             command = "clippy",
