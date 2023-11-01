@@ -228,7 +228,19 @@ function ConfigUtil.service_status()
     end
   end
 
-  -- TODO: add formatters
+  -- add formatters
+  local conform_ok, conform = pcall(require, "conform")
+  if conform_ok then
+    local active = conform.list_formatters(buf)
+    if active then
+      for _, formatter in ipairs(active) do
+        table.insert(status.formatting_providers, formatter)
+      end
+    end
+    if conform.will_fallback_lsp({ bufnr = buf }) then
+      table.insert(status.formatting_providers, "lsp")
+    end
+  end
 
   ---@class ServiceStatus
   return status
