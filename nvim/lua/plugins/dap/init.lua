@@ -14,6 +14,13 @@ return {
     config = function()
       local dap = require("dap")
       local ui = require("dapui")
+      local icons = require("config").icons
+
+      vim.fn.sign_define("DapBreakpoint", { text = icons.dap.Breakpoint, texthl = "DiagnosticInfo" })
+      vim.fn.sign_define("DapBreakpointCondition", { text = icons.dap.BreakpointCondition })
+      vim.fn.sign_define("DapBreakpointRejected", { text = icons.dap.BreakpointRejected, texthl = "DiagnosticError" })
+      vim.fn.sign_define("DapLogPoint", { text = icons.dap.LogPoint })
+      vim.fn.sign_define("DapStopped", { text = icons.dap.Stopped, texthl = "DiagnosticWarn" })
 
       -- dap.set_log_level("TRACE")
 

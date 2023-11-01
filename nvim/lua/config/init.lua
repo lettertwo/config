@@ -68,6 +68,7 @@ local config = {
   ---@class Icons
   icons = {
     separator = "  ",
+    dots = "󰇘",
     prompt = "  ",
     caret = " ",
     multi = " ",
@@ -78,6 +79,14 @@ local config = {
       foldsep = " ",
     },
     eob = " ",
+
+    dap = {
+      Stopped = "󰁕 ",
+      Breakpoint = " ",
+      BreakpointCondition = " ",
+      BreakpointRejected = " ",
+      LogPoint = ".>",
+    },
 
     diagnostics = {
       Error = " ",
@@ -111,10 +120,10 @@ local config = {
     },
     kinds = {
       Array = " ",
-      Boolean = " ",
-      Class = " ",
+      Boolean = "󰨙 ",
+      Class = " ",
       Color = " ",
-      Constant = " ",
+      Constant = "󰏿 ",
       Constructor = " ",
       Container = " ",
       Date = " ",
@@ -125,12 +134,12 @@ local config = {
       Field = "[] ",
       File = " ",
       Folder = " ",
-      Function = " ",
+      Function = "󰊕 ",
       Interface = " ",
       Key = " ",
       Keyword = " ",
       Label = " ",
-      Method = " ",
+      Method = "󰊕 ",
       Module = " ",
       Namespace = " ",
       Null = "ﳠ ",
