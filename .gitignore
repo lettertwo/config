@@ -1,3 +1,4 @@
+.DS_Store
 configstore
 git/user
 iterm2/AppSupport
@@ -18,3 +19,4 @@ github-copilot
 kitty/laserwave.conf
 alacritty/laserwave.yml
 lazygit/state.yml
+githubnext_*
