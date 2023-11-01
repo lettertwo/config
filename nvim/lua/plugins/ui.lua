@@ -24,15 +24,6 @@ return {
   -- better vim.notify
   {
     "rcarriga/nvim-notify",
-    keys = {
-      {
-        "<leader>un",
-        function()
-          require("notify").dismiss({ silent = true, pending = true })
-        end,
-        desc = "Delete all Notifications",
-      },
-    },
     opts = {
       timeout = 3000,
       max_height = function()
@@ -153,11 +144,12 @@ return {
     -- stylua: ignore
     keys = {
       { "<S-Enter>", function() require("noice").redirect(vim.fn.getcmdline()) end, mode = "c", desc = "Redirect Cmdline" },
-      { "<leader>snl", function() require("noice").cmd("last") end, desc = "Noice Last Message" },
-      { "<leader>snh", function() require("noice").cmd("history") end, desc = "Noice History" },
-      { "<leader>sna", function() require("noice").cmd("all") end, desc = "Noice All" },
+      { "<leader>xn", "<cmd>Noice all<cr>", desc = "Noice" },
+      { "<leader>xm", "<cmd>Noice last<cr>", desc = "Noice Last Message" },
+      { "<leader>sn", "<cmd>Noice telescope<cr>", desc= "Noice messages" },
+      { "<leader>un", "<cmd>Noice dismiss<cr>", desc="Dismiss notifications" },
       { "<c-f>", function() if not require("noice.lsp").scroll(4) then return "<c-f>" end end, silent = true, expr = true, desc = "Scroll forward" },
-      { "<c-b>", function() if not require("noice.lsp").scroll(-4) then return "<c-b>" end end, silent = true, expr = true, desc = "Scroll backward"},
+      { "<c-b>", function() if not require("noice.lsp").scroll(-4) then return "<c-b>" end end, silent = true, expr = true, desc = "Scroll backward" },
     },
   },
 }
