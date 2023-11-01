@@ -200,8 +200,8 @@ function ConfigUtil.service_status()
     diagnostic_providers = {},
     formatting_providers = {},
     copilot_active = false,
-    treesitter_active = next(vim.treesitter.highlighter.active[buf]),
-    session_active = vim.g.persisting == 1,
+    treesitter_active = vim.treesitter.highlighter.active[buf] ~= nil and next(vim.treesitter.highlighter.active[buf]),
+    session_active = require("persistence").current ~= nil,
     lazy_updates = require("lazy.status").has_updates(),
     -- TODO: check for mason updates
     -- mason_updates
