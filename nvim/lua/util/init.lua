@@ -223,7 +223,7 @@ function ConfigUtil.service_status()
     if active then
       -- concat the active linters to the list of diagnostic providers
       for _, linter in pairs(active) do
-        table.insert(status.daignostic_providers, linter)
+        table.insert(status.diagnostic_providers, linter)
       end
     end
   end
