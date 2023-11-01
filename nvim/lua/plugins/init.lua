@@ -17,31 +17,6 @@ return {
     end,
   },
 
-  -- Package manager for LSP, DAP, Linting, Formatting, etc.
-  {
-    "williamboman/mason.nvim",
-    cmd = { "Mason", "MasonInstall", "MasonInstallAll", "MasonUpdate" },
-    event = "VeryLazy",
-    config = function()
-      require("mason").setup({
-        ui = {
-          border = "rounded",
-          icons = {
-            package_installed = "✓",
-            package_pending = "➜",
-            package_uninstalled = "✗",
-          },
-        },
-      })
-
-      -- TODO: define user command to install all packages
-      local function install_all()
-        vim.notify_once("Not Implemented!", vim.log.levels.WARN, { title = "MasonInstallAll" })
-      end
-      vim.api.nvim_create_user_command("MasonInstallAll", install_all, { desc = "Install All configured Packages" })
-    end,
-  },
-
   -- session management
   {
     "folke/persistence.nvim",

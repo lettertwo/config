@@ -1,9 +1,10 @@
+local Util = require("util")
+
 return {
   {
     "mfussenegger/nvim-dap",
     event = "VeryLazy",
     dependencies = {
-      "jay-babu/mason-nvim-dap.nvim",
       "jbyuki/one-small-step-for-vimkind",
       "mxsdev/nvim-dap-vscode-js",
       -- "nvim-telescope/telescope-dap.nvim",
@@ -21,9 +22,7 @@ return {
 
       local adapters = require("plugins.dap.adapters")
 
-      require("mason-nvim-dap").setup({
-        ensure_installed = vim.tbl_keys(adapters),
-      })
+      Util.ensure_installed(vim.tbl_keys(adapters))
 
       for _, adapter in pairs(adapters) do
         adapter.setup(dap)

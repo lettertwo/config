@@ -1,3 +1,5 @@
+local Util = require("util")
+
 return {
   {
     "neovim/nvim-lspconfig",
@@ -31,7 +33,6 @@ return {
         event = "BufReadPost",
         config = true,
       },
-      "williamboman/mason-lspconfig.nvim",
       "hrsh7th/cmp-nvim-lsp",
       "b0o/SchemaStore.nvim",
       {
@@ -55,7 +56,7 @@ return {
         config = function(_, opts)
           local actions_preview = require("actions-preview")
           actions_preview.setup(opts)
-          require("util").on_attach(function(client, bufnr)
+          Util.on_attach(function(client, bufnr)
             require("plugins.lsp.keymaps").apply({ bufnr = bufnr, client = client }, {
               { "<leader>.", actions_preview.code_actions, desc = "Show code actions" },
               { "<leader>la", actions_preview.code_actions, desc = "Show code actions" },
@@ -79,12 +80,12 @@ return {
         config = function(_, opts)
           local inlay_hints = require("lsp-inlayhints")
           inlay_hints.setup(opts)
-          require("util").on_attach(function(client, buffer)
+          Util.on_attach(function(client, buffer)
             inlay_hints.on_attach(client, buffer, false)
 
             require("plugins.lsp.keymaps").apply({ buffer = buffer, client = client }, {
               { "<leader>li", inlay_hints.toggle, desc = "Toggle inlay hints" },
-              { "<leader>ul", inlay_hints.toggle, desc = "Toggle inlay hints" },
+              { "<leader>uL", inlay_hints.toggle, desc = "Toggle inlay hints" },
               { "<leader>lI", inlay_hints.reset, desc = "Reset inlay hints" },
             })
           end)
@@ -219,12 +220,10 @@ return {
     config = function(_, opts)
       local lspconfig = require("lspconfig")
 
-
-      require("util").on_attach(function(client, buffer)
+      Util.on_attach(function(client, buffer)
         if client.name == "copilot" then
           return
         end
-        require("plugins.lsp.format").on_attach(client, buffer)
         require("plugins.lsp.keymaps").on_attach(client, buffer)
         require("plugins.lsp.hover").on_attach(client, buffer)
       end)
@@ -252,52 +251,7 @@ return {
         lspconfig[server].setup(vim.tbl_deep_extend("error", default_opts, server_opts))
       end
 
-      require("mason-lspconfig").setup({ ensure_installed = ensure_installed, autoinstall = true })
-    end,
-  },
-
-  -- Linting
-  {
-    "jose-elias-alvarez/null-ls.nvim",
-    event = "BufReadPost",
-    dependencies = { "jayp0521/mason-null-ls.nvim" },
-    config = function()
-      local null_ls = require("null-ls")
-
-      -- https://github.com/jose-elias-alvarez/null-ls.nvim/tree/main/lua/null-ls/builtins
-      local code_actions = null_ls.builtins.code_actions
-      local completion = null_ls.builtins.completion
-      local diagnostics = null_ls.builtins.diagnostics
-      local formatting = null_ls.builtins.formatting
-      local hover = null_ls.builtins.hover
-
-      null_ls.setup({
-        debug = false,
-        sources = {
-          -- TODO: Look into switching back to eslint via null-ls, since eslint-lsp seems to lack many features like
-          -- code actions and formatting.
-          formatting.prettier.with({
-            extra_filetypes = { "toml", "flowtype", "flowtypereact" },
-          }),
-          formatting.black.with({ extrargs = { "fast" } }),
-          formatting.stylua,
-          diagnostics.flake8,
-          code_actions.gitsigns,
-          code_actions.gitrebase,
-          completion.spell,
-          hover.dictionary,
-        },
-      })
-
-      require("mason-null-ls").setup({
-        ensure_installed = {
-          "prettier",
-          "black",
-          "stylua",
-          "flake8",
-        },
-        automatic_installation = true,
-      })
+      Util.ensure_installed(ensure_installed)
     end,
   },
 }
