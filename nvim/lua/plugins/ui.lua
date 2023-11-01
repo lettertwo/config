@@ -64,9 +64,9 @@ return {
   {
     "nvim-treesitter/nvim-treesitter-context",
     event = "BufReadPost",
-    opts = {
-      mode = "topline",
-    },
+    cmds = { "TSContextToggle" },
+    keys = { { "<leader>uC", "<cmd>TSContextToggle<cr>", desc = "Toggle TS Context" } },
+    opts = { mode = "topline" },
   },
 
   -- indent guides for Neovim
