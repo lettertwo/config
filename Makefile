@@ -221,8 +221,14 @@ RUSTC := $(shell command -v rustc 2> /dev/null)
 	$(call run,cargo binstall cargo-nextest --secure --no-confirm)
 	$(call done)
 
+~/.cargo/bin/cargo-watch:
+	$(call err,"cargo-watch not found!")
+	$(call log,"Installing cargo-watch...")
+	$(call run,cargo binstall cargo-watch --secure --no-confirm)
+	$(call done)
+
 .PHONY: rust
-rust: ~/.cargo/bin/rustup ~/.cargo/bin/cargo-binstall ~/.cargo/bin/cargo-nextest
+rust: ~/.cargo/bin/rustup ~/.cargo/bin/cargo-binstall ~/.cargo/bin/cargo-nextest ~/.cargo/bin/cargo-watch
 ifndef RUSTC
 	$(call err,"rustc not found!")
 	$(call log,"Installing rust stable...")
