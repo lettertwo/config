@@ -45,7 +45,7 @@ return {
       if bufname:match("/node_modules/") then
         return
       end
-      return {}
+      return { lsp_fallback = true, timeout_ms = 3000 }
     end,
   },
   init = function()
