@@ -42,8 +42,6 @@ local Util = require("util")
 
 local version, commit = unpack(vim.split(vim.fn.execute("version"):gsub(".*%sv([%w%p]+)\n.*", "%1"), "+"))
 
-local alpha_win = vim.fn.winnr()
-
 -- font: https://famfonts.com/metallica/
 -- generator: https://www.twitchquotes.com/ascii-art-generator
 local header_lines = {
@@ -69,6 +67,20 @@ local header_lines = {
   [[  ⣴⡿⠛⠁                                                                                                          ⠈⠛⢿⣆ ]],
   [[⠠⠚⠁                                                                                                                ⠈⠓]],
 }
+
+-- Get the window that is displaying the alpha buffer.
+---@return integer | nil
+local function alpha_win()
+  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.bo[buf].filetype == "alpha" then
+      for _, win in ipairs(vim.api.nvim_list_wins()) do
+        if vim.api.nvim_win_get_buf(win) == buf then
+          return win
+        end
+      end
+    end
+  end
+end
 
 -- Performs a deep copy of a table.
 ---@see vim.deepcopy
@@ -211,11 +223,11 @@ local function overwrite(line, new_line, start)
   return result
 end
 
--- Center the string in the current window.
+-- Center the string in the given window width.
 ---@param str string
+---@param winwidth number
 ---@return string
-local function center(str)
-  local winwidth = vim.fn.winwidth(alpha_win)
+local function center(str, winwidth)
   local diff = winwidth - len(str)
   local pad = math.floor(math.abs(diff) / 2)
   if diff < 0 then
@@ -307,7 +319,8 @@ return {
     event = "VimEnter",
     cmd = { "Alpha" },
     keys = { { "<leader>;", "<cmd>Alpha<CR>", desc = "Dashboard" } },
-    opts = function()
+    config = function()
+      local alpha = require("alpha")
       local theta = require("alpha.themes.theta")
       local button = require("alpha.themes.dashboard").button
 
@@ -390,10 +403,9 @@ return {
         },
       }
 
+      ---@param winwidth integer
       ---@return Element[]
-      local function create_layout()
-        local winwidth = vim.fn.winwidth(alpha_win)
-
+      local function render_layout(winwidth)
         ---@type Element[]
         local layout = {
           { type = "padding", val = 1 },
@@ -406,7 +418,7 @@ return {
           --- @type FlatText
           local header_line = {
             type = "text",
-            val = center(val),
+            val = center(val, winwidth),
             opts = { hl = header_highlight_group(i, #header_lines) },
           }
           -- After line 11 we can start embedding section lines in the header.
@@ -429,21 +441,6 @@ return {
         end
         return layout
       end
-
-      return {
-        sections = sections,
-        layout = { { type = "group", val = create_layout } },
-        opts = {
-          margin = 0,
-          setup = theta.config.opts.setup, -- Adds an autocmd to refresh on dir change.
-          redraw_on_resize = false,
-        },
-      }
-    end,
-    config = function(_, dashboard)
-      local alpha = require("alpha")
-
-      alpha.setup(dashboard)
 
       local render = Util.debounce(16, function()
         if vim.o.filetype == "alpha" then
@@ -515,6 +512,30 @@ return {
           -- TODO: unload the alpha plugin and config?
         end,
       })
+
+      local win = nil
+
+      local opts = {
+        margin = 0,
+        win = nil,
+        setup = function()
+          require("alpha.themes.theta").config.opts.setup() -- Adds an autocmd to refresh on dir change.
+          win = alpha_win()
+        end,
+        redraw_on_resize = false,
+      }
+
+      local layout = {
+        {
+          type = "group",
+          val = function()
+            local winwidth = vim.api.nvim_win_get_width(win or 0)
+            return render_layout(winwidth)
+          end,
+        },
+      }
+
+      alpha.setup({ sections = sections, layout = layout, opts = opts })
     end,
   },
 }
