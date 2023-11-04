@@ -9,7 +9,9 @@ vim.diagnostic.config({
   update_in_insert = true,
   underline = true,
   severity_sort = true,
-  virtual_text = true,
+  virtual_text = {
+    source = "if_many",
+  },
   virtual_lines = false,
   float = {
     focusable = false,

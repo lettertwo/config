@@ -120,23 +120,29 @@ return {
       },
       routes = {
         {
-          view = "notify",
-          filter = { event = "msg_showmode" },
+          filter = {
+            event = "msg_show",
+            any = {
+              { find = "%d+L, %d+B" },
+              { find = "; after #%d+" },
+              { find = "; before #%d+" },
+            },
+          },
+          view = "mini",
         },
         {
-          filter = { event = "msg_show", kind = "", find = "written" },
-          opts = { skip = true },
-        },
-        {
-          filter = { event = "msg_show", kind = "", find = "lines" },
-          opts = { skip = true },
-        },
-        {
-          filter = { event = "msg_show", kind = "", find = "line" },
-          opts = { skip = true },
-        },
-        {
-          filter = { event = "msg_show", kind = "", find = "change" },
+          filter = {
+            event = "lsp",
+            kind = "progress",
+            any = {
+              { find = "Processing" },
+              { find = "Diagnosing" },
+            },
+            cond = function(message)
+              local client = vim.tbl_get(message.opts, "progress", "client")
+              return client == "lua_ls" -- skip lua-ls progress
+            end,
+          },
           opts = { skip = true },
         },
       },
