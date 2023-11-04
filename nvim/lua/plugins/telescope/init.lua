@@ -100,6 +100,7 @@ return {
       { "<leader>sS", "<cmd>Telescope lsp_dynamic_workspace_symbols<CR>", desc = "Workspace Symbols" },
       { "<leader>sw", grep_string_cwd, desc = "Word (cwd)" },
       { "<leader>sW", grep_string_cbd, desc = "Word (buffer dir)" },
+      { "<leader>sr", "<cmd>Telescope resume<cr>", desc = "Resume last search" },
 
       -- emoji
       { "<leader>see", "<cmd>lua require'telescope.builtin'.symbols({sources={'emoji'}})<CR>", desc = "Emoji 😀" },
