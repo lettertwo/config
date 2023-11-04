@@ -278,11 +278,11 @@ return {
       vim.api.nvim_create_autocmd("WinLeave", {
         callback = function()
           if vim.bo.ft == "TelescopePrompt" and vim.fn.mode() == "i" then
-            vim.schedule(function()
-              if vim.fn.mode() == "i" then
-                vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<C-c>", true, false, true), "i", false)
-              end
-            end)
+            if vim.fn.mode() == "i" then
+              vim.schedule(function()
+                vim.cmd("stopinsert")
+              end)
+            end
           end
         end,
       })
