@@ -150,6 +150,9 @@ end
 --- Create a toggle function for an option or variable.
 --- By default, the scope is assumed to be a buffer-local variable (`b`),
 ---
+--- An optional function may be provided to handle the toggle.
+--- If the handle returns `false`, the toggle will be cancelled.
+---
 ---@param name string
 ---@param scope? string
 ---|'bo'  # buffer-local option
@@ -158,19 +161,24 @@ end
 ---|'w'   # window-local variable
 ---|'o'   # global option
 ---|'g'   # global variable
-function ConfigUtil.create_toggle(name, scope)
+---@param handle? fun(value: boolean): false | nil
+function ConfigUtil.create_toggle(name, scope, handle)
   scope = scope or "b"
   return function()
-    if vim[scope][name] == nil then
-      vim[scope][name] = false
+    local value = vim[scope][name]
+    if value == nil then
+      value = false
     else
-      vim[scope][name] = not vim[scope][name]
+      value = not value
     end
 
-    if vim[scope][name] then
-      ConfigUtil.info("Enabled " .. name, { title = scope })
-    else
-      ConfigUtil.warn("Disabled " .. name, { title = scope })
+    if handle == nil or handle(value) ~= false then
+      vim[scope][name] = value
+      if value then
+        ConfigUtil.info("Enabled " .. name, { title = scope })
+      else
+        ConfigUtil.warn("Disabled " .. name, { title = scope })
+      end
     end
   end
 end
