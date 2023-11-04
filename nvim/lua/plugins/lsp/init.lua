@@ -43,7 +43,7 @@ return {
               use_telescope = true,
             },
             inlay_hints = {
-              auto = false,
+              auto = true,
             },
           },
           server = {
@@ -64,37 +64,9 @@ return {
           end)
         end,
       },
-      {
-        "lvimuser/lsp-inlayhints.nvim",
-        branch = "anticonceal",
-        opts = {
-          inlay_hints = {
-            parameter_hints = {
-              show = false,
-            },
-            type_hints = {
-              show = true,
-            },
-          },
-        },
-        config = function(_, opts)
-          local inlay_hints = require("lsp-inlayhints")
-          inlay_hints.setup(opts)
-          Util.on_attach(function(client, buffer)
-            inlay_hints.on_attach(client, buffer, false)
-
-            require("plugins.lsp.keymaps").apply({ buffer = buffer, client = client }, {
-              { "<leader>li", inlay_hints.toggle, desc = "Toggle inlay hints" },
-              { "<leader>uL", inlay_hints.toggle, desc = "Toggle inlay hints" },
-              { "<leader>lI", inlay_hints.reset, desc = "Reset inlay hints" },
-            })
-          end)
-        end,
-      },
     },
     ---@class PluginLspOpts
     opts = {
-      autoformat = true,
       format = {
         formatting_options = nil,
         timeout_ms = nil,
@@ -111,6 +83,9 @@ return {
               },
               completion = {
                 callSnippet = "Replace",
+              },
+              hint = {
+                enable = true,
               },
             },
           },
@@ -217,6 +192,7 @@ return {
         end
         require("plugins.lsp.keymaps").on_attach(client, buffer)
         require("plugins.lsp.hover").on_attach(client, buffer)
+        require("plugins.lsp.inlay_hint").on_attach(client, buffer)
       end)
 
       local capabilities = vim.lsp.protocol.make_client_capabilities()
