@@ -57,7 +57,7 @@ return {
     event = "BufReadPost",
     cmds = { "TSContextToggle" },
     keys = { { "<leader>uC", "<cmd>TSContextToggle<cr>", desc = "Toggle TS Context" } },
-    opts = { mode = "topline" },
+    opts = { mode = "topline", enable = false },
   },
 
   -- indent guides for Neovim
