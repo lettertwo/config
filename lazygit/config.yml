@@ -1,3 +1,5 @@
+os:
+  editPreset: nvim
 gui:
   authorColors:
     "*": cyan

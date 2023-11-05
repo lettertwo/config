@@ -1,0 +1,27 @@
+os:
+  # editPreset: nvim-remote
+  editPreset: null
+  edit: 'nvim --server "$NVIM" --remote {{filename}}'
+  editAtLine: 'nvim --server "$NVIM" --remote {{filename}}; [ -z "$NVIM" ] || nvim --server "$NVIM" --remote-send ":{{line}}<CR>"'
+  editAtLineAndWait: "nvim +{{line}} {{filename}}"
+  # // No remote-wait support yet. See https://github.com/neovim/neovim/pull/17856
+  editInTerminal: false
+  openDirInEditor: 'nvim --server "$NVIM" --remote {{dir}}'
+  open: 'nvim --server "$NVIM" --remote {{filename}}'
+# keybindings that open the editor.
+# TODO: Ideally, these would all open the current nvim (rather than nesting nvim in term)
+keybinding:
+  universal:
+    confirmInEditor: <a-enter>
+    edit: e
+    openFile: o
+    submitEditorText: <enter>
+  files:
+    commitChangesWithEditor: C
+    openMergeTool: M
+  commits:
+    renameCommitWithEditor: R
+  main:
+    editSelectHunk: E
+  commitMessage:
+    switchToEditor: <c-o>

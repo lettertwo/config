@@ -1,7 +1,7 @@
 ---@param cmd string
 ---@param opts? table
 ---@return fun(size?: number, direction?: string): Terminal
-local function toggle_cmd(cmd, opts)
+local function create_cmd(cmd, opts)
   local term
   return function(size, direction)
     if term == nil then
@@ -18,8 +18,58 @@ local function toggle_cmd(cmd, opts)
         hidden = true, -- prevent toggling by `:ToggleTerm` and friends.
       }))
     end
-    return term:toggle(size, direction)
+    term:open(size, direction)
+    return term
   end
+end
+
+local open_lazygit_cmd
+
+local function open_lazygit()
+  if open_lazygit_cmd ~= nil then
+    return open_lazygit_cmd()
+  end
+
+  local config_dir = vim.fn.resolve(vim.fs.joinpath(require("util").config_path(), "../lazygit"))
+  local lazygit_cmd = "lazygit --use-config-file='"
+    .. vim.fs.joinpath(config_dir, "config.yml")
+    .. ","
+    .. vim.fs.joinpath(config_dir, "config-nvim.yml")
+    .. "'"
+
+  local cmd = create_cmd(lazygit_cmd)
+  open_lazygit_cmd = function()
+    local term = cmd()
+
+    -- add autocmd to close lazygit when a buffer is opened for editing
+    local group = vim.api.nvim_create_augroup("LazygitClose", { clear = true })
+    vim.api.nvim_create_autocmd("BufEnter", {
+      callback = function(args)
+        vim.api.nvim_del_augroup_by_id(group)
+
+        -- Give nvim remote some time to process the edit cmd
+        local timer = vim.loop.new_timer()
+        timer:start(
+          100,
+          0,
+          vim.schedule_wrap(function()
+            if term:is_open() then
+              term:close()
+            end
+            timer:stop()
+            timer:close()
+          end)
+        )
+      end,
+      once = true,
+      group = group,
+      pattern = "*",
+    })
+
+    return term
+  end
+
+  return open_lazygit_cmd()
 end
 
 return {
@@ -30,8 +80,8 @@ return {
     keys = {
       { "<leader>\\\\", "<cmd>ToggleTerm<cr>", desc = "terminal" },
       { "<leader>\\.", "<cmd>ToggleTerm dir=%:p:h<cr>", desc = "terminal at file" },
-      { "<leader>\\g", toggle_cmd("lazygit"), desc = "lazygit" },
-      { "<leader>\\n", toggle_cmd("node"), desc = "node repl" },
+      { "<leader>\\g", open_lazygit, desc = "lazygit" },
+      { "<leader>\\n", create_cmd("node"), desc = "node repl" },
       -- remaps
       { "\\", "<leader>\\\\", remap = true, desc = "terminal" },
       { "<leader>gg", "<leader>\\g", remap = true, desc = "lazygit" },
