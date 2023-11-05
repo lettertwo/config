@@ -153,13 +153,13 @@ keybinding:
     prevTab: "<left>"
     nextScreenMode: +
     prevScreenMode: _
-    undo: z
-    redo: <c-z>
+    undo: u
+    redo: <c-r>
     filteringMenu: <c-s>
     diffingMenu: W
     diffingMenu-alt: <c-e>
     copyToClipboard: <c-o>
-    openRecentRepos: <c-r>
+    openRecentRepos: null
     submitEditorText: <enter>
     extrasMenu: "@"
     toggleWhitespaceInDiffView: <c-w>
