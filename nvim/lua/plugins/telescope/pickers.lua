@@ -27,9 +27,13 @@ function M.quick_picker(opts)
         ["<C-k>"] = telescope_actions.move_selection_previous,
         ["<C-n>"] = telescope_actions.cycle_history_next,
         ["<C-p>"] = telescope_actions.cycle_history_prev,
+        -- FIXME: These bindings only really work for file locations,
+        -- so they shouldn't be enabled for every picker by default.
+        -- The same goes for the other modes and pickers.
         ["<c-q>"] = actions.send_to_quickfix + actions.open_quickfix,
         ["<c-l>"] = actions.send_to_loclist + actions.open_loclist,
         ["<C-t>"] = trouble.smart_open_with_trouble,
+        ["<C-e>"] = actions.open_in_file_explorer,
         ["<M-q>"] = false,
       },
       n = {
@@ -40,6 +44,7 @@ function M.quick_picker(opts)
         ["<c-q>"] = actions.send_to_quickfix + actions.open_quickfix,
         ["<c-l>"] = actions.send_to_loclist + actions.open_loclist,
         ["<C-t>"] = trouble.smart_open_with_trouble,
+        ["<C-e>"] = actions.open_in_file_explorer,
         ["<M-q>"] = false,
       },
     },
@@ -62,6 +67,7 @@ function M.slow_picker(opts)
         ["<c-q>"] = actions.send_to_quickfix + actions.open_quickfix,
         ["<c-l>"] = actions.send_to_loclist + actions.open_loclist,
         ["<C-t>"] = trouble.open_with_trouble,
+        ["<C-e>"] = actions.open_in_file_explorer,
         ["<M-q>"] = false,
       },
       n = {
@@ -78,6 +84,7 @@ function M.slow_picker(opts)
         ["<c-q>"] = actions.send_to_quickfix + actions.open_quickfix,
         ["<c-l>"] = actions.send_to_loclist + actions.open_loclist,
         ["<C-t>"] = trouble.open_with_trouble,
+        ["<C-e>"] = actions.open_in_file_explorer,
         ["<M-q>"] = false,
       },
     },
@@ -111,6 +118,7 @@ function M.git_hunks(opts)
 
   require("telescope.pickers")
     .new(
+      ---@diagnostic disable-next-line: param-type-mismatch
       M.slow_picker({
         finder = require("telescope.finders").new_oneshot_job(cmd, {
           entry_maker = function(line)

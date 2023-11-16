@@ -56,44 +56,61 @@ local function send_to_qf_or_loclist(prompt_bufnr, target)
   end
 end
 
-return transform_mod({
-  send_to_quickfix = function(prompt_bufnr)
-    send_to_qf_or_loclist(prompt_bufnr)
-  end,
-  send_to_loclist = function(prompt_bufnr)
-    send_to_qf_or_loclist(prompt_bufnr, "loclist")
-  end,
-  open_quickfix = function()
-    if vim.fn.exists(":TroubleToggle") then
-      vim.cmd([[TroubleToggle quickfix]])
+local Actions = {}
+
+function Actions.send_to_quickfix(prompt_bufnr)
+  send_to_qf_or_loclist(prompt_bufnr)
+end
+
+function Actions.send_to_loclist(prompt_bufnr)
+  send_to_qf_or_loclist(prompt_bufnr, "loclist")
+end
+
+function Actions.open_quickfix()
+  if vim.fn.exists(":TroubleToggle") then
+    vim.cmd([[TroubleToggle quickfix]])
+  else
+    vim.cmd([[copen]])
+  end
+end
+
+function Actions.open_loclist()
+  if vim.fn.exists(":TroubleToggle") then
+    vim.cmd([[TroubleToggle loclist]])
+  else
+    vim.cmd([[lopen]])
+  end
+end
+
+function Actions.delete_buffer(prompt_bufnr)
+  local current_picker = action_state.get_current_picker(prompt_bufnr)
+  current_picker:delete_selection(function(selection)
+    local force = vim.api.nvim_buf_get_option(selection.bufnr, "buftype") == "terminal"
+    local bufremove_ok, bufremove = pcall(require, "mini.bufremove")
+    if bufremove_ok and bufremove then
+      local ok = pcall(bufremove.delete, selection.bufnr, force)
+      return ok
     else
-      vim.cmd([[copen]])
+      local ok = pcall(vim.api.nvim_buf_delete, selection.bufnr, { force = force })
+      return ok
     end
-  end,
-  open_loclist = function()
-    if vim.fn.exists(":TroubleToggle") then
-      vim.cmd([[TroubleToggle loclist]])
-    else
-      vim.cmd([[lopen]])
-    end
-  end,
-  delete_buffer = function(prompt_bufnr)
-    local current_picker = action_state.get_current_picker(prompt_bufnr)
-    current_picker:delete_selection(function(selection)
-      local force = vim.api.nvim_buf_get_option(selection.bufnr, "buftype") == "terminal"
-      local bufremove_ok, bufremove = pcall(require, "mini.bufremove")
-      if bufremove_ok and bufremove then
-        local ok = pcall(bufremove.delete, selection.bufnr, force)
-        return ok
-      else
-        local ok = pcall(vim.api.nvim_buf_delete, selection.bufnr, { force = force })
-        return ok
-      end
-    end)
-  end,
-  open_in_diffview = function(prompt_bufnr)
-    local entry = action_state.get_selected_entry()
-    telescope_actions.close(prompt_bufnr)
-    vim.cmd(("DiffviewOpen %s"):format(entry.value))
-  end,
-})
+  end)
+end
+
+function Actions.open_in_diffview(prompt_bufnr)
+  local entry = action_state.get_selected_entry()
+  telescope_actions.close(prompt_bufnr)
+  vim.cmd(("DiffviewOpen %s"):format(entry.value))
+end
+
+function Actions.open_in_file_explorer(prompt_bufnr)
+  local entry = action_state.get_selected_entry()
+  telescope_actions.close(prompt_bufnr)
+
+  local ok, MiniFiles = pcall(require, "mini.files")
+  if ok and MiniFiles then
+    MiniFiles.open(entry.filename or entry.value)
+  end
+end
+
+return transform_mod(Actions)
