@@ -104,6 +104,14 @@ function ConfigUtil.opts(name)
   return Plugin.values(plugin, "opts", false)
 end
 
+function ConfigUtil.config_path()
+  local config = vim.fn.stdpath("config") or "~/.config/nvim"
+  if type(config) == "table" then
+    config = config[1]
+  end
+  return config
+end
+
 -- returns the root directory based on:
 -- * lsp workspace folders
 -- * lsp root_dir
