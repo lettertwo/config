@@ -10,15 +10,6 @@ return {
     opts = {},
   },
 
-  -- search/replace in multiple files
-  {
-    "windwp/nvim-spectre",
-    -- stylua: ignore
-    keys = {
-      { "<leader>sR", function() require("spectre").open() end, desc = "Replace in files (Spectre)" },
-    },
-  },
-
   -- easily jump to any location and enhanced /, ?, f, t, F, T motions
   {
     "folke/flash.nvim",
