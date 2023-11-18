@@ -233,8 +233,8 @@ return {
       use_diagnostic_signs = true,
       auto_jump = { "lsp_definitions", "lsp_references", "lsp_type_definitions", "lsp_implementations" },
       action_keys = {
-        jump = { "<S-CR>" },
-        jump_close = { "<CR>" },
+        jump = { "<CR>" },
+        jump_close = { "<S-CR>" },
       },
     },
     keys = {
