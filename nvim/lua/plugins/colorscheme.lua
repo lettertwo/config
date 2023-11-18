@@ -1,15 +1,14 @@
 return {
   {
+    name = "laserwave.nvim",
     dev = true,
     priority = 1000,
     dir = "~/.local/share/laserwave.nvim",
-    name = "laserwave.nvim",
     dependencies = { "rktjmp/lush.nvim", "rktjmp/shipwright.nvim" },
-    config = function()
-      vim.g.colors_name = "laserwave"
-      vim.opt.termguicolors = true
-      vim.opt.background = "dark"
-      vim.cmd([[ colorscheme laserwave ]])
+    opts = { dev = vim.fn.getcwd():match("laserwave.nvim") ~= nil },
+    config = function(_, opts)
+      require("laserwave").setup(opts)
+      vim.cmd.colorscheme("laserwave")
     end,
   },
 }
