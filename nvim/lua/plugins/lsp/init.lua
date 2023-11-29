@@ -36,20 +36,57 @@ return {
       "hrsh7th/cmp-nvim-lsp",
       "b0o/SchemaStore.nvim",
       {
-        "simrat39/rust-tools.nvim",
-        opts = {
-          tools = {
-            runnables = {
-              use_telescope = true,
+        "mrcjkb/rustaceanvim",
+        ft = { "rust" },
+        init = function()
+          vim.g.rustaceanvim = {
+            -- Plugin configuration
+            tools = {
+              hover_actions = {
+                replace_builtin_hover = false,
+              },
             },
-            inlay_hints = {
-              auto = true,
+
+            -- LSP configuration
+            server = {
+              on_attach = function(client, buffer)
+                -- stylua: ignore
+                require("plugins.lsp.keymaps").apply({buffer = buffer, client = client}, {
+                  { "<leader>le", "<cmd>RustLsp expandMacro<cr>", desc = "Expand macro" },
+                  { "<leader>lp", "<cmd>RustLsp parentModule<cr>", desc = "Parent module" },
+                  { "<leader>lk", "<cmd>RustLsp moveItem up<cr>", desc = "Move item up" },
+                  { "<leader>lj", "<cmd>RustLsp moveItem down<cr>", desc = "Move item down" },
+                  { "<leader>lJ", "<cmd>RustLsp joinLines<cr>", desc = "Join lines" },
+
+                  { "<leader>dr", "<cmd>RustLsp debuggables<cr>", desc = "Debuggables" },
+
+                  { "<leader>Cr", "<cmd>RustLsp runnables<cr>", desc = "Runnables" },
+                  { "<leader>Co", "<cmd>RustLsp openCargo<cr>", desc = "Open cargo.toml" },
+
+                  -- TODO: mappings for these:
+                  -- { "<leader>Cg", "<cmd>RustLsp crateGraph bmp<cr>", desc = "View crate graph" },
+                  -- { "<leader>l/", "<cmd>RustLsp ssr<cr>", desc = "Structural search replace" },
+                  -- { "<leader>", "<cmd>RustLsp syntaxTree<cr>", desc = "View syntax tree" },
+                  -- { "<leader>", "<cmd>RustLsp explainError<cr>", desc = "Explain errors" },
+                  -- { "<leader>", "<cmd>RustLsp hover actions<cr>", desc = "Hover actions" },
+                  -- { "<leader>", "<cmd>RustLsp hover range<cr>", desc = "Hover range" },
+                  -- { "<leader>", "<cmd>RustLsp hover rebuildProcMacros<cr>", desc = "Rebuild proc macros" },
+                })
+              end,
+              standalone = false,
+              settings = {
+                ["rust_analyzer"] = {
+                  checkOnSave = {
+                    command = "clippy",
+                  },
+                },
+              },
             },
-          },
-          server = {
-            standalone = false,
-          },
-        },
+
+            -- DAP configuration
+            -- dap = {},
+          }
+        end,
       },
       {
         "aznhe21/actions-preview.nvim",
@@ -151,31 +188,7 @@ return {
             },
           },
         },
-        ["rust_analyzer"] = {
-          checkOnSave = {
-            command = "clippy",
-          },
-          on_attach = function(client, buffer)
-            local rt = require("rust-tools")
-
-            -- stylua: ignore
-            require("plugins.lsp.keymaps").apply({buffer = buffer, client = client}, {
-              { "<leader>le", rt.expand_macro.expand_macro, desc = "Expand macro" },
-              { "<leader>lp", rt.parent_module.parent_module, desc = "Parent module" },
-              -- { "<leader>lu", rt.move_item.move_item, desc = "Move item up" },
-              -- { "<leader>ld", rt.move_item.move_item, desc = "Move item down" },
-              { "<leader>lj", rt.join_lines.join_lines, desc = "Join lines" },
-              { "<leader>l/", rt.ssr.ssr, desc = "Structural search replace" },
-
-              { "<leader>dr", rt.debuggables.debuggables, desc = "Debuggables" },
-
-              { "<leader>cr", rt.runnables.runnables, desc = "Runnables" },
-              { "<leader>co", rt.open_cargo_toml.open_cargo_toml, desc = "Open cargo.toml" },
-              -- { "<leader>cg", function() rt.crate_graph.view_crate_graph('bmp') end, desc = "View crate graph" },
-            })
-          end,
-        },
-
+        ["rust_analyzer"] = false, -- NOTE: configured by rustaceanvim
         "html",
         "cssls",
         "pyright",
@@ -215,7 +228,9 @@ return {
         if server ~= "flow" then -- apparently flow is not a valid lsp server name (any more?).
           table.insert(ensure_installed, server)
         end
-        lspconfig[server].setup(vim.tbl_deep_extend("error", default_opts, server_opts))
+        if server_opts ~= false then
+          lspconfig[server].setup(vim.tbl_deep_extend("error", default_opts, server_opts))
+        end
       end
 
       Util.ensure_installed(ensure_installed)

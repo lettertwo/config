@@ -1,3 +1,4 @@
+local Util = require("util")
 local filetypes = require("config").filetypes
 
 return {
@@ -34,10 +35,11 @@ return {
     "echasnovski/mini.comment",
     event = "BufReadPost",
     config = function(_, opts)
-      local ok, ts_context_commentstring = pcall(require, "ts_context_commentstring")
-      if ok and ts_context_commentstring then
+      if Util.has("nvim-ts-context-commentstring") then
         opts.options = vim.tbl_extend("force", opts.options or {}, {
-          custom_commentstring = ts_context_commentstring.calculate_commentstring,
+          custom_commentstring = function()
+            return require("ts_context_commentstring").calculate_commentstring() or vim.bo.commentstring
+          end,
         })
       end
 
@@ -123,7 +125,6 @@ return {
         additional_vim_regex_highlighting = false,
       },
       endwise = { enable = true },
-      context_commentstring = { enable = true, enable_autocmd = false },
       ensure_installed = {
         "bash",
         "c",
@@ -186,6 +187,11 @@ return {
         },
       },
     },
+    init = function()
+      -- Skip backwards compatibility check
+      -- (see https://github.com/JoosepAlviste/nvim-ts-context-commentstring#getting-started)
+      vim.g.skip_ts_context_commentstring_module = true
+    end,
     ---@param opts TSConfig
     config = function(_, opts)
       local parsers = require("nvim-treesitter.parsers")
@@ -194,6 +200,8 @@ return {
       vim.treesitter.language.register("tsx", "flowtype")
 
       require("nvim-treesitter.configs").setup(opts)
+      ---@diagnostic disable-next-line: missing-fields
+      require("ts_context_commentstring").setup({ enable_autocmd = false })
     end,
   },
 
