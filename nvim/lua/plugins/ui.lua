@@ -56,7 +56,16 @@ return {
     "nvim-treesitter/nvim-treesitter-context",
     event = "BufReadPost",
     cmds = { "TSContextToggle" },
-    keys = { { "<leader>uC", "<cmd>TSContextToggle<cr>", desc = "Toggle TS Context" } },
+    keys = {
+      { "<leader>uC", "<cmd>TSContextToggle<cr>", desc = "Toggle TS Context" },
+      {
+        "gC",
+        function()
+          require("treesitter-context").go_to_context()
+        end,
+        desc = "Go to treesitter context",
+      },
+    },
     opts = { mode = "topline", enable = false },
   },
 
@@ -86,6 +95,12 @@ return {
         border = "both",
         indent_at_cursor = true,
         try_as_border = true,
+      },
+      mappings = {
+        object_scope = "ii",
+        object_scope_with_border = "ai",
+        goto_top = "[i",
+        goto_bottom = "]i",
       },
     },
     config = function(_, opts)
