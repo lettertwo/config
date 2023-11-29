@@ -89,7 +89,23 @@ return {
     "folke/todo-comments.nvim",
     cmd = { "TodoTrouble", "TodoTelescope" },
     event = "BufReadPost",
-    config = true,
+    opts = {
+      -- highlighting for rust todo/unimplemented macros:
+      -- From https://github.com/folke/todo-comments.nvim/issues/186#issuecomment-1592342384
+      keywords = {
+        TODO = { alt = { "todo", "unimplemented" } },
+      },
+      highlight = {
+        pattern = {
+          [[.*<(KEYWORDS)\s*:]],
+          [[.*<(KEYWORDS)\s*!\(]],
+        },
+        comments_only = false,
+      },
+      search = {
+        pattern = [[\b(KEYWORDS)(:|!\()]],
+      },
+    },
     -- stylua: ignore
     keys = {
       { "]t", function() require("todo-comments").jump_next() end, desc = "Next todo comment" },
