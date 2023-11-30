@@ -85,20 +85,25 @@ fi
 # Ensure path arrays do not contain duplicates.
 typeset -gU cdpath fpath mailpath path
 
-# Set the list of directories that Zsh searches for programs.
-# We include common node_modules/.bin locations for convenience.
-path=(
+# Run path_helper if available (macOS)
+# NOTE: this is normally run in /etc/profile,
+# but since we're not loading global configs,
+# We're doing this here to ensure that 
+# paths defined in /etc/paths.d are included.
+if [ -x /usr/libexec/path_helper ]; then
+  eval `/usr/libexec/path_helper -s`
+fi
+
+# Prepend the list of directories that Zsh searches for programs.
+# We include project-local (e.g., node_modules)
+# and managed (e.g., yarn, cargo) bin locations for convenience.
+path[1,0]=(
   {.,$HOME}/node_modules/.bin
   $HOME/.local/{bin,sbin}
   $HOME/.cargo/bin
   $HOME/.yarn/bin
   /usr/local/share/npm/bin
-  $HOME/{bin,sbin}
-  /usr/local/{bin,sbin}
-  /usr/{bin,sbin}
-  /{bin,sbin}
-  /opt/X11/bin
 )
-fpath+=$XDG_STATE_HOME/zsh/completions
 
+fpath+=$XDG_STATE_HOME/zsh/completions
 # export ZPROF=true
