@@ -135,10 +135,11 @@ return {
       { "<bs>", desc = "Shrink selection", mode = "x" },
     },
     ---@type TSConfig
+    ---@diagnostic disable-next-line: missing-fields
     opts = {
       highlight = {
         enable = true, -- false will disable the whole extension
-        additional_vim_regex_highlighting = false,
+        additional_vim_regex_highlighting = { "markdown" },
       },
       endwise = { enable = true },
       ensure_installed = {
@@ -322,5 +323,19 @@ return {
         })
       end
     end,
+  },
+
+  -- markdown preview
+  {
+    "iamcco/markdown-preview.nvim",
+    cmd = { "MarkdownPreviewToggle", "MarkdownPreview", "MarkdownPreviewStop" },
+    ft = { "markdown" },
+    keys = {
+      { "gm", "<cmd>MarkdownPreviewToggle<CR>", desc = "Markdown preview" },
+    },
+    build = function()
+      vim.fn["mkdp#util#install"]()
+    end,
+    -- init = function() end,
   },
 }
