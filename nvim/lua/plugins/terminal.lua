@@ -2,21 +2,29 @@
 ---@param opts? table
 ---@return fun(size?: number, direction?: string): Terminal
 local function create_cmd(cmd, opts)
+  opts = vim.tbl_extend(
+    "force",
+    {
+      on_open = function()
+        vim.cmd("startinsert!")
+      end,
+      on_close = function()
+        vim.cmd("startinsert!")
+      end,
+    },
+    opts or {},
+    {
+
+      cmd = cmd,
+      hidden = true, -- prevent toggling by `:ToggleTerm` and friends.
+    }
+  )
+
   local term
   return function(size, direction)
     if term == nil then
       local Terminal = require("toggleterm.terminal").Terminal
-      term = Terminal:new(vim.tbl_extend("force", opts or {
-        on_open = function()
-          vim.cmd("startinsert!")
-        end,
-        on_close = function()
-          vim.cmd("startinsert!")
-        end,
-      }, {
-        cmd = cmd,
-        hidden = true, -- prevent toggling by `:ToggleTerm` and friends.
-      }))
+      term = Terminal:new(opts)
     end
     term:open(size, direction)
     return term
