@@ -33,6 +33,20 @@ return {
   },
 
   {
+    "lmburns/lf.nvim",
+    dependencies = { "toggleterm.nvim" },
+    cmd = "Lf",
+    -- stylua: ignore start
+    keys = {
+      { "<leader>fl", "<cmd>Lf<CR>", desc = "File explorer (lf)" },
+    },
+    -- stylua: ignore end
+    opts = {
+      border = "rounded",
+    },
+  },
+
+  {
     "echasnovski/mini.files",
     version = false,
     opts = {

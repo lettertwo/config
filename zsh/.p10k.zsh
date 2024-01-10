@@ -40,6 +40,7 @@
     pyenv                   # python environment (https://github.com/pyenv/pyenv)
     newline                 # \n
     # =========================[ Line #1 ]=========================
+    lf
     dir                     # current directory
     vcs                     # git status
     # =========================[ Line #2 ]=========================

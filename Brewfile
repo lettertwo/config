@@ -34,6 +34,7 @@ brew "dust" # bootandy/dust, replacement for du
 brew "duf" # muesli/duf, replacement for df
 brew "bottom" # ClementTsang/bottom, replacement for top
 brew "zoxide" # ajeetdsouza/zoxide, smarter cd
+brew "lf" # gokcehan/lf, terminal file manager
 
 # misc. dev tooling
 brew "watchman"
