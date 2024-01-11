@@ -42,7 +42,7 @@ endif
 
 ### laserwave
 
-~/.local/share/laserwave.nvim:
+~/.local/share/laserwave.nvim: ~/.local/share
 	$(call err,"laserwave not found!")
 	$(call log,"Installing laserwave...")
 	$(call run,git clone https://github.com/lettertwo/laserwave.nvim.git $@)
@@ -54,10 +54,10 @@ update-laserwave: ~/.local/share/laserwave.nvim
 	$(call run,cd ~/.local/share/laserwave.nvim && git pull)
 	$(call done)
 
-~/.config/kitty/laserwave.conf: ~/.config/kitty
+~/.config/kitty/laserwave.conf: ~/.local/share/laserwave.nvim ~/.config/kitty
 	$(call run,ln -sf "$$HOME/.local/share/laserwave.nvim/dist/kitty/laserwave.conf" "$$HOME/.config/kitty/laserwave.conf")
 
-~/.config/alacritty/laserwave.yml: ~/.config/alacritty
+~/.config/alacritty/laserwave.yml: ~/.local/share/laserwave.nvim ~/.config/alacritty
 	$(call run,ln -sf "$$HOME/.local/share/laserwave.nvim/dist/alacritty/laserwave.yml" "$$HOME/.config/alacritty/laserwave.yml")
 
 ### homebrew
