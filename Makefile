@@ -60,6 +60,9 @@ update-laserwave: ~/.local/share/laserwave.nvim
 ~/.config/alacritty/laserwave.yml: ~/.local/share/laserwave.nvim ~/.config/alacritty
 	$(call run,ln -sf "$$HOME/.local/share/laserwave.nvim/dist/alacritty/laserwave.yml" "$$HOME/.config/alacritty/laserwave.yml")
 
+~/.config/bat/themes/laserwave.tmTheme: ~/.local/share/laserwave.nvim ~/.config/bat/themes
+	$(call run,ln -sf "$$HOME/.local/share/laserwave.nvim/dist/laserwave.tmTheme" "$$HOME/.config/bat/themes/laserwave.tmTheme")
+
 ### homebrew
 
 BREW := $(shell command -v brew 2> /dev/null)
@@ -98,6 +101,25 @@ endif
 update-sheldon: sheldon
 	$(call log,"Updating sheldon plugins...")
 	$(call run,sheldon lock)
+	$(call done)
+
+### bat
+
+BAT := $(shell command -v bat 2> /dev/null)
+
+.PHONY: bat
+bat: brew
+ifndef BAT
+	$(call err,"bat not found!")
+	$(call log,"Installing bat...")
+	$(call run,brew install bat)
+	$(call done)
+endif
+
+.PHONY: update-bat
+update-bat: bat ~/.config/bat/themes/laserwave.tmTheme
+	$(call log,"Updating bat...")
+	$(call run,bat cache --build)
 	$(call done)
 
 ### neovim
@@ -272,5 +294,6 @@ update: update-config \
 	update-laserwave \
 	update-brew \
 	update-sheldon \
+	update-bat \
 	update-nvim \
 	update-kitty
