@@ -16,7 +16,7 @@ local function map_split(direction)
         new_target_window = vim.api.nvim_get_current_win()
       end)
       MiniFiles.set_target_window(new_target_window)
-      MiniFiles.go_in()
+      MiniFiles.go_in({ close_on_file = true })
       MiniFiles.close()
     end
   end
@@ -64,6 +64,10 @@ function M.open_buffer()
       MiniFiles.open(buf_name, false)
     end
   end
+end
+
+function M.close()
+  return MiniFiles.close()
 end
 
 return M
