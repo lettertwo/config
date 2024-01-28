@@ -23,9 +23,9 @@ end
 
 -- Accept copilot suggestion if present.
 local function confirm_copilot_or_fallback(fallback)
-  local copilot_status_ok, copilot_keys = pcall(vim.fn["copilot#Accept"], "")
-  if copilot_status_ok and copilot_keys ~= "" then
-    return vim.api.nvim_feedkeys(copilot_keys, "i", true)
+  local copilot_ok, copilot = pcall(require, "copilot.suggestion")
+  if copilot_ok and copilot and copilot.is_visible() then
+    return copilot.accept()
   end
   fallback()
 end
@@ -59,12 +59,15 @@ return {
     },
   },
   {
-    "github/copilot.vim",
+    "zbirenbaum/copilot.lua",
+    cmd = "Copilot",
     event = "InsertEnter",
-    init = function()
-      -- Accepting copilot suggestions is managged via nvim-cmp plugins.
-      vim.g.copilot_no_tab_map = true
-      vim.g.copilot_assume_mapped = true
+    config = function()
+      require("copilot").setup({
+        suggestion = {
+          auto_trigger = true,
+        },
+      })
     end,
   },
   {
