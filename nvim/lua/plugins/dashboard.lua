@@ -2,7 +2,7 @@ local Util = require("util")
 
 ---@alias Position "left" | "center" | "right"
 ---@alias Alignment "left" | "right"
----@alias HighlightGroup string | [string, integer, integer][]
+---@alias Higroup string | [string, integer, integer][]
 ---@alias Element Padding | Text | Button | Group
 
 ---@class Padding
@@ -12,12 +12,12 @@ local Util = require("util")
 ---@class Text
 ---@field type "text"
 ---@field val string | string[] | fun(): string | string[]
----@field opts { position: Position, hl: HighlightGroup }
+---@field opts { position: Position, hl: Higroup }
 
 ---@class FlatText
 ---@field type "text"
 ---@field val string
----@field opts { position: Position, hl: HighlightGroup }
+---@field opts { position: Position, hl: Higroup }
 
 ---@class Button
 ---@field type "button"
@@ -27,7 +27,7 @@ local Util = require("util")
 
 ---@class ButtonOpts
 ---@field position Position
----@field hl HighlightGroup
+---@field hl Higroup
 ---@field shortcut string
 ---@field align_shortcut Alignment
 ---@field hl_shortcut string
@@ -129,18 +129,82 @@ local function pad_right(str, n)
   return str .. string.rep(" ", n)
 end
 
--- Find a value in `tbl` that passes the `predicate`.
----@generic T: any
----@param tbl table<any, T>
----@param predicate fun(value: T): boolean
----@return T | nil
-local function find(tbl, predicate)
-  for _, v in ipairs(tbl) do
-    if predicate(v) == true then
-      return v
+---@param fn string
+---@return string
+local function get_extension(fn)
+  local match = fn:match("^.+(%..+)$")
+  local ext = ""
+  if match ~= nil then
+    ext = match:sub(2)
+  end
+  return ext
+end
+
+---@param fn string
+---@return string, string
+local function icon(fn)
+  local nwd = require("nvim-web-devicons")
+  local ext = get_extension(fn)
+  return nwd.get_icon(fn, ext, { default = true })
+end
+
+---@param filepath string
+---@param shortcut string
+---@param display? string
+---@return Button
+local function file_button(filepath, shortcut, display)
+  display = display or filepath
+  local ico_txt
+  local fb_hl = {}
+
+  local ico, hl = icon(filepath)
+  table.insert(fb_hl, { hl, 0, #ico })
+
+  ico_txt = ico .. "  "
+  local file_button_el = require("alpha.themes.dashboard").button(
+    shortcut,
+    ico_txt .. display,
+    "<cmd>e " .. vim.fn.fnameescape(filepath) .. " <CR>"
+  )
+  local fn_start = display:match(".*[/\\]")
+  if fn_start ~= nil then
+    table.insert(fb_hl, { "Comment", #ico_txt - 2, #fn_start + #ico_txt })
+  end
+  file_button_el.opts.hl = fb_hl
+  return file_button_el
+end
+
+local MRU_OPTS = {
+  ignore_extensions = { "gitcommit" },
+  show = 10,
+  width = 44,
+}
+
+---@return Element[]
+local function mru()
+  local oldfiles = {}
+  for _, filepath in pairs(vim.v.oldfiles) do
+    if #oldfiles >= MRU_OPTS.show then
+      break
+    end
+    local readable = vim.fn.filereadable(filepath) == 1
+
+    local ignore = string.find(filepath, "COMMIT_EDITMSG")
+      or vim.tbl_contains(MRU_OPTS.ignore_extensions, get_extension(filepath))
+
+    if readable and not ignore then
+      oldfiles[#oldfiles + 1] = filepath
     end
   end
-  return nil
+
+  local val = {}
+  for i, filepath in ipairs(oldfiles) do
+    local display = Util.smart_shorten_path(filepath, { target_width = MRU_OPTS.width })
+    local shortcut = tostring(i - 1)
+    val[i] = file_button(filepath, shortcut, display)
+  end
+
+  return val
 end
 
 -- Given an index and a count, generates a highlight
@@ -321,24 +385,35 @@ return {
     keys = { { "<leader>;", "<cmd>Alpha<CR>", desc = "Dashboard" } },
     config = function()
       local alpha = require("alpha")
-      local theta = require("alpha.themes.theta")
       local button = require("alpha.themes.dashboard").button
-
-      ---@type Group
-      local section_mru = assert(find(theta.config.layout, function(tbl)
-        return tbl.type == "group"
-          and find(tbl.val, function(v)
-              return v.type == "text" and v.val == "Recent files"
-            end)
-            ~= nil
-      end))
 
       lazy_button = button("L", "鈴" .. " Lazy", "<CMD>Lazy<CR>")
       mason_button = button("M", "鈴" .. " Mason", "<CMD>Mason<CR>")
 
       ---@type Element[]
       local sections = {
-        section_mru,
+        {
+          type = "group",
+          val = {
+            {
+              type = "text",
+              val = "Recent files",
+              opts = {
+                hl = "SpecialComment",
+                shrink_margin = false,
+                position = "center",
+              },
+            },
+            { type = "padding", val = 1 },
+            {
+              type = "group",
+              val = mru,
+              opts = {
+                shrink_margin = false,
+              },
+            },
+          },
+        },
         { type = "padding", val = 2 },
         {
           type = "group",
