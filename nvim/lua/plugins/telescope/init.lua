@@ -1,4 +1,5 @@
 local icons = require("config").icons
+local Util = require("util")
 
 local function live_grep_cbd()
   require("telescope.builtin").live_grep({
@@ -153,6 +154,15 @@ return {
           selection_caret = icons.caret,
           multi_icon = icons.multi,
           color_devicons = true,
+          path_display = function(opts, path)
+            local status = require("telescope.state").get_status(vim.api.nvim_get_current_buf())
+            local target_width = vim.api.nvim_win_get_width(status.layout.results.winid)
+              - status.picker.selection_caret:len()
+              - status.picker.prompt_prefix:len()
+              - 2
+            path = Util.smart_shorten_path(path, { target_width = target_width, cwd = opts.cwd })
+            return path
+          end,
         })),
         extensions = {
           fzf = {
