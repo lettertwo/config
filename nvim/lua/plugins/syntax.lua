@@ -341,7 +341,8 @@ return {
     cmd = { "MarkdownPreviewToggle", "MarkdownPreview", "MarkdownPreviewStop" },
     ft = { "markdown" },
     keys = {
-      { "gm", "<cmd>MarkdownPreviewToggle<CR>", desc = "Markdown preview" },
+      -- TODO: make this buffer-specific, and based on ft
+      { "gM", "<cmd>MarkdownPreviewToggle<CR>", desc = "Markdown preview" },
     },
     build = function()
       vim.fn["mkdp#util#install"]()
