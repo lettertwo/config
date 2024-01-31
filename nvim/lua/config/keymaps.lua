@@ -362,14 +362,3 @@ vim.keymap.set("n", "<leader>fn", "<cmd>enew<cr>", { desc = "New file" })
 
 -- Mason
 vim.keymap.set("n", "<leader>M", "<cmd>Mason<cr>", { desc = "Mason" })
-
-
-local function toggle_profile()
-  if vim.v.profiling == 1 then
-    vim.cmd [[ profile pause | profile dump | noautocmd qall! ]]
-  else
-    vim.cmd [[ profile start profile.log | profile func * | profile file * ]]
-  end
-end
-
-vim.keymap.set({"n", "i"}, "<C-p>", toggle_profile, { desc = "Toggle profile" })
