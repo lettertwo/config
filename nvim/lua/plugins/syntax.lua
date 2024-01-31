@@ -52,35 +52,49 @@ return {
     "echasnovski/mini.surround",
     event = "VeryLazy",
     opts = {
+      custom_surroundings = {
+        -- Invert the balanced bracket behaviors.
+        -- Open inserts without space, close inserts with space.
+        ["("] = { output = { left = "(", right = ")" } },
+        [")"] = { output = { left = "( ", right = " )" } },
+        ["{"] = { output = { left = "{", right = "}" } },
+        ["}"] = { output = { left = "{ ", right = " }" } },
+        ["["] = { output = { left = "[", right = "]" } },
+        ["]"] = { output = { left = "[ ", right = " ]" } },
+        ["<"] = { output = { left = "<", right = ">" } },
+        [">"] = { output = { left = "< ", right = " >" } },
+      },
       mappings = {
         add = "gs", -- Add surrounding in Normal and Visual modes
         delete = "ds", -- Delete surrounding
         replace = "cs", -- Replace surrounding
 
-        find = "", -- Find surrounding kto the rightk
+        find = "", -- Find surrounding (to the right)
         find_left = "", -- Find surrounding (to the left)
         highlight = "", -- Highlight surrounding
-        suffix_last = "l", -- Suffix to search with "prev" method
-        suffix_next = "n", -- Suffix to search with "next" method
+        suffix_last = "", -- Suffix to search with "prev" method
+        suffix_next = "", -- Suffix to search with "next" method
         update_n_lines = "", -- Update `n_lines`
       },
       n_lines = 20,
       search_method = "cover_or_next",
+      respect_selection_type = true,
     },
     config = function(_, opts)
       require("mini.surround").setup(opts)
 
       -- Remap adding surrounding to Visual mode selection
-      vim.keymap.del("x", "gs")
-      vim.keymap.set(
-        "x",
-        "S",
-        [[:<C-u>lua MiniSurround.add("visual")<CR>]],
-        { desc = "Add surrounding to selection", silent = true }
-      )
+      -- vim.keymap.del("x", "gs")
+      vim.keymap.set("x", "S", "gs", { desc = "Add surrounding to selection", remap = true })
 
       -- Make special mapping for "add surrounding for line"
       vim.keymap.set("n", "gss", "gs_", { desc = "Add surrounding to line", remap = true })
+
+      -- Convenience for quickly surrounding with () or {}
+      vim.keymap.set("x", "(", "gs)", { desc = "Add surrounding () to selection", remap = true })
+      vim.keymap.set("x", ")", "gs)", { desc = "Add surrounding () to selection", remap = true })
+      vim.keymap.set("x", "{", "gs}", { desc = "Add surrounding {} to selection", remap = true })
+      vim.keymap.set("x", "}", "gs}", { desc = "Add surrounding {} to selection", remap = true })
     end,
   },
 
