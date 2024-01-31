@@ -20,7 +20,7 @@ return {
       {
         "folke/neodev.nvim",
         opts = {
-          experimental = { pathStrict = true },
+          pathStrict = true,
           library = {
             plugins = { "nvim-dap-ui", "neotest" },
             types = true,
@@ -123,6 +123,8 @@ return {
               },
               hint = {
                 enable = true,
+                arrayIndex = "Auto",
+                semicolon = "Disable",
               },
             },
           },
