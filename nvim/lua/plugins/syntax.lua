@@ -144,10 +144,6 @@ return {
       "JoosepAlviste/nvim-ts-context-commentstring",
       "nvim-treesitter/playground",
     },
-    keys = {
-      { "<c-space>", desc = "Increment selection" },
-      { "<bs>", desc = "Shrink selection", mode = "x" },
-    },
     ---@type TSConfig
     ---@diagnostic disable-next-line: missing-fields
     opts = {
@@ -194,8 +190,8 @@ return {
         enable = true,
         keymaps = {
           init_selection = "<S-CR>",
-          node_incremental = "<CR>",
-          scope_incremental = "<S-CR>",
+          node_incremental = "<S-CR>",
+          scope_incremental = "<C-CR>",
           node_decremental = "<BS>",
         },
       },
