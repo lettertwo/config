@@ -244,14 +244,23 @@ return {
   -- split/join
   {
     "Wansmer/treesj",
-    cmd = { "TSJToggle" },
+    cmd = { "TSJToggle", "TSJToggleRecursive" },
     keys = {
       { "<leader>j", "<cmd>TSJToggle<CR>", mode = { "n", "x" }, desc = "Toggle split/join" },
+      { "<leader>J", "<cmd>TSJToggleRecursive<CR>", mode = { "n", "x" }, desc = "Toggle split/join" },
     },
     dependencies = { "nvim-treesitter/nvim-treesitter" },
     opts = {
       use_default_keymaps = false,
     },
+    config = function(_, opts)
+      local treesj = require("treesj")
+      treesj.setup(opts)
+
+      vim.api.nvim_create_user_command("TSJToggleRecursive", function()
+        return treesj.toggle({ split = { recursive = true } })
+      end, { desc = "Toggle split/join recursively" })
+    end,
   },
 
   -- better text-objects
