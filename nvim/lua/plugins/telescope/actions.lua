@@ -109,7 +109,10 @@ function Actions.open_in_file_explorer(prompt_bufnr)
 
   local ok, MiniFiles = pcall(require, "mini.files")
   if ok and MiniFiles then
-    MiniFiles.open(entry.filename or entry.value)
+    local open_ok = pcall(MiniFiles.open, entry.filename or entry.path or entry.value)
+    if not open_ok then
+      vim.notify("Failed to open file in file explorer", vim.log.levels.ERROR)
+    end
   end
 end
 
