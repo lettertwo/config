@@ -59,6 +59,7 @@ return {
       { "nvim-telescope/telescope-ui-select.nvim" },
       { "nvim-telescope/telescope-symbols.nvim" },
       { "nvim-telescope/telescope-live-grep-args.nvim" },
+      { "tsakirist/telescope-lazy.nvim" },
     },
     keys = {
       { "<leader>p", "<cmd>Telescope commands<CR>", desc = "Commands" },
@@ -94,6 +95,7 @@ return {
       { "<leader>sm", "<cmd>Telescope marks<cr>", desc = "Jump to Mark" },
       { "<leader>sM", "<cmd>Telescope man_pages<cr>", desc = "Man Pages" },
       { "<leader>so", "<cmd>Telescope vim_options<CR>", desc = "Vim options" },
+      { "<leader>sp", "<cmd>Telescope lazy<CR>", desc = "Plugins" },
       { "<leader>sq", "<cmd>Telescope quickfix<CR>", desc = "Quickfix" },
       { "<leader>st", "<cmd>Telescope<CR>", desc = "Telescope Builtins" },
       { "<leader>ss", "<cmd>Telescope lsp_document_symbols<CR>", desc = "Document Symbols" },
@@ -188,6 +190,21 @@ return {
             -- theme = { }, -- use own theme spec
             -- layout_config = { mirror=true }, -- mirror preview pane
           },
+          lazy = {
+            mappings = {
+              -- TODO: make this work with mini.files
+              open_in_browser = "",
+              open_in_file_browser = "",
+              -- TODO: see if these are more generalizable similar to <C-E>
+              open_in_find_files = "<C-f>",
+              open_in_live_grep = "<C-g>",
+              open_in_terminal = "",
+              open_plugins_picker = "<C-b>", -- Works only after having called first another action
+              open_lazy_root_find_files = "",
+              open_lazy_root_live_grep = "",
+              change_cwd_to_plugin = "",
+            },
+          },
         },
         pickers = {
           find_files = {
@@ -249,6 +266,7 @@ return {
       telescope.load_extension("fzf")
       telescope.load_extension("ui-select")
       telescope.load_extension("live_grep_args")
+      telescope.load_extension("lazy")
 
       -- local function nvim_config_files()
       --   builtin.find_files({
