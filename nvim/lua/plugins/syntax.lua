@@ -91,9 +91,9 @@ return {
       vim.keymap.set("n", "gss", "gs_", { desc = "Add surrounding to line", remap = true })
 
       -- Convenience for quickly surrounding with () or {}
-      vim.keymap.set("x", "(", "gs)", { desc = "Add surrounding () to selection", remap = true })
+      vim.keymap.set("x", "(", "gs(", { desc = "Add surrounding () to selection", remap = true })
       vim.keymap.set("x", ")", "gs)", { desc = "Add surrounding () to selection", remap = true })
-      vim.keymap.set("x", "{", "gs}", { desc = "Add surrounding {} to selection", remap = true })
+      vim.keymap.set("x", "{", "gs{", { desc = "Add surrounding {} to selection", remap = true })
       vim.keymap.set("x", "}", "gs}", { desc = "Add surrounding {} to selection", remap = true })
     end,
   },
