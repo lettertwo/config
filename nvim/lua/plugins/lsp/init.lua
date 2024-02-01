@@ -19,13 +19,7 @@ return {
       },
       {
         "folke/neodev.nvim",
-        opts = {
-          pathStrict = true,
-          library = {
-            plugins = { "nvim-dap-ui", "neotest" },
-            types = true,
-          },
-        },
+        config = true,
       },
       {
         "smjonas/inc-rename.nvim",
@@ -123,7 +117,7 @@ return {
               },
               hint = {
                 enable = true,
-                arrayIndex = "Auto",
+                arrayIndex = "Disable",
                 semicolon = "Disable",
               },
             },
