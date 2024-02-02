@@ -50,7 +50,7 @@ opt.mouse = "a"
 -- UI settings
 opt.termguicolors = true -- True color support
 opt.pumheight = 10 -- reasonable popup menu height
-opt.pumblend = 10 -- Popup blend
+opt.pumblend = 0 -- Popup blend
 opt.cmdheight = 1 -- more command line space
 opt.winminwidth = 5 -- minimum window width
 opt.showmode = false -- hide the mode label (e.g., INSERT)
