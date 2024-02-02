@@ -1,33 +1,9 @@
-local source_labels = {
-  nvim_lsp = "[LSP]",
-  nvim_lsp_signature_help = "[Sig]",
-  nvim_lsp_document_symbol = "[Symbol]",
-  nvim_lua = "[Lua]",
-  buffer = "[Buf]",
-  path = "[Path]",
-  emoji = "[Emoji]",
-  calc = "[Calc]",
-  cmdline = "[Cmd]",
-  cmdline_history = "[History]",
-  git = "[Git]",
-  luasnip = "[Snip]",
-}
-
 local has_words_before = function()
-  if vim.api.nvim_buf_get_option(0, "buftype") == "prompt" then
+  if vim.api.nvim_get_option_value("buftype", { buf = 0 }) == "prompt" then
     return false
   end
   local line, col = unpack(vim.api.nvim_win_get_cursor(0))
   return col ~= 0 and vim.api.nvim_buf_get_text(0, line - 1, 0, line - 1, col, {})[1]:match("^%s*$") == nil
-end
-
--- Accept copilot suggestion if present.
-local function confirm_copilot_or_fallback(fallback)
-  local copilot_ok, copilot = pcall(require, "copilot.suggestion")
-  if copilot_ok and copilot and copilot.is_visible() then
-    return copilot.accept()
-  end
-  fallback()
 end
 
 return {
@@ -64,8 +40,11 @@ return {
     event = "InsertEnter",
     config = function()
       require("copilot").setup({
+        panel = {
+          enabled = false,
+        },
         suggestion = {
-          auto_trigger = true,
+          enabled = false,
         },
       })
     end,
@@ -75,6 +54,7 @@ return {
     version = false,
     event = "InsertEnter",
     dependencies = {
+      { "zbirenbaum/copilot-cmp", depenendencies = { "zbirenbaum/copilot.lua" } },
       { "tzachar/cmp-fuzzy-buffer", dependencies = { "tzachar/fuzzy.nvim" } },
       { "hrsh7th/cmp-nvim-lsp" },
       { "hrsh7th/cmp-nvim-lsp-signature-help" },
@@ -90,6 +70,8 @@ return {
     config = function()
       local cmp = require("cmp")
       local luasnip = require("luasnip")
+
+      require("copilot_cmp").setup({})
 
       local function enter(fallback)
         if cmp.visible() and cmp.confirm() then
@@ -109,7 +91,11 @@ return {
       end
 
       local function right(fallback)
-        confirm_copilot_or_fallback(fallback)
+        if not cmp.confirm({ select = true }) then
+          return fallback()
+        else
+          cmp.complete()
+        end
       end
 
       local function tab(fallback)
@@ -163,15 +149,15 @@ return {
           select = false,
         },
         experimental = {
-          ghost_text = false, -- let copilot haunt us instead
+          ghost_text = true,
         },
         mapping = cmp.mapping.preset.insert({
           ["<C-k>"] = cmp.mapping.select_prev_item(),
           ["<C-j>"] = cmp.mapping.select_next_item(),
           ["<Up>"] = cmp.mapping.select_prev_item(),
           ["<Down>"] = cmp.mapping.select_next_item(),
-          ["<C-b>"] = cmp.mapping.scroll_docs(-4),
-          ["<C-f>"] = cmp.mapping.scroll_docs(4),
+          ["<C-u>"] = cmp.mapping.scroll_docs(-4),
+          ["<C-d>"] = cmp.mapping.scroll_docs(4),
           ["<C-Space>"] = cmp.mapping(space, { "i", "c" }),
           ["<C-e>"] = cmp.mapping({
             i = cmp.mapping.abort(),
@@ -183,30 +169,32 @@ return {
           ["<S-Tab>"] = cmp.mapping(stab, { "i", "c" }),
         }),
         sources = cmp.config.sources({
+          { name = "copilot" },
           { name = "nvim_lsp" },
           { name = "nvim_lsp_document_symbol" },
           { name = "nvim_lsp_signature_help" },
           { name = "nvim_lua", dup = 0 },
           { name = "luasnip" },
         }, {
-          { name = "fuzzy_buffer" },
-          { name = "fuzzy_path" },
+          { name = "fuzzy_buffer", max_item_count = 5 },
+          { name = "fuzzy_path", max_item_count = 5 },
           { name = "calc" },
-          { name = "emoji" },
-          { name = "treesitter" },
-          { name = "crates" },
         }),
+        sorting = {
+          priority_weight = 2,
+          comparators = vim.list_extend({
+            require("copilot_cmp.comparators").prioritize,
+          }, cmp.config.compare),
+        },
         formatting = {
           expandable_indicator = true,
           fields = {
-            cmp.ItemField.Kind,
             cmp.ItemField.Abbr,
-            cmp.ItemField.Menu,
+            cmp.ItemField.Kind,
           },
           format = function(entry, item)
             local icons = require("config").icons.kinds
-            item.kind = icons[item.kind]
-            item.menu = source_labels[entry.source.name]
+            item.kind = vim.trim(icons[item.kind]) .. " [" .. item.kind .. "]"
             return item
           end,
         },

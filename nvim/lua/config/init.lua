@@ -123,6 +123,7 @@ local config = {
       Boolean = "󰨙 ",
       Class = " ",
       Color = " ",
+      Copilot = " ",
       Constant = "󰏿 ",
       Constructor = " ",
       Container = " ",
