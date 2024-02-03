@@ -273,6 +273,15 @@ function ConfigUtil.debounce(ms, fn)
   end
 end
 
+function ConfigUtil.interval(ms, fn)
+  local timer = vim.loop.new_timer()
+  timer:start(ms, ms, fn)
+  return function()
+    timer:stop()
+    timer:close()
+  end
+end
+
 ---@class EnsureInstalled: string[]
 -- A utility for managing what is installed by Mason.
 -- It is a list of names of Mason-installable packages.
