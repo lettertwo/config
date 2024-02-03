@@ -119,8 +119,7 @@ return {
           pattern = "LazyCheck",
           callback = function(event)
             local checker = require("lazy.manage.checker")
-            if #checker.updated > 0 then
-              vim.notify("event!")
+            if not checker.updating then
               lazy_button(#checker.updated, layout.render)
             end
           end,
@@ -128,7 +127,7 @@ return {
 
         clear_lazy_status_poll = Util.interval(1000, function()
           local checker = require("lazy.manage.checker")
-          if #checker.updated > 0 then
+          if not checker.updating then
             lazy_button(#checker.updated, layout.render)
             if type(clear_lazy_status_poll) == "function" then
               clear_lazy_status_poll()

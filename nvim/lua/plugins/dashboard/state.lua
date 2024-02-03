@@ -65,9 +65,13 @@ function M.button(shortcut, icon, label, keybind, keybind_opts, cb)
         dispose_tick()
         dispose_tick = nil
       end
-      if count and count > 0 then
-        el.val = icon .. " " .. label .. " " .. count .. ((count > 1) and " updates available" or " update available")
-        el.opts.hl = "SpecialComment"
+      if count ~= nil then
+        if count == 0 then
+          el.val = icon .. " " .. label
+        else
+          el.val = icon .. " " .. label .. " " .. count .. ((count > 1) and " updates available" or " update available")
+          el.opts.hl = "SpecialComment"
+        end
         if type(cb) == "function" then
           cb()
         end
