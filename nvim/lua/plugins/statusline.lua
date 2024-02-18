@@ -23,7 +23,7 @@ end
 local branch = {
   -- "b:gitsigns_head",
   "branch",
-  icon = " ",
+  icon = "",
   color = { gui = "bold" },
   cond = visible_for_width,
 }
@@ -121,7 +121,8 @@ local services = {
     end
 
     if status.lazy_updates then
-      table.insert(display, require("lazy.status").updates())
+      local checker = require("lazy.manage.checker")
+      table.insert(display, " " .. #checker.updated)
     end
 
     return table.concat(display, " ")

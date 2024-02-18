@@ -13,8 +13,8 @@ return {
       local alpha = require("alpha")
       local button = require("alpha.themes.dashboard").button
 
-      local lazy_button = state.button("L", " ", "Lazy", "<CMD>Lazy<CR>", nil, layout.render_immediate)
-      local mason_button = state.button("M", " ", "Mason", "<CMD>Mason<CR>", nil, layout.render_immediate)
+      local lazy_button = state.button("L", " ", "Lazy", "<CMD>Lazy<CR>", nil, layout.render_immediate)
+      local mason_button = state.button("M", " ", "Mason", "<CMD>Mason<CR>", nil, layout.render_immediate)
 
       ---@type Element[]
       local sections = {
@@ -47,10 +47,10 @@ return {
             { type = "text", val = "Find Stuff", opts = { hl = "SpecialComment", position = "center" } },
             { type = "padding", val = 1 },
             button("l", "  Load Session", [[:lua require("persistence").load() <cr>]]),
-            button("e", "פּ  Explore", "<CMD>Telescope file_browser<CR>"),
-            button("f", "  Find File", "<CMD>Telescope find_files<CR>"),
-            button("r", "  Find Recent", "<CMD>Telescope oldfiles<CR>"),
-            button("g", "  Find Text", "<CMD>Telescope live_grep<CR>"),
+            button("e", "󰙅  Explore", "<CMD>Telescope file_browser<CR>"),
+            button("f", "󰮗  Find File", "<CMD>Telescope find_files<CR>"),
+            button("r", "  Find Recent", "<CMD>Telescope oldfiles<CR>"),
+            button("g", "󰊄  Find Text", "<CMD>Telescope live_grep<CR>"),
           },
         },
         { type = "padding", val = 2 },
@@ -75,14 +75,14 @@ return {
             ),
             lazy_button,
             mason_button,
-            button("C", "律 Checkhealth", "<CMD>checkhealth<CR>"),
-            button("S", "祥 Profile startup", "<CMD>Lazy profile<CR>"),
+            button("C", "󰓙 Checkhealth", "<CMD>checkhealth<CR>"),
+            button("S", "󰔛 Profile startup", "<CMD>Lazy profile<CR>"),
           },
         },
         { type = "padding", val = 2 },
-        button("n", "  New File", "<CMD>ene!<CR>"),
-        button(";", "  Close", "<CMD>Alpha<CR>"),
-        button("q", "  Quit", "<CMD>qa<CR>"),
+        button("n", "󰈤  New File", "<CMD>ene!<CR>"),
+        button(";", "󰅚  Close", "<CMD>Alpha<CR>"),
+        button("q", "󰐥  Quit", "<CMD>qa<CR>"),
         {
           type = "group",
           val = {
