@@ -55,13 +55,13 @@ update-laserwave: ~/.local/share/laserwave.nvim
 	$(call done)
 
 ~/.config/kitty/laserwave.conf: ~/.local/share/laserwave.nvim ~/.config/kitty
-	$(call run,ln -sf "$$HOME/.local/share/laserwave.nvim/dist/kitty/laserwave.conf" "$$HOME/.config/kitty/laserwave.conf")
+	$(call run,ln -sf $</dist/kitty/laserwave.conf $@)
 
 ~/.config/alacritty/laserwave.yml: ~/.local/share/laserwave.nvim ~/.config/alacritty
-	$(call run,ln -sf "$$HOME/.local/share/laserwave.nvim/dist/alacritty/laserwave.yml" "$$HOME/.config/alacritty/laserwave.yml")
+	$(call run,ln -sf $</dist/alacritty/laserwave.yml $@)
 
 ~/.config/bat/themes/laserwave.tmTheme: ~/.local/share/laserwave.nvim ~/.config/bat/themes
-	$(call run,ln -sf "$$HOME/.local/share/laserwave.nvim/dist/laserwave.tmTheme" "$$HOME/.config/bat/themes/laserwave.tmTheme")
+	$(call run,ln -sf $</dist/laserwave.tmTheme $@)
 
 ### homebrew
 
@@ -136,15 +136,15 @@ NVIM := $(shell command -v nvim 2> /dev/null)
 nvim: ~/.local/share/neovim
 ifndef NVIM
 	$(call log,"Installing neovim...")
-	$(call run,cd ~/.local/share/neovim && make CMAKE_BUILD_TYPE=RelWithDebInfo && make install)
+	$(call run,cd $< && make CMAKE_BUILD_TYPE=RelWithDebInfo && make install)
 	$(call done)
 endif
 
 .PHONY: update-nvim
 update-nvim: ~/.local/share/neovim
 	$(call log,"Updating neovim...")
-	$(call run,cd ~/.local/share/neovim && git fetch --tags --force && git reset --hard tags/nightly)
-	$(call run,cd ~/.local/share/neovim && make clean && make distclean && make CMAKE_BUILD_TYPE=RelWithDebInfo && make install)
+	$(call run,cd $< && git fetch --tags --force && git reset --hard tags/nightly)
+	$(call run,cd $< && make clean && make distclean && make CMAKE_BUILD_TYPE=RelWithDebInfo && make install)
 	$(call log,"Updating Plugins...")
 	$(call run,nvim --headless "+Lazy! sync" "+silent w! /dev/stdout" +qa)
 	$(call log,"Updating Parsers...")
