@@ -1,6 +1,16 @@
 return {
-  -- Navigate seamlessly between kitty and nvim windows.
-  { "knubie/vim-kitty-navigator", build = [[ cp ./*.py $XDG_CONFIG_HOME/kitty/ ]] },
+  {
+    "craigmac/Navigator.nvim",
+    cmd = { "NavigatorLeft", "NavigatorRight", "NavigatorUp", "NavigatorDown", "NavigatorPrevious" },
+    keys = {
+      { "<c-h>", "<cmd>NavigatorLeft<cr>", desc = "NavigatorLeft" },
+      { "<c-l>", "<cmd>NavigatorRight<cr>", desc = "NavigatorRight" },
+      { "<c-k>", "<cmd>NavigatorUp<cr>", desc = "NavigatorUp" },
+      { "<c-j>", "<cmd>NavigatorDown<cr>", desc = "NavigatorDown" },
+      -- { "<CTRL-p>", "<cmd>NavigatorPrevious</cr>" },
+    },
+    opts = {},
+  },
 
   -- A common dependency in lua plugins. Also useful for testing plugins.
   { "nvim-lua/plenary.nvim" },
@@ -144,5 +154,23 @@ return {
       -- {'v', '<leader>cU', crates.upgrade_crates, opts)
     },
     -- stylua: ignore end
+  },
+
+  {
+    event = "BufReadPost",
+    dir = "~/.local/share/occurrence.nvim",
+    name = "occurrence.nvim",
+    config = function()
+      require("occurrence.dev").setup()
+    end,
+  },
+
+  {
+    event = "VeryLazy",
+    dir = "~/.local/share/fixlist.nvim/main",
+    name = "fixlist.nvim",
+    config = function()
+      require("fixlist.dev").setup()
+    end,
   },
 }
