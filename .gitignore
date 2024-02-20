@@ -19,5 +19,6 @@ github-copilot
 kitty/laserwave.conf
 alacritty/laserwave.yml
 bat/themes/laserwave.tmTheme
+wezterm/colors/laserwave.toml
 lazygit/state.yml
 githubnext_*
