@@ -35,7 +35,7 @@
 	keepBackup = false
 	hideResolved = true
 [mergetool "nvimdiff2"]
-	cmd = nvim -f -d -c 'wincmd l' $LOCAL $MERGED $REMOTE
+	cmd = nvim -d -c 'wincmd l' $LOCAL $MERGED $REMOTE
 [mergetool "ksdiff"]
   trustExitCode = true
   cmd = ksdiff --merge --base $BASE --output $MERGED $LOCAL $REMOTE
