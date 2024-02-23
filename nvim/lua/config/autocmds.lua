@@ -86,7 +86,7 @@ local LARGE_BUFFER_DISABLED = {
 local function disable_large_buffer(buffer)
   buffer = buffer or vim.api.nvim_get_current_buf()
 
-  if vim.api.nvim_buf_get_var(buffer, "large_buffer") then
+  if pcall(vim.api.nvim_buf_get_var, buffer, "large_buffer") then
     return
   end
 
