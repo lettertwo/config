@@ -209,7 +209,7 @@ keybinding:
     squashDown: s
     renameCommit: r
     renameCommitWithEditor: R
-    viewResetOptions: g
+    viewResetOptions: D
     markCommitAsFixup: f
     createFixupCommit: F
     squashAboveCommits: S
