@@ -52,7 +52,7 @@ function M.button(shortcut, icon, label, keybind, keybind_opts, cb)
   local dispose_tick
 
   if type(cb) == "function" then
-    dispose_tick = Util.interval(16, function()
+    dispose_tick = Util.interval(60, function()
       phase = phase % #M.dots + 1
       el.val = M.dots[phase] .. " " .. label
       cb()
