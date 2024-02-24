@@ -154,6 +154,7 @@ return {
                         end
                       end)
                     end
+                    mason_button(update_count, layout.render)
                   end)
                 end
               end)
