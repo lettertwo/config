@@ -3,7 +3,14 @@ local Util = require("util")
 return {
   {
     "neovim/nvim-lspconfig",
+    cmd = { "LspInfo", "LspStart", "LspStop", "LspRestart" },
     event = "BufReadPost",
+    keys = {
+      { "<leader>lI", "<cmd>LspInfo<CR>", desc = "Show LSP status" },
+      { "<leader>lS", "<cmd>LspStart<CR>", desc = "Start LSP clients" },
+      { "<leader>lR", "<cmd>LspRestart<CR>", desc = "Restart LSP clients" },
+      { "<leader>lq", "<cmd>LspStop<CR>", desc = "Stop LSP client(s)" },
+    },
     dependencies = {
       {
         "folke/neoconf.nvim",
