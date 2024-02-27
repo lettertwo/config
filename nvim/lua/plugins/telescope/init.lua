@@ -1,42 +1,75 @@
 local icons = require("config").icons
 local Util = require("util")
 
+local function live_grep(opts)
+  opts = vim.tbl_deep_extend("force", {
+    prompt_title = "Live Grep",
+  }, opts or {})
+  return require("telescope").extensions.live_grep_args.live_grep_args(opts)
+end
+
+local function grep_string(opts)
+  local word
+  local visual = vim.fn.mode() == "v"
+
+  if visual == true then
+    local saved_reg = vim.fn.getreg("v")
+    vim.cmd([[noautocmd sil norm! "vy]])
+    local sele = vim.fn.getreg("v")
+    vim.fn.setreg("v", saved_reg)
+    word = vim.F.if_nil(opts.search, sele)
+  else
+    word = vim.F.if_nil(opts.search, vim.fn.expand("<cword>"))
+  end
+
+  local search = require("telescope-live-grep-args.helpers").quote(vim.trim(word))
+
+  opts = vim.tbl_deep_extend("force", {
+    default_text = search,
+  }, opts or {})
+
+  return require("telescope").extensions.live_grep_args.live_grep_args(opts)
+end
+
 local function live_grep_cbd()
-  require("telescope.builtin").live_grep({
+  return live_grep({
     cwd = require("telescope.utils").buffer_dir(),
     prompt_title = "Live Grep (buffer dir)",
   })
 end
 
 local function live_grep_cwd()
-  require("telescope.builtin").live_grep({
+  return live_grep({
     cwd = vim.fn.getcwd(),
     prompt_title = "Live Grep (cwd)",
   })
 end
 
 local function live_grep_files()
-  require("telescope.builtin").live_grep({
+  return live_grep({
     grep_open_files = true,
     prompt_title = "Live Grep (open files)",
   })
 end
 
 local function grep_string_cwd()
-  require("telescope.builtin").grep_string({
+  return grep_string({
     cwd = vim.fn.getcwd(),
+    prompt_title = "Grep String (cwd)",
   })
 end
 
 local function grep_string_cbd()
-  require("telescope.builtin").grep_string({
+  return grep_string({
     cwd = require("telescope.utils").buffer_dir(),
+    prompt_title = "Grep String (buffer dir)",
   })
 end
 
 local function grep_string_files()
-  require("telescope.builtin").grep_string({
+  return grep_string({
     grep_open_files = true,
+    prompt_title = "Grep String (open files)",
   })
 end
 
@@ -67,7 +100,7 @@ return {
       { "<leader>bb", "<cmd>Telescope buffers<CR>", "Buffers" },
       { "<leader>r", "<cmd>Telescope oldfiles prompt_title=Recent(cwd) cwd_only=true<CR>", desc = "Recent Files" },
       { "<leader>/", "<cmd>Telescope current_buffer_fuzzy_find<CR>", desc = "Text in file" },
-      { "<leader>*", "<cmd>Telescope grep_string<CR>", desc = "Word under cursor" },
+      { "<leader>*", grep_string_cwd, desc = "Word under cursor", mode = { "n", "v" } },
       { "<leader>:", "<cmd>Telescope command_history<cr>", desc = "Command History" },
       { "<leader><space>", "<cmd>Telescope find_files<cr>", desc = "Find Files (root dir)" },
 
@@ -78,7 +111,7 @@ return {
       { "<leader>fr", "<cmd>Telescope oldfiles prompt_title=Recent(cwd) cwd_only=true<cr>", desc = "Recent (cwd)" },
       { "<leader>fR", "<cmd>Telescope oldfiles prompt_Title=Recent(all) cwd_only=false<cr>", desc = "Recent (all)" },
       { "<leader>fg", live_grep_files, desc = "Grep in open files" },
-      { "<leader>fw", grep_string_files, desc = "Search word in open files" },
+      { "<leader>fw", grep_string_files, desc = "Search word in open files", mode = { "n", "v" } },
 
       -- search
       { "<leader>sa", "<cmd>Telescope autocommands<cr>", desc = "Auto Commands" },
@@ -100,8 +133,8 @@ return {
       { "<leader>st", "<cmd>Telescope<CR>", desc = "Telescope Builtins" },
       { "<leader>ss", "<cmd>Telescope lsp_document_symbols<CR>", desc = "Document Symbols" },
       { "<leader>sS", "<cmd>Telescope lsp_dynamic_workspace_symbols<CR>", desc = "Workspace Symbols" },
-      { "<leader>sw", grep_string_cwd, desc = "Word (cwd)" },
-      { "<leader>sW", grep_string_cbd, desc = "Word (buffer dir)" },
+      { "<leader>sw", grep_string_cwd, desc = "Word (cwd)", mode = { "n", "v" } },
+      { "<leader>sW", grep_string_cbd, desc = "Word (buffer dir)", mode = { "n", "v" } },
       { "<leader>sr", "<cmd>Telescope resume<cr>", desc = "Resume last search" },
 
       -- emoji
