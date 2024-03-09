@@ -72,7 +72,6 @@ opt.fillchars = {
   diff = "╱",
 }
 opt.colorcolumn:append("+1") -- color column at textwidth so I know when my line's too long
-opt.shortmess = "fFIlqx" -- from https://github.com/folke/noice.nvim/issues/300#issuecomment-1378005066
 
 -- Window management
 opt.splitbelow = true -- force all horizontal splits to go below current window
