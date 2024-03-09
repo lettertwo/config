@@ -3,23 +3,27 @@ local from_entry = require("telescope.from_entry")
 local telescope_actions = require("telescope.actions")
 local transform_mod = require("telescope.actions.mt").transform_mod
 
-local entry_to_qf = function(entry)
-  local text = entry.text
+local function text_from_entry(entry)
+  local text = entry.text or entry.name
 
   if not text then
     if type(entry.value) == "table" then
-      text = entry.value.text
-    else
+      text = entry.value.text or entry.value.name
+    elseif type(entry.value) == "string" then
       text = entry.value
     end
   end
 
+  return text
+end
+
+local function entry_to_qf(entry)
   return {
     bufnr = entry.bufnr,
     filename = from_entry.path(entry, false, false),
     lnum = vim.F.if_nil(entry.lnum, 1),
     col = vim.F.if_nil(entry.col, 1),
-    text = text,
+    text = text_from_entry(entry),
   }
 end
 
@@ -114,6 +118,29 @@ function Actions.open_in_file_explorer(prompt_bufnr)
       vim.notify("Failed to open file in file explorer", vim.log.levels.ERROR)
     end
   end
+end
+
+function Actions.yank_to_clipboard(prompt_bufnr)
+  local picker = action_state.get_current_picker(prompt_bufnr)
+  local manager = picker.manager
+  local selections = picker:get_multi_selection()
+  local entries = {}
+
+  if vim.tbl_isempty(selections) then
+    for entry in manager:iter() do
+      table.insert(entries, text_from_entry(entry))
+    end
+  else
+    for _, selection in ipairs(selections) do
+      table.insert(entries, text_from_entry(selection))
+    end
+  end
+
+  vim.fn.setreg("+", entries)
+  vim.notify(
+    #entries > 1 and "Yanked " .. #entries .. " entries to clipboard" or "Yanked entry to clipboard",
+    vim.log.levels.INFO
+  )
 end
 
 return transform_mod(Actions)

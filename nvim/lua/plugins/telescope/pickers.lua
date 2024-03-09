@@ -35,6 +35,7 @@ function M.quick_picker(opts)
         ["<C-t>"] = trouble.smart_open_with_trouble,
         ["<C-e>"] = actions.open_in_file_explorer,
         ["<M-q>"] = false,
+        ["<C-y>"] = actions.yank_to_clipboard,
       },
       n = {
         ["<C-j>"] = telescope_actions.move_selection_next,
@@ -46,6 +47,7 @@ function M.quick_picker(opts)
         ["<C-t>"] = trouble.smart_open_with_trouble,
         ["<C-e>"] = actions.open_in_file_explorer,
         ["<M-q>"] = false,
+        ["<C-y>"] = actions.yank_to_clipboard,
       },
     },
   }, opts or {})
@@ -69,6 +71,7 @@ function M.slow_picker(opts)
         ["<C-t>"] = trouble.open_with_trouble,
         ["<C-e>"] = actions.open_in_file_explorer,
         ["<M-q>"] = false,
+        ["<C-y>"] = actions.yank_to_clipboard,
       },
       n = {
         ["/"] = setinsert,
@@ -86,6 +89,7 @@ function M.slow_picker(opts)
         ["<C-t>"] = trouble.open_with_trouble,
         ["<C-e>"] = actions.open_in_file_explorer,
         ["<M-q>"] = false,
+        ["<C-y>"] = actions.yank_to_clipboard,
       },
     },
   }, opts or {})
