@@ -38,6 +38,7 @@ function M.quick_picker(opts)
         ["<C-x>"] = false,
         ["<C-s>"] = telescope_actions.select_horizontal,
         ["<C-y>"] = actions.yank_to_clipboard,
+        ["<C-space>"] = telescope_actions.to_fuzzy_refine,
       },
       n = {
         ["<C-j>"] = telescope_actions.move_selection_next,
@@ -52,6 +53,7 @@ function M.quick_picker(opts)
         ["<C-x>"] = false,
         ["<C-s>"] = telescope_actions.select_horizontal,
         ["<C-y>"] = actions.yank_to_clipboard,
+        ["<C-space>"] = telescope_actions.to_fuzzy_refine,
       },
     },
   }, opts or {})
@@ -78,6 +80,7 @@ function M.slow_picker(opts)
         ["<C-x>"] = false,
         ["<C-s>"] = telescope_actions.select_horizontal,
         ["<C-y>"] = actions.yank_to_clipboard,
+        ["<C-space>"] = telescope_actions.to_fuzzy_refine,
       },
       n = {
         ["/"] = setinsert,
@@ -98,6 +101,7 @@ function M.slow_picker(opts)
         ["<C-x>"] = false,
         ["<C-s>"] = telescope_actions.select_horizontal,
         ["<C-y>"] = actions.yank_to_clipboard,
+        ["<C-space>"] = telescope_actions.to_fuzzy_refine,
       },
     },
   }, opts or {})
