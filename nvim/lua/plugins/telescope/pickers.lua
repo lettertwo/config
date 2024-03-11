@@ -65,7 +65,8 @@ local DEFAULTS = {
       ["<C-x>"] = false,
       ["<C-s>"] = telescope_actions.select_horizontal,
       ["<C-y>"] = actions.yank_to_clipboard,
-      ["<C-space>"] = telescope_actions.to_fuzzy_refine,
+      ["<BS>"] = actions.unrefine_or_default,
+      ["<C-space>"] = actions.refine,
     },
     n = {
       ["<C-j>"] = telescope_actions.move_selection_next,
@@ -80,7 +81,8 @@ local DEFAULTS = {
       ["<C-x>"] = false,
       ["<C-s>"] = telescope_actions.select_horizontal,
       ["<C-y>"] = actions.yank_to_clipboard,
-      ["<C-space>"] = telescope_actions.to_fuzzy_refine,
+      ["<BS>"] = actions.unrefine_or_default,
+      ["<C-space>"] = actions.refine,
     },
   },
 }

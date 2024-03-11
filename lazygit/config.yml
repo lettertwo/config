@@ -248,7 +248,6 @@ keybinding:
   commitMessage:
     switchToEditor: <c-o>
 disableStartupPopups: false
-services: {}
 notARepository: prompt
 promptToReturnFromSubprocess: true
 customCommands:
@@ -258,3 +257,25 @@ customCommands:
     context: "files"
     loadingText: "opening commitizen commit tool"
     subprocess: true
+
+  - key: "c"
+    context: "worktrees"
+    command: "copyuntracked {{.Form.FromWorktree}} {{.SelectedWorktree.Path }}"
+    description: "Copy untracked files from another worktree"
+    showOutput: true
+    prompts:
+      - type: "menuFromCommand"
+        title: "Which worktree to copy from?"
+        key: "FromWorktree"
+        # TODO: Figure out how to work around the fact that this command fails
+        # command: "git worktree list | grep -v {{ .SelectedWorktree.Path }}"
+        command: "git worktree list"
+        filter: '(?P<path>.*)\s+(?P<hash>.*)\s+\[(?P<name>.*)\]'
+        valueFormat: "{{ .path }}"
+        labelFormat: "{{ .name }}"
+
+  - key: "t"
+    context: "localBranches"
+    command: "gt ls"
+    description: "Show stack"
+    showOutput: true

@@ -143,4 +143,82 @@ function Actions.yank_to_clipboard(prompt_bufnr)
   )
 end
 
+function Actions.refine(prompt_bufnr)
+  -- TODO: support refining on a multi selection
+  -- TODO: support switching between file and grep search
+  local conf = require("telescope.config").values
+  local line = action_state.get_current_line()
+
+  local picker = action_state.get_current_picker(prompt_bufnr)
+  -- Opts to Picker:refresh:
+  -- (parameter) opts: {
+  --     multi: unknown,
+  --     new_prefix: unknown,
+  --     prefix_hl_group: unknown,
+  --     reset_prompt: unknown,
+  -- }
+  local picker_opts = {
+    multi = picker._multi,
+    new_prefix = picker.prompt_prefix,
+    prefix_hl_group = "TelescopePromptPrefix",
+  }
+
+  -- Push the current picker opts onto the refinements stack
+  picker.refinements = picker.refinements or {}
+  table.insert(picker.refinements, {
+    finder = picker.finder,
+    sorter = picker.sorter,
+    title = picker.prompt_title,
+    line = line,
+    opts = picker_opts,
+  })
+
+  -- Update the prompt title
+  picker.prompt_title = string.format("Refine (%s)", line)
+
+  -- Opts to actions_generate.refine:
+  -- (parameter) opts: {
+  --     prompt_hl_group: unknown,
+  --     prompt_prefix: unknown,
+  --     prompt_title: unknown,
+  --     prompt_to_prefix: unknown,
+  --     push_history: unknown,
+  --     reset_multi_selection: unknown,
+  --     results_title: unknown,
+  --     sorter: unknown,
+  -- }
+  require("telescope.actions.generate").refine(prompt_bufnr, {
+    prompt_title = picker.prompt_title,
+    prompt_to_prefix = true,
+    sorter = conf.generic_sorter({}),
+  })
+end
+
+function Actions.unrefine(prompt_bufnr)
+  local picker = action_state.get_current_picker(prompt_bufnr)
+  if picker and picker.refinements and #picker.refinements > 0 then
+    -- Pop the previous picker opts from the refinements stack
+    local refinement = table.remove(picker.refinements)
+    if refinement.sorter then
+      picker.sorter:_destroy()
+      picker.sorter = refinement.sorter
+      picker.sorter:_init()
+    end
+    picker:refresh(refinement.finder, refinement.opts)
+    picker:reset_prompt(refinement.line)
+    picker.layout.prompt.border:change_title(refinement.title)
+  end
+end
+
+function Actions.unrefine_or_default(prompt_bufnr)
+  -- if the prompt is not empty, we should pass the key press through.
+  if action_state.get_current_line() ~= "" then
+    -- TODO: Figure out if we can retrieve the keypress to pass through.
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<BS>", true, false, true), "n", true)
+    return
+  else
+    return Actions.unrefine(prompt_bufnr)
+  end
+end
+
 return transform_mod(Actions)
