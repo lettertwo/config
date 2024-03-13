@@ -165,12 +165,6 @@ return {
       { "<leader>gh", git_hunks, desc = "Hunks" },
       { "<leader>gH", git_all_hunks, desc = "Workspace Hunks" },
 
-      -- lsp
-      { "gr", "<cmd>Telescope lsp_references<CR>", desc = "Find references" },
-      { "<leader>lrr", "<cmd>Telescope lsp_references<CR>", desc = "Find references" },
-      { "<leader>lri", "<cmd>Telescope lsp_incoming_calls<CR>", desc = "Find incoming calls for cursor word" },
-      { "<leader>lro", "<cmd>Telescope lsp_outgoing_calls<CR>", desc = "Find outgoing calls from cursor word" },
-
       -- TODO: config
       -- {"<leader>cc", nvim_config_files, desc = "Neovim Config Files" },
       -- {"<leader>cf", xdg_config_files, desc = "Find Config Files" },
@@ -268,11 +262,6 @@ return {
                 ["d"] = actions.delete_buffer,
               },
             },
-          }),
-          lsp_references = pickers.slow_picker({
-            theme = "dropdown",
-            sort_mru = true,
-            sort_lastused = true,
           }),
           commands = pickers.quick_picker({
             theme = "dropdown",

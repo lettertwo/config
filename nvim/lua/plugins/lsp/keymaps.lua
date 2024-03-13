@@ -10,10 +10,6 @@ end
 
 ---@type LspKeySpec[]
 local keys = {
-  { "gd", ":TroubleToggle lsp_definitions<CR>", desc = "Go to definition", requires = "trouble" },
-  { "gD", vim.lsp.buf.declaration, desc = "Go to declaration" },
-  { "gI", ":TroubleToggle lsp_implementations<CR>", desc = "Go to implementation", requires = "trouble" },
-  { "gt", ":TroubleToggle lsp_type_definitions<CR>", desc = "Go to type", requires = "trouble" },
   { "gK", vim.lsp.buf.signature_help, desc = "Show signature help", has = "signatureHelp" },
   { "<leader>R", rename, desc = "Rename", expr = true, has = "rename" },
   { "<leader>lh", vim.lsp.buf.hover, desc = "Show hover" },
