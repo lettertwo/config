@@ -16,11 +16,12 @@ return {
         "folke/neoconf.nvim",
         cmd = "Neoconf",
         keys = {
-          { "<leader>cc", "<cmd>Neoconf local<CR>", desc = "Edit (local)" },
-          { "<leader>cg", "<cmd>Neoconf local<CR>", desc = "Edit (global)" },
-          { "<leader>ce", "<cmd>Neoconf<CR>", desc = "Edit conf" },
-          { "<leader>cl", "<cmd>Neoconf lsp<CR>", desc = "Show lsp" },
-          { "<leader>cs", "<cmd>Neoconf show<CR>", desc = "Show conf" },
+          { "<leader>,e", "<cmd>Neoconf local<CR>", desc = "Edit (local)" },
+          { "<leader>,g", "<cmd>Neoconf local<CR>", desc = "Edit (global)" },
+          { "<leader>,,", "<cmd>Neoconf<CR>", desc = "Edit conf" },
+          { "<leader>,l", "<cmd>Neoconf lsp<CR>", desc = "Show Neoconf lsp" },
+          { "<leader>lc", "<cmd>Neoconf lsp<CR>", desc = "Show Neoconf lsp" },
+          { "<leader>,s", "<cmd>Neoconf show<CR>", desc = "Show conf" },
         },
         config = true,
       },
@@ -61,11 +62,11 @@ return {
 
                   { "<leader>dr", "<cmd>RustLsp debuggables<cr>", desc = "Debuggables" },
 
-                  { "<leader>Cr", "<cmd>RustLsp runnables<cr>", desc = "Runnables" },
-                  { "<leader>Co", "<cmd>RustLsp openCargo<cr>", desc = "Open cargo.toml" },
+                  { "<leader>Pcr", "<cmd>RustLsp runnables<cr>", desc = "Runnables" },
+                  { "<leader>Pco", "<cmd>RustLsp openCargo<cr>", desc = "Open cargo.toml" },
 
                   -- TODO: mappings for these:
-                  -- { "<leader>Cg", "<cmd>RustLsp crateGraph bmp<cr>", desc = "View crate graph" },
+                  -- { "<leader>Pcg", "<cmd>RustLsp crateGraph bmp<cr>", desc = "View crate graph" },
                   -- { "<leader>l/", "<cmd>RustLsp ssr<cr>", desc = "Structural search replace" },
                   -- { "<leader>", "<cmd>RustLsp syntaxTree<cr>", desc = "View syntax tree" },
                   -- { "<leader>", "<cmd>RustLsp explainError<cr>", desc = "Explain errors" },

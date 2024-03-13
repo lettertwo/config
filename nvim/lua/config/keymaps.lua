@@ -71,6 +71,13 @@ vim.keymap.set("v", ">", ">gv")
 
 -- lazy
 vim.keymap.set("n", "<leader>L", "<cmd>:Lazy<cr>", { desc = "Lazy" })
+vim.keymap.set("n", "<leader>Pll", "<cmd>:Lazy<cr>", { desc = "Open" })
+vim.keymap.set("n", "<leader>Plu", "<cmd>:Lazy update<cr>", { desc = "Update" })
+vim.keymap.set("n", "<leader>Pls", "<cmd>:Lazy sync<cr>", { desc = "Sync" })
+vim.keymap.set("n", "<leader>PlR", "<cmd>:Lazy restore<cr>", { desc = "Restore" })
+vim.keymap.set("n", "<leader>Plh", "<cmd>:Lazy health<cr>", { desc = "Health" })
+vim.keymap.set("n", "<leader>Pll", ":Lazy load", { desc = "load…" })
+vim.keymap.set("n", "<leader>Plr", ":Lazy reload", { desc = "reload…" })
 
 -- quickfix, location list
 vim.keymap.set("n", "<leader>xl", "<cmd>lopen<cr>", { desc = "Open Location List" })
@@ -158,3 +165,8 @@ vim.keymap.set("n", "<leader>fn", "<cmd>enew<cr>", { desc = "New file" })
 
 -- Mason
 vim.keymap.set("n", "<leader>M", "<cmd>Mason<cr>", { desc = "Mason" })
+vim.keymap.set("n", "<leader>Pmm", "<cmd>Mason<cr>", { desc = "Open" })
+vim.keymap.set("n", "<leader>Pml", "<cmd>Mason<cr>", { desc = "Log" })
+vim.keymap.set("n", "<leader>Pmu", "<cmd>MasonUpdate<cr>", { desc = "Update" })
+vim.keymap.set("n", "<leader>PmI", ":MasonInstall", { desc = "Install…" })
+vim.keymap.set("n", "<leader>PmU", ":MasonUninstall", { desc = "Uninstall…" })

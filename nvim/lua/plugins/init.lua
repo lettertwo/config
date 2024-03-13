@@ -108,11 +108,11 @@ return {
     ft = { "json" },
     -- stylua: ignore start
     keys = {
-      { "<leader>nt", function() require("package-info").toggle() end, desc = "Toggle dependency versions" },
-      { "<leader>nu", function() require("package-info").update() end, desc = "Update dependency on the line" },
-      { "<leader>nd", function() require("package-info").delete() end, desc = "Delete dependency on the line" },
-      { "<leader>ni", function() require("package-info").install() end, desc = "Install a new dependency" },
-      { "<leader>np", function() require("package-info").change_version() end, desc = "Install a different dependency version" },
+      { "<leader>Pnt", function() require("package-info").toggle() end, desc = "Toggle dependency versions" },
+      { "<leader>Pnu", function() require("package-info").update() end, desc = "Update dependency on the line" },
+      { "<leader>Pnd", function() require("package-info").delete() end, desc = "Delete dependency on the line" },
+      { "<leader>Pni", function() require("package-info").install() end, desc = "Install a new dependency" },
+      { "<leader>Pnp", function() require("package-info").change_version() end, desc = "Install a different dependency version" },
     },
     -- stylua: ignore end
     opts = {
@@ -137,20 +137,20 @@ return {
     },
     -- stylua: ignore start
     keys = {
-      { "<leader>Ct", function() require("crates").toggle() end, desc = "toggle" },
-      { "<leader>Cr", function() require("crates").reload() end, desc = "reload" },
-      { "<leader>Cv", function() require("crates").show_versions_popup() end, desc = "show_versions_popup" },
-      { "<leader>Cf", function() require("crates").show_features_popup() end, desc = "show_features_popup" },
-      { "<leader>Cd", function() require("crates").show_dependencies_popup() end, desc = "show_dependencies_popup" },
-      { "<leader>Cu", function() require("crates").update_crate() end, desc = "update_crate" },
-      { "<leader>Cu", function() require("crates").update_crates() end, desc = "update_crates" },
-      { "<leader>Ca", function() require("crates").update_all_crates() end, desc = "update_all_crates" },
-      { "<leader>CU", function() require("crates").upgrade_crate() end, desc = "upgrade_crate" },
-      { "<leader>CA", function() require("crates").upgrade_all_crates() end, desc = "upgrade_all_crates" },
-      { "<leader>CH", function() require("crates").open_homepage() end, desc = "open_homepage" },
-      { "<leader>CR", function() require("crates").open_repository() end, desc = "open_repository" },
-      { "<leader>CD", function() require("crates").open_documentation() end, desc = "open_documentation" },
-      { "<leader>CC", function() require("crates").open_crates_io() end, desc = "open_crates_io" },
+      { "<leader>Pct", function() require("crates").toggle() end, desc = "toggle" },
+      { "<leader>Pcr", function() require("crates").reload() end, desc = "reload" },
+      { "<leader>Pcv", function() require("crates").show_versions_popup() end, desc = "show_versions_popup" },
+      { "<leader>Pcf", function() require("crates").show_features_popup() end, desc = "show_features_popup" },
+      { "<leader>Pcd", function() require("crates").show_dependencies_popup() end, desc = "show_dependencies_popup" },
+      { "<leader>Pcu", function() require("crates").update_crate() end, desc = "update_crate" },
+      { "<leader>Pcu", function() require("crates").update_crates() end, desc = "update_crates" },
+      { "<leader>Pca", function() require("crates").update_all_crates() end, desc = "update_all_crates" },
+      { "<leader>PcU", function() require("crates").upgrade_crate() end, desc = "upgrade_crate" },
+      { "<leader>PcA", function() require("crates").upgrade_all_crates() end, desc = "upgrade_all_crates" },
+      { "<leader>PcH", function() require("crates").open_homepage() end, desc = "open_homepage" },
+      { "<leader>PcR", function() require("crates").open_repository() end, desc = "open_repository" },
+      { "<leader>PcD", function() require("crates").open_documentation() end, desc = "open_documentation" },
+      { "<leader>PcC", function() require("crates").open_crates_io() end, desc = "open_crates_io" },
       -- {'v', '<leader>cU', crates.upgrade_crates, opts)
     },
     -- stylua: ignore end
