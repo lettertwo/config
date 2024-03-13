@@ -17,3 +17,8 @@ if [[ -x $HOMEBREW_BIN ]]; then
 else
   echo "Homebrew not found!"
 fi
+
+if [[ -f ~/.zprofile ]]; then
+    source ~/.zprofile
+fi
+
