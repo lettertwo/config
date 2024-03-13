@@ -21,9 +21,9 @@ config.show_tab_index_in_tab_bar = false
 config.mouse_wheel_scrolls_tabs = false
 
 config.window_padding = {
-	left = 6,
-	right = 6,
-	top = 14,
+	left = 5,
+	right = 5,
+	top = 1,
 	bottom = 0,
 }
 
