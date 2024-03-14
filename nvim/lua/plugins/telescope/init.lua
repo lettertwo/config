@@ -130,7 +130,7 @@ return {
       { "<leader>so", "<cmd>Telescope vim_options<CR>", desc = "Vim options" },
       { "<leader>sp", "<cmd>Telescope lazy<CR>", desc = "Plugins" },
       { "<leader>sq", "<cmd>Telescope quickfix<CR>", desc = "Quickfix" },
-      { "<leader>st", "<cmd>Telescope<CR>", desc = "Telescope Builtins" },
+      { "<leader>sT", "<cmd>Telescope<CR>", desc = "Telescope Builtins" },
       { "<leader>ss", "<cmd>Telescope lsp_document_symbols<CR>", desc = "Document Symbols" },
       { "<leader>sS", "<cmd>Telescope lsp_dynamic_workspace_symbols<CR>", desc = "Workspace Symbols" },
       { "<leader>sw", grep_string_cwd, desc = "Word (cwd)", mode = { "n", "v" } },

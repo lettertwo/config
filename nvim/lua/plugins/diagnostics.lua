@@ -245,7 +245,7 @@ return {
       { "<leader>xx", "<cmd>TroubleToggle<cr>", desc = "Trouble: Show" },
       { "<leader>xq", "<cmd>TroubleToggle quickfix<cr>", desc = "Trouble: Show QuickFix" },
       { "<leader>xl", "<cmd>TroubleToggle loclist<cr>", desc = "Trouble: Show Locationlist" },
-      { "<leader>xt", "<cmd>TroubleToggle telescope<cr>", desc = "Trouble: Show Telescope" },
+      { "<leader>xT", "<cmd>TroubleToggle telescope<cr>", desc = "Trouble: Show Telescope" },
       { "<leader>xd", "<cmd>TroubleToggle document_diagnostics<cr>", desc = "Trouble: Show Diagnostics" },
       { "<leader>xw", "<cmd>TroubleToggle workspace_diagnostics<cr>", desc = "Trouble: Show Workspace Diagnostics" },
       { "<leader>xD", require("util").toggle_diagnostics, desc = "Toggle Diagnostics" },
