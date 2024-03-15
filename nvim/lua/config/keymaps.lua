@@ -23,10 +23,14 @@ vim.keymap.set("n", "<C-Right>", "<cmd>vertical resize +2<cr>", { desc = "Increa
 -- Move Lines
 vim.keymap.set("n", "<A-j>", ":m .+1<cr>==", { desc = "Move down", silent = true })
 vim.keymap.set("v", "<A-j>", ":m '>+1<cr>gv=gv", { desc = "Move down", silent = true })
-vim.keymap.set("i", "<A-j>", "<Esc>:m .+1<cr>==gi", { desc = "Move down", silent = true })
+-- <A-j> on macos emits "∆"
+vim.keymap.set("n", "∆", ":m .+1<cr>==", { desc = "Move down", silent = true })
+vim.keymap.set("v", "∆", ":m '>+1<cr>gv=gv", { desc = "Move down", silent = true })
 vim.keymap.set("n", "<A-k>", ":m .-2<cr>==", { desc = "Move up", silent = true })
 vim.keymap.set("v", "<A-k>", ":m '<-2<cr>gv=gv", { desc = "Move up", silent = true })
-vim.keymap.set("i", "<A-k>", "<Esc>:m .-2<cr>==gi", { desc = "Move up", silent = true })
+-- <A-k> on macos emits "˚"
+vim.keymap.set("n", "˚", ":m .-2<cr>==", { desc = "Move up", silent = true })
+vim.keymap.set("v", "˚", ":m '<-2<cr>gv=gv", { desc = "Move up", silent = true })
 
 -- buffers
 vim.keymap.set("n", "<S-h>", "<cmd>bprevious<cr>", { desc = "Prev buffer" })
@@ -117,8 +121,14 @@ vim.keymap.set("n", "gp", "`[v`]", { desc = "Switch to VISUAL using the last cha
 vim.keymap.set("x", "p", '"_dP', { desc = "Paste over selection (without yanking)" })
 vim.keymap.set("n", "<A-l>", ">>", { desc = "Indent right" })
 vim.keymap.set("x", "<A-l>", ">gv", { desc = "Indent right" })
+-- <A-l> on macos emits "¬"
+vim.keymap.set("n", "¬", ">>", { desc = "Indent right" })
+vim.keymap.set("x", "¬", ">gv", { desc = "Indent right" })
 vim.keymap.set("n", "<A-h>", "<<", { desc = "Indent left" })
 vim.keymap.set("x", "<A-h>", "<gv", { desc = "Indent left" })
+-- <A-h> on macos emits "˙"
+vim.keymap.set("n", "˙", "<<", { desc = "Indent left" })
+vim.keymap.set("x", "˙", "<gv", { desc = "Indent left" })
 
 -- TODO: Add some bindings for doing diff stuff, e.g.:
 -- :windo diffthis -- diff buffers in all windows
