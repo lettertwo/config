@@ -54,6 +54,7 @@ return {
         ["<leader>Pm"] = { name = "+mason" },
         ["<leader>Pn"] = { name = "+npm" },
         ["<leader>Pc"] = { name = "+cargo" },
+        ["<leader>c"] = { name = "+copilot" },
         ["<leader>d"] = { name = "+debug" },
         ["<leader>f"] = { name = "+file/find" },
         ["<leader>g"] = { name = "+git" },

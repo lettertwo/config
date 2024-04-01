@@ -35,21 +35,6 @@ return {
     },
   },
   {
-    "zbirenbaum/copilot.lua",
-    cmd = "Copilot",
-    event = "InsertEnter",
-    config = function()
-      require("copilot").setup({
-        panel = {
-          enabled = false,
-        },
-        suggestion = {
-          enabled = false,
-        },
-      })
-    end,
-  },
-  {
     "hrsh7th/nvim-cmp",
     version = false,
     event = "InsertEnter",
