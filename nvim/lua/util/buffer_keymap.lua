@@ -67,6 +67,8 @@ function BufferKeymapUtil.create_buffer_keymap(desc)
   ---@class BufferKeymap
   local M = {
     keys = desc.keys,
+    ---@type table<number, table[]>
+    active_buffer_keymaps = {},
   }
 
   function M.filter(spec, ctx)
@@ -97,15 +99,44 @@ function BufferKeymapUtil.create_buffer_keymap(desc)
     else
       ctx = vim.tbl_extend("force", { buffer = vim.api.nvim_get_current_buf() }, ctx)
     end
+
+    local active_keymaps = {}
+
+    local function apply(parsed, opts)
+      local args = { parsed.mode or "n", parsed.lhs or parsed[1], parsed.rhs or parsed[2], opts }
+      vim.keymap.set(unpack(args))
+      table.remove(args, 3)
+      table.insert(active_keymaps, args)
+    end
+
     if desc.keys ~= nil then
       for parsed, opts in iterate_parsed_keymap_specs(desc.keys, ctx, M.filter, M.get_opts) do
-        vim.keymap.set(parsed.mode or "n", parsed.lhs or parsed[1], parsed.rhs or parsed[2], opts)
+        apply(parsed, opts)
       end
     end
 
     if specs ~= nil then
       for parsed, opts in iterate_parsed_keymap_specs(specs, ctx, M.filter, M.get_opts) do
-        vim.keymap.set(parsed.mode or "n", parsed.lhs or parsed[1], parsed.rhs or parsed[2], opts)
+        apply(parsed, opts)
+      end
+    end
+
+    M.active_buffer_keymaps[ctx.buffer] = vim.list_extend(M.active_buffer_keymaps[ctx.buffer] or {}, active_keymaps)
+  end
+
+  ---@param ctx BufferKeyCtx | integer
+  function M.clear(ctx)
+    local bufnr = type(ctx) == "number" and ctx or ctx.buffer
+    if not bufnr then
+      bufnr = vim.api.nvim_get_current_buf()
+    end
+
+    local active_keymaps = M.active_buffer_keymaps[bufnr]
+    M.active_buffer_keymaps[bufnr] = nil
+
+    if active_keymaps then
+      for _, args in ipairs(active_keymaps) do
+        vim.keymap.del(unpack(args))
       end
     end
   end
