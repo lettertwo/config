@@ -172,11 +172,3 @@ vim.keymap.set("n", "<leader>f%", "<cmd>source %<CR>", { desc = "Source current 
 -- new file
 vim.keymap.set("n", "<leader>bn", "<cmd>enew<cr>", { desc = "New file" })
 vim.keymap.set("n", "<leader>fn", "<cmd>enew<cr>", { desc = "New file" })
-
--- Mason
-vim.keymap.set("n", "<leader>M", "<cmd>Mason<cr>", { desc = "Mason" })
-vim.keymap.set("n", "<leader>Pmm", "<cmd>Mason<cr>", { desc = "Open" })
-vim.keymap.set("n", "<leader>Pml", "<cmd>Mason<cr>", { desc = "Log" })
-vim.keymap.set("n", "<leader>Pmu", "<cmd>MasonUpdate<cr>", { desc = "Update" })
-vim.keymap.set("n", "<leader>PmI", ":MasonInstall", { desc = "Install…" })
-vim.keymap.set("n", "<leader>PmU", ":MasonUninstall", { desc = "Uninstall…" })
