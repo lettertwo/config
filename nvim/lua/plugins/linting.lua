@@ -13,12 +13,6 @@ return {
       -- Event to trigger linters
       events = { "BufWritePost", "BufReadPost", "InsertLeave" },
       linters_by_ft = Util.ensure_installed({
-        typescript = { "eslint_d" },
-        typescriptreact = { "eslint_d" },
-        javascript = { "eslint_d" },
-        javascriptreact = { "eslint_d" },
-        flowtype = { "eslint_d" },
-        flowtypereact = { "eslint_d" },
         python = { "flake8" },
         sh = { "shellcheck" },
       }),

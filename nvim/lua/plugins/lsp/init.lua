@@ -247,7 +247,8 @@ return {
             },
           },
         },
-        ["rust_analyzer"] = false, -- NOTE: configured by rustaceanvim
+        rust_analyzer = false, -- NOTE: configured by rustaceanvim
+        "eslint",
         "html",
         "cssls",
         "pyright",
