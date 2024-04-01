@@ -9,9 +9,7 @@ vim.diagnostic.config({
   update_in_insert = true,
   underline = true,
   severity_sort = true,
-  virtual_text = {
-    source = "if_many",
-  },
+  virtual_text = false,
   virtual_lines = false,
   float = {
     focusable = false,
@@ -137,7 +135,9 @@ local function format_diagnostics(opts)
     end
   end
 
+  ---@type string[]
   local lines = {}
+  ---@type HoverHighlight[]
   local highlights = {}
 
   if opts.source and (opts.source ~= "if_many" or count_sources(diagnostics) > 1) then
@@ -145,27 +145,35 @@ local function format_diagnostics(opts)
   end
 
   for i, diagnostic in ipairs(diagnostics) do
-    local prefix, prefix_hl_group = (#diagnostics <= 1) and "" or string.format("%d. ", i), "NormalFloat"
-    local suffix, suffix_hl_group = diagnostic.code and string.format(" [%s]", diagnostic.code) or "", "NormalFloat"
+    local prefix = (#diagnostics <= 1) and "" or string.format("%d. ", i)
+    local suffix = diagnostic.code and string.format(" [[%s]]", diagnostic.code)
 
     local severity = vim.diagnostic.severity[diagnostic.severity]
     local hiname = "DiagnosticFloating" .. severity:sub(1, 1) .. severity:sub(2):lower()
-    local message_lines = vim.split(diagnostic.message, "\n")
+
+    local message_lines = vim.tbl_map(function(value)
+      value = string.gsub(value, "`", "``")
+      return value
+    end, vim.split(diagnostic.message, "\n"))
+
     for j = 1, #message_lines do
-      local pre = j == 1 and prefix or string.rep(" ", #prefix)
-      local suf = j == #message_lines and suffix or ""
-      table.insert(lines, pre .. message_lines[j] .. suf)
-      table.insert(highlights, {
-        hlname = hiname,
-        prefix = {
-          length = j == 1 and #prefix or 0,
-          hlname = prefix_hl_group,
-        },
-        suffix = {
-          length = j == #message_lines and #suffix or 0,
-          hlname = suffix_hl_group,
-        },
-      })
+      local line = message_lines[j]
+      local highlight = { hiname, #lines, 0, #line }
+
+      if #prefix and j == 1 then
+        line = prefix .. line
+        highlight[3] = #prefix
+      elseif #prefix then
+        line = string.rep(" ", #prefix) .. line
+      end
+
+      if #suffix and j == #message_lines then
+        line = line .. suffix
+        highlight[4] = #line - #suffix
+      end
+
+      table.insert(lines, line)
+      table.insert(highlights, highlight)
     end
   end
 

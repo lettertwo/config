@@ -1,10 +1,12 @@
 ---@class HoverUtil
 local HoverUtil = {}
 
----@class HoverHighlight
----@field hlname string
----@field prefix {hlname: string, length: number} | nil
----@field suffix {hlname: string, length: number} | nil
+-- A hover highlight is a table with the following fields:
+-- 1. The highlight group name
+-- 2. The line number (0-indexed)
+-- 3. The start column (0-indexed)
+-- 4. The end column (0-indexed)
+---@alias HoverHighlight { [1]: string, [2]: number, [3]: number, [4]: number }
 
 ---@class HoverResult
 ---@field lines string[]
@@ -14,7 +16,7 @@ local HoverUtil = {}
 ---@field name string
 ---@field priority number
 ---@field enabled boolean | fun(): boolean
----@field execute fun(done: fun(result: HoverResult | nil))
+---@field execute fun(done: fun(result: HoverResult | nil): nil): nil
 
 ---@type table<string, HoverSpec>
 local registry = {}
@@ -53,8 +55,8 @@ local function is_enabled(spec)
   end
 end
 
----@returns fun(done: fun(result: HoverResult | nil)))[]
-local function get_active_specs()
+---@return HoverSpec[]
+local function build_pipeline()
   local specs = {}
   for _, spec in pairs(registry) do
     if is_enabled(spec) then
@@ -64,9 +66,7 @@ local function get_active_specs()
   table.sort(specs, function(a, b)
     return a.priority > b.priority
   end)
-  return vim.tbl_map(function(spec)
-    return spec.execute
-  end, specs)
+  return specs
 end
 
 ---@param spec HoverSpec
@@ -79,15 +79,15 @@ function HoverUtil.register_hover(spec)
 end
 
 ---@param pipeline HoverSpec[]
----@param done fun(result: HoverResult | nil)
----@param results HoverResult[] | nil
+---@param done fun(result: {[1]: HoverSpec, [2]: HoverResult}[] | nil)
+---@param results {[1]: HoverSpec, [2]: HoverResult}[] | nil
 local function next(pipeline, done, results)
-  local fn = table.remove(pipeline, 1)
-  if fn then
+  local spec = table.remove(pipeline, 1)
+  if spec then
     results = results or {}
-    fn(function(result)
+    spec.execute(function(result)
       if result then
-        table.insert(results, result)
+        table.insert(results, { spec, result })
       end
       next(pipeline, done, results)
     end)
@@ -100,7 +100,7 @@ local function next(pipeline, done, results)
   end
 end
 
----@param results HoverResult[]
+---@param results {[1]: HoverSpec, [2]: HoverResult}[]
 ---@param opts? table
 local function show_hover(results, opts)
   if vim.tbl_isempty(results) then
@@ -108,31 +108,33 @@ local function show_hover(results, opts)
   end
 
   -- TODO: get default opts from vim lsp hover?
-  local opts = opts or {}
+  opts = opts or {}
 
   local lines = {}
 
   ---@type HoverHighlight[]
   local highlights = {}
 
-  if #results == 1 then
-    lines = results[1].lines
-    highlights = results[1].highlights
-  else
-    for _, result in ipairs(results) do
-      if not isempty(result.lines) then
-        if not isempty(lines) then
-          table.insert(lines, "---")
-        end
+  for _, entry in ipairs(results) do
+    local spec = entry[1]
+    local result = entry[2]
+    local highlight_line_offset = #lines
+    if not isempty(result.lines) then
+      if not isempty(lines) then
+        table.insert(lines, "---")
+        highlight_line_offset = highlight_line_offset + 1
+      end
 
-        for _, line in ipairs(result.lines) do
-          table.insert(lines, line)
-        end
+      table.insert(lines, "## " .. spec.name)
+      highlight_line_offset = highlight_line_offset + 1
 
-        if not isempty(result.highlights) then
-          for _, highlight in ipairs(result.highlights) do
-            table.insert(highlights, highlight)
-          end
+      for _, line in ipairs(result.lines) do
+        table.insert(lines, line)
+      end
+
+      if not isempty(result.highlights) then
+        for _, hi in ipairs(result.highlights) do
+          table.insert(highlights, { hi[1], hi[2] + highlight_line_offset, hi[3], hi[4] })
         end
       end
     end
@@ -148,24 +150,15 @@ local function show_hover(results, opts)
   local bufnr, _ = vim.lsp.util.open_floating_preview(lines, "markdown", float_opts)
 
   if highlights and not isempty(highlights) then
-    for i, hl in ipairs(highlights) do
-      local line = lines[i]
-      local prefix_len = hl.prefix and hl.prefix.length or 0
-      local suffix_len = hl.suffix and hl.suffix.length or 0
-      if prefix_len > 0 then
-        vim.api.nvim_buf_add_highlight(bufnr, -1, hl.prefix.hlname, i - 1, 0, prefix_len)
-      end
-      vim.api.nvim_buf_add_highlight(bufnr, -1, hl.hlname, i - 1, prefix_len, #line - suffix_len)
-      if suffix_len > 0 then
-        vim.api.nvim_buf_add_highlight(bufnr, -1, hl.suffix.hlname, i - 1, #line - suffix_len, -1)
-      end
+    for _, hl in ipairs(highlights) do
+      vim.api.nvim_buf_add_highlight(bufnr, -1, hl[1], hl[2], hl[3], hl[4])
     end
   end
 end
 
 ---@param opts? table
 function HoverUtil.hover(opts)
-  next(get_active_specs(), function(results)
+  next(build_pipeline(), function(results)
     if results then
       show_hover(results, opts)
     end
