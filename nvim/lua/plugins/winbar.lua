@@ -1,7 +1,5 @@
-local icons = require("config").icons.highlighted
+local icons = require("config").icons
 local filetypes = require("config").filetypes
-local highlights = require("config").highlights
-local format_highlight = require("util").format_highlight
 
 local get_ft_icon = function(buf)
   local devicons = require("nvim-web-devicons")
@@ -24,19 +22,7 @@ local function excludes()
   return false
 end
 
-local function isempty(value)
-  return value == nil or value == ""
-end
-
-local function get_buf_option(opt)
-  local status_ok, buf_option = pcall(vim.api.nvim_buf_get_option, 0, opt)
-  if not status_ok then
-    return nil
-  else
-    return buf_option
-  end
-end
-
+-- TODO: Make filename include disambiguation if there are multiple buffers with the same name.
 local filename = { "filename" }
 
 local filetype = {
@@ -140,6 +126,7 @@ return {
       },
     },
   },
+  -- TODO: Look into a mini-files like version of nvim-navbuddy
   {
     "nvim-lualine/lualine.nvim",
     event = "VeryLazy",
