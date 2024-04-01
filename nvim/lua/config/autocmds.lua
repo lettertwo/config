@@ -28,6 +28,15 @@ vim.api.nvim_create_autocmd("BufReadPost", {
   end,
 })
 
+--
+vim.api.nvim_create_autocmd("Filetype", {
+  pattern = "*",
+  callback = function()
+    vim.opt_local.formatoptions:remove("t") -- Disable text wrapping
+    vim.opt_local.formatoptions:remove("o") -- Disable comment continuation when entering insert mode
+  end,
+})
+
 -- close some filetypes with <q>
 vim.api.nvim_create_autocmd("FileType", {
   pattern = require("config").filetypes.ui,
