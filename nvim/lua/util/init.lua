@@ -313,14 +313,15 @@ ConfigUtil.ensure_installed = {}
 ---@diagnostic disable-next-line: param-type-mismatch
 setmetatable(ConfigUtil.ensure_installed, {
   __call = function(self, spec)
-    for key, value in pairs(type(spec) == "string" and { spec } or spec) do
-      if type(key) == "number" then
-        if type(value) == "string" then
+    for _, value in pairs(type(spec) == "string" and { spec } or spec) do
+      if type(value) == "string" then
+        if not vim.list_contains(self, value) then
           table.insert(self, value)
         end
-      end
-      if type(value) == "table" then
+      elseif type(value) == "table" then
         ConfigUtil.ensure_installed(value)
+      else
+        error("Invalid value type " .. type(value) .. " in spec")
       end
     end
 
