@@ -9,6 +9,7 @@ return {
       "mxsdev/nvim-dap-vscode-js",
       -- "nvim-telescope/telescope-dap.nvim",
       "rcarriga/nvim-dap-ui",
+      "nvim-neotest/nvim-nio",
       "theHamsta/nvim-dap-virtual-text",
     },
     config = function()
