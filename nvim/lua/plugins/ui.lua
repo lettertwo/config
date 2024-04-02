@@ -173,4 +173,59 @@ return {
       { "<c-b>", function() if not require("noice.lsp").scroll(-4) then return "<c-b>" end end, silent = true, expr = true, desc = "Scroll backward" },
     },
   },
+
+  {
+    "folke/edgy.nvim",
+    event = "VeryLazy",
+    opts = {
+      animate = {
+        enabled = false,
+      },
+      left = {
+        -- Neo-tree filesystem always takes half the screen height
+        {
+          title = "NeoTree",
+          ft = "neo-tree",
+          filter = function(buf)
+            return vim.b[buf].neo_tree_source == "filesystem"
+          end,
+          size = { height = 0.5 },
+        },
+        {
+          ft = "Symbols Outline",
+          pinned = true,
+          open = "SymbolsOutlineOpen",
+        },
+      },
+      bottom = {
+        {
+          ft = "toggleterm",
+          size = { height = 0.4 },
+          -- exclude floating windows
+          filter = function(buf, win)
+            return vim.api.nvim_win_get_config(win).relative == ""
+          end,
+        },
+        "Trouble",
+        { ft = "qf", title = "QuickFix" },
+        {
+          ft = "help",
+          size = { height = 20 },
+          -- only show help buffers
+          filter = function(buf)
+            return vim.bo[buf].buftype == "help"
+          end,
+        },
+      },
+      -- Refer to my configuration here https://github.com/jellydn/lazy-nvim-ide/blob/main/lua/plugins/extras/edgy.lua
+      right = {
+        {
+          title = "CopilotChat.nvim", -- Title of the window
+          ft = "copilot-chat", -- This is custom file type from CopilotChat.nvim
+          size = { width = 0.4 }, -- Width of the window
+        },
+      },
+      top = {},
+    },
+  },
 }
