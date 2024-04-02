@@ -45,7 +45,7 @@ endif
 ~/.local/share/laserwave.nvim: ~/.local/share
 	$(call err,"laserwave not found!")
 	$(call log,"Installing laserwave...")
-	$(call run,git clone https://github.com/lettertwo/laserwave.nvim.git $@)
+	$(call run,git clone git@github.com:lettertwo/laserwave.nvim.git $@)
 	$(call done)
 
 .PHONY: update-laserwave
