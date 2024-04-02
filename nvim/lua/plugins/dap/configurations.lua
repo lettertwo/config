@@ -1,32 +1,63 @@
 local M = {}
 
+-- TODO: Add https://zignar.net/2023/06/10/debugging-lua-in-neovim/
+-- M.lua = {
+--   name = "Current file (local-lua-db, lua)",
+--   type = "local-lua",
+--   request = "launch",
+--   cwd = "${workspaceFolder}",
+--   program = {
+--     lua = "lua5.1",
+--     file = "${file}",
+--   },
+--   args = {},
+-- }
+
 M.javascript = {
-  {
-    type = "node2",
-    name = "Launch",
-    request = "launch",
-    program = "${file}",
-    cwd = vim.fn.getcwd(),
-    sourceMaps = true,
-    protocol = "inspector",
-    console = "integratedTerminal",
-  },
-  {
-    type = "node2",
-    name = "Attach (node2)",
-    request = "attach",
-    program = "${file}",
-    cwd = vim.fn.getcwd(),
-    sourceMaps = true,
-    protocol = "inspector",
-    console = "integratedTerminal",
-  },
+  -- {
+  --   type = "node2",
+  --   name = "Launch",
+  --   request = "launch",
+  --   program = "${file}",
+  --   cwd = vim.fn.getcwd(),
+  --   sourceMaps = true,
+  --   protocol = "inspector",
+  --   console = "integratedTerminal",
+  -- },
+  -- {
+  --   type = "node2",
+  --   name = "Attach (node2)",
+  --   request = "attach",
+  --   program = "${file}",
+  --   cwd = vim.fn.getcwd(),
+  --   sourceMaps = true,
+  --   protocol = "inspector",
+  --   console = "integratedTerminal",
+  -- },
+  -- {
+  --   type = "pwa-node",
+  --   name = "Launch Parcel (js-debug)",
+  --   request = "launch",
+  --   runtimeArgs = { "--inspect", "${workspaceFolder}/node_modules/.bin/parcel" },
+  --   runtimeExecutable = "node",
+  --   cwd = "${workspaceFolder}",
+  --   console = "integratedTerminal",
+  --   -- internalConsoleOptions = "neverOpen",
+  --   -- protocol = "inspector",
+  --   sourceMaps = true,
+  --   skipFiles = { "<node_internals>/**" },
+  --   -- resolveSourceMapLocations = {
+  --   --   "${workspaceFolder}/**",
+  --   --   "!**/node_modules/**",
+  --   -- },
+  -- },
   {
     type = "pwa-node",
     name = "Attach (js-debug)",
     request = "attach",
     processId = require("dap.utils").pick_process,
-    cwd = vim.fn.getcwd(),
+    cwd = "${workspaceFolder}",
+    skipFiles = { "<node_internals>/**" },
     sourceMaps = true,
     resolveSourceMapLocations = {
       "${workspaceFolder}/**",
@@ -57,6 +88,19 @@ M.javascriptreact = {
       "${workspaceFolder}/**",
       "!**/node_modules/**",
     },
+  },
+  {
+    name = "lldb debug",
+    type = "codelldb",
+    request = "launch",
+    program = "/Users/eeldredge/.local/state/fnm_multishells/72638_1698867372675/bin/node",
+    args = {
+      "${workspaceFolder}/node_modules/.bin/parcel",
+      "start",
+    },
+    cwd = "${workspaceFolder}",
+    stopOnEntry = false,
+    runInTerminal = false,
   },
 }
 

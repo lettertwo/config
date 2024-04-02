@@ -11,25 +11,37 @@ M.node2 = {
   end,
 }
 
--- TODO: `js` is not the right name for an adapter type.
--- the nested `adapters` config here lists the actual adapter types.
--- It would be better if we could surface those types here, e.g.,
--- M['pwa-node'] = { ... }
 M.js = {
   opts = {
-    debugger_cmd = { "js-debug-adapter" },
-    debugger_path = vim.fn.stdpath("data") .. "/mason/bin/js-debug-adapter",
-    -- log_file_level = vim.log.levels.TRACE,
-    adapters = {
-      "pwa-node",
-      "pwa-chrome",
-      "pwa-msedge",
-      "node-terminal",
-      "pwa-extensionHost",
+    type = "server",
+    port = "${port}",
+    host = "127.0.0.1",
+    executable = {
+      command = "node",
+      args = {
+        require("mason-registry").get_package("js-debug-adapter"):get_install_path()
+          .. "/js-debug/src/dapDebugServer.js",
+        "${port}",
+      },
     },
+    -- debugger_cmd = { "js-debug-adapter" },
+    -- debugger_path = require("mason-registry").get_package("js-debug-adapter"):get_install_path(),
+    -- -- -- log_file_level = vim.log.levels.TRACE,
+
+    --   Error  12:41:05 notify.error [dap-js] Error trying to launch JS debugger: ...nvim/lazy/nvim-dap-vscode-js/lua/dap-vscode-js/utils.lua:64:
+    -- Debugger entrypoint file '/Users/eeldredge/.local/share/nvim/site/pack/packer/opt/vscode-js-debug/out/src/vsDebugServer.js' does not exist. Did it build properly?
+    -- adapters = {
+    --   "pwa-node",
+    --   "pwa-chrome",
+    --   "pwa-msedge",
+    --   "node-terminal",
+    --   "pwa-extensionHost",
+    -- },
   },
-  setup = function(_)
-    require("dap-vscode-js").setup(M.js.opts)
+  setup = function(dap)
+    for _, adapter in ipairs({ "pwa-node", "pwa-chrome", "pwa-msedge", "node-terminal", "pwa-extensionHost" }) do
+      dap.adapters[adapter] = M.js.opts
+    end
   end,
 }
 
