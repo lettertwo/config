@@ -6,7 +6,7 @@
 #
 
 ## find homebrew location
-for HOMEBREW_BIN in /usr/local/bin/brew /usr/local/Homebrew/bin/brew /home/linuxbrew/.linuxbrew/bin/brew; do
+for HOMEBREW_BIN in /usr/local/bin/brew /usr/local/Homebrew/bin/brew /opt/homebrew/bin/brew /home/linuxbrew/.linuxbrew/bin/brew; do
   if [[ -x "$HOMEBREW_BIN" ]]; then
     break
   fi
