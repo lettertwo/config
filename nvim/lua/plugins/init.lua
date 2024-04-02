@@ -1,5 +1,27 @@
 return {
   {
+    "m4xshen/hardtime.nvim",
+    event = "VeryLazy",
+    keys = {
+      { "<leader>uH", "<cmd>Hardtime toggle<cr>", desc = "Toggle hardtime" },
+    },
+    dependencies = { "MunifTanjim/nui.nvim", "nvim-lua/plenary.nvim" },
+    opts = {
+      disabled_filetypes = require("config").filetypes.ui,
+      -- restricted_keys = {
+      --   h = { "x" },
+      --   j = { "x" },
+      --   k = { "x" },
+      --   l = { "x" },
+      -- },
+      restriction_mode = "hint",
+      -- max_time = 1000, -- Maximum time (in milliseconds) to consider key presses as repeated
+      -- max_count = 5, -- Maximum count of repeated key presses allowed within max_time
+      disable_mouse = false,
+    },
+  },
+
+  {
     "craigmac/Navigator.nvim",
     cmd = { "NavigatorLeft", "NavigatorRight", "NavigatorUp", "NavigatorDown", "NavigatorPrevious" },
     keys = {
@@ -99,26 +121,6 @@ return {
         callback = require("persistence").stop,
       })
     end,
-  },
-
-  -- package info
-  {
-    "vuki656/package-info.nvim",
-    cmd = { "PackageInfoShow" },
-    ft = { "json" },
-    -- stylua: ignore start
-    keys = {
-      { "<leader>Pnt", function() require("package-info").toggle() end, desc = "Toggle dependency versions" },
-      { "<leader>Pnu", function() require("package-info").update() end, desc = "Update dependency on the line" },
-      { "<leader>Pnd", function() require("package-info").delete() end, desc = "Delete dependency on the line" },
-      { "<leader>Pni", function() require("package-info").install() end, desc = "Install a new dependency" },
-      { "<leader>Pnp", function() require("package-info").change_version() end, desc = "Install a different dependency version" },
-    },
-    -- stylua: ignore end
-    opts = {
-      autostart = false,
-      hide_up_to_date = true,
-    },
   },
 
   -- crate management
