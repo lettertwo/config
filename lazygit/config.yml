@@ -115,8 +115,8 @@ keybinding:
     scrollRight: L
     gotoTop: g
     gotoBottom: "G"
-    prevBlock: null
-    nextBlock: null
+    prevBlock: <disabled>
+    nextBlock: <disabled>
     prevBlock-alt: <up>
     nextBlock-alt: <down>
     nextBlock-alt2: ""
@@ -162,7 +162,7 @@ keybinding:
     diffingMenu: W
     diffingMenu-alt: <c-e>
     copyToClipboard: y
-    openRecentRepos: null
+    openRecentRepos: <disabled>
     submitEditorText: <enter>
     extrasMenu: "@"
     toggleWhitespaceInDiffView: <c-w>
@@ -213,8 +213,8 @@ keybinding:
     markCommitAsFixup: f
     createFixupCommit: F
     squashAboveCommits: S
-    moveDownCommit: null
-    moveUpCommit: null
+    moveDownCommit: <disabled>
+    moveUpCommit: <disabled>
     amendToCommit: A
     resetCommitAuthor: a
     pickCommit: p
@@ -257,7 +257,6 @@ customCommands:
     context: "files"
     loadingText: "opening commitizen commit tool"
     subprocess: true
-
   - key: "c"
     context: "worktrees"
     command: "copyuntracked {{.Form.FromWorktree}} {{.SelectedWorktree.Path }}"
@@ -273,7 +272,6 @@ customCommands:
         filter: '(?P<path>.*)\s+(?P<hash>.*)\s+\[(?P<name>.*)\]'
         valueFormat: "{{ .path }}"
         labelFormat: "{{ .name }}"
-
   - key: "t"
     context: "localBranches"
     command: "gt ls"
