@@ -23,6 +23,8 @@ github = "romkatv/zsh-defer"
 [plugins.smartdots]
 local = "~/.config/sheldon/local/smartdots"
 
+[plugins.workon]
+local = "~/.config/sheldon/local/workon"
 
 [plugins.alias-tips]
 github = 'djui/alias-tips'
