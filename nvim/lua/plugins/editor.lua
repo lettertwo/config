@@ -55,6 +55,7 @@ return {
         ["<leader>Pn"] = { name = "+npm" },
         ["<leader>Pc"] = { name = "+cargo" },
         ["<leader>c"] = { name = "+copilot" },
+        ["<leader>o"] = { name = "+obsidian" },
         ["<leader>d"] = { name = "+debug" },
         ["<leader>f"] = { name = "+file/find" },
         ["<leader>g"] = { name = "+git" },
