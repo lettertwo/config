@@ -42,7 +42,7 @@ endif
 
 ### laserwave
 
-~/.local/share/laserwave.nvim: ~/.local/share
+~/.local/share/laserwave.nvim: | ~/.local/share
 	$(call err,"laserwave not found!")
 	$(call log,"Installing laserwave...")
 	$(call run,git clone git@github.com:lettertwo/laserwave.nvim.git $@)
@@ -54,16 +54,16 @@ update-laserwave: ~/.local/share/laserwave.nvim
 	$(call run,cd ~/.local/share/laserwave.nvim && git pull)
 	$(call done)
 
-~/.config/kitty/laserwave.conf: ~/.local/share/laserwave.nvim ~/.config/kitty
+~/.config/kitty/laserwave.conf: | ~/.local/share/laserwave.nvim ~/.config/kitty
 	$(call run,ln -sf $</dist/kitty/laserwave.conf $@)
 
-~/.config/alacritty/laserwave.yml: ~/.local/share/laserwave.nvim ~/.config/alacritty
+~/.config/alacritty/laserwave.yml: | ~/.local/share/laserwave.nvim ~/.config/alacritty
 	$(call run,ln -sf $</dist/alacritty/laserwave.yml $@)
 
-~/.config/wezterm/colors/laserwave.toml: ~/.local/share/laserwave.nvim ~/.config/wezterm/colors
+~/.config/wezterm/colors/laserwave.toml: | ~/.local/share/laserwave.nvim ~/.config/wezterm/colors
 	$(call run,ln -sf $</dist/wezterm/laserwave.toml $@)
 
-~/.config/bat/themes/laserwave.tmTheme: ~/.local/share/laserwave.nvim ~/.config/bat/themes
+~/.config/bat/themes/laserwave.tmTheme: | ~/.local/share/laserwave.nvim ~/.config/bat/themes
 	$(call run,ln -sf $</dist/laserwave.tmTheme $@)
 
 ### homebrew
@@ -227,7 +227,7 @@ ifdef MACOS
 	$(call done)
 endif
 
-~/.local/share/qmk_firmware: ~/Library/Application\ Support/qmk/qmk.ini
+~/.local/share/qmk_firmware: | ~/Library/Application\ Support/qmk/qmk.ini
 	$(call err,"qmk_firmware not found!")
 	$(call log,"Cloning qmk_firmware...")
 	$(call run,qmk setup lettertwo/qmk_firmware --branch lettertwo)
