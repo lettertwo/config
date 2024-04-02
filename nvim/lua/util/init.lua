@@ -356,4 +356,22 @@ function ConfigUtil.smart_shorten_path(path, opts)
   return path
 end
 
+function ConfigUtil.timeago(time)
+  local current_time = os.time()
+  local time_difference = os.difftime(current_time, time)
+  local minutes = math.floor(time_difference / 60)
+  local hours = math.floor(time_difference / 3600)
+  local days = math.floor(time_difference / 86400)
+
+  if days > 0 then
+    return days .. (days > 1 and " days ago" or " day ago")
+  elseif hours > 0 then
+    return hours .. (hours > 1 and " hours ago" or " hour ago")
+  elseif minutes > 0 then
+    return minutes .. (minutes > 1 and " minutes ago" or " minute ago")
+  else
+    return "just now"
+  end
+end
+
 return ConfigUtil
