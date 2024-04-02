@@ -49,7 +49,6 @@ end
 return {
   {
     "nvim-neotest/neotest",
-    -- cmd = { "Neotest", "NeotestStop", "NeotestDebug", "NeotestSwitch", "NeotestRun", "NeotestRunAll" },
     keys = {
       { "<leader>TT", open_summary, desc = "Open Test Summary" },
       { "<leader>Ta", run_all_tests, desc = "Run All Tests" },
@@ -64,9 +63,12 @@ return {
       { "<leader>TK", open_nearest_test_output, desc = "Open Nearest Test Output" },
     },
     dependencies = {
+      "nvim-neotest/nvim-nio",
       "nvim-lua/plenary.nvim",
       "nvim-treesitter/nvim-treesitter",
       "nvim-neotest/neotest-plenary",
+      "adrigzr/neotest-mocha",
+      "nvim-neotest/neotest-jest",
       "rouge8/neotest-rust",
     },
     config = function()
@@ -75,6 +77,39 @@ return {
           require("neotest-plenary"),
           require("neotest-rust")({
             args = { "--no-capture" },
+            dap_adapter = "lldb",
+          }),
+          require("neotest-mocha")({
+            command = "yarn test:integration",
+            is_test_file = function(filename)
+              return filename:match(".*/integration-tests/test/.*\\.js$")
+            end,
+            cwd = function()
+              return vim.fn.getcwd()
+            end,
+          }),
+          require("neotest-jest")({
+            jestCommand = "yarn test",
+            env = { CI = true },
+            -- jestConfigFile = "custom.jest.config.ts",
+            -- env = { CI = true },
+            -- jestCommand = require("neotest-jest.jest-util").getJestCommand(vim.fn.expand("%:p:h")) .. " --watch",
+            -- jestConfigFile = function()
+            --   local file = vim.fn.expand("%:p")
+            --   if string.find(file, "/packages/") then
+            --     return string.match(file, "(.-/[^/]+/)src") .. "jest.config.ts"
+            --   end
+            --
+            --   return vim.fn.getcwd() .. "/jest.config.ts"
+            -- end,
+
+            is_test_file = function(filename)
+              vim.notify("checking filename: " .. filename, "info")
+              return filename:match(".*/__tests__/.*\\.(?:j|t)sx?$")
+            end,
+            cwd = function(path)
+              return vim.fn.getcwd()
+            end,
           }),
         },
       })

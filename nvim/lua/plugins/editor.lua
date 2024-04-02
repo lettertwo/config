@@ -64,6 +64,7 @@ return {
         ["<leader>s"] = { name = "+search" },
         ["<leader>se"] = { name = "+emoji" },
         ["<leader>sn"] = { name = "+noice" },
+        ["<leader>T"] = { name = "+tests" },
         ["<leader>u"] = { name = "+ui" },
         ["<leader>x"] = { name = "+diagnostics/quickfix" },
       })
