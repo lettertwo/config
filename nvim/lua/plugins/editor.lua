@@ -144,5 +144,33 @@ return {
         func = nil,
       },
     },
+
+    -- yank(kill)-ring!
+    {
+      "gbprod/yanky.nvim",
+      event = "BufReadPost",
+      keys = {
+        { "p", "<Plug>(YankyPutAfter)", mode = { "n", "x" } },
+        { "P", "<Plug>(YankyPutBefore)", mode = { "n", "x" } },
+        { "gp", "<Plug>(YankyGPutAfter)", mode = { "n", "x" } },
+        { "gP", "<Plug>(YankyGPutBefore)", mode = { "n", "x" } },
+
+        { "<c-p>", "<Plug>(YankyPreviousEntry)" },
+        { "<c-n>", "<Plug>(YankyNextEntry)" },
+
+        {
+          "lp",
+          function()
+            require("yanky.textobj").last_put()
+          end,
+          mode = { "o", "x" },
+        },
+      },
+      opts = {
+        textobj = {
+          enabled = true,
+        },
+      },
+    },
   },
 }

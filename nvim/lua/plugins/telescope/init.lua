@@ -93,6 +93,8 @@ return {
       { "nvim-telescope/telescope-symbols.nvim" },
       { "nvim-telescope/telescope-live-grep-args.nvim" },
       { "tsakirist/telescope-lazy.nvim" },
+      { "debugloop/telescope-undo.nvim" },
+      { "gbprod/yanky.nvim" },
     },
     keys = {
       { "<leader>p", "<cmd>Telescope commands<CR>", desc = "Commands" },
@@ -136,6 +138,8 @@ return {
       { "<leader>sw", grep_string_cwd, desc = "Word (cwd)", mode = { "n", "v" } },
       { "<leader>sW", grep_string_cbd, desc = "Word (buffer dir)", mode = { "n", "v" } },
       { "<leader>sr", "<cmd>Telescope resume<cr>", desc = "Resume last search" },
+      { "<leader>su", "<cmd>Telescope undo<cr>", desc = "undo history" },
+      { "<leader>sy", "<cmd>Telescope yank_history<cr>", desc = "yank history" },
 
       -- emoji
       { "<leader>see", "<cmd>lua require'telescope.builtin'.symbols({sources={'emoji'}})<CR>", desc = "Emoji 😀" },
@@ -238,6 +242,10 @@ return {
               change_cwd_to_plugin = "",
             },
           },
+          undo = {},
+          yank_history = pickers.slow_picker({
+            dynamic_preview_title = true,
+          }),
         },
         pickers = {
           find_files = {
@@ -300,6 +308,8 @@ return {
       telescope.load_extension("ui-select")
       telescope.load_extension("live_grep_args")
       telescope.load_extension("lazy")
+      telescope.load_extension("undo")
+      telescope.load_extension("yank_history")
 
       -- local function nvim_config_files()
       --   builtin.find_files({
