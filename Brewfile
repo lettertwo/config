@@ -2,10 +2,7 @@
 # https://github.com/Homebrew/homebrew-bundle
 
 # brew all teh things
-tap "homebrew/core" if OS.mac?
 tap "homebrew/bundle" if OS.mac?
-tap "homebrew/cask" if OS.mac?
-tap "homebrew/cask-drivers" if OS.mac?
 tap "homebrew/cask-fonts" if OS.mac?
 tap "homebrew/services" if OS.mac?
 tap "withgraphite/tap" if OS.mac?
