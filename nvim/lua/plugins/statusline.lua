@@ -36,6 +36,8 @@ local tabs = {
   end,
 }
 
+-- TODO: Look at https://github.com/Iron-E/nvim-libmodal#lualinenvim
+-- for example of how to do arbitrary modes with themes.
 local mode = {
   function()
     if vim.b.visual_multi == 1 then
@@ -46,6 +48,16 @@ local mode = {
         return "V-MULTI"
       end
     end
+    local hydra_ok, hydra = pcall(require, "hydra.statusline")
+    if hydra_ok and hydra.is_active() then
+      local name = hydra.get_name()
+      local color = hydra.get_color()
+
+      if name ~= nil then
+        return name
+      end
+    end
+
     return require("lualine.utils.mode").get_mode()
   end,
 }

@@ -180,6 +180,11 @@ local function format_diagnostics(opts)
   return { lines = lines, highlights = highlights }
 end
 
+local function glance_diagnostics()
+  -- TODO: Make float for diagnostics show lsp_lines
+  return vim.diagnostic.open_float()
+end
+
 vim.api.nvim_create_autocmd("BufReadPost", {
   group = vim.api.nvim_create_augroup("Diagnostics", {}),
   callback = function()
@@ -192,8 +197,7 @@ vim.api.nvim_create_autocmd("BufReadPost", {
         -- TODO: Make float show again if moved to another diagnostic on same line
         if line ~= vim.api.nvim_win_get_cursor(0)[1] then
           line = vim.api.nvim_win_get_cursor(0)[1]
-          -- TODO: Make float for diagnostics show lsp_lines
-          vim.diagnostic.open_float()
+          glance_diagnostics()
         end
       end,
     })
@@ -251,8 +255,8 @@ return {
       { "<leader>xj", vim.diagnostic.goto_next, desc = "Next diagnostic" },
       { "<leader>xk", vim.diagnostic.goto_prev, desc = "Previous diagnostic" },
       { "<leader>xx", "<cmd>TroubleToggle<cr>", desc = "Trouble: Show" },
-      { "<leader>xq", "<cmd>TroubleToggle quickfix<cr>", desc = "Trouble: Show QuickFix" },
-      { "<leader>xl", "<cmd>TroubleToggle loclist<cr>", desc = "Trouble: Show Locationlist" },
+      -- { "<leader>xq", "<cmd>TroubleToggle quickfix<cr>", desc = "Trouble: Show QuickFix" },
+      -- { "<leader>xl", "<cmd>TroubleToggle loclist<cr>", desc = "Trouble: Show Locationlist" },
       { "<leader>xT", "<cmd>TroubleToggle telescope<cr>", desc = "Trouble: Show Telescope" },
       { "<leader>xd", "<cmd>TroubleToggle document_diagnostics<cr>", desc = "Trouble: Show Diagnostics" },
       { "<leader>xw", "<cmd>TroubleToggle workspace_diagnostics<cr>", desc = "Trouble: Show Workspace Diagnostics" },
