@@ -88,6 +88,7 @@
   "promise-async": { "branch": "main", "commit": "93540c168c5ed2b030ec3e6c40ab8bbb85e36355" },
   "rustaceanvim": { "branch": "master", "commit": "5781eef090d9b0c3f0fba5ecad7987ecfd20c880" },
   "shipwright.nvim": { "branch": "master", "commit": "ab70e80bb67b7ed3350bec89dd73473539893932" },
+  "satellite.nvim": { "branch": "main", "commit": "40eb89743e3439c66192abfc31eb3280622a5d3c" },
   "statuscol.nvim": { "branch": "main", "commit": "d954893262a57a92e46edd87de67e2b3fe72305e" },
   "stickybuf.nvim": { "branch": "master", "commit": "2160fcd536d81f5fa43f7167dba6634e814e3154" },
   "symbols-outline.nvim": { "branch": "master", "commit": "564ee65dfc9024bdde73a6621820866987cbb256" },
