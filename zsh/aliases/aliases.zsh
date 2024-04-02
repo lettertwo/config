@@ -8,24 +8,20 @@ alias zi='z -I'      # use fzf to select in multiple matches
 alias zb='z -b'      # quickly cd to the parent directory
 alias zbi='z -b -I'  # use fzf to select in multiple parent directories
 
-# exa versions of some ls aliases.
-alias ls='exa'
+# lsd versions of some ls aliases.
+alias ls='lsd'
 # Lists in one column, hidden files, sorted by extension.
-alias l='exa -1a --icons -s extension'
+alias l='lsd -1a --extensionsort'
 # Lists human readable sizes.
-alias ll='exa -lh --octal-permissions --git --icons -s extension'
+alias ll='lsd -lh --permission octal --git --icon always --extensionsort'
 # Lists human readable sizes, recursively.
 alias lr='ll -R'
 # Lists human readable sizes, hidden files.
 alias la='ll -a'
 # Lists sorted by size, largest last.
-alias lk='ll -s size'
+alias lk='ll --sizesort'
 # Lists sorted by date, most recent last.
-alias lt='ll -s oldest'
-# Lists sorted by date, most recent last, shows change time.
-alias lc='lt -t created'
-# Lists sorted by date, most recent last, shows access time.
-alias lu='lt -t accessed'
+alias lt='ll --timesort --reverse'
 
 # IP addresses
 alias ip="dig +short myip.opendns.com @resolver1.opendns.com"

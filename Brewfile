@@ -25,7 +25,7 @@ brew "sheldon"
 brew "ripgrep" # BurntSushi/ripgrep
 brew "fd" # sharkdp/fd, replacement for find
 brew "bat" # sharkdp/bat, replacement for cat
-brew "exa" # ogham/exa, replacement for ls
+brew "lsd" # lsd-rs/lsd, replacement for ls
 brew "git-delta" # dandavison/delta, replacement for diff
 brew "dust" # bootandy/dust, replacement for du
 brew "duf" # muesli/duf, replacement for df
