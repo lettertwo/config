@@ -162,7 +162,7 @@ vim.keymap.set("n", "<leader>bC", "<cmd>%bd|e#|bd#<CR>", { desc = "Close all buf
 vim.keymap.set("n", "<leader>bs", function()
   local fname = vim.fn.input({ prompt = "Save as: ", default = vim.fn.bufname(), completion = "file" })
   if fname ~= "" then
-    vim.cmd("<cmd>saveas! " .. fname)
+    vim.cmd("saveas! " .. fname)
   end
 end, { desc = "Save current buffer as" })
 
