@@ -83,6 +83,9 @@ return {
       },
     },
     keys = {
+      { "<leader>cc", "<cmd>CopilotChatToggle<cr>", desc = "CopilotChat - Toggle" },
+      { "<leader>cR", "<cmd>CopilotChatReset<cr>", desc = "CopilotChat - Reset" },
+      { "<leader>cD", "<cmd>CopilotChatDebugInfo<cr>", desc = "CopilotChat - Debug info" },
       {
         "<leader>cq",
         function()
