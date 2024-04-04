@@ -8,13 +8,13 @@ return {
     dependencies = { "MunifTanjim/nui.nvim", "nvim-lua/plenary.nvim" },
     opts = {
       disabled_filetypes = require("config").filetypes.ui,
-      -- restricted_keys = {
-      --   h = { "x" },
-      --   j = { "x" },
-      --   k = { "x" },
-      --   l = { "x" },
-      -- },
-      restriction_mode = "hint",
+      restricted_keys = {
+        h = { "x", "o" },
+        j = { "x", "o" },
+        k = { "x", "o" },
+        l = { "x", "o" },
+      },
+      -- restriction_mode = "hint",
       -- max_time = 1000, -- Maximum time (in milliseconds) to consider key presses as repeated
       -- max_count = 5, -- Maximum count of repeated key presses allowed within max_time
       disable_mouse = false,
