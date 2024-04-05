@@ -84,6 +84,9 @@ local = "~/.config/sheldon/local/install-completions"
 [plugins.graphite-completions]
 inline = 'install-completions graphite gt completion'
 
+[plugins.fnm-completions]
+inline = 'install-completions fnm fnm completions --shell zsh'
+
 [plugins.yarn-completions]
 github = "chrisands/zsh-yarn-completions"
 use = ["zsh-yarn-completions.zsh"]
