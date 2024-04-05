@@ -38,7 +38,7 @@ apply = ["defer"]
 inline = 'zsh-defer eval "$(fnm env --use-on-cd)"'
 
 [plugins.zoxide]
-inline = 'eval "$(zoxide init zsh)"'
+inline = 'zsh-defer eval "$(zoxide init zsh)"'
 
 [plugins.nnn-nerdfont]
 # TODO: Also install nnn plugins (~/.config/nnn/plugins)
@@ -91,7 +91,6 @@ apply = ["install-yarn-completions"]
 
 [plugins.compinit]
 local = "~/.config/sheldon/local/compinit"
-apply = ["defer"]
 
 ### tab title
 [plugins.tab-title]
