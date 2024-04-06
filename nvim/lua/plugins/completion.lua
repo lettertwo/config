@@ -114,10 +114,16 @@ return {
           end
           return true
         end,
-        -- view = {
-        -- -- TODO: Figure out how to get this to work with noice.
-        --   entries = "native",
-        -- },
+        view = {
+          entries = {
+            name = "custom",
+            selection_order = "near_cursor",
+            follow_cursor = true,
+          },
+          docs = {
+            auto_open = true,
+          },
+        },
         snippet = {
           -- REQUIRED - you must specify a snippet engine :(
           -- See https://github.com/hrsh7th/nvim-cmp/issues/373
@@ -177,7 +183,7 @@ return {
             cmp.ItemField.Abbr,
             cmp.ItemField.Kind,
           },
-          format = function(entry, item)
+          format = function(_, item)
             local icons = require("config").icons.kinds
             item.kind = vim.trim(icons[item.kind]) .. " [" .. item.kind .. "]"
             return item
