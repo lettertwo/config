@@ -139,7 +139,7 @@ return {
       { "<leader>sW", grep_string_cbd, desc = "Word (buffer dir)", mode = { "n", "v" } },
       { "<leader>sr", "<cmd>Telescope resume<cr>", desc = "Resume last search" },
       { "<leader>su", "<cmd>Telescope undo<cr>", desc = "undo history" },
-      { "<leader>sy", "<cmd>Telescope yank_history<cr>", desc = "yank history" },
+      { "<leader>sy", "<cmd>Telescope yank_history<cr>", desc = "yank history", mode = { "n", "v" } },
 
       -- emoji
       { "<leader>see", "<cmd>lua require'telescope.builtin'.symbols({sources={'emoji'}})<CR>", desc = "Emoji 😀" },
