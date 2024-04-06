@@ -47,7 +47,6 @@ return {
             { type = "text", val = "Find Stuff", opts = { hl = "SpecialComment", position = "center" } },
             { type = "padding", val = 1 },
             button("l", "  Load Session", [[:lua require("persistence").load() <cr>]]),
-            button("e", "󰙅  Explore", "<CMD>Telescope file_browser<CR>"),
             button("f", "󰮗  Find File", "<CMD>Telescope find_files<CR>"),
             button("r", "  Find Recent", "<CMD>Telescope oldfiles<CR>"),
             button("g", "󰊄  Find Text", "<CMD>Telescope live_grep<CR>"),
