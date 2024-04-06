@@ -99,11 +99,6 @@ vim.keymap.set("n", "<leader>uc", Util.create_toggle("cursorline", "wo"), { desc
 vim.keymap.set("n", "<leader>qq", "<cmd>qa<cr>", { desc = "Quit all" })
 vim.keymap.set("n", "<leader>qQ", "<cmd>cq!<cr>", { desc = "Force quit (with error code)" })
 
--- highlights under cursor
-if vim.fn.has("nvim-0.9.0") == 1 then
-  vim.keymap.set("n", "<leader>ui", vim.show_pos, { desc = "Inspect Pos" })
-end
-
 -- tabs
 vim.keymap.set("n", "<leader><tab>l", "<cmd>tablast<cr>", { desc = "Last" })
 vim.keymap.set("n", "<leader><tab>f", "<cmd>tabfirst<cr>", { desc = "First" })

@@ -80,7 +80,6 @@
   "obsidian.nvim": { "branch": "main", "commit": "d70f3289399c25153b7f503b838afbf981124a37" },
   "one-small-step-for-vimkind": { "branch": "main", "commit": "cd2500ab74addeed6ac260a008dd649c01d3ba12" },
   "persistence.nvim": { "branch": "main", "commit": "4982499c1636eac254b72923ab826ee7827b3084" },
-  "playground": { "branch": "master", "commit": "ba48c6a62a280eefb7c85725b0915e021a1a0749" },
   "plenary.nvim": { "branch": "master", "commit": "8aad4396840be7fc42896e3011751b7609ca4119" },
   "profile.nvim": { "branch": "master", "commit": "3c5aaf2f8b2e4c2bc48d2cde396a55892e0267ad" },
   "promise-async": { "branch": "main", "commit": "93540c168c5ed2b030ec3e6c40ab8bbb85e36355" },
