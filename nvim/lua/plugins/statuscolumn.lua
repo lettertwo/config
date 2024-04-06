@@ -111,7 +111,7 @@ return {
         vim.keymap.set("n", "<leader>gu", gitsigns.undo_stage_hunk, { buffer = buffer, desc = "Unstage hunk" })
         vim.keymap.set("n", "<leader>gR", gitsigns.reset_buffer, { buffer = buffer, desc = "Reset buffer" })
         vim.keymap.set("n", "<leader>gp", gitsigns.preview_hunk, { buffer = buffer, desc = "Preview hunk" })
-        vim.keymap.set("n", "<leader>gl", function()
+        vim.keymap.set("n", "<leader>gb", function()
           gitsigns.blame_line({ full = true })
         end, { buffer = buffer, desc = "Blame" })
         vim.keymap.set("n", "<leader>gD", gitsigns.toggle_deleted, { buffer = buffer, desc = "Toggle deleted lines" })
@@ -123,11 +123,10 @@ return {
         )
         vim.keymap.set(
           "n",
-          "<leader>gB",
+          "<leader>uB",
           gitsigns.toggle_current_line_blame,
           { buffer = buffer, desc = "Toggle line blame" }
         )
-        vim.keymap.set("n", "<leader>uB", "<leader>gB", { remap = true, buffer = buffer, desc = "Toggle line blame" })
 
         vim.keymap.set("n", "]c", function()
           if vim.wo.diff then

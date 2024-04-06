@@ -163,7 +163,7 @@ return {
       { "<leader>gf", "<cmd>Telescope git_files<CR>", desc = "Git files" },
       { "<leader>gc", "<cmd>Telescope git_commits<CR>", desc = "Commits" },
       { "<leader>gC", "<cmd>Telescope git_bcommits<CR>", desc = "Buffer Commits" },
-      { "<leader>gb", "<cmd>Telescope git_branches<CR>", desc = "Branches" },
+      { "<leader>gB", "<cmd>Telescope git_branches<CR>", desc = "Branches" },
       { "<leader>gs", "<cmd>Telescope git_status<CR>", desc = "Status" },
       { "<leader>gS", "<cmd>Telescope git_stash<CR>", desc = "Stash" },
       { "<leader>gh", git_hunks, desc = "Hunks" },
