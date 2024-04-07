@@ -32,6 +32,9 @@ brew "duf" # muesli/duf, replacement for df
 brew "bottom" # ClementTsang/bottom, replacement for top
 brew "zoxide" # ajeetdsouza/zoxide, smarter cd
 brew "lf" # gokcehan/lf, terminal file manager
+brew "ffmpegthumbnailer" # for video thumbnails
+brew "unar" # for archive preview
+brew "poppler" # for pdf preview
 
 # misc. dev tooling
 brew "watchman"
@@ -39,12 +42,6 @@ brew "graphviz"
 brew "hyperfine"
 brew "jq"
 
-# yazi file browser
-# NOTE: also requires fd, ripgrep, fzf, zoxide, jq (installed above)
-brew "yazi"
-brew "ffmpegthumbnailer" # for video thumbnails
-brew "unar" # for archive preview
-brew "poppler" # for pdf preview
 
 # neovim dependencies
 # See https://github.com/neovim/neovim/wiki/Building-Neovim#macos--homebrew
