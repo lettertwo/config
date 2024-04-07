@@ -106,4 +106,23 @@ path[1,0]=(
 )
 
 fpath+=$XDG_STATE_HOME/zsh/completions
+
+#
+# Homebrew
+#
+
+## find homebrew location
+for HOMEBREW_BIN in /usr/local/bin/brew /usr/local/Homebrew/bin/brew /opt/homebrew/bin/brew /home/linuxbrew/.linuxbrew/bin/brew; do
+  if [[ -x "$HOMEBREW_BIN" ]]; then
+    break
+  fi
+done
+
+if [[ -x $HOMEBREW_BIN ]]; then
+  eval "$($HOMEBREW_BIN shellenv)"
+  fpath+=$HOMEBREW_PREFIX/share/zsh/site-functions
+else
+  echo "Homebrew not found!"
+fi
+
 # export ZPROF=true

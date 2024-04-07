@@ -4,6 +4,7 @@ autoload -Uz compinit
 
 comprebuild() {
   local zcompdump=${1:-$XDG_CACHE_HOME/zsh/zcompdump}
+  echo "rebuilding zcompdump:" $zcompdump
   rm -f $1:-$zcompdump 2>/dev/null
   compinit -d $zcompdump
 }
@@ -19,7 +20,6 @@ function() {
   local zcompdump=${1:-$XDG_CACHE_HOME/zsh/zcompdump}
 
   if [[ ! -f $zcompdump ]]; then
-    echo "rebuilding early"
     comprebuild $zcompdump
     return
   fi
@@ -50,7 +50,6 @@ function() {
   done
 
   if $rebuild; then
-    echo "rebuilding"
     comprebuild $zcompdump
   else
     compinit -C -d $zcompdump
