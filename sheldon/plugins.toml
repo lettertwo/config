@@ -40,10 +40,6 @@ inline = 'zsh-defer eval "$(fnm env --use-on-cd)"'
 [plugins.zoxide]
 inline = 'zsh-defer eval "$(zoxide init zsh)"'
 
-[plugins.nnn-nerdfont]
-# TODO: Also install nnn plugins (~/.config/nnn/plugins)
-inline = 'zsh-defer source /usr/local/share/nnn-nerdfont/quitcd/quitcd.bash_zsh'
-
 [plugins.rust]
 github = "cowboyd/zsh-rust"
 apply = ["defer"]
