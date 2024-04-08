@@ -16,6 +16,8 @@ export XDG_CACHE_HOME="$HOME/.cache"       # non-essential data
 export XDG_DATA_HOME="$HOME/.local/share"  # essential portable data
 export XDG_STATE_HOME="$HOME/.local/state" # persistant non-portable data
 
+export PYENV_ROOT="$XDG_DATA_HOME/pyenv"
+
 #
 # Browser
 #
@@ -103,6 +105,7 @@ path[1,0]=(
   $HOME/.cargo/bin
   $HOME/.yarn/bin
   /usr/local/share/npm/bin
+  $PYENV_ROOT/bin
 )
 
 fpath+=$XDG_STATE_HOME/zsh/completions
