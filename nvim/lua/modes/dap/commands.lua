@@ -1,7 +1,7 @@
 local M = {}
 
 local function uninitialized_error()
-  error("dap commands have not been initialized. Call require('plugins.dap.commands').setup first.")
+  error("dap commands have not been initialized. Call require('modes.dap.commands').setup first.")
 end
 
 M.start = uninitialized_error

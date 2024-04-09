@@ -28,7 +28,7 @@ return {
       -- local telescope = require("telescope")
       -- telescope.load_extension("dap")
 
-      local adapters = require("plugins.dap.adapters")
+      local adapters = require("modes.dap.adapters")
 
       Util.ensure_installed(vim.tbl_keys(adapters))
 
@@ -36,16 +36,16 @@ return {
         adapter.setup(dap)
       end
 
-      dap.configurations = require("plugins.dap.configurations")
+      dap.configurations = require("modes.dap.configurations")
 
       -- Try to load launch.json
       if not pcall(require("dap.ext.vscode").load_launchjs, nil, {}) then
         vim.notify("Failed to parse launch.json", "warn")
       end
 
-      require("plugins.dap.commands").setup(dap, ui)
-      require("plugins.dap.keymaps").setup(dap, ui)
-      require("plugins.dap.ui").setup(dap, ui)
+      require("modes.dap.commands").setup(dap, ui)
+      require("modes.dap.keymaps").setup(dap, ui)
+      require("modes.dap.ui").setup(dap, ui)
       require("nvim-dap-virtual-text").setup({})
     end,
   },
