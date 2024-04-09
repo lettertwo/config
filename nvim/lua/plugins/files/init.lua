@@ -97,7 +97,7 @@ return {
             keymaps.apply(buf_id, {
               { "<esc>", actions.close, desc = "Close minifiles" },
               { "g.", actions.toggle_dotfiles, desc = "Toggle dotfiles" },
-              { "g~", actions.files_set_cwd, desc = "Set cwd" },
+              { "<C-.>", actions.files_set_cwd, desc = "Set cwd" },
               { "<C-s>", actions.split, desc = "Open in split" },
               { "<C-v>", actions.vsplit, desc = "Open in vsplit" },
             })
