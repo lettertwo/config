@@ -122,6 +122,7 @@ opt.conceallevel = 2 -- Hide * markup for bold and italic
 -- vim.wo.foldmethod = "expr"
 -- vim.wo.foldexpr = "nvim_treesitter#foldexpr()"
 
--- diffing
+-- diffing (default "internal,filler,closeoff")
 opt.diffopt:append("vertical")
 opt.diffopt:append("context:3")
+opt.diffopt:append("linematch:60")
