@@ -81,6 +81,7 @@ opt.splitkeep = "screen"
 
 -- Cursor behavior
 opt.wrap = false -- Disable line wrapping
+opt.smoothscroll = true -- Scroll screen lines rather than text lines (useful when wrap is on)
 opt.textwidth = 120 -- the width that'll be used for wrapping (gq)
 opt.whichwrap:append("<,>,[,],h,l") -- navigate to next/prev lines more naturally
 
