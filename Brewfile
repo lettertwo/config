@@ -35,6 +35,7 @@ brew "lf" # gokcehan/lf, terminal file manager
 brew "ffmpegthumbnailer" # for video thumbnails
 brew "unar" # for archive preview
 brew "poppler" # for pdf preview
+brew "toilet" # very important
 
 # misc. dev tooling
 brew "watchman"
