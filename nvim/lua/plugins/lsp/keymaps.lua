@@ -36,6 +36,7 @@ local M = create_buffer_keymap({
     if not ctx.client.server_capabilities then return false end
     if ctx.client.server_capabilities[spec.has] then return true end
     if ctx.client.server_capabilities[spec.has .. "Provider"] then return true end
+    if ctx.client.supports_method('textDocument/' .. spec.has) then return true end
     return false
     -- stylua: ignore end
   end,
