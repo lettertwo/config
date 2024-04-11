@@ -11,9 +11,15 @@ return {
     { "<leader>=", "<cmd>Format<cr>", desc = "Format Range", mode = "x" },
   },
   opts = {
+    formatters = {
+      beautysh = {
+        args = { "--indent-size", "2", "--force-function-style", "fnpar", "-" },
+      },
+    },
     formatters_by_ft = Util.ensure_installed({
       lua = { "stylua" },
-      sh = { "shfmt" },
+      sh = { "beautysh" },
+      zsh = { "beautysh" },
       python = { "black" },
       javascript = { { "prettierd", "prettier" } },
       javascriptreact = { { "prettierd", "prettier" } },

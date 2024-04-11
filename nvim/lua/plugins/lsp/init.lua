@@ -247,12 +247,14 @@ return {
             },
           },
         },
+        bashls = {
+          filetypes = { "sh", "zsh" },
+        },
         rust_analyzer = false, -- NOTE: configured by rustaceanvim
         "eslint",
         "html",
         "cssls",
         "pyright",
-        "bashls",
       },
     },
     ---@param opts PluginLspOpts
