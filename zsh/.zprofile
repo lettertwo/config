@@ -6,6 +6,6 @@
 #
 
 if [[ -f ~/.zprofile ]]; then
-    source ~/.zprofile
+  source ~/.zprofile
 fi
 

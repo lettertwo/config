@@ -2,21 +2,21 @@
 
 autoload -Uz compinit
 
-comprebuild() {
+function comprebuild() {
   local zcompdump=${1:-$XDG_CACHE_HOME/zsh/zcompdump}
   echo "rebuilding zcompdump:" $zcompdump
   rm -f $1:-$zcompdump 2>/dev/null
   compinit -d $zcompdump
 }
 
-complist() {
+function complist() {
   for command completion in ${(kv)_comps}
-    do
-      printf "%-32s %s\n" $command $completion
+  do
+    printf "%-32s %s\n" $command $completion
   done | sort
 }
 
-function() {
+function function() {
   local zcompdump=${1:-$XDG_CACHE_HOME/zsh/zcompdump}
 
   if [[ ! -f $zcompdump ]]; then

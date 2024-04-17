@@ -4,7 +4,7 @@
 
 # Quick change directories
 # Expands .... -> ../../../
-smartdots() {
+function smartdots() {
   if [[ $LBUFFER = *.. ]]; then
     LBUFFER+=/..
   else

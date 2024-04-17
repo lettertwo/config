@@ -1,18 +1,18 @@
 #! /usr/bin/env zsh
 
 # From https://harrisonpim.com/blog/setting-better-terminal-tab-titles
-is_git() {
+function is_git() {
   [[ $(git rev-parse --is-inside-work-tree 2>/dev/null) == true ]]
 }
 
-is_ssh() {
+function is_ssh() {
   [[ -n "$SSH_CLIENT" || -n "$SSH_TTY" ]]
 }
 
-tab_title() {
+function tab_title() {
   local TITLE
   if is_git; then
-   TITLE=$(git rev-parse --show-toplevel)
+    TITLE=$(git rev-parse --show-toplevel)
   else
     TITLE=$(PWD)
   fi

@@ -1,6 +1,6 @@
 #! /usr/bin/env zsh
 
-install-completions() {
+function install-completions() {
   local ttl=h+24
   local dir=${XDG_STATE_HOME:-~/.local/state}/zsh/completions
   local name cmd output code dryrun update verbose

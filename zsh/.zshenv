@@ -90,7 +90,7 @@ typeset -gU cdpath fpath mailpath path
 # Run path_helper if available (macOS)
 # NOTE: this is normally run in /etc/profile,
 # but since we're not loading global configs,
-# We're doing this here to ensure that 
+# We're doing this here to ensure that
 # paths defined in /etc/paths.d are included.
 if [ -x /usr/libexec/path_helper ]; then
   eval `/usr/libexec/path_helper -s`

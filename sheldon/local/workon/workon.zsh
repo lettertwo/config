@@ -10,7 +10,7 @@ function workon() {
   while getopts ":hvn" opt
   do
     case $opt in
-      (*h) print -r -- "workon [-vn] [worktree]
+        (*h) print -r -- "workon [-vn] [worktree]
 
 Given no arguments, workon will show an interactive list of worktrees to choose from.
 
@@ -24,13 +24,13 @@ Options:
   -h  Show this help message
   -v  Turn the volume up to 11
   -n  Create a new worktree
-"
+        "
         return 0
-      ;;
+        ;;
       n) new=1 ;;
       v) verbose=1 ;;
-      \?) >&2 print -r -- "workon: invalid option: $OPTARG"            ; return 1;;
-      :)  >&2 print -r -- "workon: missing required argument: $OPTARG" ; return 1;;
+      \?) >&2 print -r -- "workon: invalid option: $OPTARG"            ; return 1 ;;
+      :)  >&2 print -r -- "workon: missing required argument: $OPTARG" ; return 1 ;;
     esac
   done
   local query=${@[OPTIND++]#_}
@@ -81,13 +81,13 @@ Options:
 # Cleanup:
 #
 #   `git worktree remove ../lettertwo/some-thing \
-#     && git branch -d lettertwo/some-thing`
+  #     && git branch -d lettertwo/some-thing`
 #
 # Cleanup remote:
 #
 #   `git worktree remove ../bdo/browser-reporter \
-#     && git branch -d bdo/browser-reporter \
-#     && git push --delete origin bdo/browser-reporter`
+  #     && git branch -d bdo/browser-reporter \
+  #     && git push --delete origin bdo/browser-reporter`
 function worktree() {
   >&2 print -r -- "not implemented yet: worktree: $@"
   return 1
@@ -99,7 +99,7 @@ function copyuntracked() {
   while getopts ":hvn" opt
   do
     case $opt in
-      (*h) print -r -- "copyuntracked [-vn] <from> <to>
+        (*h) print -r -- "copyuntracked [-vn] <from> <to>
 
 Copy any untracked files in <from> to <to>.
 
@@ -134,13 +134,13 @@ Examples:
 
   # Copy untracked files from the main worktree to a feature branch worktree:
   copyuntracked  ./main ./feature-branch
-"
+        "
         return 0
-      ;;
+        ;;
       v) verbose=1 ;;
       n) dryrun=1 ;;
-      \?) >&2 print -r -- "copyuntracked: invalid option: $OPTARG"            ; return 1;;
-      :)  >&2 print -r -- "copyuntracked: missing required argument: $OPTARG" ; return 1;;
+      \?) >&2 print -r -- "copyuntracked: invalid option: $OPTARG"            ; return 1 ;;
+      :)  >&2 print -r -- "copyuntracked: missing required argument: $OPTARG" ; return 1 ;;
     esac
   done
 

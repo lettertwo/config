@@ -28,10 +28,8 @@ setopt CDABLE_VARS            # Change directory to a path stored in a variable.
 setopt MULTIOS                # Write to multiple descriptors.
 setopt EXTENDED_GLOB          # Use extended globbing syntax.
 setopt NO_BANG_HIST           # Let ! be !
-unsetopt CLOBBER              # Do not overwrite existing files with > and >>.
-                              # Use >! and >>! to bypass.
-unsetopt NOMATCH              # Allow ^ to be used unescaped in args.
-                              # See https://github.com/ohmyzsh/ohmyzsh/issues/449#issuecomment-6973425
+unsetopt CLOBBER              # Do not overwrite existing files with > and >>. Use >! and >>! to bypass.
+unsetopt NOMATCH              # Allow ^ to be used unescaped in args. See https://github.com/ohmyzsh/ohmyzsh/issues/449#issuecomment-6973425
 setopt HIST_FIND_NO_DUPS      # Do not find duplicate command when searching
 setopt HIST_EXPIRE_DUPS_FIRST # Trim duplicates from history file first
 setopt HIST_IGNORE_SPACE      # Prepend a command with a space to exclude it from history
@@ -63,12 +61,12 @@ zstyle ':fzf-tab:*' switch-group 'left' 'right'
 zstyle ':fzf-tab:complete:(kill|ps):argument-rest' fzf-flags --preview-window=down:3:wrap
 
 # Use fd instead of the default find command for listing path candidates.
-_fzf_compgen_path() {
+function _fzf_compgen_path() {
   fd --hidden --follow --exclude ".git" . "$1"
 }
 
 # Use fd to generate the list for directory completion
-_fzf_compgen_dir() {
+function _fzf_compgen_dir() {
   fd --type d --hidden --follow --exclude ".git" . "$1"
 }
 
