@@ -45,11 +45,7 @@ github = "cowboyd/zsh-rust"
 apply = ["defer"]
 
 [plugins.pyenv]
-inline = 'zsh-defer eval "$(pyenv init -)"'
-
-[plugins.poetry]
-github = "darvid/zsh-poetry"
-apply = ["defer"]
+inline = 'zsh-defer eval "$(pyenv init -)";eval "$(pyenv virtualenv-init -)"'
 
 [plugins.luaver]
 github = "DhavalKapil/luaver"
