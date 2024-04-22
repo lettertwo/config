@@ -74,11 +74,11 @@ local function grep_string_files()
 end
 
 local function git_hunks()
-  require("plugins.telescope.pickers").git_hunks({ bufnr = 0 })
+  require("plugins.telescope.pickers.git_hunks").git_hunks({ bufnr = 0 })
 end
 
 local function git_all_hunks()
-  require("plugins.telescope.pickers").git_hunks()
+  require("plugins.telescope.pickers.git_hunks").git_hunks()
 end
 
 return {
