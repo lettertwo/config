@@ -146,7 +146,7 @@ local function format_diagnostics(opts)
 
   for i, diagnostic in ipairs(diagnostics) do
     local prefix = (#diagnostics <= 1) and "" or string.format("%d. ", i)
-    local suffix = diagnostic.code and string.format(" [[%s]]", diagnostic.code)
+    local suffix = diagnostic.code and string.format(" [[%s]]", diagnostic.code) or ""
 
     local severity = vim.diagnostic.severity[diagnostic.severity]
     local hiname = "DiagnosticFloating" .. severity:sub(1, 1) .. severity:sub(2):lower()
