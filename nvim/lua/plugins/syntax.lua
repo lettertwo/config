@@ -221,8 +221,24 @@ return {
 
   -- auto pairs
   {
-    "echasnovski/mini.pairs",
-    event = "VeryLazy",
+    "windwp/nvim-autopairs",
+    event = "InsertEnter",
+    opts = {
+      disable_filetype = filetypes.ui,
+      ignored_next_char = [=[[%w%%%'%[%(%{%"%.%`%$]]=],
+      keys = "asdfghjklqwertyuiopzxcvbnm",
+      ts_config = {
+        lua = { "string", "source", "string_content" },
+        javascript = { "string", "template_string" },
+      },
+      fast_wrap = {
+        map = "<c-w>",
+        chars = { "{", "[", "(", '"', "'", "`" },
+        manual_position = false,
+        use_virt_lines = true,
+      },
+    },
+  },
     config = function(_, opts)
       require("mini.pairs").setup(opts)
     end,
