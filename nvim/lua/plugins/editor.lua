@@ -159,14 +159,6 @@ return {
 
         { "<c-p>", "<Plug>(YankyPreviousEntry)" },
         { "<c-n>", "<Plug>(YankyNextEntry)" },
-
-        {
-          "lp",
-          function()
-            require("yanky.textobj").last_put()
-          end,
-          mode = { "o", "x" },
-        },
       },
       opts = {
         textobj = {
