@@ -374,4 +374,20 @@ function ConfigUtil.timeago(time)
   end
 end
 
+---@param bufnr integer
+---@param force? boolean
+function ConfigUtil.delete_buffer(bufnr, force)
+  if force == nil then
+    force = vim.api.nvim_get_option_value("buftype", { buf = bufnr }) == "terminal"
+  end
+  local bufremove_ok, bufremove = pcall(require, "mini.bufremove")
+  if bufremove_ok and bufremove then
+    local ok, success = pcall(bufremove.delete, bufnr, force)
+    return ok and success
+  else
+    local ok = pcall(vim.api.nvim_buf_delete, bufnr, { force = force })
+    return ok
+  end
+end
+
 return ConfigUtil

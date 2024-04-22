@@ -2,6 +2,7 @@ local action_state = require("telescope.actions.state")
 local from_entry = require("telescope.from_entry")
 local telescope_actions = require("telescope.actions")
 local transform_mod = require("telescope.actions.mt").transform_mod
+local Util = require("util")
 
 local function text_from_entry(entry)
   local text = entry.text or entry.name
@@ -89,15 +90,7 @@ end
 function Actions.delete_buffer(prompt_bufnr)
   local current_picker = action_state.get_current_picker(prompt_bufnr)
   current_picker:delete_selection(function(selection)
-    local force = vim.api.nvim_buf_get_option(selection.bufnr, "buftype") == "terminal"
-    local bufremove_ok, bufremove = pcall(require, "mini.bufremove")
-    if bufremove_ok and bufremove then
-      local ok = pcall(bufremove.delete, selection.bufnr, force)
-      return ok
-    else
-      local ok = pcall(vim.api.nvim_buf_delete, selection.bufnr, { force = force })
-      return ok
-    end
+    return Util.delete_buffer(selection.bufnr)
   end)
 end
 
