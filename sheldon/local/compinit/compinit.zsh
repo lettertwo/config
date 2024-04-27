@@ -16,7 +16,7 @@ function complist() {
   done | sort
 }
 
-function function() {
+function () {
   local zcompdump=${1:-$XDG_CACHE_HOME/zsh/zcompdump}
 
   if [[ ! -f $zcompdump ]]; then
