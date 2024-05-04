@@ -95,12 +95,14 @@ return {
       { "tsakirist/telescope-lazy.nvim" },
       { "debugloop/telescope-undo.nvim" },
       { "gbprod/yanky.nvim" },
+      { "danielfalk/smart-open.nvim", branch = "0.2.x", dependencies = { "kkharji/sqlite.lua" } },
     },
     keys = {
       { "<leader>p", "<cmd>Telescope commands<CR>", desc = "Commands" },
       { "<leader>t", "<cmd>Telescope buffers<CR>", desc = "Buffers" },
       { "<leader>bb", "<cmd>Telescope buffers<CR>", "Buffers" },
-      { "<leader>r", "<cmd>Telescope oldfiles prompt_title=Recent(cwd) cwd_only=true<CR>", desc = "Recent Files" },
+      { "<leader>r", "<cmd>Telescope smart_open cwd_only=true<CR>", desc = "Recent Files (cwd)" },
+      { "<leader>a", "<cmd>Telescope smart_open cwd_only=false<CR>", desc = "Recent Files (all)" },
       { "<leader>/", "<cmd>Telescope current_buffer_fuzzy_find<CR>", desc = "Text in file" },
       { "<leader>*", grep_string_cwd, desc = "Word under cursor", mode = { "n", "v" } },
       { "<leader>:", "<cmd>Telescope command_history<cr>", desc = "Command History" },
@@ -110,8 +112,10 @@ return {
       { "<leader>fb", "<cmd>Telescope buffers show_all_buffers=true<cr>", desc = "Buffers (all)" },
       { "<leader>ff", "<cmd>Telescope find_files<cr>", desc = "Find Files (root dir)" },
       { "<leader>fF", "<cmd>Telescope find_files cwd=true<cr>", desc = "Find Files (cwd)" },
-      { "<leader>fr", "<cmd>Telescope oldfiles prompt_title=Recent(cwd) cwd_only=true<cr>", desc = "Recent (cwd)" },
-      { "<leader>fR", "<cmd>Telescope oldfiles prompt_Title=Recent(all) cwd_only=false<cr>", desc = "Recent (all)" },
+      { "<leader>fr", "<cmd>Telescope smart_open prompt_title=Recent(cwd) cwd_only=true<cr>", desc = "Recent (cwd)" },
+      { "<leader>fR", "<cmd>Telescope smart_open prompt_Title=Recent(all) cwd_only=false<cr>", desc = "Recent (all)" },
+      { "<leader>fo", "<cmd>Telescope oldfiles cwd_only=true<cr>", desc = "oldfiles (cwd)" },
+      { "<leader>fO", "<cmd>Telescope oldfiles cwd_only=false<cr>", desc = "oldfiles (all)" },
       { "<leader>fg", live_grep_files, desc = "Grep in open files" },
       { "<leader>fw", grep_string_files, desc = "Search word in open files", mode = { "n", "v" } },
 
@@ -227,6 +231,20 @@ return {
             -- theme = { }, -- use own theme spec
             -- layout_config = { mirror=true }, -- mirror preview pane
           },
+          smart_open = {
+            show_scores = false,
+            -- ignore_patterns = { "*.git/*", "*/tmp/*" },
+            match_algorithm = "fzf",
+            -- disable_devicons = false,
+            -- open_buffer_indicators = { previous = "👀", others = "🙈" },
+            -- TODO: Add mappings for:
+            -- <c-r> to narrow to just open buffers
+            -- <c-d> to delete open buffer? (or should it be <c-x> to preserve preview scroll?)
+            -- toggle cwd_only?
+            -- FIXME: refine doesn't work
+            -- TODO: add grapple tag status to display (maybe just a hook icon)
+          },
+
           lazy = {
             mappings = {
               -- TODO: make this work with mini.files
@@ -310,6 +328,7 @@ return {
       telescope.load_extension("lazy")
       telescope.load_extension("undo")
       telescope.load_extension("yank_history")
+      telescope.load_extension("smart_open")
 
       -- local function nvim_config_files()
       --   builtin.find_files({
