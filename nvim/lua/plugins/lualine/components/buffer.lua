@@ -24,11 +24,14 @@ function Buffer:init(opts)
   self.tag_name = opts.tag_name
   self.options = opts.options
   self.highlights = opts.highlights
-  self.file = require("lualine.utils.utils").stl_escape(vim.api.nvim_buf_get_name(self.bufnr))
-  self.buftype = vim.api.nvim_get_option_value("buftype", { buf = self.bufnr })
-  self.filetype = vim.api.nvim_get_option_value("filetype", { buf = self.bufnr })
-  self.modified = vim.api.nvim_get_option_value("modified", { buf = self.bufnr })
-  self.icon = require("nvim-web-devicons").get_icon(self.file, vim.fn.expand("#" .. self.bufnr .. ":e"))
+
+  if vim.api.nvim_buf_is_valid(self.bufnr) then
+    self.file = require("lualine.utils.utils").stl_escape(vim.api.nvim_buf_get_name(self.bufnr))
+    self.buftype = vim.api.nvim_get_option_value("buftype", { buf = self.bufnr })
+    self.filetype = vim.api.nvim_get_option_value("filetype", { buf = self.bufnr })
+    self.modified = vim.api.nvim_get_option_value("modified", { buf = self.bufnr })
+    self.icon = require("nvim-web-devicons").get_icon(self.file, vim.fn.expand("#" .. self.bufnr .. ":e"))
+  end
 end
 
 ---@param props BufferProps
