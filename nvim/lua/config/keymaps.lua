@@ -27,11 +27,8 @@ vim.keymap.set("n", "˚", ":m .-2<cr>==", { desc = "Move up", silent = true })
 vim.keymap.set("v", "˚", ":m '<-2<cr>gv=gv", { desc = "Move up", silent = true })
 
 -- buffers
-vim.keymap.set("n", "<S-h>", "<cmd>bprevious<cr>", { desc = "Prev buffer" })
-vim.keymap.set("n", "<S-l>", "<cmd>bnext<cr>", { desc = "Next buffer" })
-vim.keymap.set("n", "bh", "<cmd>bprevious<cr>", { desc = "Previous" })
-vim.keymap.set("n", "bl", "<cmd>bnext<cr>", { desc = "Next" })
-vim.keymap.set("n", "<leader>bb", "<cmd>e #<cr>", { desc = "Switch to Other Buffer" })
+vim.keymap.set("n", "<leader>bh", "<cmd>bprevious<cr>", { desc = "Previous" })
+vim.keymap.set("n", "<leader>bl", "<cmd>bnext<cr>", { desc = "Next" })
 vim.keymap.set("n", "<leader>`", "<cmd>e #<cr>", { desc = "Switch to Other Buffer" })
 vim.keymap.set("n", "<leader>br", "<cmd>e %<cr>", { desc = "Reopen buffer" })
 vim.keymap.set("n", "<leader>bO", "<cmd>!open -R %<cr>", { desc = "Reveal file in finder" })

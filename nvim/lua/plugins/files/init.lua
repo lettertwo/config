@@ -92,4 +92,18 @@ return {
       })
     end,
   },
+  {
+    "cbochs/grapple.nvim",
+    dependencies = { "nvim-telescope/telescope.nvim" },
+    event = { "BufReadPost", "BufNewFile" },
+    cmd = { "Grapple", "CloseUntaggedBuffers" },
+    keys = {
+      { "<leader>m", "<cmd>Grapple toggle<cr>", desc = "Toggle Buffer Tag" },
+      { "<s-l>", "<cmd>Grapple cycle_tags next<cr>", desc = "Next tag" },
+      { "<s-h>", "<cmd>Grapple cycle_tags prev<cr>", desc = "Previous tag" },
+    },
+    opts = {
+      scope = "git", -- also try out "git_branch"
+      style = "basename",
+    },
 }

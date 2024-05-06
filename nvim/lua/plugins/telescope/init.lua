@@ -81,6 +81,10 @@ local function git_all_hunks()
   require("plugins.telescope.pickers.git_hunks").git_hunks()
 end
 
+local function grapple()
+  require("plugins.telescope.pickers.grapple").grapple()
+end
+
 return {
   {
     "nvim-telescope/telescope.nvim",
@@ -96,17 +100,15 @@ return {
       { "debugloop/telescope-undo.nvim" },
       { "gbprod/yanky.nvim" },
       { "danielfalk/smart-open.nvim", branch = "0.2.x", dependencies = { "kkharji/sqlite.lua" } },
+      { "cbochs/grapple.nvim" },
     },
     keys = {
-      { "<leader>p", "<cmd>Telescope commands<CR>", desc = "Commands" },
-      { "<leader>t", "<cmd>Telescope buffers<CR>", desc = "Buffers" },
       { "<leader>bb", "<cmd>Telescope buffers<CR>", "Buffers" },
       { "<leader>r", "<cmd>Telescope smart_open cwd_only=true<CR>", desc = "Recent Files (cwd)" },
       { "<leader>a", "<cmd>Telescope smart_open cwd_only=false<CR>", desc = "Recent Files (all)" },
       { "<leader>/", "<cmd>Telescope current_buffer_fuzzy_find<CR>", desc = "Text in file" },
       { "<leader>*", grep_string_cwd, desc = "Word under cursor", mode = { "n", "v" } },
       { "<leader>:", "<cmd>Telescope command_history<cr>", desc = "Command History" },
-      { "<leader><space>", "<cmd>Telescope find_files<cr>", desc = "Find Files (root dir)" },
 
       -- find / files
       { "<leader>fb", "<cmd>Telescope buffers show_all_buffers=true<cr>", desc = "Buffers (all)" },
@@ -173,6 +175,9 @@ return {
       { "<leader>gh", git_hunks, desc = "Hunks" },
       { "<leader>gH", git_all_hunks, desc = "Workspace Hunks" },
 
+      -- grapple
+      { "<leader><space>", grapple, desc = "open tags" },
+
       -- TODO: config
       -- {"<leader>cc", nvim_config_files, desc = "Neovim Config Files" },
       -- {"<leader>cf", xdg_config_files, desc = "Find Config Files" },
@@ -197,14 +202,17 @@ return {
           selection_caret = icons.caret,
           multi_icon = icons.multi,
           color_devicons = true,
+
           path_display = function(opts, path)
-            local status = require("telescope.state").get_status(vim.api.nvim_get_current_buf())
-            local target_width = vim.api.nvim_win_get_width(status.layout.results.winid)
-              - status.picker.selection_caret:len()
-              - status.picker.prompt_prefix:len()
-              - 2
-            path = Util.smart_shorten_path(path, { target_width = target_width, cwd = opts.cwd })
-            return path
+            local target_width = opts.target_width
+            if target_width == nil then
+              local status = require("telescope.state").get_status(vim.api.nvim_get_current_buf())
+              target_width = vim.api.nvim_win_get_width(status.layout.results.winid)
+                - status.picker.selection_caret:len()
+                - status.picker.prompt_prefix:len()
+                - 2
+            end
+            return Util.smart_shorten_path(path, { target_width = target_width, cwd = opts.cwd })
           end,
         })),
         extensions = {
