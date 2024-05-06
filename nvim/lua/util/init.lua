@@ -329,13 +329,19 @@ setmetatable(ConfigUtil.ensure_installed, {
   end,
 })
 
+--- @param path string?
+--- @param opts? { cwd: string?, target_width: number? }
 function ConfigUtil.smart_shorten_path(path, opts)
-  local opts = opts or {}
+  opts = opts or {}
   local cwd = opts.cwd
   local target_width = opts.target_width
 
   local Path = require("plenary.path")
   local truncate = require("plenary.strings").truncate
+
+  if path == nil then
+    path = vim.api.nvim_buf_get_name(0)
+  end
 
   path = Path:new(path):normalize(cwd or vim.loop.cwd())
 
