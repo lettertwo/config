@@ -437,4 +437,15 @@ function ConfigUtil.delete_buffer(bufnr, force)
   end
 end
 
+function ConfigUtil.is_callable(callback)
+  if type(callback) == "function" then
+    return true
+  end
+  local cb_meta = getmetatable(callback)
+  if cb_meta ~= nil then
+    return ConfigUtil.is_callable(cb_meta.__call)
+  end
+  return false
+end
+
 return ConfigUtil
