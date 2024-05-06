@@ -1,27 +1,5 @@
 return {
   {
-    "m4xshen/hardtime.nvim",
-    event = "VeryLazy",
-    keys = {
-      { "<leader>uH", "<cmd>Hardtime toggle<cr>", desc = "Toggle hardtime" },
-    },
-    dependencies = { "MunifTanjim/nui.nvim", "nvim-lua/plenary.nvim" },
-    opts = {
-      disabled_filetypes = require("config").filetypes.ui,
-      restricted_keys = {
-        h = { "x", "o" },
-        j = { "x", "o" },
-        k = { "x", "o" },
-        l = { "x", "o" },
-      },
-      -- restriction_mode = "hint",
-      -- max_time = 1000, -- Maximum time (in milliseconds) to consider key presses as repeated
-      -- max_count = 5, -- Maximum count of repeated key presses allowed within max_time
-      disable_mouse = false,
-    },
-  },
-
-  {
     "mrjones2014/smart-splits.nvim",
     event = "VeryLazy",
     build = "./kitty/install-kittens.bash",
@@ -183,23 +161,5 @@ return {
       -- {'v', '<leader>cU', crates.upgrade_crates, opts)
     },
     -- stylua: ignore end
-  },
-
-  {
-    event = "BufReadPost",
-    dir = "~/.local/share/occurrence.nvim",
-    name = "occurrence.nvim",
-    config = function()
-      require("occurrence.dev").setup()
-    end,
-  },
-
-  {
-    event = "VeryLazy",
-    dir = "~/.local/share/fixlist.nvim/main",
-    name = "fixlist.nvim",
-    config = function()
-      require("fixlist.dev").setup()
-    end,
   },
 }
