@@ -62,7 +62,15 @@ end
 ---@param name string
 ---@return string
 function Buffer:configure_mouse_click(name)
-  return string.format("%%%s@LualineSwitchBuffer@%s%%T", self.bufnr, name)
+  if not _G.SwitchBuffer then
+    function _G.SwitchBuffer(bufnr, _, mousebutton)
+      if mousebutton == nil or mousebutton == "l" then
+        vim.api.nvim_set_current_buf(bufnr)
+      end
+    end
+  end
+
+  return string.format("%%%s@v:lua.SwitchBuffer@%s%%X", self.bufnr, name)
 end
 
 ---apply separator before current buffer
