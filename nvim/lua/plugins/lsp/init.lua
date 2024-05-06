@@ -39,7 +39,9 @@ return {
       "b0o/SchemaStore.nvim",
       {
         "mrcjkb/rustaceanvim",
+        version = "^4",
         ft = { "rust" },
+        build = "rustup component add rust-analyzer",
         init = function()
           vim.g.rustaceanvim = {
             -- Plugin configuration
@@ -250,7 +252,7 @@ return {
         bashls = {
           filetypes = { "sh", "zsh" },
         },
-        rust_analyzer = false, -- NOTE: configured by rustaceanvim
+        -- rust_analyzer = false, -- NOTE: configured by rustaceanvim
         "eslint",
         "html",
         "cssls",
