@@ -362,6 +362,47 @@ function ConfigUtil.smart_shorten_path(path, opts)
   return path
 end
 
+local DEFAULT_TITLE_PATH_OPTS = {
+  ambiguous_segments = {
+    "init.lua",
+    "index.js",
+    "index.ts",
+    "index.jsx",
+    "index.tsx",
+    "package.json",
+    "init.rs",
+    "lib.rs",
+    "main.rs",
+    "src",
+  },
+}
+
+local SEP = package.config:sub(1, 1)
+
+--- @param path string?
+--- @param opts? { cwd: string?, target_width: number?, ambiguous_segments: string[]? }
+function ConfigUtil.title_path(path, opts)
+  opts = vim.tbl_deep_extend("keep", opts or {}, DEFAULT_TITLE_PATH_OPTS)
+  path = ConfigUtil.smart_shorten_path(path, { cwd = opts.cwd, target_width = opts.target_width })
+
+  local segments = vim.split(path, SEP)
+
+  local title_path = {}
+
+  local i = #segments
+
+  while i > 0 do
+    local segment = segments[i]
+    table.insert(title_path, 1, segment)
+    if not vim.list_contains(opts.ambiguous_segments, segment) then
+      break
+    end
+    i = i - 1
+  end
+
+  return table.concat(title_path, SEP)
+end
+
 function ConfigUtil.timeago(time)
   local current_time = os.time()
   local time_difference = os.difftime(current_time, time)
