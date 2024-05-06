@@ -93,6 +93,39 @@ return {
         end,
       },
       {
+        "pmizio/typescript-tools.nvim",
+        ft = { "javascript", "javascriptreact", "javascript.jsx", "typescript", "typescriptreact", "typescript.tsx" },
+        dependencies = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
+        config = function()
+          local api = require("typescript-tools.api")
+          require("typescript-tools").setup({
+            settings = {
+              expose_as_code_action = "all",
+              -- tsserver_path = vim.fn.stdpath("data") .. "/lspinstall/typescript/node_modules/.bin/tsserver",
+              tsserver_path = vim.fn.getcwd() .. "/node_modules/.bin/tsserver",
+              tsserver_file_preferences = {
+                includeInlayParameterNameHints = false,
+                includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+                includeInlayFunctionParameterTypeHints = false,
+                includeInlayVariableTypeHints = false,
+                includeInlayVariableTypeHintsWhenTypeMatchesName = false,
+                includeInlayPropertyDeclarationTypeHints = false,
+                includeInlayFunctionLikeReturnTypeHints = false,
+                includeInlayEnumMemberValueHints = false,
+              },
+              -- tsserver_format_options = {},
+            },
+
+            handlers = {
+              ["textDocument/publishDiagnostics"] = api.filter_diagnostics(
+                -- Ignore 'This may be converted to an async function' diagnostics.
+                { 80006 }
+              ),
+            },
+          })
+        end,
+      },
+      {
         "aznhe21/actions-preview.nvim",
         config = function(_, opts)
           local actions_preview = require("actions-preview")
@@ -188,36 +221,7 @@ return {
             },
           },
         },
-        tsserver = {
-          -- Only activate tsserver if the project has config for it.
-          root_dir = function(...)
-            return require("lspconfig.util").root_pattern("tsconfig.json", "jsconfig.json")(...)
-          end,
-          typescript = {
-            inlayHints = {
-              includeInlayParameterNameHints = "all",
-              includeInlayParameterNameHintsWhenArgumentMatchesName = false,
-              includeInlayFunctionParameterTypeHints = true,
-              includeInlayVariableTypeHints = true,
-              includeInlayVariableTypeHintsWhenTypeMatchesName = false,
-              includeInlayPropertyDeclarationTypeHints = true,
-              includeInlayFunctionLikeReturnTypeHints = true,
-              includeInlayEnumMemberValueHints = true,
-            },
-          },
-          javascript = {
-            inlayHints = {
-              includeInlayParameterNameHints = "all",
-              includeInlayParameterNameHintsWhenArgumentMatchesName = false,
-              includeInlayFunctionParameterTypeHints = true,
-              includeInlayVariableTypeHints = true,
-              includeInlayVariableTypeHintsWhenTypeMatchesName = false,
-              includeInlayPropertyDeclarationTypeHints = true,
-              includeInlayFunctionLikeReturnTypeHints = true,
-              includeInlayEnumMemberValueHints = true,
-            },
-          },
-        },
+        -- tsserver = false, -- NOTE: configured by typescript-tools
         flow = {
           filetypes = { "javascript", "javascriptreact", "javascript.jsx", "flowtype", "flowtypereact" },
         },
