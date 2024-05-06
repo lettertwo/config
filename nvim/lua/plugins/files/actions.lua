@@ -45,24 +45,15 @@ function M.toggle_dotfiles()
 end
 
 function M.open_cwd()
-  local ok = pcall(MiniFiles.open)
-  if not ok then
-    MiniFiles.open(nil, false)
-  end
+  MiniFiles.open(nil, false)
 end
 
 function M.open_buffer()
   local buf_name = vim.api.nvim_buf_get_name(0)
   if buf_name == "" then
-    local ok = pcall(MiniFiles.open)
-    if not ok then
-      MiniFiles.open(nil, false)
-    end
+    MiniFiles.open(nil, false)
   else
-    local ok = pcall(MiniFiles.open, buf_name)
-    if not ok then
-      MiniFiles.open(buf_name, false)
-    end
+    MiniFiles.open(buf_name, false)
   end
 end
 
