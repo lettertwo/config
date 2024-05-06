@@ -239,8 +239,89 @@ return {
       },
     },
   },
+
+  -- pair matching
+  {
+    "theHamsta/nvim-treesitter-pairs",
+    dependencies = { "nvim-treesitter/nvim-treesitter" },
+    opts = {
+      pairs = {
+        enable = true,
+        disable = filetypes.ui,
+        highlight_pair_events = {}, -- e.g. {"CursorMoved"}, -- when to highlight the pairs, use {} to deactivate highlighting
+        highlight_self = false, -- whether to highlight also the part of the pair under cursor (or only the partner)
+        goto_right_end = false, -- whether to go to the end of the right partner or the beginning
+        fallback_cmd_normal = "normal! %", -- What command to issue when we can't find a pair (e.g. "normal! %")
+        keymaps = {
+          goto_partner = "%",
+          delete_balanced = "X",
+        },
+        delete_balanced = {
+          only_on_first_char = false, -- whether to trigger balanced delete when on first character of a pair
+          fallback_cmd_normal = nil, -- fallback command when no pair found, can be nil
+          longest_partner = false, -- whether to delete the longest or the shortest pair when multiple found.
+          -- E.g. whether to delete the angle bracket or whole tag in  <pair> </pair>
+        },
+      },
+    },
     config = function(_, opts)
-      require("mini.pairs").setup(opts)
+      require("nvim-treesitter.configs").setup(opts)
+    end,
+  },
+
+  -- tags
+  {
+    "windwp/nvim-ts-autotag",
+    dependencies = { "nvim-treesitter/nvim-treesitter" },
+    opts = {
+      autotag = {
+        enable = true,
+        enable_rename = true,
+        enable_close = true,
+
+        filetypes = {
+          "html",
+          "javascript",
+          "typescript",
+          "javascriptreact",
+          "typescriptreact",
+          "svelte",
+          "vue",
+          "tsx",
+          "jsx",
+          "rescript",
+          "xml",
+          "php",
+          "markdown",
+          "astro",
+          "glimmer",
+          "handlebars",
+          "hbs",
+        },
+        skip_tags = {
+          "area",
+          "base",
+          "br",
+          "col",
+          "command",
+          "embed",
+          "hr",
+          "img",
+          "slot",
+          "input",
+          "keygen",
+          "link",
+          "meta",
+          "param",
+          "source",
+          "track",
+          "wbr",
+          "menuitem",
+        },
+      },
+    },
+    config = function(_, opts)
+      require("nvim-treesitter.configs").setup(opts)
     end,
   },
 
