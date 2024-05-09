@@ -68,5 +68,24 @@ return {
         },
       }
     end,
+    config = function(_, opts)
+      -- Patch `lualine.utils.utils.is_focused` to force inactive state when nvim focus is lost.
+      -- Based on:  https://github.com/nvim-lualine/lualine.nvim/issues/498#issuecomment-997346570
+      local force_inactive = false
+      local is_focused = require("lualine.utils.utils").is_focused
+      require("lualine.utils.utils").is_focused = function()
+        return not force_inactive and is_focused()
+      end
+
+      require("lualine").setup(opts)
+
+      vim.api.nvim_create_autocmd({ "FocusGained", "FocusLost" }, {
+        group = vim.api.nvim_create_augroup("lualine_force_inactive", { clear = true }),
+        callback = function(e)
+          force_inactive = e.event == "FocusLost"
+          require("lualine").refresh()
+        end,
+      })
+    end,
   },
 }
