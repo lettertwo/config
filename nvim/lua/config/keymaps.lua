@@ -90,6 +90,7 @@ vim.keymap.set("n", "<leader>uc", Util.create_toggle("cursorline", "wo"), { desc
 -- quit
 vim.keymap.set("n", "<leader>qq", "<cmd>qa<cr>", { desc = "Quit all" })
 vim.keymap.set("n", "<leader>qQ", "<cmd>cq!<cr>", { desc = "Force quit (with error code)" })
+vim.keymap.set("n", "<leader>qR", "<cmd>230cq<cr>", { desc = "Restart" })
 
 -- tabs
 vim.keymap.set("n", "<leader><tab>l", "<cmd>tablast<cr>", { desc = "Last" })

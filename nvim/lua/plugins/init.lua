@@ -104,6 +104,7 @@ return {
   {
     "folke/persistence.nvim",
     event = "BufReadPost",
+    cmd = { "RestoreSession", "RestoreLastSession", "StopSession" },
     opts = { options = { "buffers", "curdir", "tabpages", "winsize", "help" } },
     -- stylua: ignore
     keys = {
@@ -125,6 +126,18 @@ return {
         pattern = { "gitcommit", "gitrebase", "gitconfig" },
         callback = require("persistence").stop,
       })
+
+      vim.api.nvim_create_user_command("RestoreSession", function()
+        require("persistence").load()
+      end, { desc = "Restore Session" })
+
+      vim.api.nvim_create_user_command("RestoreLastSession", function()
+        require("persistence").load({ last = true })
+      end, { desc = "Restore Last Session" })
+
+      vim.api.nvim_create_user_command("StopSession", function()
+        require("persistence").stop()
+      end, { desc = "Don't Save Current Session" })
     end,
   },
 
