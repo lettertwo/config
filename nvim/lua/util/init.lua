@@ -377,7 +377,7 @@ local DEFAULT_TITLE_PATH_OPTS = {
   },
 }
 
-local SEP = package.config:sub(1, 1)
+ConfigUtil.SEP = package.config:sub(1, 1)
 
 --- @param path string?
 --- @param opts? { cwd: string?, target_width: number?, ambiguous_segments: string[]? }
@@ -385,7 +385,7 @@ function ConfigUtil.title_path(path, opts)
   opts = vim.tbl_deep_extend("keep", opts or {}, DEFAULT_TITLE_PATH_OPTS)
   path = ConfigUtil.smart_shorten_path(path, { cwd = opts.cwd, target_width = opts.target_width })
 
-  local segments = vim.split(path, SEP)
+  local segments = vim.split(path, ConfigUtil.SEP)
 
   local title_path = {}
 
@@ -400,7 +400,7 @@ function ConfigUtil.title_path(path, opts)
     i = i - 1
   end
 
-  return table.concat(title_path, SEP)
+  return table.concat(title_path, ConfigUtil.SEP)
 end
 
 function ConfigUtil.timeago(time)
