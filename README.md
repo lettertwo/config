@@ -15,6 +15,7 @@ The install task will attempt to bootstrap these things if they are missing.
 
 - [Homebrew] for most things
 - [Sheldon] for zsh things
+- [Fisher] for fish shell things
 - [Neovim] for vim things
 - [Kitty] for term things
 
@@ -55,6 +56,7 @@ An update will do the following:
 - pull the latest from lettertwo/config
 - update [Homebrew] and installed dependencies
 - update [Sheldon] and installed dependencies
+- update [Fisher] and installed dependencies
 - update [Neovim] and installed dependencies
 - update [Kitty]
 
@@ -81,5 +83,6 @@ git config --file ~/.config/git/user credential.helper osxkeychain
 [XDG Base Directory Specification]: https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
 [Homebrew]: https://brew.sh
 [Sheldon]: https://sheldon.cli.rs
+[Fisher]: https://github.com/jorgebucaran/fisher
 [Neovim]: https://neovim.io/
 [Kitty]: https://sw.kovidgoyal.net/kitty/

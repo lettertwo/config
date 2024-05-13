@@ -106,6 +106,34 @@ update-sheldon: sheldon
 	$(call run,sheldon lock)
 	$(call done)
 
+### fish
+
+FISH := $(shell command -v fish 2> /dev/null)
+
+.PHONY: fish
+fish: brew
+ifndef FISH
+	$(call err,"fish not found!")
+	$(call log,"Installing fish...")
+	$(call run,brew install fish fisher)
+	$(call done)
+endif
+
+.PHONY: update-fish
+update-fish: fish
+	$(call log,"Updating fish...")
+	$(call run,brew upgrade fish fisher)
+	$(call log,"Updating fisher plugins...")
+	$(call run,fisher update)
+	$(call done)
+
+.PHONY: set-fish-as-default
+set-fish-as-default: fish
+	$(call log,"Setting fish as default shell...")
+	$(call run,echo $$HOMEBREW_PREFIX/bin/fish | sudo tee -a /etc/shells)
+	$(call run,chsh -s $$HOMEBREW_PREFIX/bin/fish)
+	$(call done)
+
 ### bat
 
 BAT := $(shell command -v bat 2> /dev/null)
@@ -179,7 +207,7 @@ ifndef KITTY
 else
 	$(call log,"Updating kitty...")
 endif
-	$(call run,curl -L https://sw.kovidgoyal.net/kitty/installer.sh | zsh /dev/stdin installer=nightly launch=n)
+	$(call run,curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin installer=nightly launch=n)
 ifdef MACOS
 	$(call run,ln -sf /Applications/kitty.app/Contents/MacOS/kitty "$$HOME/.local/bin/kitty")
 	$(call run,rm /var/folders/*/*/*/com.apple.dock.iconcache; killall Dock) #force refresh of dock icons.
@@ -295,7 +323,7 @@ update-config:
 mkdirs: ~/.cache/zsh ~/.local/bin ~/.local/share ~/.local/state/zsh/completions
 
 .PHONY: install
-install: mkdirs ~/.zshenv ~/.local/share/laserwave.nvim brew
+install: mkdirs ~/.zshenv ~/.local/share/laserwave.nvim brew set-fish-as-default
 	@echo ""
 	$(call done)
 	@echo ""
@@ -314,7 +342,7 @@ endif
 update: update-config \
 	update-laserwave \
 	update-brew \
-	update-sheldon \
+	update-fish \
 	update-bat \
 	update-nvim \
 	update-kitty \

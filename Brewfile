@@ -8,8 +8,13 @@ tap "homebrew/services" if OS.mac?
 tap "withgraphite/tap" if OS.mac?
 tap "jesseduffield/lazygit"
 
+# fish shell
+brew "fish"
+brew "fisher"
+brew "starship"
+
+
 # CLI Tools
-brew "zsh" if OS.mac?
 brew "git" if OS.mac?
 brew "coreutils" if OS.mac?
 brew "tree" if OS.mac?
@@ -21,7 +26,6 @@ brew "trash" if OS.mac?
 brew "lnav" if OS.mac?
 
 brew "fzf"
-brew "sheldon"
 brew "ripgrep" # BurntSushi/ripgrep
 brew "fd" # sharkdp/fd, replacement for find
 brew "bat" # sharkdp/bat, replacement for cat
@@ -36,6 +40,7 @@ brew "ffmpegthumbnailer" # for video thumbnails
 brew "unar" # for archive preview
 brew "poppler" # for pdf preview
 brew "toilet" # very important
+
 
 # misc. dev tooling
 brew "watchman"
