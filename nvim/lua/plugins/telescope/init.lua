@@ -1,90 +1,6 @@
 local icons = require("config").icons
 local Util = require("util")
 
-local function live_grep(opts)
-  opts = vim.tbl_deep_extend("force", {
-    prompt_title = "Live Grep",
-  }, opts or {})
-  return require("telescope").extensions.live_grep_args.live_grep_args(opts)
-end
-
-local function grep_string(opts)
-  local word
-  local visual = vim.fn.mode() == "v"
-
-  if visual == true then
-    local saved_reg = vim.fn.getreg("v")
-    vim.cmd([[noautocmd sil norm! "vy]])
-    local sele = vim.fn.getreg("v")
-    vim.fn.setreg("v", saved_reg)
-    word = vim.F.if_nil(opts.search, sele)
-  else
-    word = vim.F.if_nil(opts.search, vim.fn.expand("<cword>"))
-  end
-
-  local search = require("telescope-live-grep-args.helpers").quote(vim.trim(word))
-
-  opts = vim.tbl_deep_extend("force", {
-    default_text = search,
-  }, opts or {})
-
-  return require("telescope").extensions.live_grep_args.live_grep_args(opts)
-end
-
-local function live_grep_cbd()
-  return live_grep({
-    cwd = require("telescope.utils").buffer_dir(),
-    prompt_title = "Live Grep (buffer dir)",
-  })
-end
-
-local function live_grep_cwd()
-  return live_grep({
-    cwd = vim.fn.getcwd(),
-    prompt_title = "Live Grep (cwd)",
-  })
-end
-
-local function live_grep_files()
-  return live_grep({
-    grep_open_files = true,
-    prompt_title = "Live Grep (open files)",
-  })
-end
-
-local function grep_string_cwd()
-  return grep_string({
-    cwd = vim.fn.getcwd(),
-    prompt_title = "Grep String (cwd)",
-  })
-end
-
-local function grep_string_cbd()
-  return grep_string({
-    cwd = require("telescope.utils").buffer_dir(),
-    prompt_title = "Grep String (buffer dir)",
-  })
-end
-
-local function grep_string_files()
-  return grep_string({
-    grep_open_files = true,
-    prompt_title = "Grep String (open files)",
-  })
-end
-
-local function git_hunks()
-  require("plugins.telescope.pickers.git_hunks").git_hunks({ bufnr = 0 })
-end
-
-local function git_all_hunks()
-  require("plugins.telescope.pickers.git_hunks").git_hunks()
-end
-
-local function grapple()
-  require("plugins.telescope.pickers.grapple").grapple()
-end
-
 return {
   {
     "nvim-telescope/telescope.nvim",
@@ -107,28 +23,26 @@ return {
       { "<leader>r", "<cmd>Telescope smart_open cwd_only=true<CR>", desc = "Recent Files (cwd)" },
       { "<leader>a", "<cmd>Telescope smart_open cwd_only=false<CR>", desc = "Recent Files (all)" },
       { "<leader>/", "<cmd>Telescope current_buffer_fuzzy_find<CR>", desc = "Text in file" },
-      { "<leader>*", grep_string_cwd, desc = "Word under cursor", mode = { "n", "v" } },
+      { "<leader>*", "<cmd>Telescope grep word=true<cr>", desc = "Word under cursor", mode = { "n", "v" } },
       { "<leader>:", "<cmd>Telescope command_history<cr>", desc = "Command History" },
 
       -- find / files
       { "<leader>fb", "<cmd>Telescope buffers show_all_buffers=true<cr>", desc = "Buffers (all)" },
-      { "<leader>ff", "<cmd>Telescope find_files<cr>", desc = "Find Files (root dir)" },
-      { "<leader>fF", "<cmd>Telescope find_files cwd=true<cr>", desc = "Find Files (cwd)" },
-      { "<leader>fr", "<cmd>Telescope smart_open prompt_title=Recent(cwd) cwd_only=true<cr>", desc = "Recent (cwd)" },
-      { "<leader>fR", "<cmd>Telescope smart_open prompt_Title=Recent(all) cwd_only=false<cr>", desc = "Recent (all)" },
+      { "<leader>ff", "<cmd>Telescope smart_open cwd_only=true<cr>", desc = "Find files" },
+      { "<leader>fF", "<cmd>Telescope smart_open cwd_only=false<cr>", desc = "Find files (all)" },
       { "<leader>fo", "<cmd>Telescope oldfiles cwd_only=true<cr>", desc = "oldfiles (cwd)" },
       { "<leader>fO", "<cmd>Telescope oldfiles cwd_only=false<cr>", desc = "oldfiles (all)" },
-      { "<leader>fg", live_grep_files, desc = "Grep in open files" },
-      { "<leader>fw", grep_string_files, desc = "Search word in open files", mode = { "n", "v" } },
+      { "<leader>fg", "<cmd>Telescope grep open<cr>", desc = "Grep in open files" },
+      { "<leader>fw", "<cmd>Telescope grep open word=true<cr>", desc = "Word in open files", mode = { "n", "v" } },
 
       -- search
       { "<leader>sa", "<cmd>Telescope autocommands<cr>", desc = "Auto Commands" },
       { "<leader>sb", "<cmd>Telescope current_buffer_fuzzy_find<cr>", desc = "Buffer" },
-      { "<leader>sB", live_grep_files, desc = "Grep (open buffers)" },
+      { "<leader>sB", "<cmd>Telescope grep open<cr>", desc = "Grep (open buffers)" },
       { "<leader>sc", "<cmd>Telescope command_history<cr>", desc = "Command History" },
       { "<leader>sC", "<cmd>Telescope commands<cr>", desc = "Commands" },
-      { "<leader>sg", live_grep_cwd, desc = "Grep (cwd dir)" },
-      { "<leader>sG", live_grep_cbd, desc = "Grep (buffer dir)" },
+      { "<leader>sg", "<cmd>Telescope grep<cr>", desc = "Grep (cwd dir)" },
+      { "<leader>sG", "<cmd>Telescope grep relative<cr>", desc = "Grep (buffer dir)" },
       { "<leader>sh", "<cmd>Telescope help_tags<CR>", desc = "Help" },
       { "<leader>sH", "<cmd>Telescope highlights<CR>", desc = "Highlights" },
       { "<leader>sj", "<cmd>Telescope jumplist<CR>", desc = "Jumplist" },
@@ -141,8 +55,8 @@ return {
       { "<leader>sT", "<cmd>Telescope<CR>", desc = "Telescope Builtins" },
       { "<leader>ss", "<cmd>Telescope lsp_document_symbols<CR>", desc = "Document Symbols" },
       { "<leader>sS", "<cmd>Telescope lsp_dynamic_workspace_symbols<CR>", desc = "Workspace Symbols" },
-      { "<leader>sw", grep_string_cwd, desc = "Word (cwd)", mode = { "n", "v" } },
-      { "<leader>sW", grep_string_cbd, desc = "Word (buffer dir)", mode = { "n", "v" } },
+      { "<leader>sw", "<cmd>Telescope grep word=true<cr>", desc = "Word (cwd)", mode = { "n", "v" } },
+      { "<leader>sW", "<cmd>Telescope grep relative word=true<cr>", desc = "Word (buffer dir)", mode = { "n", "v" } },
       { "<leader>sr", "<cmd>Telescope resume<cr>", desc = "Resume last search" },
       { "<leader>su", "<cmd>Telescope undo<cr>", desc = "undo history" },
       { "<leader>sy", "<cmd>Telescope yank_history<cr>", desc = "yank history", mode = { "n", "v" } },
@@ -172,26 +86,15 @@ return {
       { "<leader>gB", "<cmd>Telescope git_branches<CR>", desc = "Branches" },
       { "<leader>gs", "<cmd>Telescope git_status<CR>", desc = "Status" },
       { "<leader>gS", "<cmd>Telescope git_stash<CR>", desc = "Stash" },
-      { "<leader>gh", git_hunks, desc = "Hunks" },
-      { "<leader>gH", git_all_hunks, desc = "Workspace Hunks" },
+      { "<leader>gh", "<cmd>Telescope git_jump hunks bufnr=0<CR>", desc = "Hunks" },
+      { "<leader>gH", "<cmd>Telescope git_jump hunks<CR>", desc = "Workspace Hunks" },
 
-      -- grapple
-      { "<leader><space>", grapple, desc = "open tags" },
-
-      -- TODO: config
-      -- {"<leader>cc", nvim_config_files, desc = "Neovim Config Files" },
-      -- {"<leader>cf", xdg_config_files, desc = "Find Config Files" },
-      -- {"<leader>cs", xdg_config_grep, desc = "Search Config Dir" },
-      -- {"<leader>cn", ":Neoconf<cr>", desc = "Open Neoconf file" },
-      -- {"<leader>cN", ":Neoconf show<cr>", desc = "Show Neoconf" },
-      -- {"<leader>cl", ":Neoconf lsp<cr>", desc = "Show Neoconf LSP" },
+      { "<leader><space>", "<cmd>Telescope switch<cr>", desc = "switch to buffer" },
 
       -- TODO: implement something like lvim's info: https://github.com/LunarVim/LunarVim/blob/rolling/lua/lvim/core/info.lua
       -- TODO: implement something like lvim's log: https://github.com/LunarVim/LunarVim/blob/rolling/lua/lvim/core/which-key.lua#L211-L236
-      -- TODO: implement something like lvim's peak:https://github.com/LunarVim/LunarVim/blob/rolling/lua/lvim/core/which-key.lua#L173-L178
     },
     opts = function()
-      local telescope_actions = require("telescope.actions")
       local themes = require("telescope.themes")
       local pickers = require("plugins.telescope.pickers")
       local actions = require("plugins.telescope.actions")
@@ -203,6 +106,7 @@ return {
           multi_icon = icons.multi,
           color_devicons = true,
 
+          -- Format path and add custom highlighting
           path_display = function(opts, path)
             local target_width = opts.target_width
             if target_width == nil then
@@ -212,7 +116,35 @@ return {
                 - status.picker.prompt_prefix:len()
                 - 2
             end
-            return Util.smart_shorten_path(path, { target_width = target_width, cwd = opts.cwd })
+
+            local basename = Util.title_path(path)
+            target_width = target_width - #basename - 1
+
+            local dir_path = Util.smart_shorten_path(
+              path.sub(path, 1, #path - #basename),
+              { target_width = target_width, cwd = opts.cwd }
+            )
+
+            local display = basename
+            local highlights = {}
+
+            local display_segments = vim.split(display, Util.SEP)
+
+            if #display_segments > 1 then
+              table.insert(highlights, {
+                { #display - #display_segments[#display_segments] - 1, #display },
+                "TelescopeResultsDiffUntracked",
+              })
+            end
+
+            if dir_path ~= "" then
+              display = string.format("%s %s", display, dir_path)
+              table.insert(highlights, {
+                { #basename + 1, #display },
+                "TelescopePreviewDirectory",
+              })
+            end
+            return display, highlights
           end,
         })),
         extensions = {
@@ -225,7 +157,7 @@ return {
           ["ui-select"] = {
             themes.get_dropdown({}),
           },
-          live_grep_args = {
+          grep = {
             auto_quoting = true, -- enable/disable auto-quoting
             -- define mappings, e.g.
             mappings = { -- extend mappings
@@ -234,10 +166,6 @@ return {
                 ["<C-i>"] = require("telescope-live-grep-args.actions").quote_prompt({ postfix = " --iglob " }),
               },
             },
-            -- ... also accepts theme settings, for example:
-            -- theme = "dropdown", -- use dropdown theme
-            -- theme = { }, -- use own theme spec
-            -- layout_config = { mirror=true }, -- mirror preview pane
           },
           smart_open = {
             show_scores = false,
@@ -251,6 +179,7 @@ return {
             -- toggle cwd_only?
             -- FIXME: refine doesn't work
             -- TODO: add grapple tag status to display (maybe just a hook icon)
+            -- TODO: Tagged buffers should have higher priority?
           },
 
           lazy = {
@@ -268,10 +197,8 @@ return {
               change_cwd_to_plugin = "",
             },
           },
-          undo = {},
-          yank_history = pickers.slow_picker({
-            dynamic_preview_title = true,
-          }),
+          git_jump = pickers.slow_picker(),
+          switch = pickers.slow_picker(themes.get_dropdown({})),
         },
         pickers = {
           find_files = {
@@ -297,10 +224,15 @@ return {
               },
             },
           }),
-          commands = pickers.quick_picker({
+          command_history = pickers.quick_picker({
             theme = "dropdown",
+          }),
+          commands = pickers.quick_picker({
             sort_mru = true,
             sort_lastused = true,
+          }),
+          builtin = pickers.quick_picker({
+            theme = "dropdown",
           }),
           git_commits = pickers.quick_picker({
             mappings = {
@@ -328,49 +260,23 @@ return {
       }
     end,
     config = function(_, opts)
+      -- patch telescope.log to use nvim.notify() instead of plenary.log
+
+      local mylog = {}
+
+      -- package.loaded["telescope.log"] = mylog
+
       local telescope = require("telescope")
       telescope.setup(opts)
       telescope.load_extension("fzf")
       telescope.load_extension("ui-select")
-      telescope.load_extension("live_grep_args")
       telescope.load_extension("lazy")
       telescope.load_extension("undo")
       telescope.load_extension("yank_history")
       telescope.load_extension("smart_open")
-
-      -- local function nvim_config_files()
-      --   builtin.find_files({
-      --     prompt_title = "Nvim Config Files",
-      --     cwd = vim.fn.stdpath("config"),
-      --   })
-      -- end
-
-      -- local function xdg_config_files()
-      --   builtin.find_files({
-      --     prompt_title = "Config Files",
-      --     cwd = vim.env.XDG_CONFIG_HOME,
-      --   })
-      -- end
-
-      -- local function xdg_config_grep()
-      --   builtin.live_grep({
-      --     prompt_title = "Search Config",
-      --     search_dirs = { vim.env.XDG_CONFIG_HOME },
-      --   })
-      -- end
-
-      -- Workaround for https://github.com/nvim-telescope/telescope.nvim/issues/2501
-      vim.api.nvim_create_autocmd("WinLeave", {
-        callback = function()
-          if vim.bo.ft == "TelescopePrompt" and vim.fn.mode() == "i" then
-            if vim.fn.mode() == "i" then
-              vim.schedule(function()
-                vim.cmd("stopinsert")
-              end)
-            end
-          end
-        end,
-      })
+      telescope.load_extension("git_jump")
+      telescope.load_extension("grep")
+      telescope.load_extension("switch")
     end,
   },
 }
