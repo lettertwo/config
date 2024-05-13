@@ -72,7 +72,9 @@ brew "fnm" # fast node version manager
 # python
 brew "pyenv"
 brew "pyenv-virtualenv"
-brew "python"
+
+# lua
+brew "luajit"
 
 # No more font patching!
 cask "font-symbols-only-nerd-font" if OS.mac?
