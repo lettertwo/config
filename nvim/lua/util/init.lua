@@ -192,11 +192,11 @@ function ConfigUtil.create_toggle(name, scope, handle)
 end
 
 function ConfigUtil.toggle_diagnostics()
-  if vim.diagnostic.is_disabled() then
-    vim.diagnostic.enable()
+  if not vim.diagnostic.is_enabled() then
+    vim.diagnostic.enable(true)
     ConfigUtil.info("Enabled diagnostics", { title = "Diagnostics" })
   else
-    vim.diagnostic.disable()
+    vim.diagnostic.enable(false)
     ConfigUtil.warn("Disabled diagnostics", { title = "Diagnostics" })
   end
 end
