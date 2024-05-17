@@ -56,7 +56,15 @@ return {
       local cmp = require("cmp")
       local luasnip = require("luasnip")
 
-      require("copilot_cmp").setup({})
+      require("copilot_cmp").setup({
+        -- event = {
+        --   on_menu_change = function(entry, menu)
+        --     if #menu.items == 0 then
+        --       cmp.close()
+        --     end
+        --   end,
+        -- },
+      })
 
       local function enter(fallback)
         if cmp.visible() and cmp.confirm() then
