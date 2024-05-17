@@ -1,34 +1,96 @@
 local icons = require("config").icons
 
 return {
-  -- file explorer
+  -- file tree
   {
-    "nvim-neo-tree/neo-tree.nvim",
-    branch = "v3.x",
-    cmd = "Neotree",
-    dependencies = {
-      "nvim-lua/plenary.nvim",
-      "nvim-tree/nvim-web-devicons",
-      "MunifTanjim/nui.nvim",
-    },
-    -- stylua: ignore start
+    "nvim-tree/nvim-tree.lua",
+    cmd = { "NvimTreeToggle", "NvimTreeFindFileToggle" },
     keys = {
-      { "<leader>fE", function() require("neo-tree.command").execute({ toggle = true, dir = vim.loop.cwd() }) end, desc = "File tree (cwd)" },
+      { "<leader>fE", "<cmd>NvimTreeFindFileToggle<cr>", desc = "File tree (cwd)" },
       { "<leader>E", "<leader>fE", remap = true, desc = "File tree (cwd)" },
     },
-    -- stylua: ignore end
-    init = function()
-      vim.g.neo_tree_remove_legacy_commands = 1
-      if vim.fn.argc() == 1 then
-        local stat = vim.loop.fs_stat(vim.fn.argv(0))
-        if stat and stat.type == "directory" then
-          require("neo-tree")
-        end
-      end
-    end,
     opts = {
-      default_component_configs = { git_status = { symbols = vim.tbl_extend("force", {}, icons.diff, icons.git) } },
-      filesystem = { follow_current_file = { enabled = true } },
+      create_in_closed_folder = true,
+      hijack_cursor = true,
+      sync_root_with_cwd = true,
+      view = {
+        adaptive_size = true,
+      },
+      renderer = {
+        full_name = true,
+        group_empty = true,
+        special_files = {},
+        symlink_destination = false,
+        indent_markers = {
+          enable = false,
+        },
+        icons = {
+          git_placement = "after",
+          modified_placement = "after",
+          diagnostics_placement = "signcolumn",
+          bookmarks_placement = "signcolumn",
+          show = {
+            file = true,
+            folder = true,
+            folder_arrow = false,
+            git = true,
+            modified = true,
+            diagnostics = true,
+            bookmarks = true,
+          },
+          glyphs = {
+            git = {
+              unstaged = vim.trim(icons.git.unstaged),
+              staged = vim.trim(icons.git.staged),
+              unmerged = vim.trim(icons.git.conflict),
+              renamed = vim.trim(icons.git.renamed),
+              untracked = vim.trim(icons.git.untracked),
+              deleted = vim.trim(icons.git.removed),
+              ignored = vim.trim(icons.git.ignored),
+            },
+          },
+        },
+      },
+      update_focused_file = {
+        enable = true,
+        update_root = true,
+        ignore_list = { "help" },
+      },
+      git = {
+        enable = true,
+        show_on_dirs = true,
+        show_on_open_dirs = false,
+      },
+      diagnostics = {
+        enable = true,
+        show_on_dirs = true,
+        show_on_open_dirs = false,
+      },
+      modified = {
+        enable = true,
+        show_on_dirs = true,
+        show_on_open_dirs = false,
+      },
+      filters = {
+        custom = {
+          "^.git$",
+        },
+      },
+      actions = {
+        change_dir = {
+          enable = false,
+          restrict_above_cwd = true,
+        },
+        open_file = {
+          resize_window = true,
+          window_picker = {
+            chars = "aoeui",
+          },
+        },
+        remove_file = {
+          close_window = false,
+        },
+      },
     },
   },
 

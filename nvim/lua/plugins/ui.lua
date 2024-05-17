@@ -182,19 +182,10 @@ return {
         enabled = false,
       },
       left = {
-        -- Neo-tree filesystem always takes half the screen height
         {
-          title = "NeoTree",
-          ft = "neo-tree",
-          filter = function(buf)
-            return vim.b[buf].neo_tree_source == "filesystem"
-          end,
+          title = "NvimTree",
+          ft = "NvimTree",
           size = { height = 0.5 },
-        },
-        {
-          ft = "Symbols Outline",
-          pinned = true,
-          open = "SymbolsOutlineOpen",
         },
       },
       bottom = {

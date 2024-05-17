@@ -106,7 +106,7 @@ local config = {
       renamed = " ",
       untracked = " ",
       ignored = "",
-      unstaged = "",
+      unstaged = "󰛄 ",
       staged = " ",
       conflict = " ",
     },
