@@ -1,9 +1,4 @@
-local capcase = require("util").capcase
-
-for key, icon in pairs(require("config").icons.diagnostics) do
-  local name = "DiagnosticSign" .. capcase(key)
-  vim.fn.sign_define(name, { text = icon, texthl = name, numhl = "" })
-end
+local icons = require("config").icons
 
 vim.diagnostic.config({
   update_in_insert = true,
@@ -11,12 +6,20 @@ vim.diagnostic.config({
   severity_sort = true,
   virtual_text = false,
   virtual_lines = false,
+  signs = {
+    text = {
+      [vim.diagnostic.severity.ERROR] = icons.diagnostics.Error,
+      [vim.diagnostic.severity.WARN] = icons.diagnostics.Warn,
+      [vim.diagnostic.severity.INFO] = icons.diagnostics.Info,
+      [vim.diagnostic.severity.HINT] = icons.diagnostics.Hint,
+    },
+  },
   float = {
     focusable = false,
     close_events = { "BufLeave", "CursorMoved", "InsertEnter", "FocusLost" },
     style = "minimal",
     border = "rounded",
-    source = "always",
+    source = true,
     header = "",
     prefix = "",
   },
@@ -208,7 +211,7 @@ require("util").register_hover({
   name = "Diagnostics",
   priority = 2,
   enabled = function()
-    return not vim.diagnostic.is_disabled()
+    return vim.diagnostic.is_enabled()
   end,
   execute = function(done)
     local result = format_diagnostics()

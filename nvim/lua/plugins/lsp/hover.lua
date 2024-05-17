@@ -1,5 +1,11 @@
 local util = require("vim.lsp.util")
 
+--- @param lines string[]
+--- @return string[]
+local function trim_empty_lines(lines)
+  return vim.split(table.concat(lines, "\n"), "\n", { trimempty = true })
+end
+
 local M = {}
 
 local function get_signature_help(params, cb)
@@ -32,7 +38,7 @@ local function get_signature_help(params, cb)
       end
     end
 
-    lines = util.trim_empty_lines(lines)
+    lines = trim_empty_lines(lines)
 
     if not vim.tbl_isempty(lines) then
       cb({ lines = lines, highlights = highlights })
@@ -55,14 +61,14 @@ local function get_hover(params, cb)
     for _, response in pairs(responses) do
       if response.result and response.result.contents then
         local markdown_lines = util.convert_input_to_markdown_lines(response.result.contents)
-        markdown_lines = util.trim_empty_lines(markdown_lines)
+        markdown_lines = trim_empty_lines(markdown_lines)
         if not vim.tbl_isempty(markdown_lines) then
           vim.list_extend(lines, markdown_lines)
         end
       end
     end
 
-    lines = util.trim_empty_lines(lines)
+    lines = trim_empty_lines(lines)
 
     if not vim.tbl_isempty(lines) then
       cb({ lines = lines })
