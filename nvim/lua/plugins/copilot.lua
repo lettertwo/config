@@ -4,14 +4,47 @@ return {
     cmd = "Copilot",
     event = "InsertEnter",
     config = function()
+      local copilot = require("copilot.suggestion")
+
       require("copilot").setup({
         panel = {
           enabled = false,
         },
         suggestion = {
-          enabled = false,
+          enabled = true,
+          auto_trigger = true,
+          keymap = {
+            accept = "<down>",
+            accept_word = "<right>",
+            accept_line = false,
+            next = "<up>",
+            prev = false,
+            dismiss = "<left>",
+          },
         },
+        filetypes = { markdown = true },
       })
+
+      local function set_trigger(trigger)
+        if not trigger and copilot.is_visible() then
+          copilot.dismiss()
+        end
+        vim.b.copilot_suggestio_auto_trigger = trigger
+        vim.b.copilot_suggestion_hidden = not trigger
+      end
+
+      -- Hide Copilot suggestions when using completion or inside snippets
+      local cmp_ok, cmp = pcall(require, "cmp")
+
+      if cmp_ok and cmp then
+        cmp.event:on("menu_opened", function()
+          set_trigger(false)
+        end)
+
+        cmp.event:on("menu_closed", function()
+          set_trigger(not vim.snippet.active())
+        end)
+      end
     end,
   },
   {
