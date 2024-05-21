@@ -100,19 +100,16 @@ end
 function M.slow_picker(opts)
   return vim.tbl_deep_extend("force", DEFAULTS, {
     initial_mode = "normal",
-    mappings = {
-      i = {
-        ["<cr>"] = setnormal,
-      },
-      n = {
-        ["/"] = setinsert,
-        i = noop,
-        a = noop,
-        I = noop,
-        A = noop,
-        R = noop,
-      },
-    },
+    attach_mappings = function(_, map)
+      map("i", "<cr>", setnormal)
+      map("n", "/", setinsert)
+      map("n", "i", noop)
+      map("n", "a", noop)
+      map("n", "I", noop)
+      map("n", "A", noop)
+      map("n", "R", noop)
+      return true
+    end,
   }, opts or {})
 end
 
