@@ -67,8 +67,6 @@ return {
     event = "InsertEnter",
     dependencies = {
       { "hrsh7th/cmp-nvim-lsp" },
-      { "hrsh7th/cmp-nvim-lsp-signature-help" },
-      { "hrsh7th/cmp-nvim-lsp-document-symbol" },
       { "tzachar/cmp-fuzzy-buffer", dependencies = { "tzachar/fuzzy.nvim" } },
       { "tzachar/cmp-fuzzy-path", dependencies = { "tzachar/fuzzy.nvim" } },
       { "hrsh7th/cmp-nvim-lua" },
@@ -99,16 +97,12 @@ return {
       end
 
       local function right(fallback)
-        local copilot_ok, copilot = pcall(require, "copilot.suggestion")
-
-        if copilot_ok and copilot and copilot.is_visible() then
-          fallback()
-        elseif cmp.visible() then
+        if cmp.visible() then
           if not cmp.confirm({ behavior = cmp.ConfirmBehavior.Replace, select = true }) then
             return
           end
         else
-          cmp.complete()
+          fallback()
         end
       end
 
@@ -142,6 +136,9 @@ return {
       ---@diagnostic disable-next-line: missing-fields
       cmp.setup({
         preselect = cmp.PreselectMode.None,
+        completion = {
+          autocomplete = false,
+        },
         view = {
           entries = {
             name = "custom",
@@ -185,8 +182,6 @@ return {
         }),
         sources = cmp.config.sources({
           { name = "nvim_lsp" },
-          { name = "nvim_lsp_document_symbol" },
-          { name = "nvim_lsp_signature_help" },
           { name = "nvim_lua", dup = 0 },
           { name = "snippets" },
         }, {
