@@ -20,4 +20,12 @@ vim.filetype.add({
       return "javascriptreact"
     end,
   },
+  filename = {
+    [".eslintrc.json"] = "jsonc",
+    [".parcelrc"] = "jsonc",
+  },
+  pattern = {
+    ["tsconfig*.json"] = "jsonc",
+    [".*/%.vscode/.*%.json"] = "jsonc",
+  },
 })
