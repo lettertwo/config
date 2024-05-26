@@ -94,6 +94,16 @@ function Actions.delete_buffer(prompt_bufnr)
   end)
 end
 
+function Actions.reveal_in_finder(prompt_bufnr)
+  local entry = action_state.get_selected_entry()
+  local path = entry.filename or entry.path or entry.value
+  if path ~= nil then
+    if vim.fn.system("open -R " .. path) then
+      telescope_actions.close(prompt_bufnr)
+    end
+  end
+end
+
 function Actions.open_in_diffview(prompt_bufnr)
   local entry = action_state.get_selected_entry()
   telescope_actions.close(prompt_bufnr)

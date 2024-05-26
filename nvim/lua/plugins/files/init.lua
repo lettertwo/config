@@ -137,6 +137,15 @@ return {
       vim.keymap.set("n", "<leader>e", actions.open_buffer, { desc = "File explorer (buffer)" })
       vim.keymap.set("n", "<leader>~", actions.open_cwd, { desc = "File explorer (cwd)" })
 
+      local function reveal_in_finder()
+        local entry = MiniFiles.get_fs_entry()
+        if entry ~= nil and entry.path ~= nil then
+          if vim.fn.system("open -R " .. entry.path) then
+            MiniFiles.close()
+          end
+        end
+      end
+
       vim.api.nvim_create_autocmd("User", {
         pattern = "MiniFilesBufferCreate",
         callback = function(args)
@@ -148,6 +157,7 @@ return {
               { "<C-.>", actions.files_set_cwd, desc = "Set cwd" },
               { "<C-s>", actions.split, desc = "Open in split" },
               { "<C-v>", actions.vsplit, desc = "Open in vsplit" },
+              { "<C-o>", reveal_in_finder, desc = "Reveal in finder" },
             })
           end
         end,
