@@ -1,5 +1,13 @@
 local icons = require("config").icons
 
+local function diagnostic_goto_next()
+  vim.diagnostic.jump({ count = 1 })
+end
+
+local function diagnostic_goto_prev()
+  vim.diagnostic.jump({ count = -1 })
+end
+
 vim.diagnostic.config({
   update_in_insert = true,
   underline = true,
@@ -253,16 +261,16 @@ return {
       },
     },
     keys = {
-      { "]x", vim.diagnostic.goto_next, desc = "Next diagnostic" },
-      { "[x", vim.diagnostic.goto_prev, desc = "Previous diagnostic" },
-      { "<leader>xj", vim.diagnostic.goto_next, desc = "Next diagnostic" },
-      { "<leader>xk", vim.diagnostic.goto_prev, desc = "Previous diagnostic" },
       { "<leader>xx", "<cmd>TroubleToggle<cr>", desc = "Trouble: Show" },
       -- { "<leader>xq", "<cmd>TroubleToggle quickfix<cr>", desc = "Trouble: Show QuickFix" },
       -- { "<leader>xl", "<cmd>TroubleToggle loclist<cr>", desc = "Trouble: Show Locationlist" },
       { "<leader>xT", "<cmd>TroubleToggle telescope<cr>", desc = "Trouble: Show Telescope" },
       { "<leader>xd", "<cmd>TroubleToggle document_diagnostics<cr>", desc = "Trouble: Show Diagnostics" },
       { "<leader>xw", "<cmd>TroubleToggle workspace_diagnostics<cr>", desc = "Trouble: Show Workspace Diagnostics" },
+      { "]x", diagnostic_goto_next, desc = "Next diagnostic" },
+      { "[x", diagnostic_goto_prev, desc = "Previous diagnostic" },
+      { "<leader>xj", diagnostic_goto_next, desc = "Next diagnostic" },
+      { "<leader>xk", diagnostic_goto_prev, desc = "Previous diagnostic" },
       { "<leader>xD", require("util").toggle_diagnostics, desc = "Toggle Diagnostics" },
       { "<leader>ux", require("util").toggle_diagnostics, desc = "Toggle Diagnostics" },
       { "<leader>xs", "<cmd>Telescope diagnostics bufnr=0<cr>", desc = "Search Diagnostics" },
