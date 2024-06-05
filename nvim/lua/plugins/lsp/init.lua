@@ -26,8 +26,19 @@ return {
         config = true,
       },
       {
-        "folke/neodev.nvim",
-        config = true,
+        "folke/lazydev.nvim",
+        dependencies = {
+          { "Bilal2453/luvit-meta", lazy = true }, -- optional `vim.uv` typings
+        },
+        opts = {
+          library = {
+            -- Only load luvit types when the `vim.uv` word is found
+            { path = "luvit-meta/library", words = { "vim%.uv" } },
+          },
+          enabled = function(root_dir)
+            return not vim.uv.fs_stat(root_dir .. "/.luarc.json")
+          end,
+        },
       },
       {
         "smjonas/inc-rename.nvim",

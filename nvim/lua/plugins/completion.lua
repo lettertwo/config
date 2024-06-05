@@ -185,6 +185,7 @@ return {
           { name = "nvim_lua", dup = 0 },
           { name = "snippets" },
         }, {
+          { name = "lazydev" },
           { name = "fuzzy_buffer", keyword_length = 4 },
           { name = "fuzzy_path" },
         }),
