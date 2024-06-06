@@ -66,6 +66,9 @@ update-laserwave: ~/.local/share/laserwave.nvim
 ~/.config/bat/themes/laserwave.tmTheme: ~/.local/share/laserwave.nvim ~/.config/bat/themes
 	$(call run,ln -sf $</dist/laserwave.tmTheme $@)
 
+~/.config/git/laserwave.gitconfig: ~/.local/share/laserwave.nvim
+	$(call run,ln -sf $</dist/delta/laserwave.gitconfig $@)
+
 ### homebrew
 
 BREW := $(shell command -v brew 2> /dev/null)
