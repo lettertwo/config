@@ -156,9 +156,10 @@ return {
         { "P", "<Plug>(YankyPutBefore)", mode = { "n", "x" } },
         { "gp", "<Plug>(YankyGPutAfter)", mode = { "n", "x" } },
         { "gP", "<Plug>(YankyGPutBefore)", mode = { "n", "x" } },
-
-        { "<c-p>", "<Plug>(YankyPreviousEntry)" },
-        { "<c-n>", "<Plug>(YankyNextEntry)" },
+        { "]p", "<Plug>(YankyPutIndentAfterLinewise)", mode = { "n", "x" } },
+        { "[p", "<Plug>(YankyPutIndentBeforeLinewise)", mode = { "n", "x" } },
+        { ">p", "<Plug>(YankyPutIndentAfterShiftRight)", mode = { "n", "x" } },
+        { "<p", "<Plug>(YankyPutIndentAfterShiftLeft)", mode = { "n", "x" } },
       },
       opts = {
         textobj = {

@@ -104,7 +104,7 @@ vim.keymap.set("n", "<leader><tab>D", "<cmd>tabonly<cr>", { desc = "Close Other 
 -- Normal --
 vim.keymap.set("n", "]q", "<cmd>cnext<CR>", { desc = "Next quickfix" })
 vim.keymap.set("n", "[q", "<cmd>cprev<CR>", { desc = "Previous quickfix" })
-vim.keymap.set("n", "gp", "`[v`]", { desc = "Switch to VISUAL using the last changed or yanked text" })
+vim.keymap.set("n", "gy", "`[v`]", { desc = "Switch to VISUAL using the last changed or yanked text" })
 
 -- Visual --
 vim.keymap.set("x", "p", '"_dP', { desc = "Paste over selection (without yanking)" })
