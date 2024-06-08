@@ -3,6 +3,7 @@ local filetypes = require("config").filetypes
 return {
   -- icons
   { "nvim-tree/nvim-web-devicons", lazy = true },
+  { "rachartier/tiny-devicons-auto-colors.nvim", lazy = true, config = true },
 
   -- ui components
   { "MunifTanjim/nui.nvim", lazy = true },
