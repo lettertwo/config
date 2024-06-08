@@ -32,19 +32,9 @@ return {
 
   -- comments
   {
-    "echasnovski/mini.comment",
+    "folke/ts-comments.nvim",
     event = "BufReadPost",
-    config = function(_, opts)
-      if Util.has("nvim-ts-context-commentstring") then
-        opts.options = vim.tbl_extend("force", opts.options or {}, {
-          custom_commentstring = function()
-            return require("ts_context_commentstring").calculate_commentstring() or vim.bo.commentstring
-          end,
-        })
-      end
-
-      require("mini.comment").setup(opts)
-    end,
+    opts = {},
   },
 
   -- surround
@@ -141,7 +131,6 @@ return {
     cmd = { "TSUpdateSync" },
     dependencies = {
       "RRethy/nvim-treesitter-endwise",
-      "JoosepAlviste/nvim-ts-context-commentstring",
     },
     keys = {
       { "<leader>ui", "<cmd>Inspect<CR>", desc = "Show Position" },
@@ -201,11 +190,6 @@ return {
         },
       },
     },
-    init = function()
-      -- Skip backwards compatibility check
-      -- (see https://github.com/JoosepAlviste/nvim-ts-context-commentstring#getting-started)
-      vim.g.skip_ts_context_commentstring_module = true
-    end,
     ---@param opts TSConfig
     config = function(_, opts)
       local parsers = require("nvim-treesitter.parsers")
@@ -214,8 +198,6 @@ return {
       vim.treesitter.language.register("tsx", "flowtype")
 
       require("nvim-treesitter.configs").setup(opts)
-      ---@diagnostic disable-next-line: missing-fields
-      require("ts_context_commentstring").setup({ enable_autocmd = false })
     end,
   },
 
