@@ -71,7 +71,7 @@ opt.fillchars = {
   eob = icons.eob,
   diff = "╱",
 }
-opt.colorcolumn:append("+1") -- color column at textwidth so I know when my line's too long
+-- opt.colorcolumn:append("+1") -- color column at textwidth so I know when my line's too long
 
 -- Window management
 opt.splitbelow = true -- force all horizontal splits to go below current window
