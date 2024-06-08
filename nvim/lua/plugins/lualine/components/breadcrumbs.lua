@@ -1,30 +1,27 @@
 local M = require("lualine.component"):extend()
--- local filetypes = require("config").filetypes
+local filetype = require("plugins.lualine.components").filetype
 
--- local function visible_for_filetype()
---   return not vim.tbl_contains(filetypes.ui, vim.bo.filetype)
--- end
---
--- local function excludes()
---   if not visible_for_filetype() then
---     vim.opt_local.winbar = nil
---     return true
---   end
---   return false
--- end
---
 function M:update_status()
-  -- if excludes() then
-  --   return
-  -- end
+  if package.loaded["dropbar"] then
+    -- TODO: update opts.menu.win_configs.col to match the size of the filepath section.
+    -- from https://github.com/Bekaboo/dropbar.nvim/issues/19#issuecomment-1574760272
+    return " %{%v:lua.dropbar.get_dropbar_str()%}"
+  end
+end
 
-  if not package.loaded["dropbar"] then
-    return
+function M:draw()
+  self.status = ""
+
+  if not filetype.cond() then
+    return self.status
+  end
+  if self.options.cond ~= nil and self.options.cond() ~= true then
+    return self.status
   end
 
-  -- TODO: update opts.menu.win_configs.col to match the size of the filepath section.
-  -- from https://github.com/Bekaboo/dropbar.nvim/issues/19#issuecomment-1574760272
-  return "%{%v:lua.dropbar.get_dropbar_str()%}"
+  self.status = self:update_status()
+
+  return self.status
 end
 
 return M

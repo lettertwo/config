@@ -241,9 +241,9 @@ function M:draw()
   self.status = ""
   self.applied_separator = ""
 
-  -- if not filetype.cond() then
-  --   return
-  -- end
+  if not filetype.cond() then
+    return self.status
+  end
   if self.options.cond ~= nil and self.options.cond() ~= true then
     return self.status
   end
