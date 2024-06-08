@@ -355,8 +355,42 @@ return {
             a = { "@block.outer", "@conditional.outer", "@loop.outer" },
             i = { "@block.inner", "@conditional.inner", "@loop.inner" },
           }, {}),
-          f = ai.gen_spec.treesitter({ a = "@function.outer", i = "@function.inner" }, {}),
-          c = ai.gen_spec.treesitter({ a = "@class.outer", i = "@class.inner" }, {}),
+          -- Function definition
+          F = ai.gen_spec.treesitter({ a = "@function.outer", i = "@function.inner" }),
+          -- Class definition
+          C = ai.gen_spec.treesitter({ a = "@class.outer", i = "@class.inner" }),
+          -- Function call (without dot)
+          -- From: https://github.com/LazyVim/LazyVim/blob/8ba7c64/lua/lazyvim/plugins/coding.lua#L196
+          f = ai.gen_spec.function_call({ name_pattern = "[%w_]" }),
+          -- Tags
+          -- From: https://github.com/LazyVim/LazyVim/blob/8ba7c64/lua/lazyvim/plugins/coding.lua#L187
+          t = { "<([%p%w]-)%f[^<%w][^<>]->.-</%1>", "^<.->().*()</[^/]->$" },
+          -- Digits
+          -- From: https://github.com/LazyVim/LazyVim/blob/8ba7c64/lua/lazyvim/plugins/coding.lua#L188
+          d = { "%f[%d]%d+" },
+          -- Subword (e.g., 'camel' or 'Case' in camelCase, 'snake' or 'case' in snake_case)
+          -- From: https://github.com/LazyVim/LazyVim/blob/8ba7c64/lua/lazyvim/plugins/coding.lua#L189-L192
+          s = {
+            { "%u[%l%d]+%f[^%l%d]", "%f[%S][%l%d]+%f[^%l%d]", "%f[%P][%l%d]+%f[^%l%d]", "^[%l%d]+%f[^%l%d]" },
+            "^().*()$",
+          },
+          -- Current buffer textobject
+          -- From: https://github.com/echasnovski/mini.nvim/blob/cc2f5b5/lua/mini/extra.lua#L133
+          A = function(ai_type)
+            local start_line, end_line = 1, vim.fn.line("$")
+            if ai_type == "i" then
+              -- Skip first and last blank lines for `i` textobject
+              local first_nonblank, last_nonblank = vim.fn.nextnonblank(start_line), vim.fn.prevnonblank(end_line)
+              -- Do nothing for buffer with all blanks
+              if first_nonblank == 0 or last_nonblank == 0 then
+                return { from = { line = start_line, col = 1 } }
+              end
+              start_line, end_line = first_nonblank, last_nonblank
+            end
+
+            local to_col = math.max(vim.fn.getline(end_line):len(), 1)
+            return { from = { line = start_line, col = 1 }, to = { line = end_line, col = to_col } }
+          end,
         },
       }
     end,
@@ -384,8 +418,12 @@ return {
           _ = "Underscore",
           a = "Argument",
           b = "Balanced ), ], }",
-          c = "Class",
-          f = "Function",
+          f = "Function call",
+          d = "Digit(s)",
+          s = "Subword",
+          F = "Function",
+          C = "Class",
+          A = "All (buffer)",
           o = "Block, conditional, loop",
           q = "Quote `, \", '",
           t = "Tag",
