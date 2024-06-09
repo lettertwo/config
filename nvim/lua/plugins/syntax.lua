@@ -430,7 +430,9 @@ return {
         }
         local a = vim.deepcopy(i)
         for k, v in pairs(a) do
-          a[k] = v:gsub(" including.*", "")
+          if type(v) == "string" then
+            a[k] = v:gsub(" including.*", "")
+          end
         end
 
         local ic = vim.deepcopy(i)
