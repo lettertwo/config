@@ -44,6 +44,7 @@
   "mini.indentscope": { "branch": "main", "commit": "f0d7faa064c892b96997810afcddfadc3f2a15b3" },
   "mini.operators": { "branch": "main", "commit": "ccc67955124dde0ba20cdcb37ea30ff1646da574" },
   "mini.surround": { "branch": "main", "commit": "27096c1a27324ee8f2044ea2adc77366d8a782de" },
+  "mini.trailspace": { "branch": "main", "commit": "f43e2dff55a07e0a84c01ba4b25ed976a12eea44" },
   "neoconf.nvim": { "branch": "main", "commit": "7d0931532c66e7ffac93f68bd3adb4ca3f59d843" },
   "neotest": { "branch": "master", "commit": "6f35d797882c6ce0ab7c87dc86561512dc3d7aba" },
   "neotest-jest": { "branch": "main", "commit": "514fd4eae7da15fd409133086bb8e029b65ac43f" },

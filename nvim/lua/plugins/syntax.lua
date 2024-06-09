@@ -448,6 +448,13 @@ return {
     end,
   },
 
+  -- whitespace
+  {
+    "echasnovski/mini.trailspace",
+    event = "BufReadPost",
+    config = true,
+  },
+
   -- markdown preview
   {
     "iamcco/markdown-preview.nvim",
