@@ -454,19 +454,4 @@ return {
     event = "BufReadPost",
     config = true,
   },
-
-  -- markdown preview
-  {
-    "iamcco/markdown-preview.nvim",
-    cmd = { "MarkdownPreviewToggle", "MarkdownPreview", "MarkdownPreviewStop" },
-    ft = { "markdown" },
-    keys = {
-      -- TODO: make this buffer-specific, and based on ft
-      { "gM", "<cmd>MarkdownPreviewToggle<CR>", desc = "Markdown preview" },
-    },
-    build = function()
-      vim.fn["mkdp#util#install"]()
-    end,
-    -- init = function() end,
-  },
 }

@@ -1,15 +1,4 @@
 return {
-  --symbols outline
-  {
-    "simrat39/symbols-outline.nvim",
-    cmd = { "SymbolsOutline", "SymbolsOutlineOpen" },
-    event = "VeryLazy",
-    keys = {
-      { "<leader>S", "<cmd>SymbolsOutline<cr>", desc = "Symbols outline" },
-    },
-    opts = {},
-  },
-
   -- easily jump to any location and enhanced /, ?, f, t, F, T motions
   {
     "folke/flash.nvim",
