@@ -1,6 +1,7 @@
 .DS_Store
 configstore
 git/user
+git/laserwave.gitconfig
 iterm2/AppSupport
 karabiner/automatic_backups
 lvim/plugin
@@ -23,3 +24,4 @@ wezterm/colors/laserwave.toml
 lazygit/state.yml
 githubnext_*
 atlassian
+cloudtoken
