@@ -1,3 +1,5 @@
+require("lazy_init")
+
 vim.o.relativenumber = true
 vim.o.number = false
 vim.o.mouse = "a"
@@ -26,62 +28,63 @@ vim.api.nvim_create_autocmd(
   { pattern = "*", command = "call cursor(max([0,INPUT_LINE_NUMBER-1])+CURSOR_LINE, CURSOR_COLUMN)" }
 )
 
-local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-if vim.loop.fs_stat(lazypath) then
-  vim.opt.rtp:prepend(vim.env.LAZY or lazypath)
-
-  require("lazy").setup({
-    spec = {
-      { import = "plugins.colorscheme" },
-      -- Navigate seamlessly between kitty and nvim windows.
-      { "knubie/vim-kitty-navigator", build = [[ cp ./*.py $XDG_CONFIG_HOME/kitty/ ]] },
-      {
-        "folke/which-key.nvim",
-        opts = {
-          plugins = { spelling = true },
-          window = { border = "single" },
-          show_help = false,
-          show_keys = false,
-          key_labels = { ["<leader>"] = "SPC" },
-        },
-        config = function(_, opts)
-          local wk = require("which-key")
-          wk.setup(opts)
-          wk.register({
-            mode = { "n", "v" },
-            ["g"] = { name = "+goto" },
-            ["]"] = { name = "+next" },
-            ["["] = { name = "+prev" },
-            ["<leader>s"] = { name = "+search" },
-            ["<leader>u"] = { name = "+ui" },
-          })
-        end,
+require("lazy").setup({
+  spec = {
+    { import = "plugins.colorscheme" },
+    { import = "plugins.ui" },
+    {
+      "folke/which-key.nvim",
+      opts = {
+        plugins = { spelling = true },
+        window = { border = "single" },
+        show_help = false,
+        show_keys = false,
+        key_labels = { ["<leader>"] = "SPC" },
+      },
+      config = function(_, opts)
+        local wk = require("which-key")
+        wk.setup(opts)
+        wk.register({
+          mode = { "n", "v" },
+          ["g"] = { name = "+goto" },
+          ["]"] = { name = "+next" },
+          ["["] = { name = "+prev" },
+          ["<leader>s"] = { name = "+search" },
+          ["<leader>u"] = { name = "+ui" },
+        })
+      end,
+    },
+  },
+  dev = { path = "~/.local/share/" },
+  install = {
+    missing = true,
+    colorscheme = { "laserwave", "habamax" },
+  },
+  ui = { border = "rounded" },
+  checker = {
+    enabled = false, -- automatically check for plugin updates
+    notify = false, -- get a notification when updates are found
+  },
+  change_detection = {
+    enabled = false, -- automatically check for config file changes and reload the ui
+    notify = false, -- get a notification when changes are found
+  },
+  performance = {
+    rtp = {
+      -- disable some rtp plugins
+      disabled_plugins = {
+        "gzip",
+        "matchit",
+        "matchparen",
+        "netrwPlugin",
+        "tarPlugin",
+        "tohtml",
+        "tutor",
+        "zipPlugin",
       },
     },
-    defaults = {
-      lazy = false,
-      version = false, -- always use the latest git commit
-    },
-    install = { colorscheme = { "laserwave" } },
-    ui = { border = "rounded" },
-    checker = { enabled = false },
-    performance = {
-      rtp = {
-        -- disable some rtp plugins
-        disabled_plugins = {
-          "gzip",
-          "matchit",
-          "matchparen",
-          "netrwPlugin",
-          "tarPlugin",
-          "tohtml",
-          "tutor",
-          "zipPlugin",
-        },
-      },
-    },
-  })
-end
+  },
+})
 
 local Util = require("util")
 
@@ -90,10 +93,10 @@ vim.keymap.set("n", "j", "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = tr
 vim.keymap.set("n", "k", "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
 
 -- Resize window using <ctrl> arrow keys
-vim.keymap.set("n", "<C-Up>", "<cmd>resize +2<cr>", { desc = "Increase window height" })
-vim.keymap.set("n", "<C-Down>", "<cmd>resize -2<cr>", { desc = "Decrease window height" })
-vim.keymap.set("n", "<C-Left>", "<cmd>vertical resize -2<cr>", { desc = "Decrease window width" })
-vim.keymap.set("n", "<C-Right>", "<cmd>vertical resize +2<cr>", { desc = "Increase window width" })
+-- vim.keymap.set("n", "<C-Up>", "<cmd>resize +2<cr>", { desc = "Increase window height" })
+-- vim.keymap.set("n", "<C-Down>", "<cmd>resize -2<cr>", { desc = "Decrease window height" })
+-- vim.keymap.set("n", "<C-Left>", "<cmd>vertical resize -2<cr>", { desc = "Decrease window width" })
+-- vim.keymap.set("n", "<C-Right>", "<cmd>vertical resize +2<cr>", { desc = "Increase window width" })
 
 -- Close floats, and clear highlights with <Esc>
 vim.keymap.set("n", "<Esc>", Util.close_floats_and_clear_highlights, { desc = "Close floats, clear highlights" })

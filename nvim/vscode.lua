@@ -1,7 +1,7 @@
+require("lazy_init")
 require("config.options")
-
 require("lazy").setup({
-
+  lockfile = vim.fn.stdpath("config") .. "/.lazy-lock.vscode.json",
   -- TODO: Build vscode-specific plugin spec
   -- see https://github.com/vscode-neovim/vscode-neovim#other-extensions
   spec = {
@@ -16,16 +16,18 @@ require("lazy").setup({
     -- version = "*", -- try installing the latest stable version for plugins that support semver
   },
   -- dev = { path = "~/.local/share/" },
-  -- install = { colorscheme = { "laserwave", "habamax" } },
-  -- ui = { border = "rounded" },
-  -- checker = {
-  --   enabled = false, -- automatically check for plugin updates
-  --   notify = false, -- get a notification when updates are found
-  -- },
-  -- change_detection = {
-  --   enabled = false, -- automatically check for config file changes and reload the ui
-  --   notify = false, -- get a notification when changes are found
-  -- },
+  install = {
+    missing = true,
+    colorscheme = { "laserwave", "habamax" },
+  },
+  checker = {
+    enabled = false, -- automatically check for plugin updates
+    notify = false, -- get a notification when updates are found
+  },
+  change_detection = {
+    enabled = false, -- automatically check for config file changes and reload the ui
+    notify = false, -- get a notification when changes are found
+  },
   performance = {
     rtp = {
       -- disable some rtp plugins
