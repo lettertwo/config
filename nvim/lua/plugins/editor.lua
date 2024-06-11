@@ -20,9 +20,9 @@ return {
     opts = {
       plugins = { spelling = true },
       window = { border = "single" },
-      show_help = false,
-      show_keys = false,
-      key_labels = { ["<leader>"] = "SPC" },
+      show_help = true,
+      show_keys = true,
+      key_labels = { ["<leader>"] = "<space>" },
     },
     config = function(_, opts)
       local wk = require("which-key")
@@ -30,9 +30,19 @@ return {
 
       wk.register({
         mode = { "n", "v" },
-        ["g"] = { name = "+goto" },
+        c = { name = "+change" },
+        d = { name = "+delete" },
+        g = { name = "+goto" },
+        m = { name = "+mark" },
+        v = { name = "+visual" },
+        y = { name = "+yank" },
+        z = { name = "+fold/scroll" },
         ["]"] = { name = "+next" },
         ["["] = { name = "+prev" },
+        ["!"] = { name = "+filter" },
+        ["<"] = { name = "+indent/left" },
+        [">"] = { name = "+indent/right" },
+        ["<leader>"] = { name = "+leader" },
         ["<leader>,"] = { name = "config" },
         ["<leader>\\"] = { name = "+terminals" },
         ["<leader><tab>"] = { name = "+tabs" },

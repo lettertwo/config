@@ -1,7 +1,7 @@
 require("lazy_init")
 require("config.options")
 require("lazy").setup({
-  lockfile = vim.fn.stdpath("config") .. "/.lazy-lock.vscode.json",
+  lockfile = vim.fn.stdpath("config") .. "/lazy-lock-vscode.json",
   -- TODO: Build vscode-specific plugin spec
   -- see https://github.com/vscode-neovim/vscode-neovim#other-extensions
   spec = {

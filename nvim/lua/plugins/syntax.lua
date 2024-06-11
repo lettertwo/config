@@ -20,6 +20,51 @@ return {
     },
   },
 
+  -- indent guides for Neovim
+  {
+    "lukas-reineke/indent-blankline.nvim",
+    main = "ibl",
+    event = "BufReadPost",
+    opts = {
+      indent = { char = "┆" },
+      whitespace = { remove_blankline_trail = false },
+      scope = { enabled = false },
+      exclude = { filetypes = filetypes.ui },
+    },
+  },
+
+  -- active indent guide and indent text objects
+  {
+    "echasnovski/mini.indentscope",
+    version = false,
+    event = "BufReadPost",
+    opts = {
+      symbol = "┆",
+      --stylua: ignore
+      draw = { delay = 0, animation = function() return 0 end },
+      options = {
+        border = "both",
+        indent_at_cursor = true,
+        try_as_border = true,
+      },
+      mappings = {
+        object_scope = "ii",
+        object_scope_with_border = "ai",
+        goto_top = "[i",
+        goto_bottom = "]i",
+      },
+    },
+    config = function(_, opts)
+      vim.api.nvim_create_autocmd("FileType", {
+        pattern = filetypes.ui,
+        callback = function()
+          vim.b.miniindentscope_disable = true
+        end,
+      })
+      require("mini.indentscope").setup(opts)
+    end,
+  },
+
   -- indentation detection
   {
     "Darazaki/indent-o-matic",
@@ -202,6 +247,23 @@ return {
 
       require("nvim-treesitter.configs").setup(opts)
     end,
+  },
+
+  {
+    "nvim-treesitter/nvim-treesitter-context",
+    event = "BufReadPost",
+    cmds = { "TSContextToggle" },
+    keys = {
+      { "<leader>uC", "<cmd>TSContextToggle<cr>", desc = "Toggle TS Context" },
+      {
+        "gC",
+        function()
+          require("treesitter-context").go_to_context()
+        end,
+        desc = "Go to treesitter context",
+      },
+    },
+    opts = { mode = "topline", enable = false },
   },
 
   -- auto pairs
