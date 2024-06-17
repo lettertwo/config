@@ -59,9 +59,10 @@
 [color "diff"]
 	meta = black bold
 	frag = magenta
-	old = red bold
-	new = green bold
+	old = red
+	new = blue
 	whitespace = red reverse
+	context = black
 [color "status"]
 	header = black
 	added = green
@@ -83,6 +84,8 @@
 	required = true
 [interactive]
 	diffFilter = delta --color-only
+[pager]
+	format-patch = delta
 [delta]
 	features = laserwave
 	navigate = true

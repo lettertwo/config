@@ -30,9 +30,7 @@ gui:
     optionsTextColor:
       - blue
     selectedLineBgColor:
-      - "#342b3c"
-    selectedRangeBgColor:
-      - reverse
+      - "#433351"
     cherryPickedCommitBgColor:
       - cyan
     cherryPickedCommitFgColor:
@@ -65,8 +63,7 @@ gui:
 git:
   paging:
     colorArg: always
-    pager: ""
-    useConfig: false
+    pager: delta --dark --paging=never
   commit:
     signOff: false
   merging:
