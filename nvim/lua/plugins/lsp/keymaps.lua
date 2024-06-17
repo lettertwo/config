@@ -11,6 +11,7 @@ end
 ---@type LspKeySpec[]
 local keys = {
   { "gK", vim.lsp.buf.signature_help, desc = "Show signature help", has = "signatureHelp" },
+  { "grn", rename, desc = "Rename", expr = true, has = "rename" },
   { "<leader>R", rename, desc = "Rename", expr = true, has = "rename" },
   { "<leader>lh", vim.lsp.buf.hover, desc = "Show hover" },
   { "<leader>lr", rename, desc = "Rename", expr = true, has = "rename" },

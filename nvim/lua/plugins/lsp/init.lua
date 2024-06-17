@@ -145,6 +145,7 @@ return {
             require("plugins.lsp.keymaps").apply({ bufnr = bufnr, client = client }, {
               { "<leader>.", actions_preview.code_actions, desc = "Show code actions" },
               { "<leader>la", actions_preview.code_actions, desc = "Show code actions" },
+              { "gra", actions_preview.code_actions, desc = "Show code actions" },
             })
           end)
         end,
@@ -154,11 +155,11 @@ return {
         cmd = "Glance",
         event = "BufReadPost",
         keys = {
-          { "gd", "<cmd>Glance definitions<cr>", desc = "Show definitions" },
-          { "gD", "<cmd>Glance declarations<cr>", desc = "Show declarations" },
-          { "gt", "<cmd>Glance type_definitions<cr>", desc = "Show type definitions" },
-          { "gI", "<cmd>Glance implementations<cr>", desc = "Show implementations" },
-          { "gr", "<cmd>Glance references<cr>", desc = "Show references" },
+          { "grd", "<cmd>Glance definitions<cr>", desc = "Show definitions" },
+          { "grD", "<cmd>Glance declarations<cr>", desc = "Show declarations" },
+          { "grt", "<cmd>Glance type_definitions<cr>", desc = "Show type definitions" },
+          { "grI", "<cmd>Glance implementations<cr>", desc = "Show implementations" },
+          { "grr", "<cmd>Glance references<cr>", desc = "Show references" },
         },
         opts = {
           detached = false,

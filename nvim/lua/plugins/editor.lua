@@ -33,6 +33,7 @@ return {
         c = { name = "+change" },
         d = { name = "+delete" },
         g = { name = "+goto" },
+        gr = { name = "+references" },
         m = { name = "+mark" },
         v = { name = "+visual" },
         y = { name = "+yank" },
