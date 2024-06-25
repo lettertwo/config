@@ -10,7 +10,7 @@
 	unmerged = branch -a --no-merged
 	delete-merged = !git branch --merged | grep -v "\\*" | xargs -n 1 git branch -d
 	prune-remote = !git remote | fzf | xargs -I {} git remote prune {}
-  gone = ! "git fetch -p && git branch -vv | grep ': gone]' | awk '{print $1}' | xargs git branch -D"
+  gone = ! "git fetch -p && git branch -vv | grep ': gone]' | sed 's/^+ //g' | awk '{print $1}' | xargs git branch -D"
 	publish = !git remote | fzf | xargs -I {} git push -u {} HEAD
 	unpublish = ! "git branch -r | fzf | awk '{sub(/\\//,\" --delete \");print}' | xargs -p git push"
 	who = shortlog -s --
