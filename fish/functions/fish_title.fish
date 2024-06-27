@@ -1,5 +1,5 @@
 function fish_title
-    set title $argv[1] (prompt_pwd)
+    set title $argv[1] (prompt_pwd) (prompt_branch)
 
     if is_ssh
         set user (whoami)
