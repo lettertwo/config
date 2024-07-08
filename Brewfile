@@ -84,3 +84,6 @@ cask "syntax-highlight" if OS.mac? # https://github.com/sbarex/SourceCodeSyntaxH
 
 # QMK
 cask "qmk-toolbox" if OS.mac? # https://github.com/qmk/qmk_toolbox
+brew "avr-gcc" if OS.mac? # needed for QMK
+brew "arm-gcc-bin" if OS.mac? # needed for QMK
+brew "qmk/qmk/qmk" if OS.mac?
