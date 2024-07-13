@@ -9,6 +9,8 @@ local config = {
       "PlenaryTestPopup",
       "TelescopePrompt",
       "Trouble",
+      "trouble",
+      "checkhealth",
       "alpha",
       "cmp_menu",
       "dashboard",

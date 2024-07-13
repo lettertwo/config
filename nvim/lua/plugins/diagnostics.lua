@@ -251,7 +251,7 @@ return {
   -- better diagnostics list and others
   {
     "folke/trouble.nvim",
-    cmd = { "TroubleToggle", "Trouble" },
+    cmd = { "Trouble" },
     opts = {
       use_diagnostic_signs = true,
       auto_jump = { "lsp_definitions", "lsp_references", "lsp_type_definitions", "lsp_implementations" },
@@ -259,18 +259,43 @@ return {
         jump = { "<CR>" },
         jump_close = { "<S-CR>" },
       },
+      modes = {
+        lsp_document_symbols = {
+          mode = "lsp_document_symbols",
+          focus = true,
+          follow = true,
+        },
+        diagnostics = {
+          mode = "diagnostics",
+          focus = true,
+          preview = {
+            type = "split",
+            relative = "win",
+            position = "right",
+            size = 0.3,
+          },
+        },
+        diagnostics_buffer = {
+          mode = "diagnostics_preview_float",
+          follow = true,
+          focus = true,
+          filter = { buf = 0 },
+        },
+      },
     },
+
     keys = {
-      { "<leader>xx", "<cmd>TroubleToggle<cr>", desc = "Trouble: Show" },
-      -- { "<leader>xq", "<cmd>TroubleToggle quickfix<cr>", desc = "Trouble: Show QuickFix" },
-      -- { "<leader>xl", "<cmd>TroubleToggle loclist<cr>", desc = "Trouble: Show Locationlist" },
-      { "<leader>xT", "<cmd>TroubleToggle telescope<cr>", desc = "Trouble: Show Telescope" },
-      { "<leader>xd", "<cmd>TroubleToggle document_diagnostics<cr>", desc = "Trouble: Show Diagnostics" },
-      { "<leader>xw", "<cmd>TroubleToggle workspace_diagnostics<cr>", desc = "Trouble: Show Workspace Diagnostics" },
       { "]x", diagnostic_goto_next, desc = "Next diagnostic" },
       { "[x", diagnostic_goto_prev, desc = "Previous diagnostic" },
       { "<leader>xj", diagnostic_goto_next, desc = "Next diagnostic" },
       { "<leader>xk", diagnostic_goto_prev, desc = "Previous diagnostic" },
+      { "<leader>xx", "<cmd>Trouble diagnostics toggle<cr>", desc = "Trouble: Show Workspace Diagnostics" },
+      { "<leader>xq", "<cmd>Trouble qflist toggle<cr>", desc = "Trouble: Show QuickFix" },
+      { "<leader>xl", "<cmd>Trouble loclist toggle<cr>", desc = "Trouble: Show Locationlist" },
+      { "<leader>xT", "<cmd>Trouble telescope toggle<cr>", desc = "Trouble: Show Telescope" },
+      { "<leader>S", "<cmd>Trouble lsp_document_symbols follow=true<cr>", desc = "Symbols outline" },
+      { "<leader>xd", "<cmd>Trouble diagnostics_buffer toggle<cr>", desc = "Trouble: Show Diagnostics" },
+      { "<leader>xw", "<cmd>Trouble diagnostics toggle<cr>", desc = "Trouble: Show Workspace Diagnostics" },
       { "<leader>xD", require("util").toggle_diagnostics, desc = "Toggle Diagnostics" },
       { "<leader>ux", require("util").toggle_diagnostics, desc = "Toggle Diagnostics" },
       { "<leader>xs", "<cmd>Telescope diagnostics bufnr=0<cr>", desc = "Search Diagnostics" },

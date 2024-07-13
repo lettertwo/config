@@ -1,5 +1,4 @@
 local telescope_actions = require("telescope.actions")
-local trouble = require("trouble.providers.telescope")
 local actions = require("plugins.telescope.actions")
 
 local function setnormal()
@@ -8,6 +7,7 @@ end
 
 local function setinsert()
   vim.cmd([[startinsert]])
+  vim.cmd([[normal! $]])
 end
 
 local function noop()
@@ -59,7 +59,8 @@ local DEFAULTS = {
       -- The same goes for the other modes and pickers.
       ["<c-q>"] = actions.send_to_quickfix + actions.open_quickfix,
       ["<c-l>"] = actions.send_to_loclist + actions.open_loclist,
-      ["<C-t>"] = trouble.smart_open_with_trouble,
+      ["<C-t>"] = actions.open_in_trouble,
+      ["<C-T>"] = actions.add_to_trouble,
       ["<C-e>"] = actions.open_in_file_explorer,
       ["<C-o>"] = actions.reveal_in_finder,
       ["<M-q>"] = false,
@@ -77,7 +78,8 @@ local DEFAULTS = {
       ["<C-p>"] = telescope_actions.cycle_history_prev,
       ["<c-q>"] = actions.send_to_quickfix + actions.open_quickfix,
       ["<c-l>"] = actions.send_to_loclist + actions.open_loclist,
-      ["<C-t>"] = trouble.smart_open_with_trouble,
+      ["<C-t>"] = actions.open_in_trouble,
+      ["<C-T>"] = actions.add_to_trouble,
       ["<C-e>"] = actions.open_in_file_explorer,
       ["<C-o>"] = actions.reveal_in_finder,
       ["<M-q>"] = false,

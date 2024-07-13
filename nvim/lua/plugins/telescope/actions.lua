@@ -72,16 +72,20 @@ function Actions.send_to_loclist(prompt_bufnr)
 end
 
 function Actions.open_quickfix()
-  if vim.fn.exists(":TroubleToggle") then
+  if vim.fn.exists(":TroubleToggle") == 2 then
     vim.cmd([[TroubleToggle quickfix]])
+  elseif vim.fn.exists(":Trouble") == 2 then
+    vim.cmd([[Trouble quickfix]])
   else
     vim.cmd([[copen]])
   end
 end
 
 function Actions.open_loclist()
-  if vim.fn.exists(":TroubleToggle") then
+  if vim.fn.exists(":TroubleToggle") == 2 then
     vim.cmd([[TroubleToggle loclist]])
+  elseif vim.fn.exists("Trouble") == 2 then
+    vim.cmd([[Trouble loclist]])
   else
     vim.cmd([[lopen]])
   end
@@ -121,6 +125,28 @@ function Actions.open_in_file_explorer(prompt_bufnr)
       vim.notify("Failed to open file in file explorer", vim.log.levels.ERROR)
     end
   end
+end
+
+function Actions.open_in_trouble(...)
+  local ok, trouble = pcall(require, "trouble.sources.telescope")
+  if not ok then
+    ok, trouble = pcall(require, "trouble.providers.telescope")
+    if not ok then
+      vim.notify("trouble.nvim is not installed", vim.log.levels.ERROR)
+      return
+    end
+    return trouble.open_with_telescope(...)
+  end
+  return trouble.open(...)
+end
+
+function Actions.add_to_trouble(...)
+  local ok, trouble = pcall(require, "trouble.sources.telescope")
+  if not ok then
+    vim.notify("trouble.nvim is not installed", vim.log.levels.ERROR)
+    return
+  end
+  return trouble.add(...)
 end
 
 function Actions.yank_to_clipboard(prompt_bufnr)

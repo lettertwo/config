@@ -131,6 +131,13 @@ return {
           ft = "NvimTree",
           size = { height = 0.5 },
         },
+        {
+          title = "Symbols Outline",
+          ft = "trouble",
+          filter = function(buf, win)
+            return vim.w[win].trouble.mode == "lsp_document_symbols"
+          end,
+        },
       },
       bottom = {
         {
@@ -141,7 +148,7 @@ return {
             return vim.api.nvim_win_get_config(win).relative == ""
           end,
         },
-        "Trouble",
+        "trouble",
         { ft = "qf", title = "QuickFix" },
         {
           ft = "help",
