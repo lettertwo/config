@@ -24,32 +24,10 @@ return {
             {
               type = "text",
               val = "Recent files",
-              opts = {
-                hl = "SpecialComment",
-                shrink_margin = false,
-                position = "center",
-              },
+              opts = { hl = "SpecialComment", position = "center" },
             },
             { type = "padding", val = 1 },
-            {
-              type = "group",
-              val = mru,
-              opts = {
-                shrink_margin = false,
-              },
-            },
-          },
-        },
-        { type = "padding", val = 2 },
-        {
-          type = "group",
-          val = {
-            { type = "text", val = "Find Stuff", opts = { hl = "SpecialComment", position = "center" } },
-            { type = "padding", val = 1 },
-            button("l", "  Load Session", [[:lua require("persistence").load() <cr>]]),
-            button("f", "󰮗  Find File", "<CMD>Telescope find_files<CR>"),
-            button("r", "  Find Recent", "<CMD>Telescope oldfiles<CR>"),
-            button("g", "󰊄  Find Text", "<CMD>Telescope live_grep<CR>"),
+            { type = "group", val = mru },
           },
         },
         { type = "padding", val = 2 },
@@ -67,11 +45,7 @@ return {
               opts = { hl = "Comment", position = "center" },
             },
             { type = "padding", val = 1 },
-            button(
-              "c",
-              "  Configuration",
-              "<CMD>Telescope find_files cwd=" .. vim.fn.stdpath("config") .. " prompt_title=Nvim\\ Config\\ Files<CR>"
-            ),
+            button("l", "  Load Session", [[:lua require("persistence").load() <cr>]]),
             lazy_button,
             mason_button,
             button("C", "󰓙 Checkhealth", "<CMD>checkhealth<CR>"),
@@ -112,28 +86,30 @@ return {
         vim.api.nvim_create_autocmd("VimResized", { pattern = "*", group = group, callback = layout.render })
         vim.api.nvim_create_autocmd("User", { pattern = "LazyVimStarted", group = group, callback = layout.render })
 
+        local lazy_checker = require("lazy.manage.checker")
+
         vim.api.nvim_create_autocmd("User", {
           group = group,
           once = true,
           pattern = "LazyCheck",
           callback = function(event)
-            local checker = require("lazy.manage.checker")
-            if not checker.updating then
-              lazy_button(#checker.updated, layout.render)
+            if not lazy_checker.updating and not lazy_checker.running then
+              lazy_button(#lazy_checker.updated, layout.render)
             end
           end,
         })
 
         clear_lazy_status_poll = Util.interval(1000, function()
-          local checker = require("lazy.manage.checker")
-          if not checker.updating then
-            lazy_button(#checker.updated, layout.render)
+          if not lazy_checker.updating and not lazy_checker.running then
+            lazy_button(#lazy_checker.updated, layout.render)
             if type(clear_lazy_status_poll) == "function" then
               clear_lazy_status_poll()
               clear_lazy_status_poll = nil
             end
           end
         end)
+
+        lazy_checker.fast_check()
 
         vim.api.nvim_create_autocmd("User", {
           group = group,
