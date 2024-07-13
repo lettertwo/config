@@ -1,4 +1,3 @@
-local Util = require("util")
 local filetypes = require("config").filetypes
 
 return {
@@ -416,6 +415,7 @@ return {
       return {
         n_lines = 500,
         custom_textobjects = {
+          -- Code block
           o = ai.gen_spec.treesitter({
             a = { "@block.outer", "@conditional.outer", "@loop.outer" },
             i = { "@block.inner", "@conditional.inner", "@loop.inner" },
@@ -462,55 +462,54 @@ return {
     config = function(_, opts)
       local ai = require("mini.ai")
       ai.setup(opts)
-      -- from https://github.com/LazyVim/LazyVim/blob/b1b5b46/lua/lazyvim/plugins/coding.lua#L181m
+
+      -- from https://github.com/LazyVim/LazyVim/blob/431ceaf/lua/lazyvim/util/mini.lua#L63
       -- register all text objects with which-key
       if require("util").has("which-key.nvim") then
-        ---@type table<string, string|table>
-        local i = {
-          [" "] = "Whitespace",
-          ['"'] = 'Balanced "',
-          ["'"] = "Balanced '",
-          ["`"] = "Balanced `",
-          ["("] = "Balanced (",
-          [")"] = "Balanced ) including white-space",
-          [">"] = "Balanced > including white-space",
-          ["<lt>"] = "Balanced <",
-          ["]"] = "Balanced ] including white-space",
-          ["["] = "Balanced [",
-          ["}"] = "Balanced } including white-space",
-          ["{"] = "Balanced {",
-          ["?"] = "User Prompt",
-          _ = "Underscore",
-          a = "Argument",
-          b = "Balanced ), ], }",
-          f = "Function call",
-          d = "Digit(s)",
-          s = "Subword",
-          F = "Function",
-          C = "Class",
-          A = "All (buffer)",
-          o = "Block, conditional, loop",
-          q = "Quote `, \", '",
-          t = "Tag",
+        local objects = {
+          { " ", desc = "whitespace" },
+          { '"', desc = 'balanced "' },
+          { "'", desc = "balanced '" },
+          { "[", desc = "balanced [" },
+          { "]", desc = "balanced ] including white-space" },
+          { "(", desc = "balanced (" },
+          { ")", desc = "balanced ) including white-space" },
+          { "{", desc = "balanced {" },
+          { "}", desc = "balanced } including white-space" },
+          { "<", desc = "balanced <" },
+          { ">", desc = "balanced > including white-space" },
+          { "?", desc = "user prompt" },
+          { "_", desc = "underscore" },
+          { "`", desc = "balanced `" },
+          { "a", desc = "argument" },
+          { "A", desc = "all (entire file)" },
+          { "b", desc = "balanced )]}" },
+          { "C", desc = "class" },
+          { "d", desc = "digit(s)" },
+          { "f", desc = "function call" },
+          { "F", desc = "function" },
+          { "i", desc = "indent" },
+          { "o", desc = "block, conditional, loop" },
+          { "q", desc = "quote `\"'" },
+          { "s", desc = "Subword" },
+          { "t", desc = "tag" },
         }
-        local a = vim.deepcopy(i)
-        for k, v in pairs(a) do
-          if type(v) == "string" then
-            a[k] = v:gsub(" including.*", "")
+
+        local ret = { mode = { "o", "x" } }
+        for prefix, name in pairs({
+          i = "inside",
+          a = "around",
+          il = "last",
+          ["in"] = "next",
+          al = "last",
+          an = "next",
+        }) do
+          ret[#ret + 1] = { prefix, group = name }
+          for _, obj in ipairs(objects) do
+            ret[#ret + 1] = { prefix .. obj[1], desc = obj.desc }
           end
         end
-
-        local ic = vim.deepcopy(i)
-        local ac = vim.deepcopy(a)
-        for key, name in pairs({ n = "Next", l = "Last" }) do
-          i[key] = vim.tbl_extend("force", { name = "Inside " .. name .. " textobject" }, ic)
-          a[key] = vim.tbl_extend("force", { name = "Around " .. name .. " textobject" }, ac)
-        end
-        require("which-key").register({
-          mode = { "o", "x" },
-          i = i,
-          a = a,
-        })
+        require("which-key").add(ret, { notify = false })
       end
     end,
   },
