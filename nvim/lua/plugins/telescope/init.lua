@@ -81,10 +81,10 @@ return {
 
       -- git
       { "<leader>gf", "<cmd>Telescope git_files<CR>", desc = "Git files" },
-      { "<leader>gc", "<cmd>Telescope git_commits<CR>", desc = "Commits" },
-      { "<leader>gC", "<cmd>Telescope git_bcommits<CR>", desc = "Buffer Commits" },
+      { "<leader>gc", "<cmd>Telescope git_delta commits<CR>", desc = "Commits" },
+      { "<leader>gC", "<cmd>Telescope git_delta commits bufnr=0<CR>", desc = "Buffer Commits" },
       { "<leader>gB", "<cmd>Telescope git_branches<CR>", desc = "Branches" },
-      { "<leader>gs", "<cmd>Telescope git_status<CR>", desc = "Status" },
+      { "<leader>gs", "<cmd>Telescope git_delta status<CR>", desc = "Status" },
       { "<leader>gS", "<cmd>Telescope git_stash<CR>", desc = "Stash" },
       { "<leader>gh", "<cmd>Telescope git_jump hunks bufnr=0<CR>", desc = "Hunks" },
       { "<leader>gH", "<cmd>Telescope git_jump hunks<CR>", desc = "Workspace Hunks" },
@@ -274,6 +274,7 @@ return {
       telescope.load_extension("undo")
       telescope.load_extension("yank_history")
       telescope.load_extension("smart_open")
+      telescope.load_extension("git_delta")
       telescope.load_extension("git_jump")
       telescope.load_extension("grep")
       telescope.load_extension("switch")
