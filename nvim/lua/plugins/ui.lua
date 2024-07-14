@@ -58,6 +58,40 @@ return {
     "folke/noice.nvim",
     event = "VeryLazy",
     opts = {
+      cmdline = {
+        format = {
+          -- execute shell command (:!)
+          filter = { pattern = "^:%s*!", icon = "$", lang = "fish" },
+          -- replace file content with shell command output (:%!)
+          f_filter = {
+            pattern = "^:%s*%%%s*!",
+            icon = " $",
+            lang = "fish",
+            opts = { border = { text = { top = " filter file " } } },
+          },
+          -- replace selection with shell command output (:'<,'>!)
+          v_filter = {
+            pattern = "^:%s*%'<,%'>%s*!",
+            icon = " $",
+            lang = "fish",
+            opts = { border = { text = { top = " filter selection " } } },
+          },
+          -- substitute (:s/, :%s/)
+          substitute = {
+            pattern = "^:%%?s/",
+            icon = " ",
+            lang = "regex",
+            opts = { border = { text = { top = " sub (old/new/) " } } },
+          },
+          -- substitute on visual selection (:'<,'>s/)
+          v_substitute = {
+            pattern = "^:%s*%'<,%'>s/",
+            icon = "  ",
+            lang = "regex",
+            opts = { border = { text = { top = " sub selection (old/new/) " } } },
+          },
+        },
+      },
       lsp = {
         override = {
           ["vim.lsp.util.convert_input_to_markdown_lines"] = true,
@@ -67,10 +101,10 @@ return {
         hover = { enabled = false }, -- Using a custom hover handler. See `config.lsp`.
       },
       presets = {
-        long_message_to_split = true, -- long messages will be sent to a split
+        long_message_to_split = false, -- long messages will be sent to a split
         command_palette = true, -- position the cmdline and popupmenu together
         lsp_doc_border = true, -- add a border to hover docs and signature help
-        inc_rename = vim.fn.exists(":IncRename"),
+        inc_rename = vim.fn.exists(":IncRename") ~= 0,
       },
       routes = {
         {
@@ -104,8 +138,8 @@ return {
     -- stylua: ignore
     keys = {
       { "<S-Enter>", function() require("noice").redirect(vim.fn.getcmdline()) end, mode = "c", desc = "Redirect Cmdline" },
-      { "<leader>xn", "<cmd>Noice all<cr>", desc = "Noice" },
-      { "<leader>xm", "<cmd>Noice last<cr>", desc = "Noice Last Message" },
+      { "<leader>xn", "<cmd>Noice all<cr>", desc = "Noice messages" },
+      { "<leader>xm", "<cmd>Noice last<cr>", desc = "Last noice message" },
       { "<leader>un", "<cmd>Noice dismiss<cr>", desc="Dismiss notifications" },
       { "<c-f>", function() if not require("noice.lsp").scroll(4) then return "<c-f>" end end, silent = true, expr = true, desc = "Scroll forward" },
       { "<c-b>", function() if not require("noice.lsp").scroll(-4) then return "<c-b>" end end, silent = true, expr = true, desc = "Scroll backward" },
@@ -148,25 +182,30 @@ return {
             return vim.api.nvim_win_get_config(win).relative == ""
           end,
         },
+        {
+          ft = "noice",
+          size = { height = 0.4 },
+          filter = function(buf, win)
+            return vim.api.nvim_win_get_config(win).relative == ""
+          end,
+        },
         "trouble",
         { ft = "qf", title = "QuickFix" },
         {
           ft = "help",
-          size = { height = 20 },
+          size = { height = 0.4 },
           -- only show help buffers
           filter = function(buf)
             return vim.bo[buf].buftype == "help"
           end,
         },
-      },
-      -- Refer to my configuration here https://github.com/jellydn/lazy-nvim-ide/blob/main/lua/plugins/extras/edgy.lua
-      right = {
         {
           title = "CopilotChat.nvim", -- Title of the window
           ft = "copilot-chat", -- This is custom file type from CopilotChat.nvim
-          size = { width = 0.4 }, -- Width of the window
+          size = { height = 0.4 }, -- Width of the window
         },
       },
+      right = {},
       top = {},
     },
   },
