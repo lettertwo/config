@@ -75,6 +75,7 @@ brew "pyenv-virtualenv"
 
 # lua
 brew "luajit"
+brew "luarocks"
 
 # No more font patching!
 cask "font-symbols-only-nerd-font" if OS.mac?
