@@ -30,7 +30,16 @@ return {
         end
       end
 
-      local function toggle_profile()
+      local function start_profile()
+        local prof = require("profile")
+        if prof.is_recording() then
+          vim.notify("Profile already in progress?", vim.log.levels.ERROR)
+        else
+          prof.start("*")
+        end
+      end
+
+      local function stop_profile()
         local prof = require("profile")
         if prof.is_recording() then
           prof.stop()
@@ -44,7 +53,16 @@ return {
             end
           )
         else
-          prof.start("*")
+          vim.notify("Profile not in progress?", vim.log.levels.ERROR)
+        end
+      end
+
+      local function toggle_profile()
+        local prof = require("profile")
+        if prof.is_recording() then
+          stop_profile()
+        else
+          start_profile()
         end
       end
 
@@ -56,7 +74,11 @@ return {
       --   end
       -- end
 
-      vim.keymap.set("", "<C-p>", toggle_profile, { desc = "Toggle profile" })
+      vim.api.nvim_create_user_command("ProfileStart", start_profile, { nargs = 0 })
+      vim.api.nvim_create_user_command("ProfileStop", stop_profile, { nargs = 0 })
+      vim.api.nvim_create_user_command("ProfileToggle", toggle_profile, { nargs = 0 })
+
+      vim.keymap.set("", "<S-C-P>", toggle_profile, { desc = "Toggle profile" })
     end,
   },
 }
