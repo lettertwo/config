@@ -106,6 +106,12 @@ return {
         lsp_doc_border = true, -- add a border to hover docs and signature help
         inc_rename = vim.fn.exists(":IncRename") ~= 0,
       },
+
+      commands = {
+        console = {
+          view = "console",
+        },
+      },
       routes = {
         {
           filter = {
@@ -138,7 +144,9 @@ return {
     -- stylua: ignore
     keys = {
       { "<S-Enter>", function() require("noice").redirect(vim.fn.getcmdline()) end, mode = "c", desc = "Redirect Cmdline" },
-      { "<leader>xn", "<cmd>Noice all<cr>", desc = "Noice messages" },
+      { "<leader>xn", "<cmd>Noice console<cr>", desc = "Noice console" },
+      { "<leader>xc", "<cmd>Noice console<cr>", desc = "Noice console" },
+      { "<leader>xa", "<cmd>Noice all<cr>", desc = "Noice all" },
       { "<leader>xm", "<cmd>Noice last<cr>", desc = "Last noice message" },
       { "<leader>un", "<cmd>Noice dismiss<cr>", desc="Dismiss notifications" },
       { "<c-f>", function() if not require("noice.lsp").scroll(4) then return "<c-f>" end end, silent = true, expr = true, desc = "Scroll forward" },
