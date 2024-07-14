@@ -4,9 +4,17 @@ M.attached_adapter = nil
 M.attached_count = 0
 M.attached_keys = nil
 
+local function dap_start()
+  -- Try to load launch.json
+  if not pcall(require("dap.ext.vscode").load_launchjs, nil, {}) then
+    vim.notify("Failed to parse launch.json", "warn")
+  end
+  vim.cmd("DapStart")
+end
+
 M.get_keys = function(dap, ui)
   return {
-    { "<leader>d<cr>", "<cmd>DapStart<cr>", desc = "Start debugger session" },
+    { "<leader>d<cr>", dap_start, desc = "Start debugger session" },
     { "<leader>dd", "<cmd>DapToggle<cr>", desc = "Toggle debugger" },
     { "<leader>dL", "<cmd>DapShowLog<cr>", desc = "Show Log" },
     { "<Leader>db", dap.toggle_breakpoint, desc = "Toggle breakpoint" },

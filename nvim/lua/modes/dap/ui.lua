@@ -18,7 +18,7 @@ function M.setup(dap, ui)
           "stacks",
         },
         size = 0.3,
-        position = "right",
+        position = "left",
       },
       {
         elements = {

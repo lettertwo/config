@@ -8,6 +8,7 @@ M.node2 = {
   },
   setup = function(dap)
     dap.adapters.node2 = M.node2.opts
+    dap.adapters.node = M.node2.opts
   end,
 }
 
@@ -39,9 +40,10 @@ M.js = {
     -- },
   },
   setup = function(dap)
-    for _, adapter in ipairs({ "pwa-node", "pwa-chrome", "pwa-msedge", "node-terminal", "pwa-extensionHost" }) do
+    for _, adapter in ipairs({ "pwa-node", "pwa-chrome", "pwa-msedge", "pwa-extensionHost", "node-terminal", "node" }) do
       dap.adapters[adapter] = M.js.opts
     end
+    -- dap.adapters.node = M.js.opts
   end,
 }
 

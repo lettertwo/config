@@ -15,7 +15,7 @@ local M = {}
 
 M.javascript = {
   -- {
-  --   type = "node2",
+  --   type = "node",
   --   name = "Launch",
   --   request = "launch",
   --   program = "${file}",
@@ -25,8 +25,8 @@ M.javascript = {
   --   console = "integratedTerminal",
   -- },
   -- {
-  --   type = "node2",
-  --   name = "Attach (node2)",
+  --   type = "node",
+  --   name = "Attach (node)",
   --   request = "attach",
   --   program = "${file}",
   --   cwd = vim.fn.getcwd(),
