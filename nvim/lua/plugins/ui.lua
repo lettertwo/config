@@ -126,6 +126,23 @@ return {
         },
         {
           filter = {
+            event = "notify",
+            cond = function(message)
+              return message.opts and message.opts.title == "TSC"
+            end,
+          },
+          -- TODO: Figure out how to format these TSC messages
+          -- watch mode doesn't show progress, but running TSC manually
+          -- does show an indeterminate spinner.
+          -- just routing the messages results in a every frame of the spinner
+          -- to be shown as a separate message.
+          -- format = "progress",
+          -- format_done = "progress_done",
+          -- throttle = 1000 / 10, -- frequency to update lsp progress message
+          view = "mini",
+        },
+        {
+          filter = {
             event = "lsp",
             kind = "progress",
             any = {
