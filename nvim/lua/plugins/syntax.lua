@@ -262,7 +262,11 @@ return {
         desc = "Go to treesitter context",
       },
     },
-    opts = { mode = "topline", enable = false },
+    opts = {
+      mode = "topline",
+      separator = "─",
+      multiline_threshold = 1,
+    },
   },
 
   -- auto pairs
