@@ -81,4 +81,35 @@ return {
       vim.keymap.set("", "<S-C-P>", toggle_profile, { desc = "Toggle profile" })
     end,
   },
+
+  {
+    "ruifm/gitlinker.nvim",
+    keys = {
+      {
+        "gb",
+        function()
+          require("gitlinker").get_buf_range_url(
+            "n",
+            { action_callback = require("gitlinker.actions").open_in_browser }
+          )
+        end,
+        mode = { "n" },
+        desc = "Open in browser",
+      },
+      {
+        "gb",
+        function()
+          require("gitlinker").get_buf_range_url(
+            "n",
+            { action_callback = require("gitlinker.actions").open_in_browser }
+          )
+        end,
+        mode = { "v" },
+        desc = "Open in browser",
+      },
+    },
+    opts = {
+      mappings = nil,
+    },
+  },
 }
