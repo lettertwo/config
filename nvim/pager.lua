@@ -5,7 +5,6 @@ vim.o.signcolumn = "no" -- never show the sign column
 vim.o.foldcolumn = "0" -- hide fold column
 
 require("lazy").setup({
-  lockfile = vim.fn.stdpath("config") .. "/lazy-lock-pager.json",
   spec = {
     { import = "plugins.colorscheme" },
     { import = "plugins.ui" },
