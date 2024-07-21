@@ -3,7 +3,7 @@ return {
     "nvim-lualine/lualine.nvim",
     event = "VeryLazy",
     dependencies = {
-      "nvim-tree/nvim-web-devicons",
+      "echasnovski/mini.icons",
       "lewis6991/gitsigns.nvim",
     },
     opts = function()

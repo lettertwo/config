@@ -30,7 +30,7 @@ function Buffer:init(opts)
     self.buftype = vim.api.nvim_get_option_value("buftype", { buf = self.bufnr })
     self.filetype = vim.api.nvim_get_option_value("filetype", { buf = self.bufnr })
     self.modified = vim.api.nvim_get_option_value("modified", { buf = self.bufnr })
-    self.icon = require("nvim-web-devicons").get_icon(self.file, vim.fn.expand("#" .. self.bufnr .. ":e"))
+    self.icon = require("mini.icons").get("file", self.file)
   end
 end
 

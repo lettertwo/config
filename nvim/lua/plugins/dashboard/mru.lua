@@ -22,12 +22,11 @@ end
 ---@param fn string
 ---@return string | nil, string | nil
 local function icon(fn)
-  local nwd_ok, nwd = pcall(require, "nvim-web-devicons")
-  if not nwd_ok then
+  local ok, MiniIcons = pcall(require, "mini.icons")
+  if not ok then
     return nil
   end
-  local ext = get_extension(fn)
-  return nwd.get_icon(fn, ext, { default = true })
+  return MiniIcons.get("file", fn)
 end
 
 ---@param filepath string

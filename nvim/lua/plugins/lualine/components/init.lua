@@ -63,12 +63,12 @@ M.filetype = {
     local buf = vim.api.nvim_get_current_buf()
     local win = vim.api.nvim_get_current_win()
 
-    local devicons = require("nvim-web-devicons")
+    local MiniIcons = require("mini.icons")
     local current_path = vim.fs.normalize(
       ---@diagnostic disable-next-line: param-type-mismatch
       vim.fn.fnamemodify((vim.api.nvim_buf_get_name(buf)), ":p")
     )
-    local icon = devicons.get_icon(current_path, vim.fn.fnamemodify(current_path, ":e"), { default = true })
+    local icon = MiniIcons.get("file", current_path)
 
     if vim.w[win].sticky_win ~= nil then
       icon = "󰐃 " .. icon

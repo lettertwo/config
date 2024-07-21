@@ -2,8 +2,14 @@ local filetypes = require("config").filetypes
 
 return {
   -- icons
-  { "nvim-tree/nvim-web-devicons", lazy = true },
-  { "rachartier/tiny-devicons-auto-colors.nvim", lazy = true, config = true },
+  {
+    "echasnovski/mini.icons",
+    lazy = true,
+    config = function()
+      require("mini.icons").setup()
+      MiniIcons.mock_nvim_web_devicons()
+    end,
+  },
 
   -- ui components
   { "MunifTanjim/nui.nvim", lazy = true },
