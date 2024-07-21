@@ -16,7 +16,6 @@ require("lazy").setup({
         delay = 0,
         show_help = true,
         show_keys = true,
-        triggers = true,
         spec = {
           mode = { "n", "v" },
           { "c", group = "change" },

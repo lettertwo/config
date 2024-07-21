@@ -22,7 +22,6 @@ return {
       delay = 0,
       show_help = true,
       show_keys = true,
-      triggers = true,
       spec = {
         { "c", group = "change" },
         { "d", group = "delete" },

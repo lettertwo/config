@@ -253,7 +253,8 @@ function ConfigUtil.service_status()
         table.insert(status.formatting_providers, formatter)
       end
     end
-    if conform.will_fallback_lsp({ bufnr = buf }) then
+    local _, lsp = conform.list_formatters_to_run(buf)
+    if lsp then
       table.insert(status.formatting_providers, "lsp")
     end
   end
@@ -263,7 +264,7 @@ function ConfigUtil.service_status()
 end
 
 function ConfigUtil.debounce(ms, fn)
-  local timer = vim.loop.new_timer()
+  local timer = vim.uv.new_timer()
   return function(...)
     local argv = { ... }
     timer:start(ms, 0, function()
@@ -274,7 +275,7 @@ function ConfigUtil.debounce(ms, fn)
 end
 
 function ConfigUtil.interval(ms, fn)
-  local timer = vim.loop.new_timer()
+  local timer = vim.uv.new_timer()
   timer:start(ms, ms, fn)
   return function()
     timer:stop()
