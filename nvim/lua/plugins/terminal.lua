@@ -56,7 +56,7 @@ local function open_lazygit()
         vim.api.nvim_del_augroup_by_id(group)
 
         -- Give nvim remote some time to process the edit cmd
-        local timer = vim.loop.new_timer()
+        local timer = vim.uv.new_timer()
         timer:start(
           100,
           0,
@@ -80,6 +80,11 @@ local function open_lazygit()
   return open_lazygit_cmd()
 end
 
+local function open_cbd(opts)
+  opts = vim.tbl_extend("force", opts or {}, { dir = vim.fn.expand("%:p:h") })
+  return create_cmd(nil, opts)()
+end
+
 return {
   {
     "akinsho/toggleterm.nvim",
@@ -87,7 +92,7 @@ return {
     cmd = "ToggleTerm",
     keys = {
       { "<leader>\\\\", "<cmd>ToggleTerm<cr>", desc = "terminal" },
-      { "<leader>\\.", "<cmd>ToggleTerm dir=%:p:h<cr>", desc = "terminal at file" },
+      { "<leader>\\.", open_cbd, desc = "terminal at file" },
       { "<leader>\\g", open_lazygit, desc = "lazygit" },
       { "<leader>\\n", create_cmd("node"), desc = "node repl" },
       -- remaps
@@ -95,7 +100,7 @@ return {
       { "<leader>gg", "<leader>\\g", remap = true, desc = "lazygit" },
     },
     opts = {
-      autochdir = true,
+      autochdir = false,
       direction = "float",
       shade_filetypes = {},
       hide_numbers = true,
