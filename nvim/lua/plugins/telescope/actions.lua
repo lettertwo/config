@@ -4,6 +4,14 @@ local telescope_actions = require("telescope.actions")
 local transform_mod = require("telescope.actions.mt").transform_mod
 local Util = require("util")
 
+local function path_from_entry(entry)
+  local path = entry.filename or entry.path or entry.value
+  if type(path) == "table" then
+    path = path.path
+  end
+  return path
+end
+
 local function text_from_entry(entry)
   local text = entry.text or entry.name
 
@@ -100,7 +108,7 @@ end
 
 function Actions.reveal_in_finder(prompt_bufnr)
   local entry = action_state.get_selected_entry()
-  local path = entry.filename or entry.path or entry.value
+  local path = path_from_entry(entry)
   if path ~= nil then
     if vim.fn.system("open -R " .. path) then
       telescope_actions.close(prompt_bufnr)
@@ -120,7 +128,7 @@ function Actions.open_in_file_explorer(prompt_bufnr)
 
   local ok, MiniFiles = pcall(require, "mini.files")
   if ok and MiniFiles then
-    local open_ok = pcall(MiniFiles.open, entry.filename or entry.path or entry.value)
+    local open_ok = pcall(MiniFiles.open, path_from_entry(entry))
     if not open_ok then
       vim.notify("Failed to open file in file explorer", vim.log.levels.ERROR)
     end
