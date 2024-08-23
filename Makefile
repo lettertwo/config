@@ -170,7 +170,7 @@ NVIM := $(shell command -v nvim 2> /dev/null)
 nvim: ~/.local/share/neovim
 ifndef NVIM
 	$(call log,"Installing neovim...")
-	$(call run,cd $< && make CMAKE_BUILD_TYPE=RelWithDebInfo && make CMAKE_INSTALL_PREFIX="$$HOME/.local" install)
+	$(call run,cd $< && make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX="$$HOME/.local" install)
 	$(call done)
 endif
 
@@ -178,7 +178,7 @@ endif
 update-nvim: ~/.local/share/neovim
 	$(call log,"Updating neovim...")
 	$(call run,cd $< && git fetch --tags --force && git reset --hard tags/nightly)
-	$(call run,cd $< && make clean && make distclean && make CMAKE_BUILD_TYPE=RelWithDebInfo && make CMAKE_INSTALL_PREFIX="$$HOME/.local" install)
+	$(call run,cd $< && make clean && make distclean && make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX="$$HOME/.local" install)
 	$(call log,"Updating Plugins...")
 	$(call run,nvim --headless "+Lazy! sync" "+silent w! /dev/stdout" +qa)
 	$(call log,"Updating Parsers...")
