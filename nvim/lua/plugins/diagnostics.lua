@@ -364,6 +364,7 @@ return {
       end, { desc = "Refresh Quickfix/Loclist" })
     end,
   },
+  { "kevinhwang91/nvim-bqf", ft = "qf", opts = {} },
 
   -- better diagnostics list and others
   {
