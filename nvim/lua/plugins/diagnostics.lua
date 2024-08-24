@@ -33,7 +33,7 @@ vim.diagnostic.config({
   },
 })
 
----@param diagnostics Diagnostic[]
+---@param diagnostics vim.Diagnostic[]
 ---@return integer
 local function count_sources(diagnostics)
   local seen = {}
@@ -47,8 +47,8 @@ local function count_sources(diagnostics)
   return count
 end
 
----@param diagnostics Diagnostic[]
----@return Diagnostic[]
+---@param diagnostics vim.Diagnostic[]
+---@return vim.Diagnostic[]
 local function prefix_source(diagnostics)
   return vim.tbl_map(function(d)
     if not d.source then
@@ -65,14 +65,17 @@ end
 ---@return integer
 local function to_severity(severity)
   if type(severity) == "string" then
-    return assert(vim.diagnostic.severity[string.upper(severity)], string.format("Invalid severity: %s", severity))
+    return assert(
+      vim.diagnostic.severity[string.upper(severity)] --[[@as integer]],
+      string.format("Invalid severity: %s", severity)
+    )
   end
   return severity
 end
 
 ---@param severity integer|string|{max?: string, min?: string}|table|nil
----@param diagnostics Diagnostic[]
----@return Diagnostic[]
+---@param diagnostics vim.Diagnostic[]
+---@return vim.Diagnostic[]
 local function filter_by_severity(severity, diagnostics)
   if not severity then
     return diagnostics
@@ -248,6 +251,120 @@ return {
     end,
   },
 
+  {
+    "stevearc/quicker.nvim",
+    event = "FileType qf",
+    cmd = { "ToggleQuickfix", "ToggleLoclist", "RefreshQuickfix" },
+    keys = {
+      { "<leader>xq", "<cmd>ToggleQuickfix<cr>", desc = "Toggle QuickFix" },
+      { "<leader>xl", "<cmd>ToggleLoclist<cr>", desc = "Toggle Locationlist" },
+      { "<leader>xr", "<cmd>RefreshQuickfix<cr>", desc = "Refresh Quickfix/Loclist" },
+    },
+    ---@module "quicker"
+    ---@type quicker.SetupOptions
+    opts = {
+      -- Local options to set for quickfix
+      opts = {
+        buflisted = false,
+        number = false,
+        relativenumber = false,
+        signcolumn = "auto",
+        winfixheight = true,
+        wrap = false,
+      },
+      -- Set to false to disable the default options in `opts`
+      use_default_opts = true,
+      -- Keymaps to set for the quickfix buffer
+      keys = {
+        {
+          ">",
+          function()
+            require("quicker").expand({ before = 2, after = 2, add_to_existing = true })
+          end,
+          desc = "Expand quickfix content",
+        },
+        {
+          "<",
+          function()
+            require("quicker").collapse()
+          end,
+          desc = "Collapse quickfix content",
+        },
+      },
+      -- Callback function to run any custom logic or keymaps for the quickfix buffer
+      -- on_qf = function(bufnr) end,
+      edit = {
+        -- Enable editing the quickfix like a normal buffer
+        enabled = true,
+        -- Set to true to write buffers after applying edits.
+        -- Set to "unmodified" to only write unmodified buffers.
+        autosave = "unmodified",
+      },
+      -- Keep the cursor to the right of the filename and lnum columns
+      constrain_cursor = true,
+      highlight = {
+        -- Use treesitter highlighting
+        treesitter = true,
+        -- Use LSP semantic token highlighting
+        lsp = true,
+        -- Load the referenced buffers to apply more accurate highlights (may be slow)
+        load_buffers = true,
+      },
+      -- Map of quickfix item type to icon
+      type_icons = {
+        E = icons.diagnostics.Error,
+        W = icons.diagnostics.Warn,
+        I = icons.diagnostics.Info,
+        N = icons.diagnostics.Info,
+        H = icons.diagnostics.Hint,
+      },
+      -- Border characters
+      borders = {
+        vert = " ",
+        -- Strong headers separate results from different files
+        strong_header = "━",
+        strong_cross = "━",
+        strong_end = "━",
+        -- Soft headers separate results within the same file
+        soft_header = "╌",
+        soft_cross = "╌",
+        soft_end = "╌",
+      },
+      -- Trim the leading whitespace from results
+      trim_leading_whitespace = true,
+      -- Maximum width of the filename column
+      -- max_filename_width = function()
+      --   return math.floor(math.min(95, vim.o.columns / 2))
+      -- end,
+      -- How far the header should extend to the right
+      -- header_length = function(type, start_col)
+      --   return vim.o.columns - start_col
+      -- end,
+    },
+    config = function(_, opts)
+      local quicker = require("quicker")
+
+      quicker.setup(opts)
+
+      vim.api.nvim_create_user_command("ToggleQuickfix", function()
+        quicker.toggle()
+      end, { desc = "Toggle Quickfix" })
+
+      vim.api.nvim_create_user_command("ToggleLoclist", function()
+        quicker.toggle({ loclist = true })
+      end, { desc = "Toggle Locationlist" })
+
+      vim.api.nvim_create_user_command("RefreshQuickfix", function()
+        local win = vim.api.nvim_get_current_win()
+        if quicker.is_open(win) then
+          quicker.refresh(win)
+        else
+          quicker.refresh()
+        end
+      end, { desc = "Refresh Quickfix/Loclist" })
+    end,
+  },
+
   -- better diagnostics list and others
   {
     "folke/trouble.nvim",
@@ -290,14 +407,12 @@ return {
       { "<leader>xj", diagnostic_goto_next, desc = "Next diagnostic" },
       { "<leader>xk", diagnostic_goto_prev, desc = "Previous diagnostic" },
       { "<leader>xx", "<cmd>Trouble diagnostics toggle<cr>", desc = "Trouble: Show Workspace Diagnostics" },
-      { "<leader>xq", "<cmd>Trouble qflist toggle<cr>", desc = "Trouble: Show QuickFix" },
-      { "<leader>xl", "<cmd>Trouble loclist toggle<cr>", desc = "Trouble: Show Locationlist" },
       { "<leader>xT", "<cmd>Trouble telescope toggle<cr>", desc = "Trouble: Show Telescope" },
-      { "<leader>S", "<cmd>Trouble lsp_document_symbols follow=true<cr>", desc = "Symbols outline" },
-      { "<leader>xd", "<cmd>Trouble diagnostics_buffer toggle<cr>", desc = "Trouble: Show Diagnostics" },
+      { "<leader>S", "<cmd>Trouble symbols toggle focus=false<cr>", desc = "Symbols outline" },
+      { "<leader>xd", "<cmd>Trouble diagnostics toggle filter.buf=0<cr>", desc = "Trouble: Show Diagnostics" },
       { "<leader>xw", "<cmd>Trouble diagnostics toggle<cr>", desc = "Trouble: Show Workspace Diagnostics" },
-      { "<leader>xD", require("util").toggle_diagnostics, desc = "Toggle Diagnostics" },
-      { "<leader>ux", require("util").toggle_diagnostics, desc = "Toggle Diagnostics" },
+      { "<leader>xD", require("util").toggle_diagnostics, desc = "Turn Diagnostics on/off" },
+      { "<leader>ux", require("util").toggle_diagnostics, desc = "Turn Diagnostics on/off" },
       { "<leader>xs", "<cmd>Telescope diagnostics bufnr=0<cr>", desc = "Search Diagnostics" },
       { "<leader>sx", "<cmd>Telescope diagnostics bufnr=0<cr>", desc = "Diagnostics" },
       { "<leader>xS", "<cmd>Telescope diagnostics<cr>", desc = "Search Workspace Diagnostics" },

@@ -220,8 +220,33 @@ return {
             return vim.api.nvim_win_get_config(win).relative == ""
           end,
         },
-        "trouble",
-        { ft = "qf", title = "QuickFix" },
+        {
+          ft = "trouble",
+          size = { height = 0.4 },
+          filter = function(buf, win)
+            return vim.api.nvim_win_get_config(win).relative == ""
+          end,
+        },
+        {
+          ft = "qf",
+          title = "LocationList",
+          size = { height = 0.4 },
+          filter = function(buf, win)
+            local info = vim.fn.getwininfo(win)
+            return vim.api.nvim_win_get_config(win).relative == ""
+              and info ~= nil
+              and info[1] ~= nil
+              and info[1].loclist == 1
+          end,
+        },
+        {
+          ft = "qf",
+          title = "QuickFix",
+          size = { height = 0.4 },
+          filter = function(buf, win)
+            return vim.api.nvim_win_get_config(win).relative == ""
+          end,
+        },
         {
           ft = "help",
           size = { height = 0.4 },

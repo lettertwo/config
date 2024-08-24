@@ -80,7 +80,9 @@ function Actions.send_to_loclist(prompt_bufnr)
 end
 
 function Actions.open_quickfix()
-  if vim.fn.exists(":TroubleToggle") == 2 then
+  if vim.fn.exists(":ToggleQuickfix") == 2 then
+    vim.cmd([[ToggleQuickfix]])
+  elseif vim.fn.exists(":TroubleToggle") == 2 then
     vim.cmd([[TroubleToggle quickfix]])
   elseif vim.fn.exists(":Trouble") == 2 then
     vim.cmd([[Trouble quickfix]])
@@ -90,7 +92,9 @@ function Actions.open_quickfix()
 end
 
 function Actions.open_loclist()
-  if vim.fn.exists(":TroubleToggle") == 2 then
+  if vim.fn.exists(":ToggleLoclist") == 2 then
+    vim.cmd([[ToggleLoclist]])
+  elseif vim.fn.exists(":TroubleToggle") == 2 then
     vim.cmd([[TroubleToggle loclist]])
   elseif vim.fn.exists("Trouble") == 2 then
     vim.cmd([[Trouble loclist]])
