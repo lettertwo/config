@@ -48,6 +48,7 @@ return {
       },
       "hrsh7th/cmp-nvim-lsp",
       "b0o/SchemaStore.nvim",
+      "williamboman/mason.nvim",
       {
         "mrcjkb/rustaceanvim",
         version = "^4",
