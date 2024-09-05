@@ -1,6 +1,7 @@
 os:
   editPreset: nvim
 gui:
+  nerdFontsVersion: "3"
   authorColors:
     "*": cyan
     "Eric Eldredge": blue
@@ -51,13 +52,10 @@ gui:
   showRandomTip: true
   showCommandLog: false
   showBottomLine: false
-  showIcons: true
-  nerdFontsVersion: ""
   showBranchCommitHash: false
   commandLogSize: 8
   splitDiff: auto
   skipRewordInEditorWarning: false
-  windowSize: ""
   border: rounded
   animateExplosion: true
 git:
