@@ -36,9 +36,11 @@ return {
     "kevinhwang91/nvim-ufo",
     dependencies = { "kevinhwang91/promise-async" },
     event = "BufReadPost",
+    cmd = { "ToggleUfo" },
     -- stylua: ignore
     keys = {
       { "zk", function() require('ufo').peekFoldedLinesUnderCursor() end, desc = "Peek folded lines" },
+      { "<leader>uu", "<cmd>ToggleUfo<cr>", desc = "Toggle UFO" },
     },
     opts = {
       open_fold_hl_timeout = 0,
@@ -67,6 +69,16 @@ return {
           pcall(require("ufo").detach)
         end,
       })
+
+      local toggle_ufo = require("util").create_toggle("ufo", "b", function(value)
+        if value then
+          require("ufo").attach()
+        else
+          require("ufo").detach()
+        end
+      end)
+
+      vim.api.nvim_create_user_command("ToggleUfo", toggle_ufo, {})
     end,
   },
   {
