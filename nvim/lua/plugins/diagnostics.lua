@@ -370,34 +370,28 @@ return {
   {
     "folke/trouble.nvim",
     cmd = { "Trouble" },
+    ---@module "trouble"
+    ---@type trouble.Config
     opts = {
-      use_diagnostic_signs = true,
-      auto_jump = { "lsp_definitions", "lsp_references", "lsp_type_definitions", "lsp_implementations" },
-      action_keys = {
-        jump = { "<CR>" },
-        jump_close = { "<S-CR>" },
+      keys = {
+        ["<CR>"] = "jump",
+        ["<S-CR>"] = "jump_close",
       },
       modes = {
-        lsp_document_symbols = {
-          mode = "lsp_document_symbols",
-          focus = true,
-          follow = true,
-        },
+        ---@type trouble.Mode
         diagnostics = {
           mode = "diagnostics",
           focus = true,
+          ---@type trouble.Window.opts
           preview = {
-            type = "split",
-            relative = "win",
-            position = "right",
-            size = 0.3,
+            type = "float",
+            relative = "editor",
+            title = "Preview",
+            title_pos = "center",
+            border = "rounded",
+            size = { width = 1, height = 0.3 },
+            position = { 0.3, 0 },
           },
-        },
-        diagnostics_buffer = {
-          mode = "diagnostics_preview_float",
-          follow = true,
-          focus = true,
-          filter = { buf = 0 },
         },
       },
     },
