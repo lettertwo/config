@@ -62,8 +62,11 @@ return {
   },
 
   {
-    "hrsh7th/nvim-cmp",
-    version = false,
+
+    -- FIXME: Switch back to original when this merges: https://github.com/hrsh7th/nvim-cmp/pull/1980
+    -- "hrsh7th/nvim-cmp",
+    "yioneko/nvim-cmp",
+    branch = "perf",
     event = "InsertEnter",
     dependencies = {
       { "hrsh7th/cmp-nvim-lsp" },

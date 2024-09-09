@@ -95,7 +95,7 @@ return {
         },
         submit_prompt = {
           normal = "<CR>",
-          insert = "<C-m>",
+          insert = "<C-CR>",
         },
         accept_diff = {
           normal = "<C-y>",
