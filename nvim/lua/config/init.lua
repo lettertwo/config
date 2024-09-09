@@ -20,6 +20,7 @@ local config = {
       "lspinfo",
       "man",
       "mason",
+      "minifiles",
       "neo-tree",
       "neo-tree-popup",
       "neogitstatus",
