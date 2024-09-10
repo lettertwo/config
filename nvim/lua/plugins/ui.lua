@@ -112,7 +112,6 @@ return {
         lsp_doc_border = true, -- add a border to hover docs and signature help
         inc_rename = vim.fn.exists(":IncRename") ~= 0,
       },
-
       commands = {
         console = {
           view = "console",
