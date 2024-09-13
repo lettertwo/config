@@ -1,3 +1,4 @@
+local filetypes = require("config").filetypes
 return {
   -- easily jump to any location and enhanced /, ?, f, t, F, T motions
   {
@@ -19,7 +20,12 @@ return {
     event = "VeryLazy",
     opts = {
       preset = "modern",
-      delay = 0,
+      disable = {
+        ft = filetypes.ui,
+      },
+      delay = function(ctx)
+        return ctx.mode == "x" and 500 or 0
+      end,
       show_help = true,
       show_keys = true,
       spec = {
