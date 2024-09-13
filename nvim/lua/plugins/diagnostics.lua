@@ -8,6 +8,16 @@ local function diagnostic_goto_prev()
   vim.diagnostic.jump({ count = -1 })
 end
 
+local function toggle_diagnostics()
+  if not vim.diagnostic.is_enabled() then
+    vim.diagnostic.enable(true)
+    require("util").info("Enabled diagnostics", { title = "Diagnostics" })
+  else
+    vim.diagnostic.enable(false)
+    require("util").warn("Disabled diagnostics", { title = "Diagnostics" })
+  end
+end
+
 vim.diagnostic.config({
   update_in_insert = true,
   underline = true,
@@ -406,8 +416,8 @@ return {
       { "<leader>S", "<cmd>Trouble symbols toggle focus=false<cr>", desc = "Symbols outline" },
       { "<leader>xd", "<cmd>Trouble diagnostics toggle filter.buf=0<cr>", desc = "Trouble: Show Diagnostics" },
       { "<leader>xw", "<cmd>Trouble diagnostics toggle<cr>", desc = "Trouble: Show Workspace Diagnostics" },
-      { "<leader>xD", require("util").toggle_diagnostics, desc = "Turn Diagnostics on/off" },
-      { "<leader>ux", require("util").toggle_diagnostics, desc = "Turn Diagnostics on/off" },
+      { "<leader>xD", toggle_diagnostics, desc = "Turn Diagnostics on/off" },
+      { "<leader>ux", toggle_diagnostics, desc = "Turn Diagnostics on/off" },
       { "<leader>xs", "<cmd>Telescope diagnostics bufnr=0<cr>", desc = "Search Diagnostics" },
       { "<leader>sx", "<cmd>Telescope diagnostics bufnr=0<cr>", desc = "Diagnostics" },
       { "<leader>xS", "<cmd>Telescope diagnostics<cr>", desc = "Search Workspace Diagnostics" },
