@@ -4,6 +4,7 @@ return {
   {
     "mfussenegger/nvim-lint",
     event = "BufReadPost",
+    cond = vim.g.mergetool ~= true,
     cmd = "Lint",
     keys = {
       { "<leader>ll", "<cmd>Lint<cr>", desc = "Lint document" },

@@ -23,22 +23,22 @@
 [difftool]
 	prompt = true
 [difftool "nvimdiff"]
-  cmd = nvim -d $LOCAL $REMOTE
+  cmd = nvim -d --cmd 'lua vim.g.difftool=true' \"$LOCAL\" \"$REMOTE\"
 [difftool "ksdiff"]
-  cmd = ksdiff --diff $LOCAL $REMOTE
+  cmd = ksdiff --diff \"$LOCAL\" \"$REMOTE\"
 [merge]
 	log = true
-	tool = nvimdiff2
+	tool = nvimdiff
 	conflictStyle = diff3
 [mergetool]
 	prompt = false
 	keepBackup = false
 	hideResolved = true
-[mergetool "nvimdiff2"]
-	cmd = nvim -d -c 'wincmd l' $LOCAL $MERGED $REMOTE
+[mergetool "nvimdiff"]
+	cmd = nvim -d --cmd 'lua vim.g.mergetool=true' +'wincmd l' \"$LOCAL\" \"$MERGED\" \"$REMOTE\"
 [mergetool "ksdiff"]
   trustExitCode = true
-  cmd = ksdiff --merge --base $BASE --output $MERGED $LOCAL $REMOTE
+  cmd = ksdiff --merge --base $BASE --output \"$MERGED\" \"$LOCAL\" \"$REMOTE\"
 [rebase]
 	autoStash = true
 	autoSquash = true

@@ -5,6 +5,7 @@ return {
     "neovim/nvim-lspconfig",
     cmd = { "LspInfo", "LspStart", "LspStop", "LspRestart" },
     event = "BufReadPost",
+    cond = vim.g.mergetool ~= true,
     keys = {
       { "<leader>lI", "<cmd>LspInfo<CR>", desc = "Show LSP status" },
       { "<leader>lS", "<cmd>LspStart<CR>", desc = "Start LSP clients" },
@@ -108,6 +109,7 @@ return {
         "pmizio/typescript-tools.nvim",
         ft = { "javascript", "javascriptreact", "javascript.jsx", "typescript", "typescriptreact", "typescript.tsx" },
         dependencies = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
+        cond = vim.g.mergetool ~= true,
         config = function()
           local api = require("typescript-tools.api")
           require("typescript-tools").setup({

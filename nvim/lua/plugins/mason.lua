@@ -86,6 +86,7 @@ end
 return {
   {
     "williamboman/mason.nvim",
+    cond = vim.g.mergetool ~= true,
     dependencies = {
       "williamboman/mason-lspconfig.nvim",
       "jay-babu/mason-nvim-dap.nvim",
