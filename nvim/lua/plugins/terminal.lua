@@ -116,6 +116,12 @@ return {
       -- shading_factor = 2,
       float_opts = {
         border = "curved",
+        width = function()
+          return vim.o.columns
+        end,
+        height = function()
+          return math.ceil(vim.o.lines * 0.9)
+        end,
       },
       highlights = {
         Float = { link = "Float" },
