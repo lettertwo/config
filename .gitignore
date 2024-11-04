@@ -25,3 +25,6 @@ lazygit/state.yml
 githubnext_*
 atlassian
 cloudtoken
+barn
+graphite
+gh-copilot
