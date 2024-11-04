@@ -81,7 +81,7 @@ for manpath in (path filter $__fish_data_dir/man /usr/local/share/man /usr/share
 end
 
 # Add bin directories to path.
-fish_add_path --prepend  \
+fish_add_path --global --prepend  \
   node_modules/.bin \
   $HOME/node_modules/.bin \
   $HOME/.local/{bin,sbin} \
