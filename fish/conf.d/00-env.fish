@@ -82,7 +82,8 @@ end
 
 # Add bin directories to path.
 fish_add_path --prepend  \
-  {.,$HOME}/node_modules/.bin \
+  node_modules/.bin \
+  $HOME/node_modules/.bin \
   $HOME/.local/{bin,sbin} \
   $HOME/.cargo/bin \
   $HOME/.yarn/bin \
