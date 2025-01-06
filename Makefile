@@ -191,7 +191,7 @@ update-nvim: ~/.local/share/neovim
 .PHONY update-nvim-plugins:
 update-nvim-plugins: nvim
 	$(call log,"Updating Plugins...")
-	$(call run,nvim --headless "+Lazy! sync" "+silent w! /dev/stdout" +qa)
+	$(call run,nvim --headless "+Lazy! install" "+silent w! /dev/stdout" +qa)
 	$(call log,"Updating Parsers...")
 	$(call run,nvim --headless "+TSUpdateSync" "+silent w! /dev/stdout" +qa)
 	$(call log,"Updating Packages...")
