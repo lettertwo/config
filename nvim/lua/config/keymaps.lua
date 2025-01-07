@@ -1,105 +1,38 @@
--- Adapted from: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/keymaps.lua
+-- Keymaps are automatically loaded on the VeryLazy event
+-- Default keymaps that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/keymaps.lua
+-- Add any additional keymaps here
 
-local Util = require("util")
-
--- hover
-vim.keymap.set("n", "K", require("util.hover").hover, { desc = "Hover" })
-vim.keymap.set("n", "gh", require("util.hover").hover, { desc = "Hover" })
-
--- better up/down
-vim.keymap.set("n", "j", "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
-vim.keymap.set("n", "k", "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
+-- No more accidental macros
+vim.keymap.set("n", "q", "<nop>", { noremap = true })
+vim.keymap.set("n", "Q", "q", { noremap = true, desc = "Record macro" })
 
 -- better scroll up/down
-vim.keymap.set("n", "<C-d>", "'<C-d>zz'", { expr = true, silent = true, desc = "Scroll down" })
-vim.keymap.set("n", "<C-u>", "'<C-u>zz'", { expr = true, silent = true, desc = "Scroll up" })
+vim.keymap.set("n", "<C-d>", "<C-d>zz", { desc = "Scroll down" })
+vim.keymap.set("n", "<C-u>", "<C-u>zz", { desc = "Scroll up" })
 
--- Move Lines
-vim.keymap.set("n", "<A-j>", ":m .+1<cr>==", { desc = "Move down", silent = true })
-vim.keymap.set("v", "<A-j>", ":m '>+1<cr>gv=gv", { desc = "Move down", silent = true })
--- <A-j> on macos emits "∆"
-vim.keymap.set("n", "∆", ":m .+1<cr>==", { desc = "Move down", silent = true })
-vim.keymap.set("v", "∆", ":m '>+1<cr>gv=gv", { desc = "Move down", silent = true })
-vim.keymap.set("n", "<A-k>", ":m .-2<cr>==", { desc = "Move up", silent = true })
-vim.keymap.set("v", "<A-k>", ":m '<-2<cr>gv=gv", { desc = "Move up", silent = true })
--- <A-k> on macos emits "˚"
-vim.keymap.set("n", "˚", ":m .-2<cr>==", { desc = "Move up", silent = true })
-vim.keymap.set("v", "˚", ":m '<-2<cr>gv=gv", { desc = "Move up", silent = true })
+-- Move Lines: on MacOS, <A-j> emits "∆", <A-k> emits "˚"
+vim.keymap.set({ "n", "i", "v" }, "∆", "<A-j>", { remap = true, desc = "Move Down" })
+vim.keymap.set({ "n", "i", "v" }, "˚", "<A-k>", { remap = true, desc = "Move Down" })
 
 -- buffers
-vim.keymap.set("n", "<leader>bh", "<cmd>bprevious<cr>", { desc = "Previous" })
-vim.keymap.set("n", "<leader>bl", "<cmd>bnext<cr>", { desc = "Next" })
-vim.keymap.set("n", "<leader>`", "<cmd>e #<cr>", { desc = "Switch to Other Buffer" })
 vim.keymap.set("n", "<leader>br", "<cmd>e %<cr>", { desc = "Reopen buffer" })
 vim.keymap.set("n", "<leader>bO", "<cmd>!open -R %<cr>", { desc = "Reveal file in finder" })
 
--- Close floats, and clear highlights with <Esc>
-vim.keymap.set("n", "<Esc>", Util.close_floats_and_clear_highlights, { desc = "Close floats, clear highlights" })
-
--- Clear search, diff update and redraw
--- taken from runtime/lua/_editor.lua
-vim.keymap.set(
-  "n",
-  "<leader>ur",
-  "<Cmd>nohlsearch<Bar>diffupdate<Bar>normal! <C-L><CR>",
-  { desc = "Redraw / clear hlsearch / diff update" }
-)
-
--- https://github.com/mhinz/vim-galore#saner-behavior-of-n-and-n
-vim.keymap.set("n", "n", "'Nn'[v:searchforward]", { expr = true, desc = "Next search result" })
-vim.keymap.set("x", "n", "'Nn'[v:searchforward]", { expr = true, desc = "Next search result" })
-vim.keymap.set("o", "n", "'Nn'[v:searchforward]", { expr = true, desc = "Next search result" })
-vim.keymap.set("n", "N", "'nN'[v:searchforward]", { expr = true, desc = "Prev search result" })
-vim.keymap.set("x", "N", "'nN'[v:searchforward]", { expr = true, desc = "Prev search result" })
-vim.keymap.set("o", "N", "'nN'[v:searchforward]", { expr = true, desc = "Prev search result" })
-
--- Add undo break-points
-vim.keymap.set("i", ",", ",<c-g>u")
-vim.keymap.set("i", ".", ".<c-g>u")
-vim.keymap.set("i", ";", ";<c-g>u")
-
--- save file
-vim.keymap.set({ "i", "v", "n", "s" }, "<C-s>", "<cmd>w<cr><esc>", { desc = "Save file" })
-
--- better indenting
-vim.keymap.set("v", "<", "<gv")
-vim.keymap.set("v", ">", ">gv")
-
 -- lazy
-vim.keymap.set("n", "<leader>L", "<cmd>:Lazy<cr>", { desc = "Lazy" })
-vim.keymap.set("n", "<leader>Pll", "<cmd>:Lazy<cr>", { desc = "Open" })
-vim.keymap.set("n", "<leader>Plu", "<cmd>:Lazy update<cr>", { desc = "Update" })
-vim.keymap.set("n", "<leader>Pls", "<cmd>:Lazy sync<cr>", { desc = "Sync" })
-vim.keymap.set("n", "<leader>PlR", "<cmd>:Lazy restore<cr>", { desc = "Restore" })
-vim.keymap.set("n", "<leader>Plh", "<cmd>:Lazy health<cr>", { desc = "Health" })
-vim.keymap.set("n", "<leader>Pll", ":Lazy load", { desc = "load…" })
-vim.keymap.set("n", "<leader>Plr", ":Lazy reload", { desc = "reload…" })
+vim.keymap.set("n", "<leader>L", "<cmd>:LazyExtras<cr>", { desc = "Lazy Extras" })
 
--- quickfix, location list
-vim.keymap.set("n", "<leader>xl", "<cmd>lopen<cr>", { desc = "Open Location List" })
-vim.keymap.set("n", "<leader>xq", "<cmd>copen<cr>", { desc = "Open Quickfix List" })
-
--- stylua: ignore start
+-- mason
+vim.keymap.set("n", "<leader>M", "<cmd>:Mason<cr>", { desc = "Mason" })
 
 -- toggle options
-vim.keymap.set("n", "<leader>us", Util.create_toggle("spell", "wo"), { desc = "Toggle Spelling" })
-vim.keymap.set("n", "<leader>uw", Util.create_toggle("wrap", "wo"), { desc = "Toggle Word Wrap" })
-vim.keymap.set("n", "<leader>uh", Util.create_toggle("hlsearch", "o"), { desc = "Toggle Highlight Search" })
-vim.keymap.set("n", "<leader>uc", Util.create_toggle("cursorline", "wo"), { desc = "Toggle Cursorline" })
+vim.keymap.del("n", "<leader>ul")
+vim.keymap.del("n", "<leader>uL")
+Snacks.toggle.option("hlsearch", { name = "Highlight Search" }):map("<leader>uH")
+Snacks.toggle.option("cursorline", { name = "Cursorline" }):map("<leader>uC")
 
 -- quit
-vim.keymap.set("n", "<leader>qq", "<cmd>qa<cr>", { desc = "Quit all" })
 vim.keymap.set("n", "<leader>qQ", "<cmd>cq!<cr>", { desc = "Force quit (with error code)" })
 vim.keymap.set("n", "<leader>qR", "<cmd>230cq<cr>", { desc = "Restart" })
-
--- tabs
-vim.keymap.set("n", "<leader><tab>l", "<cmd>tablast<cr>", { desc = "Last" })
-vim.keymap.set("n", "<leader><tab>f", "<cmd>tabfirst<cr>", { desc = "First" })
-vim.keymap.set("n", "<leader><tab>l", "<cmd>tabnext<cr>", { desc = "Next" })
-vim.keymap.set("n", "<leader><tab>h", "<cmd>tabprevious<cr>", { desc = "Previous" })
-vim.keymap.set("n", "<leader><tab><tab>", "<cmd>tabnew<cr>", { desc = "New Tab" })
-vim.keymap.set("n", "<leader><tab>d", "<cmd>tabclose<cr>", { desc = "Close" })
-vim.keymap.set("n", "<leader><tab>D", "<cmd>tabonly<cr>", { desc = "Close Other Tabs" })
 
 -- Normal --
 vim.keymap.set("n", "]q", "<cmd>cnext<CR>", { desc = "Next quickfix" })
@@ -119,6 +52,14 @@ vim.keymap.set("x", "<A-h>", "<gv", { desc = "Indent left" })
 vim.keymap.set("n", "˙", "<<", { desc = "Indent left" })
 vim.keymap.set("x", "˙", "<gv", { desc = "Indent left" })
 
+-- diagnostics
+vim.keymap.set("n", "]x", "]d", { desc = "Next diagnostic", remap = true })
+vim.keymap.set("n", "[x", "[d", { desc = "Prev diagnostic", remap = true })
+vim.keymap.set("n", "<leader>xj", "]d", { desc = "Next diagnostic", remap = true })
+vim.keymap.set("n", "<leader>xk", "[d", { desc = "Prev diagnostic", remap = true })
+vim.keymap.set("n", "<leader>sx", "<leader>sd", { desc = "Document diagnostics", remap = true })
+vim.keymap.set("n", "<leader>sX", "<leader>sD", { desc = "Workspace diagnostics", remap = true })
+
 -- TODO: Add some bindings for doing diff stuff, e.g.:
 -- :windo diffthis -- diff buffers in all windows
 -- :windo diffoff -- turn off diffing for all windows
@@ -131,7 +72,7 @@ vim.keymap.set("x", "˙", "<gv", { desc = "Indent left" })
 -- :vert diffsplit %~ -- diff current buffer with previous version
 -- :vert diffpatch /path/to/patch -- diff current buffer with patch from file
 
--- Add a way to change the diff algorithm.
+-- Add a way to change the diff algornthm.
 -- Currently supported algorithms are:
 -- myers      the default algorithm
 -- minimal    spend extra time to generate the smallest possible diff
@@ -148,16 +89,13 @@ vim.keymap.set("n", "<leader>bW", "<leader>W", { remap = true, desc = "Save (no 
 vim.keymap.set("n", "<leader>bu", "<leader><cr>", { remap = true, desc = "Save, if changed" })
 vim.keymap.set("n", "<leader>ba", "<cmd>wa!<CR>", { desc = "Write all buffers" })
 vim.keymap.set("n", "<leader>bC", "<cmd>%bd|e#|bd#<CR>", { desc = "Close all buffers" })
-vim.keymap.set("n", "<leader>bs", function()
-  local fname = vim.fn.input({ prompt = "Save as: ", default = vim.fn.bufname(), completion = "file" })
-  if fname ~= "" then
-    vim.cmd("saveas! " .. fname)
-  end
-end, { desc = "Save current buffer as" })
 
 vim.keymap.set("n", "<leader>b%", "<cmd>source %<CR>", { desc = "Source current file" })
 vim.keymap.set("n", "<leader>f%", "<cmd>source %<CR>", { desc = "Source current file" })
 
--- new file
-vim.keymap.set("n", "<leader>bn", "<cmd>enew<cr>", { desc = "New file" })
-vim.keymap.set("n", "<leader>fn", "<cmd>enew<cr>", { desc = "New file" })
+-- Tab management
+vim.keymap.del("n", "<leader><tab>l")
+vim.keymap.del("n", "<leader><tab>f")
+vim.keymap.set("n", "<leader><tab>l", "<leader><tab>]", { remap = true, desc = "Next Tab" })
+vim.keymap.set("n", "<leader><tab>h", "<leader><tab>[", { remap = true, desc = "Prev Tab" })
+vim.keymap.set("n", "<leader><tab>D", "<leader><tab>o", { remap = true, desc = "Close Other Tabs" })

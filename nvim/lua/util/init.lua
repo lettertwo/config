@@ -1,17 +1,13 @@
 -- Adapted from: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/util/init.lua
 
----@class ConfigUtil: LazyUtilCore, BufferKeymapUtil, HoverUtil, LspUtil, MasonUtil, RootUtil, ServiceUtil, StringUtil, ToggleUtil
+---@class ConfigUtil: LazyUtilCore, BufferKeymapUtil, RootUtil, ServiceUtil, StringUtil
 local ConfigUtil = vim.tbl_extend(
   "error",
   require("lazy.core.util"),
   require("util.buffer_keymap"),
-  require("util.hover"),
-  require("util.lsp"),
-  require("util.mason"),
   require("util.root"),
   require("util.service"),
-  require("util.string"),
-  require("util.toggle")
+  require("util.string")
 )
 
 ---@param plugin string

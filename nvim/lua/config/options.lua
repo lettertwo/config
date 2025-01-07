@@ -1,12 +1,16 @@
--- Adapted from: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/options.lua
-local icons = require("config").icons
+-- Options are automatically loaded before lazy.nvim startup
+-- Default options that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/options.lua
+-- Add any additional options here
 
--- Space is leader
-vim.g.mapleader = " "
-vim.g.maplocalleader = " "
+if vim.env.FNM_DIR then
+  vim.g.copilot_node_command = vim.fn.expand(vim.env.FNM_DIR) .. "/aliases/default/bin/node"
+end
 
--- fix markdown indentation settings
-vim.g.markdown_recommended_style = 0
+-- disable copilot cmp/blink source
+vim.g.ai_cmp = false
+
+-- Use blink main branch instead of cmp
+-- vim.g.lazyvim_blink_main = true
 
 local opt = vim.opt
 
@@ -19,97 +23,37 @@ opt.autowrite = true -- enable auto write
 opt.confirm = true -- confirm to save changes before exiting modified buffer
 opt.hidden = true -- Enable modified buffers in background
 
--- Default to utf-8
-opt.fileencoding = "utf-8"
+opt.winblend = 0
+opt.pumblend = 0
 
--- Use system clipboard
-opt.clipboard = "unnamedplus"
-
-opt.spelllang = { "en" }
-
--- sometimes it takes a while to realize your mistake
-opt.undolevels = 10000
-
--- Indents and whitespace
-opt.expandtab = true -- convert tabs to spaces
-opt.tabstop = 2 -- insert 2 spaces for a tab
-opt.smartindent = true -- autoindent more smartlier
-opt.shiftwidth = 2 -- number of spaces used in autoindent
-opt.shiftround = true -- Round indent
-opt.joinspaces = false -- No double spaces with join after a dot
-
--- Search behaviors
-opt.hlsearch = true
-opt.ignorecase = true
-opt.smartcase = true
-opt.inccommand = "nosplit" -- preview incremental substitute
-
--- Allow mouse interactivity
-opt.mouse = "a"
-
--- UI settings
-opt.termguicolors = true -- True color support
-opt.pumheight = 10 -- reasonable popup menu height
-opt.pumblend = 0 -- Popup blend
-opt.cmdheight = 1 -- more command line space
-opt.winminwidth = 5 -- minimum window width
-opt.showmode = false -- hide the mode label (e.g., INSERT)
-opt.showtabline = 0 -- never show tabline
-opt.cursorline = true -- highlight the current line
-opt.laststatus = 3 -- always show only one statusline
-opt.showcmd = false -- hide display of last command
-opt.ruler = false -- hide display of cursor location
-opt.signcolumn = "yes" -- always show the sign column
-opt.guifont = "monospace:h14" -- use the configured monospace font
-opt.timeoutlen = 250 -- gotta type faster
-opt.updatetime = 200 -- tigger CursorHold autocmds faster
-opt.fillchars = {
-  foldopen = icons.fold.foldopen,
-  foldclose = icons.fold.foldclose,
-  foldsep = icons.fold.foldsep,
-  fold = icons.fold.fold,
-  eob = icons.eob,
-  diff = "╱",
-}
--- opt.colorcolumn:append("+1") -- color column at textwidth so I know when my line's too long
-
--- Window management
-opt.splitbelow = true -- force all horizontal splits to go below current window
-opt.splitright = true -- force all vertical splits to go to the right of current window
-opt.equalalways = true -- always equalize window sizes
-opt.splitkeep = "screen"
-
--- Cursor behavior
-opt.wrap = false -- Disable line wrapping
-opt.smoothscroll = true -- Scroll screen lines rather than text lines (useful when wrap is on)
 opt.textwidth = 120 -- the width that'll be used for wrapping (gq)
-opt.whichwrap:append("<,>,[,],h,l") -- navigate to next/prev lines more naturally
+
+opt.number = true -- show line numbers
+opt.relativenumber = false -- nonrelative normally, relative in visual mode (see `config.autocmd`).
 
 -- Formatting behavior
 -- Many ftplugins will override these settings; Check `:verbose setlocal formatoptions?`.
 -- Duplicating them in after/ftplugin/<filetype>.lua may be necessary.
 opt.formatoptions:remove("t") -- Disable text wrapping in formatting
 opt.formatoptions:remove("o") -- Disable comment continuation when entering insert mode
-opt.iskeyword:append("-")
+
+-- Note that iskeyword is buffer-local
+-- (default "@,48-57,_,192-255")
+opt.iskeyword:append("-") -- add dash to iskeyword for motion commands
 
 opt.scrolloff = 10 -- keep lines below cursor when scrolling
 opt.sidescrolloff = 15 -- keep columns after cursor when scrolling
 
-opt.number = true -- show line numbers
-opt.relativenumber = false -- nonrelative normally, relative in visual mode (see `config.autocmd`).
-
--- Completions
-opt.completeopt = "menu,menuone,noselect" -- insert mode completion setting
-opt.wildmenu = true -- visual autocomplete for command menu
-opt.wildmode = "longest:full,full" -- autocomplete full on first tab, full on second tab
-
--- Set grep default grep command with ripgrep
-opt.grepformat = "%f:%l:%c:%m"
-opt.grepprg = "rg --vimgrep --follow" -- --follow resolves symlinks. Not sure if...
-opt.errorformat:append("%f:%l:%c%p%m")
-
--- Things to save in sessions
-opt.sessionoptions = { "buffers", "curdir", "tabpages", "winsize" }
+-- diffing (default "internal,filler,closeoff")
+-- Start diff mode with vertical splits by default
+opt.diffopt:append("vertical")
+-- Use a context of {n} lines between a change
+-- and a fold that contains unchanged lines.
+opt.diffopt:append("context:3")
+-- When the total number of lines in a hunk exceeds {n},
+-- the second stage diff will not be performed as
+-- very large hunks can cause noticeable lag.
+opt.diffopt:append("linematch:60")
 
 -- folding (configured for nvim-ufo)
 opt.foldcolumn = "1"
@@ -118,11 +62,4 @@ opt.foldlevelstart = 99
 opt.foldenable = true
 opt.conceallevel = 2 -- Hide * markup for bold and italic
 
--- treesitter folding
--- vim.wo.foldmethod = "expr"
--- vim.wo.foldexpr = "nvim_treesitter#foldexpr()"
-
--- diffing (default "internal,filler,closeoff")
-opt.diffopt:append("vertical")
-opt.diffopt:append("context:3")
-opt.diffopt:append("linematch:60")
+opt.showtabline = 0
