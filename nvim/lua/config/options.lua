@@ -9,6 +9,8 @@ end
 -- disable copilot cmp/blink source
 vim.g.ai_cmp = false
 
+vim.g.snacks_animate = false
+
 -- Use blink main branch instead of cmp
 -- vim.g.lazyvim_blink_main = true
 
@@ -25,6 +27,8 @@ opt.hidden = true -- Enable modified buffers in background
 
 opt.winblend = 0
 opt.pumblend = 0
+
+opt.listchars:remove("trail") -- don't show trailing whitespace char
 
 opt.textwidth = 120 -- the width that'll be used for wrapping (gq)
 

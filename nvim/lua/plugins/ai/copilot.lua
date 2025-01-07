@@ -52,17 +52,27 @@ return {
       end
 
       -- Hide Copilot suggestions when using completion
-      ---@module 'cmp'
-      local cmp = package.loaded["cmp"]
+      ---@module 'blink.cmp'
+      local cmp = package.loaded["blink.cmp"]
       if cmp then
-        cmp.event:on("menu_opened", function()
-          suggestion.dismiss()
-          vim.b.copilot_suggestion_auto_trigger = false
-        end)
+        local group = vim.api.nvim_create_augroup("blink-cmp-copilot", { clear = true })
 
-        cmp.event:on("menu_closed", function()
-          vim.b.copilot_suggestion_auto_trigger = true
-        end)
+        vim.api.nvim_create_autocmd("User", {
+          pattern = "BlinkCmpMenuOpen",
+          group = group,
+          callback = function()
+            suggestion.dismiss()
+            vim.b.copilot_suggestion_auto_trigger = false
+          end,
+        })
+
+        vim.api.nvim_create_autocmd("User", {
+          pattern = "BlinkCmpMenuClose",
+          group = group,
+          callback = function()
+            vim.b.copilot_suggestion_auto_trigger = true
+          end,
+        })
       end
     end,
   },
