@@ -6,6 +6,10 @@
 vim.keymap.set("n", "q", "<nop>", { noremap = true })
 vim.keymap.set("n", "Q", "q", { noremap = true, desc = "Record macro" })
 
+-- no builtin keyword completions
+vim.keymap.set("i", "<C-N>", "<nop>", { noremap = true })
+vim.keymap.set("i", "<C-P>", "<nop>", { noremap = true })
+
 -- better scroll up/down
 vim.keymap.set("n", "<C-d>", "<C-d>zz", { desc = "Scroll down" })
 vim.keymap.set("n", "<C-u>", "<C-u>zz", { desc = "Scroll up" })

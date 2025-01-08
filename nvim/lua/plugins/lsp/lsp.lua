@@ -51,6 +51,9 @@ return {
         { "gr", false },
         { "gI", false },
         { "gy", false },
+        -- Disable signature help binding in insert mode.
+        -- blink.cmp has experimental signature help.
+        { "<c-k>", false, mode = { "i" } },
       })
     end,
   },

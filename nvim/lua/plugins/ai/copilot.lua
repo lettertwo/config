@@ -23,6 +23,20 @@ return {
 
       local LazyVim = require("lazyvim.util")
 
+      LazyVim.cmp.actions.ai_show = function()
+        if not suggestion.is_visible() then
+          suggestion.next()
+          return true
+        end
+      end
+
+      LazyVim.cmp.actions.ai_hide = function()
+        if suggestion.is_visible() then
+          suggestion.dismiss()
+          return true
+        end
+      end
+
       LazyVim.cmp.actions.ai_select_prev = function()
         if suggestion.is_visible() then
           suggestion.prev()
@@ -58,11 +72,13 @@ return {
         local group = vim.api.nvim_create_augroup("blink-cmp-copilot", { clear = true })
 
         vim.api.nvim_create_autocmd("User", {
-          pattern = "BlinkCmpMenuOpen",
+          pattern = "BlinkCmpListSelect",
           group = group,
           callback = function()
-            suggestion.dismiss()
-            vim.b.copilot_suggestion_auto_trigger = false
+            if cmp.is_visible() and cmp.get_selected_item() ~= nil then
+              suggestion.dismiss()
+              vim.b.copilot_suggestion_auto_trigger = false
+            end
           end,
         })
 

@@ -4,24 +4,17 @@ return {
   opts = function(_, default_opts)
     local cmp = require("blink.cmp")
 
-    LazyVim.cmp.actions.select_next_item = function()
-      if cmp.is_visible() then
-        cmp.select_next()
+    LazyVim.cmp.actions.show_or_ai_show = function()
+      if not cmp.is_visible() then
+        if LazyVim.cmp.actions.ai_hide then
+          LazyVim.cmp.actions.ai_hide()
+        end
+        cmp.show()
         return true
-      end
-    end
-
-    LazyVim.cmp.actions.select_prev_item = function()
-      if cmp.is_visible() then
-        cmp.select_prev()
+      elseif LazyVim.cmp.actions.ai_show then
+        LazyVim.cmp.actions.ai_show()
+        cmp.hide()
         return true
-      end
-    end
-
-    LazyVim.cmp.actions.select_and_confirm = function()
-      if cmp.is_visible() then
-        LazyVim.create_undo()
-        return cmp.select_and_accept()
       end
     end
 
@@ -37,7 +30,6 @@ return {
           },
         },
         menu = {
-          auto_show = false,
           border = "rounded",
           draw = { align_to = "cursor" },
         },
@@ -45,18 +37,31 @@ return {
       signature = { window = { border = "rounded" } },
 
       keymap = {
-        preset = "default",
+        preset = "none",
+
+        ["<C-space>"] = { LazyVim.cmp.map({ "show_or_ai_show" }), "show_documentation", "hide_documentation" },
+        ["<C-e>"] = { "hide", "fallback" },
+        ["<Esc>"] = { "hide", "fallback" },
+
+        ["<CR>"] = { "accept", "fallback" },
+        ["<Right>"] = { "accept", LazyVim.cmp.map({ "ai_accept_word" }), "fallback" },
+
         ["<C-k>"] = { "select_prev", "fallback" },
+        ["<C-p>"] = { "select_prev", LazyVim.cmp.map({ "ai_select_prev" }), "fallback" },
+        ["<Up>"] = { "select_prev", LazyVim.cmp.map({ "ai_select_next" }), "fallback" },
+
         ["<C-j>"] = { "select_next", "fallback" },
+        ["<C-n>"] = { "select_next", LazyVim.cmp.map({ "ai_select_next" }), "fallback" },
+        ["<Down>"] = { "select_next", LazyVim.cmp.map({ "ai_accept_line" }), "fallback" },
+
+        ["<C-b>"] = { "scroll_documentation_up", "fallback" },
         ["<C-u>"] = { "scroll_documentation_up", "fallback" },
+
+        ["<C-f>"] = { "scroll_documentation_down", "fallback" },
         ["<C-d>"] = { "scroll_documentation_down", "fallback" },
-        ["<C-n>"] = { LazyVim.cmp.map({ "select_next_item", "ai_select_next" }), "fallback" },
-        ["<C-p>"] = { LazyVim.cmp.map({ "select_prev_item", "ai_select_prev" }), "fallback" },
-        ["<Up>"] = { LazyVim.cmp.map({ "select_prev_item", "ai_select_next" }), "fallback" },
-        ["<Down>"] = { LazyVim.cmp.map({ "select_next_item", "ai_accept_line" }), "fallback" },
-        ["<Right>"] = { LazyVim.cmp.map({ "select_and_confirm", "ai_accept_word" }), "fallback" },
-        ["<Tab>"] = { LazyVim.cmp.map({ "snippet_forward", "select_next_item", "ai_accept" }), "fallback" },
-        ["<S-Tab>"] = { LazyVim.cmp.map({ "snippet_backward", "select_prev_item" }), "fallback" },
+
+        ["<Tab>"] = { LazyVim.cmp.map({ "snippet_forward", "ai_accept" }), "fallback" },
+        ["<S-Tab>"] = { "snippet_backward", "fallback" },
       },
     }
 
