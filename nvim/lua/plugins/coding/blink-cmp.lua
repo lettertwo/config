@@ -41,7 +41,6 @@ return {
 
         ["<C-space>"] = { LazyVim.cmp.map({ "show_or_ai_show" }), "show_documentation", "hide_documentation" },
         ["<C-e>"] = { "hide", "fallback" },
-        ["<Esc>"] = { "hide", "fallback" },
 
         ["<CR>"] = { "accept", "fallback" },
         ["<Right>"] = { "accept", LazyVim.cmp.map({ "ai_accept_word" }), "fallback" },
