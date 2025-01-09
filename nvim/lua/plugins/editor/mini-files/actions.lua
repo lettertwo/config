@@ -1,5 +1,7 @@
 local M = {}
 
+local MiniFiles = require("mini.files")
+
 local function map_split(direction)
   return function()
     -- if current selection is not a file, do nothing.
@@ -7,7 +9,7 @@ local function map_split(direction)
       return
     end
 
-    local win_id = MiniFiles.get_target_window()
+    local win_id = MiniFiles.get_explorer_state().target_window
     if win_id ~= nil then
       -- Make new window and set it as target
       local new_target_window = vim.api.nvim_get_current_win()
