@@ -13,9 +13,10 @@ gui:
   skipDiscardChangeWarning: false
   skipStashWarning: false
   sidePanelWidth: 0.3333
-  expandFocusedSidePanel: false
-  experimentalShowBranchHeads: true
+  expandFocusedSidePanel: true
+  expandedSidePanelWeight: 2
   mainPanelSplitMode: flexible
+  enlargedSideViewLocation: left
   language: auto
   timeFormat: 02 Jan 06
   shortTimeFormat: 3:04PM
@@ -81,10 +82,9 @@ git:
   commitPrefixes: {}
   parseEmoji: true
   log:
-    order: topo-order
-    showGraph: when-maximised
+    order: default
+    showGraph: always
     showWholeGraph: false
-  diffContextSize: 3
 update:
   method: prompt
   days: 14
@@ -141,7 +141,10 @@ keybinding:
     scrollDownMain-alt1: J
     scrollUpMain-alt2: <c-u>
     scrollDownMain-alt2: <c-d>
-    executeCustomCommand: ":"
+    toggleRangeSelect: V
+    rangeSelectDown: <s-down>
+    rangeSelectUp: <s-up>
+    executeShellCommand: ":"
     createRebaseOptionsMenu: m
     pushFiles: P
     pullFiles: p
@@ -215,7 +218,6 @@ keybinding:
     pickCommit: p
     revertCommit: t
     cherryPickCopy: c
-    cherryPickCopyRange: C
     pasteCommits: v
     markCommitAsBaseForRebase: B
     tagCommit: T
@@ -231,8 +233,6 @@ keybinding:
   commitFiles:
     checkoutCommitFile: c
   main:
-    toggleDragSelect: v
-    toggleDragSelect-alt: V
     toggleSelectHunk: a
     pickBothHunks: b
     editSelectHunk: E
@@ -241,7 +241,7 @@ keybinding:
     update: u
     bulkMenu: b
   commitMessage:
-    switchToEditor: <c-o>
+    commitMenu: <c-o>
 disableStartupPopups: false
 notARepository: prompt
 promptToReturnFromSubprocess: true
@@ -251,6 +251,11 @@ customCommands:
     description: "commit with commitizen"
     context: "files"
     loadingText: "opening commitizen commit tool"
+    subprocess: true
+  - key: "W"
+    description: "force commit (--no-verify)"
+    command: "git commit --no-verify"
+    context: "global"
     subprocess: true
   - key: "c"
     context: "worktrees"
