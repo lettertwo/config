@@ -4,9 +4,9 @@
 # XDG Base Directories
 # https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
 #
-set -q XDG_CONFIG_HOME; or set -Ux XDG_CONFIG_HOME $HOME/.config    # configuration files
-set -q XDG_CACHE_HOME; or set -Ux XDG_CACHE_HOME $HOME/.cache       # non-essential data
-set -q XDG_DATA_HOME; or set -Ux XDG_DATA_HOME $HOME/.local/share   # essential portable data
+set -q XDG_CONFIG_HOME; or set -Ux XDG_CONFIG_HOME $HOME/.config # configuration files
+set -q XDG_CACHE_HOME; or set -Ux XDG_CACHE_HOME $HOME/.cache # non-essential data
+set -q XDG_DATA_HOME; or set -Ux XDG_DATA_HOME $HOME/.local/share # essential portable data
 set -q XDG_STATE_HOME; or set -Ux XDG_STATE_HOME $HOME/.local/state # persistant non-portable data
 mkdir -p $XDG_CONFIG_HOME $XDG_DATA_HOME $XDG_STATE_HOME $XDG_CACHE_HOME
 
@@ -22,7 +22,7 @@ set -q INFOPATH; or set -gx INFOPATH ''
 set -qU OS_TYPE; or set -Ux OS_TYPE (uname)
 
 if test "$OS_TYPE" = Darwin
-  set -gx BROWSER open
+    set -gx BROWSER open
 end
 
 #
@@ -32,19 +32,19 @@ if test "$TERM_PROGRAM" = vscode
     # in vscode, use vscode as editor.
     set -gx EDITOR code --wait
     set -gx VISUAL code --wait
-else if test -n "$NVIM" && command -v nvr > /dev/null
+else if test -n "$NVIM" && command -v nvr >/dev/null
     # in neovim with nvr available, use nvr as editor.
     set -gx GIT_EDITOR nvr --nostart --remote-tab-wait +"set bufhidden=delete"
     alias nvim='nvr -l'
-    set -gx EDITOR 'nvim'
+    set -gx EDITOR nvim
     set -gx VISUAL $VISUAL
-else if command -v nvim > /dev/null
+else if command -v nvim >/dev/null
     # if neovim is available, use it as editor.
-    set -gx VISUAL 'nvim'
+    set -gx VISUAL nvim
     set -gx EDITOR $VISUAL
 else
     # otherwise, use vim as editor.
-    set -gx VISUAL 'vim'
+    set -gx VISUAL vim
     set -gx EDITOR $VISUAL
 end
 
@@ -81,13 +81,12 @@ for manpath in (path filter $__fish_data_dir/man /usr/local/share/man /usr/share
 end
 
 # Add bin directories to path.
-fish_add_path --global --prepend  \
-  node_modules/.bin \
-  $HOME/node_modules/.bin \
-  $HOME/.local/{bin,sbin} \
-  $HOME/.cargo/bin \
-  $HOME/.yarn/bin \
-  /usr/local/share/npm/bin \
-
+fish_add_path --global --prepend \
+    node_modules/.bin \
+    $HOME/node_modules/.bin \
+    $HOME/.local/{bin,sbin} \
+    $HOME/.cargo/bin \
+    $HOME/.yarn/bin \
+    /usr/local/share/npm/bin
 # Disable new user greeting.
 set fish_greeting

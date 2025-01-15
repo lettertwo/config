@@ -38,17 +38,25 @@ for common in add bisect branch checkout cherry cherry-pick clone commit diff fe
     add_abbr $common
 end
 
-for path_dir in $PATH
-    if test -d $path_dir
-        for git_extension in $path_dir/git-*
-            # Skip if not a file or doesn't exist
-            if not test -e $git_extension; or not test -f $git_extension
-                continue
-            end
-            set subcommand (string replace -r 'git-' '' (basename $git_extension))
-            add_abbr $subcommand
-        end
-    end
-end
+# FIXME: This adds 100ms to startup time!
+# Using hyperfine fish -i -c exit
+# Enabled:
+#   Time (mean ± σ):     357.0 ms ±   9.3 ms    [User: 44.9 ms, System: 86.0 ms]
+#   Range (min … max):   341.9 ms … 374.6 ms    10 runs
+# Disabled:
+#   Time (mean ± σ):     256.1 ms ±  10.6 ms    [User: 36.6 ms, System: 61.0 ms]
+#   Range (min … max):   241.3 ms … 277.2 ms    11 runs
+# for path_dir in $PATH
+#     if test -d $path_dir
+#         for git_extension in $path_dir/git-*
+#             # Skip if not a file or doesn't exist
+#             if not test -e $git_extension; or not test -f $git_extension
+#                 continue
+#             end
+#             set subcommand (string replace -r 'git-' '' (basename $git_extension))
+#             add_abbr $subcommand
+#         end
+#     end
+# end
 
 functions -e add_abbr

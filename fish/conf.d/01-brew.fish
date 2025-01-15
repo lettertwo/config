@@ -18,5 +18,3 @@ if test -x $HOMEBREW_BIN
         set -a fish_complete_path "$HOMEBREW_PREFIX/share/fish/completions"
     end
 end
-
-

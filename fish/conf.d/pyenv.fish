@@ -5,7 +5,7 @@ fish_add_path $PYENV_ROOT/bin
 # Inlined from:
 # cachecmd -- pyenv init - --no-rehash --no-push-path | source
 if not contains -- "/Users/eeldredge/.local/share/pyenv/shims" $PATH
-  set -gx PATH '/Users/eeldredge/.local/share/pyenv/shims' $PATH
+    set -gx PATH '/Users/eeldredge/.local/share/pyenv/shims' $PATH
 end
 set -gx PYENV_SHELL fish
 
