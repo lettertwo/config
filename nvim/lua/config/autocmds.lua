@@ -109,3 +109,29 @@ vim.api.nvim_create_autocmd("FileType", {
     end)
   end,
 })
+
+if os.getenv("KITTY_WINDOW_ID") then
+  local kitty_set_spacing = vim.api.nvim_create_augroup("kitty_set_spacing", { clear = true })
+
+  -- Set the padding and margin of the kitty window when entering nvim
+  if vim.v.vim_did_enter == 1 then
+    vim.system({ "kitty", "@set-spacing", "padding=0", "margin=0" })
+  else
+    vim.api.nvim_create_autocmd({ "VimEnter", "VimResume" }, {
+      group = kitty_set_spacing,
+      pattern = "*",
+      callback = function()
+        vim.system({ "kitty", "@set-spacing", "padding=0", "margin=0" })
+      end,
+    })
+  end
+
+  -- Reset the spacing of the kitty window when leaving nvim
+  vim.api.nvim_create_autocmd({ "VimLeave", "VimSuspend" }, {
+    group = kitty_set_spacing,
+    pattern = "*",
+    callback = function()
+      vim.system({ "kitty", "@set-spacing", "padding=default", "margin=default" })
+    end,
+  })
+end
