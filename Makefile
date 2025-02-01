@@ -348,5 +348,4 @@ update: update-config \
 	update-fish \
 	update-bat \
 	update-nvim \
-	update-kitty \
-	update-wezterm
+	update-kitty
