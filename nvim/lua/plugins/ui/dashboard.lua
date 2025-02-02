@@ -448,7 +448,7 @@ return {
 
       ---@module 'snacks'
       ---@type snacks.Config
-      return {
+      local local_opts = {
         dashboard = {
           width = 60,
           row = 3,
@@ -466,6 +466,8 @@ return {
           },
         },
       }
+
+      return vim.tbl_deep_extend("force", opts or {}, local_opts)
     end,
   },
 }
