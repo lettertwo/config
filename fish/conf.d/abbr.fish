@@ -23,7 +23,7 @@ abbr -a -g top btm
 abbr -a -g htop btm
 
 # Use trash instead of rm (macOS only)
-if test (uname) = Darwin
+if test (uname) = Darwin && type -q trash
     abbr -a -g rm trash
 end
 
