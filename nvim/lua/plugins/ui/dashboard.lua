@@ -58,7 +58,7 @@ local stats = setmetatable({}, {
   end,
 })
 
----@overload fun(string): string, boolean
+---@overload fun(string): string, boolean, number?
 local lazy_check = setmetatable({ status = nil, pending = false }, {
   __call = function(self, desc)
     local lazy_checker = package.loaded["lazy.manage.checker"]
@@ -77,11 +77,11 @@ local lazy_check = setmetatable({ status = nil, pending = false }, {
       desc = desc .. " " .. self.status .. " " .. (self.status == 1 and "update available" or "updates available")
     end
 
-    return desc, self.pending
+    return desc, self.pending, self.status
   end,
 })
 
----@overload fun(string): string, boolean
+---@overload fun(string): string, boolean, number?
 local mason_check = setmetatable({ status = nil, pending = false }, {
   __call = function(self, desc)
     local mason_registry = package.loaded["mason-registry"]
@@ -109,7 +109,7 @@ local mason_check = setmetatable({ status = nil, pending = false }, {
       desc = desc .. " " .. self.status .. " " .. (self.status == 1 and "update available" or "updates available")
     end
 
-    return desc, self.pending
+    return desc, self.pending, self.status
   end,
 })
 
@@ -208,7 +208,7 @@ return {
     "folke/snacks.nvim",
     cmd = { "Dashboard" },
     keys = { { "<leader>;", "<cmd>Dashboard<cr>" } },
-    opts = function()
+    opts = function(_, opts)
       local Snacks = require("snacks")
 
       -- The default zindex for the dashboard is 10, but some UI elements
@@ -375,17 +375,18 @@ return {
       ---@field action string
       ---@field icon string
       ---@field desc string
-      ---@field check fun(string): string, boolean
+      ---@field check fun(string): string, boolean, number?
 
       ---@param live_options LiveSectionOptions
       function Snacks.dashboard.sections.live(live_options)
-        local updated_desc, pending = live_options.check(live_options.desc)
+        local updated_desc, pending, status = live_options.check(live_options.desc)
         live_pending = pending or live_pending
         return {
           key = live_options.key,
           action = live_options.action,
           icon = pending and { SPINNER[frame], hl = "footer" } or live_options.icon,
-          desc = updated_desc and { updated_desc, hl = pending and "footer" or "special" } or live_options.desc,
+          desc = updated_desc and { updated_desc, hl = pending and "footer" or (status > 0 and "special" or nil) }
+            or live_options.desc,
         }
       end
 
