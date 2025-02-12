@@ -22,7 +22,6 @@ brew "readline" if OS.mac?
 brew "curl" if OS.mac?
 brew "wget" if OS.mac?
 brew "tldr" if OS.mac?
-brew "trash" if OS.mac?
 brew "lnav" if OS.mac?
 
 brew "fzf"
