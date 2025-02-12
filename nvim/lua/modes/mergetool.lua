@@ -44,12 +44,22 @@ return {
       })
 
       -- TODO: Replace these with submode mappings
-      vim.keymap.set("n", "co", "<Plug>(git-conflict-ours)")
-      vim.keymap.set("n", "ct", "<Plug>(git-conflict-theirs)")
-      vim.keymap.set("n", "cb", "<Plug>(git-conflict-both)")
-      vim.keymap.set("n", "c0", "<Plug>(git-conflict-none)")
-      vim.keymap.set("n", "n", "<Plug>(git-conflict-prev-conflict)")
-      vim.keymap.set("n", "p", "<Plug>(git-conflict-next-conflict)")
+      vim.keymap.set("n", "<leader>gco", "<cmd>GitConflictChooseOurs<cr>", { desc = "Choose ours" })
+      vim.keymap.set("n", "<leader>gct", "<cmd>GitConflictChooseTheirs<cr>", { desc = "Choose theirs" })
+      vim.keymap.set("n", "<leader>gch", "<cmd>GitConflictChooseOurs<cr>", { desc = "Choose left (ours)" })
+      vim.keymap.set("n", "<leader>gcl", "<cmd>GitConflictChooseTheirs<cr>", { desc = "Choose right (theirs)" })
+      vim.keymap.set("n", "<leader>gcb", "<cmd>GitConflictChooseBoth<cr>", { desc = "Choose both" })
+      vim.keymap.set("n", "<leader>gcn", "<cmd>GitConflictChooseNone<cr>", { desc = "Choose none" })
+      -- vim.keymap.set("n", "<leader>gn", "<Plug>(git-conflict-prev-conflict)")
+      -- vim.keymap.set("n", "<leader>gp", "<Plug>(git-conflict-next-conflict)")
     end,
+  },
+  {
+    "folke/which-key.nvim",
+    opts = {
+      spec = {
+        { "<leader>gc", group = "conflict" },
+      },
+    },
   },
 }
