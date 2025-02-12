@@ -17,7 +17,7 @@ function ServiceUtil.service_status()
     formatting_providers = {},
     copilot_active = false,
     treesitter_active = vim.treesitter.highlighter.active[buf] ~= nil and next(vim.treesitter.highlighter.active[buf]),
-    session_active = require("persistence").current ~= nil,
+    session_active = package.loaded["persistence"] and require("persistence").current ~= nil,
     lazy_updates = require("lazy.status").has_updates(),
     -- TODO: check for mason updates
     -- mason_updates
