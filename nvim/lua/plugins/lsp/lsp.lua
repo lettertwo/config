@@ -45,7 +45,7 @@ return {
         { "<leader>.", vim.lsp.buf.code_action, desc = "Code Action", mode = { "n", "v" }, has = "codeAction" },
         { "grn", rename, expr = true, desc = "Rename (inc-rename.nvim)" },
         -- Disable these keymaps from the picker extras (fzf, telescope).
-        -- They conflict with both the builtin keymaps and Glance functionality.
+        -- They conflict with builtin keymaps.
         { "gd", false },
         { "gD", false },
         { "gr", false },
