@@ -2,22 +2,20 @@ local require = require("noice.util.lazy")
 
 local NuiView = require("noice.view.nui")
 
-local function debounce(ms, fn)
-  local timer = vim.uv.new_timer()
-  local argv
-  return function(...)
-    argv = { ... }
-    timer:start(ms, 0, function()
-      timer:stop()
-      vim.schedule_wrap(fn)(unpack(argv))
-    end)
-  end
+-- TODO: Figure out how to restore the previous scroll position as well
+local function update_cursor(winid, cursor)
+  -- Temporarily disable cursor autocmds
+  local original_eventignore = vim.opt.eventignore
+  vim.opt.eventignore = "all"
+  vim.api.nvim_win_set_cursor(winid, cursor)
+  -- Re-enable cursor autocmds
+  vim.opt.eventignore = original_eventignore
 end
 
 ---@class Console: NuiView
 ---@field super NuiView
 ---@field _routes? NoiceRouteOptions[]
----@field _lines? integer
+---@field _line_count? integer
 ---@diagnostic disable-next-line: undefined-field
 local Console = NuiView:extend("Console")
 
@@ -49,6 +47,7 @@ local CONSOLE_ROUTES = {
 }
 
 ---@type NoiceViewBaseOptions | NuiSplitOptions
+---@diagnostic disable-next-line: missing-fields
 local CONSOLE_OPTS = {
   type = "split",
   view = "console",
@@ -62,6 +61,7 @@ function Console:init(opts)
   return Console.super.init(self, vim.tbl_deep_extend("force", CONSOLE_OPTS, opts or {}))
 end
 
+-- TODO: add keymaps for going to a location mentioned in a stacktrace
 function Console:enable()
   if not self._routes then
     self._routes = {}
@@ -79,7 +79,7 @@ function Console:enable()
     -- process messages
     router.update()
 
-    vim.notify("Added " .. #self._routes .. " console routes", "debug")
+    vim.notify("Added " .. #self._routes .. " console routes", vim.log.levels.DEBUG)
   end
 end
 
@@ -107,7 +107,7 @@ function Console:disable()
     -- process messages
     router.update()
 
-    vim.notify("Removed " .. count .. " console routes", "debug")
+    vim.notify("Removed " .. count .. " console routes", vim.log.levels.DEBUG)
     self._routes = nil
   end
 end
@@ -115,20 +115,36 @@ end
 ---@param buf number buffer number
 ---@param opts? {offset: number, highlight: boolean, messages?: NoiceMessage[]} line number (1-indexed), if `highlight`, then only highlight
 function Console:render(buf, opts)
-  Console.super.render(self, buf, opts)
-  self:autoscroll()
+  if self._nui and self._nui.bufnr and self._nui.winid then
+    local prev_cursor = vim.api.nvim_win_get_cursor(self._nui.winid)
+    local prev_line_count = vim.api.nvim_buf_line_count(self._nui.bufnr)
+    Console.super.render(self, buf, opts)
+    self:update_cursor(prev_cursor, prev_line_count)
+  end
 end
 
-Console.autoscroll = debounce(16, function(self)
-  if self._nui and self._nui.bufnr and self._nui.winid then
-    local cursor = vim.api.nvim_win_get_cursor(self._nui.winid)
-    local autoscroll = not self._lines or cursor[1] == self._lines
-    self._lines = vim.api.nvim_buf_line_count(self._nui.bufnr)
-    if autoscroll then
-      vim.api.nvim_win_set_cursor(self._nui.winid, { self._lines, 0 })
-    end
+function Console:update_cursor(prev_cursor, prev_line_count)
+  -- Only autoscroll if cursor was at the last line.
+  -- Otherwise, maintain previous cursor position
+  if
+    not prev_cursor
+    or not prev_line_count
+    or prev_cursor[1] == prev_line_count
+    or (prev_cursor[1] == 1 and prev_cursor[2] == 0)
+  then
+    vim.schedule(function()
+      if self._nui and self._nui.bufnr and self._nui.winid then
+        update_cursor(self._nui.winid, { vim.api.nvim_buf_line_count(self._nui.bufnr), 0 })
+      end
+    end)
+  else
+    vim.schedule(function()
+      if self._nui and self._nui.bufnr and self._nui.winid then
+        update_cursor(self._nui.winid, prev_cursor)
+      end
+    end)
   end
-end)
+end
 
 function Console:show()
   self:enable()
