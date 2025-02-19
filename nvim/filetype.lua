@@ -22,10 +22,11 @@ vim.filetype.add({
   },
   filename = {
     [".eslintrc.json"] = "jsonc",
-    [".parcelrc"] = "jsonc",
   },
   pattern = {
-    ["tsconfig*.json"] = "jsonc",
+    ["%.atlaspackrc.*"] = "jsonc",
+    ["%.parcelrc.*"] = "jsonc",
+    ["tsconfig.*%.json"] = "jsonc",
     [".*/%.vscode/.*%.json"] = "jsonc",
   },
 })
