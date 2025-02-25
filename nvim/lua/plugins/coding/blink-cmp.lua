@@ -36,6 +36,12 @@ return {
       },
       signature = { window = { border = "rounded" } },
 
+      enabled = function()
+        return not vim.tbl_contains(require("lazyvim.config").filetypes.ui, vim.bo.filetype)
+          and vim.bo.buftype ~= "prompt"
+          and vim.b.completion ~= false
+      end,
+
       keymap = {
         preset = "none",
 
