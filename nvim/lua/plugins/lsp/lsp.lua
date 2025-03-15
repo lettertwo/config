@@ -24,7 +24,7 @@ return {
       {
         "<leader>cL",
         function()
-          if next(vim.lsp.get_clients()) ~= nil then
+          if next(vim.lsp.get_clients({ bufnr = 0 })) ~= nil then
             vim.cmd("LspStop")
             vim.notify("LSP stopped")
           else
