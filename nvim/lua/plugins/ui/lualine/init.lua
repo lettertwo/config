@@ -6,7 +6,7 @@ return {
       "echasnovski/mini.icons",
       "lewis6991/gitsigns.nvim",
     },
-    opts = function()
+    opts = function(_, opts)
       local filetypes = require("lazyvim.config").filetypes
 
       local breadcrumbs = require("plugins.ui.lualine.components.breadcrumbs")
@@ -26,7 +26,7 @@ return {
       local tabs = components.tabs
       local tabstop = components.tabstop
 
-      return {
+      local local_opts = {
         options = {
           component_separators = { left = "", right = "" },
           section_separators = { left = "", right = "" },
@@ -67,6 +67,8 @@ return {
           lualine_z = {},
         },
       }
+
+      return vim.tbl_deep_extend("force", opts or {}, local_opts)
     end,
     config = function(_, opts)
       -- Patch `lualine.utils.utils.is_focused` to force inactive state when nvim focus is lost.
