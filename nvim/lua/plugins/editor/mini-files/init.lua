@@ -4,13 +4,6 @@ return {
     version = false,
     keys = {
       {
-        "<leader>fe",
-        function()
-          require("plugins.editor.mini-files.actions").open_buffer()
-        end,
-        desc = "File explorer (buffer)",
-      },
-      {
         "<leader>e",
         function()
           require("plugins.editor.mini-files.actions").open_buffer()
