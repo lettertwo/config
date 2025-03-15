@@ -34,32 +34,6 @@ return {
     },
   },
 
-  -- scratch
-  {
-    "folke/snacks.nvim",
-    -- stylua: ignore
-    keys = {
-      {"<leader>.", false},
-      {"<leader>S", false},
-      { "<leader>bn", function() require('snacks').scratch() end, desc = "Toggle Scratch Buffer" },
-      { "<leader>bs", function() require('snacks').scratch() end, desc = "Toggle Scratch Buffer" },
-      { "<leader>bS", function() require("snacks").scratch.select() end, desc = "Select Scratch Buffer" },
-    },
-    opts = {
-      scratch = {
-        win = {
-          width = function()
-            return vim.o.columns
-          end,
-          height = function()
-            return math.ceil(vim.o.lines * 0.9)
-          end,
-          zindex = 50,
-        },
-      },
-    },
-  },
-
   -- profiler
   {
     {
