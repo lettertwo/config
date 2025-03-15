@@ -11,7 +11,7 @@ return {
       { "<leader>bc", "<cmd>CloseUntaggedBuffers<cr>", desc = "Close untagged buffers" },
     },
     opts = {
-      scope = "git", -- also try out "git_branch"
+      scope = "git_branch", -- also try out "git_branch"
       style = "basename",
     },
     config = function(_, opts)
