@@ -13,11 +13,11 @@ return {
             and not vim.list_contains(require("lazyvim.config").filetypes.ui, vim.bo[buf].filetype)
         end,
         animate = { enabled = false },
-        indent = { char = "┆" },
+        indent = { char = "│" },
         scope = {
           enabled = true,
           only_current = true,
-          char = "┆",
+          char = "│",
         },
         chunk = {
           enabled = true,
@@ -25,9 +25,9 @@ return {
           char = {
             corner_top = "╭",
             corner_bottom = "╰",
-            horizontal = "╌",
-            vertical = "┆",
-            arrow = "╌",
+            horizontal = "─",
+            vertical = "│",
+            arrow = "─",
           },
         },
       },
