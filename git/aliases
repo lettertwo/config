@@ -51,7 +51,7 @@
 	# Recover a dropped stash
 	stash-recover = !"f() { if [ -z "$1" ] ; then echo 'Missing commit hash.'; exit 1; fi; git update-ref -m \"$(git log -1 --pretty="format:%s" "$1")\" refs/stash "$1"; }; f"
 	# Show the list of files changed in a commit
-	show-files = !git show --pretty="" --name-status
+	show-files = !git show --pretty='""' --name-status
 	# List worktrees
 	worktrees = worktree list
   jump = "!$(brew --prefix git)/share/git-core/contrib/git-jump/git-jump"
@@ -118,3 +118,4 @@
 	ri = !git rebase -i
 	rc = !git rebase --continue
 	ra = !git rebase --abort
+	wip = !git add . && git commit -m "WIP" --no-verify
