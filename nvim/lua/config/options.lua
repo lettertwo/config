@@ -59,11 +59,6 @@ opt.diffopt:append("context:3")
 -- very large hunks can cause noticeable lag.
 opt.diffopt:append("linematch:60")
 
--- folding (configured for nvim-ufo)
-opt.foldcolumn = "1"
-opt.foldlevel = 99
-opt.foldlevelstart = 99
-opt.foldenable = true
-opt.conceallevel = 2 -- Hide * markup for bold and italic
-
 opt.showtabline = 0
+
+require("config.folding")
