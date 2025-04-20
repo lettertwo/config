@@ -79,7 +79,7 @@ function Console:enable()
     -- process messages
     router.update()
 
-    vim.notify("Added " .. #self._routes .. " console routes", vim.log.levels.DEBUG)
+    vim.notify("Added " .. #self._routes .. " console routes", vim.log.levels.TRACE)
   end
 end
 
@@ -107,7 +107,7 @@ function Console:disable()
     -- process messages
     router.update()
 
-    vim.notify("Removed " .. count .. " console routes", vim.log.levels.DEBUG)
+    vim.notify("Removed " .. count .. " console routes", vim.log.levels.TRACE)
     self._routes = nil
   end
 end
