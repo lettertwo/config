@@ -173,7 +173,7 @@ keybinding:
   files:
     commitChanges: c
     commitChangesWithoutHook: w
-    amendLastCommit: A
+    amendLastCommit: <disabled>
     commitChangesWithEditor: C
     confirmDiscard: x
     ignoreFile: i
@@ -252,11 +252,20 @@ customCommands:
     context: "files"
     loadingText: "opening commitizen commit tool"
     subprocess: true
+  - key: "A"
+    command: git diff --cached --quiet HEAD && { echo "No staged changes to amend."; exit 1; } || git commit --amend --no-edit --no-verify
+    context: "files"
+    description: "Amend last commit (--no-verify)"
+    loadingText: Amending previous commit…
   - key: "W"
-    description: "force commit (--no-verify)"
-    command: "git commit --no-verify"
+    prompts:
+      - type: "input"
+        title: "commit --no-verify"
+        initialValue: ""
+    command: git commit -m "{{index .PromptResponses 0}}" --no-verify
+    description: "commit --no-verify"
+    loadingText: "Committing (--no-verify)…"
     context: "global"
-    subprocess: true
   - key: "c"
     context: "worktrees"
     command: "copyuntracked {{.Form.FromWorktree}} {{.SelectedWorktree.Path }}"
