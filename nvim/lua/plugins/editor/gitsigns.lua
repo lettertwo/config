@@ -85,9 +85,9 @@ return {
         map({ "x", "o" }, "ah", gs.select_hunk, "Select hunk")
 
         -- blame
-        map("n", "<leader>gb", function()
-          gs.blame_line({ full = true })
-        end, "Blame")
+        -- map("n", "<leader>gb", function()
+        --   gs.blame_line()
+        -- end, "Blame")
         map("n", "<leader>gB", function()
           gs.blame()
         end, "Blame Buffer")

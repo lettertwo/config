@@ -1,5 +1,4 @@
 return {
-  { "nvim-neo-tree/neo-tree.nvim", enabled = false },
   {
     "folke/snacks.nvim",
 
@@ -11,6 +10,7 @@ return {
       },
     },
     keys = {
+      { "<leader>e", false },
       {
         "<leader>fe",
         function()

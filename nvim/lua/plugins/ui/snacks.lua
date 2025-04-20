@@ -5,6 +5,7 @@ return {
     ---@type snacks.Config
     opts = {
       notifier = { level = vim.log.levels.INFO },
+      image = {},
       indent = {
         filter = function(buf)
           return vim.g.snacks_indent ~= false
@@ -57,5 +58,29 @@ return {
         table.insert(opts.sections.lualine_x, Snacks.profiler.status())
       end,
     },
+  },
+
+  -- lazygit
+  {
+    "folke/snacks.nvim",
+    opts = function(_, opts)
+      local local_opts = {
+        lazygit = {
+          config = {
+            os = {
+              editPreset = nil,
+              edit = 'nvim --server "$NVIM" --remote-send "q" && nvim --server "$NVIM" --remote {{filename}}',
+              editAtLine = 'nvim --server "$NVIM" --remote-send "q" &&  nvim --server "$NVIM" --remote {{filename}} && nvim --server "$NVIM" --remote-send ":{{line}}<CR>"',
+              -- No remote-wait support yet. See https://github.com/neovim/neovim/pull/17856
+              editAtLineAndWait = "nvim +{{line}} {{filename}}",
+              openDirInEditor = 'nvim --server "$NVIM" --remote-send "q" && nvim --server "$NVIM" --remote {{dir}}',
+              open = 'nvim --server "$NVIM" --remote-send "q" && nvim --server "$NVIM" --remote {{filename}}',
+            },
+          },
+        },
+      }
+
+      return vim.tbl_deep_extend("force", opts or {}, local_opts)
+    end,
   },
 }
