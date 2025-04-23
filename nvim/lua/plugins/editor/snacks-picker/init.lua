@@ -137,7 +137,7 @@ return {
       { "<leader><space>", LazyVim.pick("switch", { scope = "root" }), desc = "Switch (root)" },
       { "<leader>r", LazyVim.pick("switch", { scope = "workspace" }), desc = "Switch (workspace)" },
       { "<leader>R", LazyVim.pick("switch"), desc = "Switch" },
-      { "<leader>G", LazyVim.pick("grapple"), desc = "Grapple" },
+      { "<leader>'", LazyVim.pick("grapple"), desc = "Grapple" },
       { "<leader>nn", function() Snacks.picker.notifications() end, desc = "Notification History" },
       { "<leader>qp", LazyVim.pick("projects"), desc = "Projects" },
 
