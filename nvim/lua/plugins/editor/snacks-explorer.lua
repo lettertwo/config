@@ -14,16 +14,14 @@ return {
       {
         "<leader>fe",
         function()
-          Snacks.explorer({ auto_close = true, cwd = LazyVim.root() })
+          Snacks.explorer({ cwd = LazyVim.root(), layout = { layout = { width = 0.3 } } })
         end,
         desc = "File Tree (root dir)",
       },
       {
         "<leader>fE",
         function()
-          Snacks.explorer({
-            auto_close = true,
-          })
+          Snacks.explorer({ layout = { layout = { width = 0.3 } } })
         end,
         desc = "File Tree (cwd)",
       },
