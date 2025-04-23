@@ -1,5 +1,5 @@
 # lsd versions of some ls aliases.
-abbr -a -g ls lsd
+abbr -a -g ls lsd --hyperlink=auto
 # Lists in one column, hidden files, sorted by extension.
 abbr -a -g l 'lsd -1a --extensionsort'
 # Lists human readable sizes.
