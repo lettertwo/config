@@ -63,6 +63,36 @@
                             }
                         ],
                         "note": "Requires extension https://chromewebstore.google.com/detail/tab-and-tab-group-shortcu/nnbnphmhdbcgnekonlgniafbpcpapkep?hl=en with focus tab left bound to cmd+shift+left_arrow"
+                    },
+                    {
+                        "description": "Google Chrome: Command + ` → Switch between recent tabs",
+                        "manipulators": [
+                            {
+                                "conditions": [
+                                    {
+                                        "bundle_identifiers": [
+                                            "^com\\.google\\.Chrome$"
+                                        ],
+                                        "type": "frontmost_application_if"
+                                    }
+                                ],
+                                "from": {
+                                    "key_code": "grave_accent_and_tilde",
+                                    "modifiers": {
+                                        "mandatory": ["command"],
+                                        "optional": ["any"]
+                                    }
+                                },
+                                "to": [
+                                    {
+                                        "key_code": "q",
+                                        "modifiers": ["option"]
+                                    }
+                                ],
+                                "type": "basic"
+                            }
+                        ],
+                        "note": "Requires extension https://chromewebstore.google.com/detail/switch-between-recent-tab/jceaicinopjaoknlhdfdjileacogogep with default key config of Opt+Q"
                     }
                 ]
             },
