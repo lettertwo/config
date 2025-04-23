@@ -1,7 +1,7 @@
 return {
   {
     "cbochs/grapple.nvim",
-    dependencies = { "nvim-telescope/telescope.nvim" },
+    dependencies = { "folke/snacks.nvim" },
     event = { "BufReadPost", "BufNewFile" },
     cmd = { "Grapple", "CloseUntaggedBuffers", "ToggledTaggedBuffer", "NextTaggedBuffer", "PreviousTaggedBuffer" },
     keys = {
@@ -17,27 +17,33 @@ return {
     config = function(_, opts)
       require("grapple").setup(opts)
 
-      -- TODO: Figure out why this is not working; it seems to just nuke the contents of open buffers?
       local function close_untagged_buffers()
         local tags = require("grapple").tags()
         if not tags or #tags == 0 then
           vim.notify("No tags found", vim.log.levels.WARN)
         end
-        local bufnrs = vim.api.nvim_list_bufs()
-        for _, bufnr in ipairs(bufnrs) do
-          local should_close = true
-          local bufpath = vim.api.nvim_buf_get_name(bufnr)
-          for _, tag in ipairs(tags) do
-            if tag.path == bufpath then
-              should_close = false
-              break
+
+        local tag_paths = vim.iter(tags):fold({}, function(acc, tag)
+          if tag.path then
+            acc[tag.path] = true
+          end
+          return acc
+        end)
+
+        local closed = 0
+        Snacks.bufdelete.delete({
+          filter = function(bufnr)
+            local should_close = vim.api.nvim_buf_is_valid(bufnr)
+              and vim.fn.buflisted(bufnr) >= 1
+              and tag_paths[vim.api.nvim_buf_get_name(bufnr)] == nil
+            if should_close then
+              vim.print("Closing buffer: " .. vim.api.nvim_buf_get_name(bufnr))
+              closed = closed + 1
             end
-          end
-          if should_close then
-            vim.notify("would close " .. bufnr .. " " .. bufpath, vim.log.levels.INFO)
-            -- Util.delete_buffer(bufnr)
-          end
-        end
+            return should_close
+          end,
+        })
+        vim.notify(string.format("Closed %d untagged buffers", closed), vim.log.levels.INFO)
       end
 
       local function is_ui_buffer(bufnr)
