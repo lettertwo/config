@@ -30,7 +30,6 @@ return {
           return acc
         end)
 
-        local closed = 0
         Snacks.bufdelete.delete({
           filter = function(bufnr)
             local should_close = vim.api.nvim_buf_is_valid(bufnr)
@@ -38,12 +37,10 @@ return {
               and tag_paths[vim.api.nvim_buf_get_name(bufnr)] == nil
             if should_close then
               vim.print("Closing buffer: " .. vim.api.nvim_buf_get_name(bufnr))
-              closed = closed + 1
             end
             return should_close
           end,
         })
-        vim.notify(string.format("Closed %d untagged buffers", closed), vim.log.levels.INFO)
       end
 
       local function is_ui_buffer(bufnr)
