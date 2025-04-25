@@ -87,6 +87,7 @@ fish_add_path --global --prepend \
     $HOME/.local/{bin,sbin} \
     $HOME/.cargo/bin \
     $HOME/.yarn/bin \
+    $HOME/.orbit/bin \
     /usr/local/share/npm/bin
 # Disable new user greeting.
 set fish_greeting
