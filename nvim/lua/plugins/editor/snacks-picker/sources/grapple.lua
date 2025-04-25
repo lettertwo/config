@@ -149,29 +149,31 @@ grapple_sources.grapple = {
 
     for i, tag in ipairs(tags) do
       local buf = vim.fn.bufnr(tag.path)
-      local name = vim.api.nvim_buf_get_name(buf)
-      local tagname = quick_select[i] and quick_select[i] or i
-      if name == "" then
-        name = "[No Name]" .. (vim.bo[buf].filetype ~= "" and " " .. vim.bo[buf].filetype or "")
-      end
-      local info = vim.fn.getbufinfo(buf)[1]
-      local mark = vim.api.nvim_buf_get_mark(buf, '"')
-      local flags = {
-        buf == current_buf and "%" or (buf == alternate_buf and "#" or ""),
-        info.hidden == 1 and "h" or (#(info.windows or {}) > 0) and "a" or "",
-        vim.bo[buf].readonly and "=" or "",
-        info.changed == 1 and "+" or "",
-      }
+      if vim.api.nvim_buf_is_valid(buf) then
+        local name = vim.api.nvim_buf_get_name(buf)
+        local tagname = quick_select[i] and quick_select[i] or i
+        if name == "" then
+          name = "[No Name]" .. (vim.bo[buf].filetype ~= "" and " " .. vim.bo[buf].filetype or "")
+        end
+        local info = vim.fn.getbufinfo(buf)[1]
+        local mark = vim.api.nvim_buf_get_mark(buf, '"')
+        local flags = {
+          buf == current_buf and "%" or (buf == alternate_buf and "#" or ""),
+          info.hidden == 1 and "h" or (#(info.windows or {}) > 0) and "a" or "",
+          vim.bo[buf].readonly and "=" or "",
+          info.changed == 1 and "+" or "",
+        }
 
-      table.insert(items, {
-        tag = tagname,
-        flags = table.concat(flags),
-        buf = buf,
-        text = buf .. " " .. name,
-        file = name,
-        info = info,
-        pos = mark[1] ~= 0 and mark or { info.lnum, 0 },
-      })
+        table.insert(items, {
+          tag = tagname,
+          flags = table.concat(flags),
+          buf = buf,
+          text = buf .. " " .. name,
+          file = name,
+          info = info,
+          pos = mark[1] ~= 0 and mark or { info.lnum, 0 },
+        })
+      end
     end
 
     return ctx.filter:filter(items)
