@@ -13,6 +13,10 @@ return {
         ["]"] = { output = { left = "[ ", right = " ]" } },
         ["<"] = { output = { left = "<", right = ">" } },
         [">"] = { output = { left = "< ", right = " >" } },
+        ["*"] = {
+          input = { "%/%*% ?().-()% ?%*%/" },
+          output = { left = "/* ", right = " */" },
+        },
       },
       mappings = {
         add = "gs", -- Add surrounding in Normal and Visual modes
@@ -26,7 +30,7 @@ return {
         suffix_next = "", -- Suffix to search with "next" method
         update_n_lines = "", -- Update `n_lines`
       },
-      n_lines = 20,
+      n_lines = 100,
       search_method = "cover_or_next",
       respect_selection_type = true,
     },
