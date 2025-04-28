@@ -72,9 +72,9 @@ git:
     - master
     - main
   skipHookPrefix: WIP
-  autoFetch: true
+  autoFetch: false
   autoRefresh: true
-  fetchAll: true
+  fetchAll: false
   branchLogCmd: "git log --graph --color=always --oneline --pretty=format:'%C(bold red)%h%Creset %s %C(bold blue)%an%Creset %C(yellow)(%cr)%Creset%C(bold magenta)%d%Creset' {{branchName}} --"
   allBranchesLogCmd: git log --graph --all --color=always --abbrev-commit --decorate --date=relative  --pretty=medium
   overrideGpg: false
