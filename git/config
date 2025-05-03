@@ -14,7 +14,8 @@
 	ff = only
 	rebase = true
 [push]
-	default = tracking
+	default = upstream
+	autosetupremote = true
 	followTags = false
 [rerere]
 	enabled = false
