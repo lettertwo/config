@@ -42,6 +42,15 @@ local function grapple_buffer(item, picker)
   return ret
 end
 
+local function select_current_buffer(picker)
+  for i, item in ipairs(picker.list.items) do
+    if item.flags:find("%%") then
+      picker.list:set_target(i)
+      break
+    end
+  end
+end
+
 grapple_sources.buffers = {
   win = {
     input = {
@@ -66,6 +75,7 @@ grapple_sources.buffers = {
     },
   },
   format = grapple_buffer,
+  on_show = select_current_buffer,
   finder = function(opts, ctx)
     local items = require("snacks.picker.source.buffers").buffers(
       vim.tbl_extend("force", opts, {
@@ -126,6 +136,7 @@ grapple_sources.grapple = {
     },
   },
   format = grapple_filename,
+  on_show = select_current_buffer,
   finder = function(opts, ctx)
     local grapple_ok, Grapple = pcall(require, "grapple")
     if not grapple_ok then
@@ -189,6 +200,7 @@ grapple_sources.switch = {
   },
   transform = "unique_file",
   format = grapple_filename,
+  on_show = select_current_buffer,
 }
 
 return grapple_sources
