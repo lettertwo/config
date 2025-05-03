@@ -6,6 +6,9 @@ return {
         vtsls = {
           enabled = false,
         },
+        eslint = {
+          cmd_env = { NODE_OPTIONS = "--max-old-space-size=8192" },
+        },
       },
     },
   },
@@ -20,6 +23,7 @@ return {
         settings = {
           expose_as_code_action = "all",
           tsserver_path = vim.fn.getcwd() .. "/node_modules/.bin/tsserver",
+          tsserver_max_memory = 8192,
           tsserver_file_preferences = {
             includeInlayParameterNameHints = false,
             includeInlayParameterNameHintsWhenArgumentMatchesName = false,
