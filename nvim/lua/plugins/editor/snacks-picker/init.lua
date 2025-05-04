@@ -134,9 +134,9 @@ return {
 
     --stylua: ignore
   keys = {
-      { "<leader><space>", LazyVim.pick("switch", { scope = "root" }), desc = "Switch (root)" },
-      { "<leader>r", LazyVim.pick("switch"), desc = "Switch" },
-      { "<leader>R", LazyVim.pick("switch", { scope = "workspace" }), desc = "Switch (workspace)" },
+      { "<leader><space>", LazyVim.pick("switch", { scope = "workspace" }), desc = "Switch (workspace)" },
+      { "<leader>r", LazyVim.pick("switch", { scope = "root" }), desc = "Switch (root)" },
+      { "<leader>R", LazyVim.pick("switch"), desc = "Switch (global)" },
       { "<leader>'", LazyVim.pick("grapple"), desc = "Grapple" },
       { "<leader>nn", function() Snacks.picker.notifications() end, desc = "Notification History" },
       { "<leader>qp", LazyVim.pick("projects"), desc = "Projects" },
