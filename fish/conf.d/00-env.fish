@@ -38,14 +38,10 @@ else if test -n "$NVIM" && command -v nvr >/dev/null
     alias nvim='nvr -l'
     set -gx EDITOR nvim
     set -gx VISUAL $VISUAL
-else if command -v nvim >/dev/null
-    # if neovim is available, use it as editor.
+else
     set -gx VISUAL nvim
     set -gx EDITOR $VISUAL
-else
-    # otherwise, use vim as editor.
-    set -gx VISUAL vim
-    set -gx EDITOR $VISUAL
+    set -gx GIT_EDITOR $VISUAL
 end
 
 #
