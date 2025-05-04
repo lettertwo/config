@@ -44,7 +44,7 @@ end
 
 local function select_current_buffer(picker)
   for i, item in ipairs(picker.list.items) do
-    if item.flags:find("%%") then
+    if item and item.flags and item.flags:find("%%") then
       picker.list:set_target(i)
       break
     end
