@@ -55,8 +55,7 @@ directories_sources.directories = {
 -- TODO: use yarn info or something instead?
 directories_sources.node_modules = vim.tbl_extend("force", directories_sources.directories, {
   config = function(opts)
-    -- local package_dir = LazyVim.root.detectors.pattern(0, "package.json")[1]
-    local package_dir = LazyVim.root.git()
+    local package_dir = LazyVim.root.detectors.pattern(0, "package.json")[1]
     local cwd = package_dir or vim.fn.getcwd()
     opts.cwd = vim.fs.joinpath(cwd, "node_modules")
     opts.max_depth = 2
