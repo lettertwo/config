@@ -165,13 +165,13 @@ return {
       { "<leader>gS", LazyVim.pick("git_stash"), desc = "Git Stash" },
 
       -- grep
+      { "<leader>sg", LazyVim.pick("grep", { scope = 'workspace' }), desc = "Grep (workspace)" },
+      { "<leader>sG", LazyVim.pick("grep", { scope = 'root' }), desc = "Grep (root dir)" },
+      { "<leader>s.", LazyVim.pick("grep", { scope = 'package' }), desc = "Grep (package)" },
       -- { "<leader>sb", function() Snacks.picker.lines() end, desc = "Buffer Lines" },
       -- { "<leader>sB", function() Snacks.picker.grep_buffers() end, desc = "Grep Open Buffers" },
-      -- { "<leader>sg", LazyVim.pick("live_grep"), desc = "Grep (Root Dir)" },
-      -- { "<leader>sG", LazyVim.pick("live_grep", { root = false }), desc = "Grep (cwd)" },
       -- { "<leader>sw", LazyVim.pick("grep_word"), desc = "Visual selection or word (Root Dir)", mode = { "n", "x" } },
       -- { "<leader>sW", LazyVim.pick("grep_word", { root = false }), desc = "Visual selection or word (cwd)", mode = { "n", "x" } },
-      { "<leader>s.", function() return LazyVim.pick("live_grep", {cwd = vim.fn.expand('%:p:h') })() end, desc = "Grep (Buffer Dir)", mode = { "n", "x" } },
 
       -- search
       -- { '<leader>s"', function() Snacks.picker.registers() end, desc = "Registers" },

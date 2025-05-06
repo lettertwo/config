@@ -97,4 +97,17 @@ scope_sources.switch = {
   end,
 }
 
+scope_sources.grep = {
+  ---@param opts PickerConfigWithScope
+  config = function(opts)
+    local scope = opts and opts.scope
+    local cwd = get_scope_dir(opts)
+    opts.title = get_title("grep", scope, cwd)
+    if scope or cwd then
+      opts.cwd = cwd
+    end
+    return opts
+  end,
+}
+
 return scope_sources
