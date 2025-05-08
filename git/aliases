@@ -51,8 +51,9 @@
 	stash-dropped = !"git fsck --unreachable 2> /dev/null | grep 'commit' | awk '{print $3}' | git log --extended-regexp --grep=\"${1:-(WIP )?[Oo]n [^:]+:}\" --merges --no-walk --stdin"
 	# Recover a dropped stash
 	stash-recover = !"f() { if [ -z "$1" ] ; then echo 'Missing commit hash.'; exit 1; fi; git update-ref -m \"$(git log -1 --pretty="format:%s" "$1")\" refs/stash "$1"; }; f"
-	# Show the list of files changed in a commit
-	show-files = !git show --pretty='""' --name-status
+	# Switch branches interactively
+	switch-interactive = "!f() { branch=$(git branch | grep -v '\\->' | fzf --query=\"$1\" --select-1); [ -z \"$branch\" ] && return; git switch --no-guess ${branch#remotes/}; }; f"
+
 	# List worktrees
 	worktrees = worktree list
   jump = "!$(brew --prefix git)/share/git-core/contrib/git-jump/git-jump"
@@ -93,7 +94,7 @@
 	br = branch -vv
 	bra = branch -a
 	brr = branch -r
-	sw = switch
+	sw = switch-interactive
 	tr = track
 	s = status -sb
 	# FIXME: !git changes the wd to the git root!
@@ -101,7 +102,6 @@
 	sts = !git s --untracked-files=no
 	sta = !git s --untracked-files=all
 	stc = !git conflicted
-	sf = !git show-files
 	l = !git logsmart
 	lg = !git loggraph
 	lm = !git logmain
