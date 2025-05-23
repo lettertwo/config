@@ -13,6 +13,7 @@ return {
     },
     keys = {
       { "<leader>m", "<cmd>ToggleTaggedBuffer<cr>", desc = "Toggle buffer tag" },
+      { "<C-m>", "<cmd>ToggleTaggedBuffer<cr>", desc = "Toggle buffer tag" },
       { "<s-l>", "<cmd>NextTaggedBuffer<cr>", desc = "Next tag" },
       { "<s-h>", "<cmd>PreviousTaggedBuffer<cr>", desc = "Previous tag" },
       { "<leader>bc", "<cmd>CloseUntaggedBuffers<cr>", desc = "Close untagged buffers" },
