@@ -335,6 +335,114 @@ return {
         }
       end
 
+      function Snacks.dashboard.sections.last_session_files(opts)
+        return function()
+          opts = opts or {}
+          local limit = opts.limit or 10
+
+          local ret = {} ---@type snacks.dashboard.Section
+          local added = {} ---@type table<string, true>
+
+          -- Add tagged buffers from the previous session up to the limit.
+          -- NOTE: Grapple tags aren't actually persisted as part of the session,
+          -- but they are scoped to git branch by default, as are sessions, so they _roughly_ correlate.
+          local tags = nil
+          local grapple_ok, grapple = pcall(require, "grapple")
+          if grapple_ok and grapple then
+            tags = grapple.tags()
+          end
+
+          if tags ~= nil then
+            local i = 1
+            while #ret < limit and i <= #tags do
+              local tag = tags[i]
+              if tag then
+                local file, cursor = tag.path, tag.cursor
+                if vim.fn.filereadable(vim.fn.fnamemodify(file, ":~:.")) == 1 then
+                  file = vim.fn.fnamemodify(file, ":~:.")
+                end
+                if vim.fn.filereadable(file) == 1 and not added[file] then
+                  local action = ":e"
+                    .. (cursor and cursor[1] and cursor[2] and "+call\\ cursor(" .. cursor[1] .. "," .. cursor[2] + 1 .. ") " or " ")
+                    .. vim.fn.fnameescape(file)
+                  ret[#ret + 1] = {
+                    file = file,
+                    icon = "󰓹 ",
+                    action = action,
+                    autokey = true,
+                  }
+                  added[file] = true
+                end
+              end
+              i = i + 1
+            end
+          end
+
+          if #ret >= limit then
+            return ret
+          end
+
+          -- Add buffers from previous session up to the limit.
+
+          ---@type string | nil
+          local session = nil
+
+          local persistence_ok, persistence = pcall(require, "persistence")
+          if persistence_ok and persistence then
+            session = persistence.last() or persistence.current()
+            if vim.fn.filereadable(session) == 0 then
+              session = persistence.current({ branch = false })
+            end
+          end
+
+          if session ~= nil and vim.fn.filereadable(session) == 0 then
+            session = nil
+          end
+
+          local files = {} ---@type [string, string?][]
+
+          for line in io.lines(session) do
+            local lineno, file = line:match("^badd%s+%+([^%s]+)%s+(.+)")
+            if file then
+              if vim.fn.filereadable(vim.fn.fnamemodify(file, ":~:.")) == 1 then
+                file = vim.fn.fnamemodify(file, ":~:.")
+              end
+              if vim.fn.filereadable(file) == 1 and not added[file] then
+                table.insert(files, { file, lineno })
+              end
+            else
+              file = line:match("^edit%s+(.+)")
+              if file then
+                if vim.fn.filereadable(vim.fn.fnamemodify(file, ":~:.")) == 1 then
+                  file = vim.fn.fnamemodify(file, ":~:.")
+                end
+                if vim.fn.filereadable(file) == 1 and not added[file] then
+                  table.insert(files, { file })
+                end
+              end
+            end
+          end
+
+          local i = 1
+          while #ret < limit and i <= #files do
+            local file, lineno = files[i][1], files[i][2]
+            if file and not added[file] then
+              local action = ":e" .. (lineno ~= nil and " +" .. lineno .. " " or " ") .. vim.fn.fnameescape(file)
+              ret[#ret + 1] = {
+                file = file,
+                icon = "file",
+                action = action,
+                autokey = true,
+              }
+              added[file] = true
+            end
+            i = i + 1
+          end
+
+          return ret
+        end
+      end
+
       function Snacks.dashboard.sections.stats()
         return {
           align = "center",
@@ -454,7 +562,7 @@ return {
           row = 3,
           sections = {
             { icon = "? ", title = "Up Next", section = "tasks", padding = 1, indent = 2 },
-            { icon = " ", title = "Recent Files", section = "recent_files", cwd = true, padding = 1, indent = 2 },
+            { icon = " ", title = "Last Session", section = "last_session_files", padding = 1, indent = 2 },
             { icon = " ", key = "s", desc = "Restore Session", section = "session" },
             { icon = " ", key = "L", desc = "Lazy", action = ":Lazy", section = "live", check = lazy_check },
             { icon = " ", key = "M", desc = "Mason", action = ":Mason", section = "live", check = mason_check },
