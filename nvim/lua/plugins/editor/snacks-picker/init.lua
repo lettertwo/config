@@ -60,10 +60,16 @@ return {
               builtin = false,
             },
           },
-          actions = vim.tbl_deep_extend("error", {}, actions, grapple_actions, refine_actions),
+          actions = vim.tbl_deep_extend(
+            "error",
+            (opts and opts.actions) or {},
+            actions,
+            grapple_actions,
+            refine_actions
+          ),
           sources = vim.tbl_deep_extend(
             "error",
-            {},
+            (opts and opts.sources) or {},
             sources,
             grapple_sources,
             directories_sources,
