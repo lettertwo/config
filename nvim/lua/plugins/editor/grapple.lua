@@ -3,15 +3,24 @@ return {
     "cbochs/grapple.nvim",
     dependencies = { "folke/snacks.nvim" },
     event = { "BufReadPost", "BufNewFile" },
-    cmd = { "Grapple", "CloseUntaggedBuffers", "ToggledTaggedBuffer", "NextTaggedBuffer", "PreviousTaggedBuffer" },
+    cmd = {
+      "Grapple",
+      "CloseUntaggedBuffers",
+      "ClearTaggedBuffers",
+      "ToggledTaggedBuffer",
+      "NextTaggedBuffer",
+      "PreviousTaggedBuffer",
+    },
     keys = {
-      { "<leader>m", "<cmd>ToggleTaggedBuffer<cr>", desc = "Toggle Buffer Tag" },
+      { "<leader>m", "<cmd>ToggleTaggedBuffer<cr>", desc = "Toggle buffer tag" },
       { "<s-l>", "<cmd>NextTaggedBuffer<cr>", desc = "Next tag" },
       { "<s-h>", "<cmd>PreviousTaggedBuffer<cr>", desc = "Previous tag" },
       { "<leader>bc", "<cmd>CloseUntaggedBuffers<cr>", desc = "Close untagged buffers" },
+      { "<leader>bm", "<cmd>ToggleTaggedBuffer<cr>", desc = "Toggle buffer tag" },
+      { "<leader>bM", "<cmd>ClearTaggedBuffers<cr>", desc = "Clear buffer bags" },
     },
     opts = {
-      scope = "git_branch", -- also try out "git_branch"
+      scope = "git_branch",
       style = "basename",
     },
     config = function(_, opts)
@@ -52,6 +61,14 @@ return {
       end
 
       vim.api.nvim_create_user_command("CloseUntaggedBuffers", close_untagged_buffers, {})
+
+      vim.api.nvim_create_user_command("ClearTaggedBuffers", function()
+        if is_ui_buffer() then
+          vim.notify("Cannot clear tags in UI buffer", vim.log.levels.WARN)
+        else
+          require("grapple").reset()
+        end
+      end, {})
 
       vim.api.nvim_create_user_command("ToggleTaggedBuffer", function()
         if is_ui_buffer() then
