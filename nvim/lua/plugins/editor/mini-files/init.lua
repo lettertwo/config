@@ -54,17 +54,11 @@ return {
 
       MiniFiles.setup(opts)
 
-      local function reveal_in_finder()
-        local entry = MiniFiles.get_fs_entry()
-        if entry ~= nil and entry.path ~= nil then
-          if vim.fn.system("open -R " .. entry.path) then
-            MiniFiles.close()
-          end
-        end
-      end
+      local group = vim.api.nvim_create_augroup("MiniFilesUserAutoCmds", { clear = true })
 
       vim.api.nvim_create_autocmd("User", {
         pattern = "MiniFilesBufferCreate",
+        group = group,
         callback = function(args)
           local buf_id = args.data.buf_id
           if buf_id ~= nil then
@@ -74,11 +68,13 @@ return {
               { "<C-.>", actions.files_set_cwd, desc = "Set cwd" },
               { "<C-s>", actions.split, desc = "Open in split" },
               { "<C-v>", actions.vsplit, desc = "Open in vsplit" },
-              { "<C-o>", reveal_in_finder, desc = "Reveal in finder" },
+              { "<C-o>", actions.reveal_in_finder, desc = "Reveal in finder" },
+              { "<C-m>", actions.toggle_tag, desc = "Toggle tag" },
             })
           end
         end,
       })
+      require("plugins.editor.mini-files.grapple").setup()
     end,
   },
 }

@@ -63,4 +63,27 @@ function M.close()
   return MiniFiles.close()
 end
 
+function M.reveal_in_finder()
+  local entry = MiniFiles.get_fs_entry()
+  if entry ~= nil and entry.path ~= nil then
+    if vim.fn.system("open -R " .. entry.path) then
+      MiniFiles.close()
+    end
+  end
+end
+
+function M.toggle_tag()
+  local grapple_ok, Grapple = pcall(require, "grapple")
+  if grapple_ok then
+    local entry = MiniFiles.get_fs_entry()
+    if entry ~= nil and entry.path ~= nil then
+      Grapple.toggle({ path = entry.path })
+      local new_filter = show_dotfiles and filter_show or filter_hide
+      MiniFiles.refresh({ content = { filter = new_filter } })
+    end
+  else
+    vim.notify("grapple not found", vim.log.levels.WARN)
+  end
+end
+
 return M
