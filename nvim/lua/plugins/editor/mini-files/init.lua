@@ -76,6 +76,7 @@ return {
       })
 
       require("plugins.editor.mini-files.status").setup()
+      require("plugins.editor.mini-files.severity").setup()
       require("plugins.editor.mini-files.grapple").setup()
     end,
   },
