@@ -1,4 +1,4 @@
-require("lazy_init")
+require("config.lazy-init")
 require("config.options")
 
 vim.o.signcolumn = "no" -- never show the sign column
@@ -8,7 +8,7 @@ require("lazy").setup({
   spec = {
     { import = "plugins.colorscheme" },
     { import = "plugins.ui" },
-    { import = "plugins.kitty" },
+    { import = "plugins.kitty-scrollback" },
     {
       "folke/which-key.nvim",
       opts = {
@@ -38,7 +38,7 @@ require("lazy").setup({
   },
   dev = { path = "~/.local/share" },
   install = {
-    missing = true,
+    missing = false,
     colorscheme = { "laserwave", "habamax" },
   },
   ui = { border = "rounded" },

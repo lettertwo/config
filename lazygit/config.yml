@@ -147,7 +147,7 @@ keybinding:
     executeShellCommand: ":"
     createRebaseOptionsMenu: m
     pushFiles: P
-    pullFiles: p
+    pullFiles: <disabled>
     refresh: R
     createPatchOptionsMenu: <c-p>
     nextTab: "<right>"

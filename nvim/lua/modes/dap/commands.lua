@@ -21,17 +21,27 @@ vim.api.nvim_create_user_command("DapClearBreakpoints", function() M.clear_break
 -- stylua: ignore
 vim.api.nvim_create_user_command("DapToggle", function() M.toggle() end, { desc = "Toggle debugger UI" })
 
-function M.setup(dap, ui)
+-- Try to load launch.json
+local function load_launch_config()
+  if not pcall(require("dap.ext.vscode").load_launchjs, nil, {}) then
+    vim.notify("Failed to parse launch.json", vim.log.levels.WARN)
+  end
+end
+
+function M.setup(mode, dap, ui)
   function M.start()
+    load_launch_config()
     ui.open()
     dap.continue()
     vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<C-w>=", false, true, true), "n", false)
-    vim.notify("Debugger session started", "warn")
+    mode:activate()
+    vim.notify("Debugger session started", vim.log.levels.INFO)
   end
 
   function M.restart()
     dap.terminate()
     vim.defer_fn(function()
+      load_launch_config()
       dap.continue()
     end, 300)
   end
@@ -41,12 +51,12 @@ function M.setup(dap, ui)
     dap.terminate()
     ui.close()
     vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<C-w>=", false, true, true), "n", false)
-    vim.notify("Debugger session ended", "warn")
+    vim.notify("Debugger session ended", vim.log.levels.INFO)
   end
 
   function M.clear_breakpoints()
     dap.clear_breakpoints()
-    vim.notify("Breakpoints cleared", "warn")
+    vim.notify("Breakpoints cleared", vim.log.levels.INFO)
   end
 
   function M.toggle()

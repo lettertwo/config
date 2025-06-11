@@ -18,7 +18,11 @@ return {
       cp("kitty_scroll_prompt.py")
       cp("loading.py")
     end,
-    cmd = { "KittyScrollbackGenerateKittens", "KittyScrollbackCheckHealth" },
+    cmd = {
+      "KittyScrollbackGenerateKittens",
+      "KittyScrollbackCheckHealth",
+      "KittyScrollbackGenerateCommandLineEditing",
+    },
     event = { "User KittyScrollbackLaunch" },
     config = true,
   },

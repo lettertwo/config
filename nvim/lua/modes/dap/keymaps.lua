@@ -7,7 +7,7 @@ M.attached_keys = nil
 local function dap_start()
   -- Try to load launch.json
   if not pcall(require("dap.ext.vscode").load_launchjs, nil, {}) then
-    vim.notify("Failed to parse launch.json", "warn")
+    vim.notify("Failed to parse launch.json", vim.log.levels.WARN)
   end
   vim.cmd("DapStart")
 end
@@ -76,6 +76,7 @@ function M.activate_keys(config)
   for _, keys in pairs(keymaps) do
     local opts = Keys.opts(keys)
     opts.silent = true
+    ---@diagnostic disable-next-line: param-type-mismatch
     vim.keymap.set(keys.mode or "n", keys.lhs or keys[1], keys.rhs or keys[2], opts)
   end
 
@@ -88,6 +89,7 @@ function M.deactivate_keys(config)
   for _, keys in pairs(config) do
     local opts = Keys.opts(keys)
     opts.silent = true
+    ---@diagnostic disable-next-line: param-type-mismatch
     vim.keymap.del(keys.mode or "n", keys.lhs or keys[1], opts)
   end
 end
@@ -118,13 +120,70 @@ function M.on_detach(client)
   end
 end
 
-function M.setup(dap, ui)
-  M.activate_keys(M.get_keys(dap, ui))
-  M.attached_keys = M.get_attached_keys(dap, ui)
+function M.setup(mode, dap, ui)
+  -- map our custom mode keymaps
+  mode:keymaps({
+    n = {
+      {
+        "s",
+        function()
+          dap.step_over()
+        end,
+        { desc = "step forward" },
+      },
+      {
+        "c",
+        function()
+          dap.continue()
+        end,
+        { desc = "continue" },
+      },
+      { -- this acts as a way to leave debug mode without quitting the debugger
+        "<esc>",
+        function()
+          mode:deactivate()
+        end,
+        { desc = "exit" },
+      },
+      -- and so on...
+    },
+  })
 
-  dap.listeners.after.event_initialized.dap_keymaps = M.on_attach
-  dap.listeners.before.event_terminated.dap_keymaps = M.on_detach
-  dap.listeners.before.event_exited.dap_keymaps = M.on_detach
+  local function on_attach(client)
+    if M.attached_count > 0 and M.attached_adapter ~= client.adapter.id then
+      error("Already attached to " .. M.attached_adapter)
+    end
+
+    M.attached_count = M.attached_count + 1
+
+    if M.attached_count == 1 then
+      M.attached_adapter = client.adapter.id
+      mode:activate()
+    end
+  end
+
+  local function on_detach(client)
+    if M.attached_adapter ~= client.adapter.id then
+      error("Not attached to " .. client.adapter.id)
+    end
+
+    M.attached_count = M.attached_count - 1
+
+    if M.attached_count == 0 then
+      M.attached_adapter = nil
+      M.deactivate_keys(M.attached_keys)
+    end
+  end
+
+  -- M.activate_keys(M.get_keys(dap, ui))
+  -- M.attached_keys = M.get_attached_keys(dap, ui)
+
+  dap.listeners.after.event_initialized.dap_keymaps = on_attach
+  dap.listeners.before.event_terminated.dap_keymaps = on_detach
+  dap.listeners.before.event_exited.dap_keymaps = on_detach
+  -- dap.listeners.after.event_initialized.dap_keymaps = M.on_attach
+  -- dap.listeners.before.event_terminated.dap_keymaps = M.on_detach
+  -- dap.listeners.before.event_exited.dap_keymaps = M.on_detach
 end
 
 return M

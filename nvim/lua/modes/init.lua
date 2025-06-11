@@ -1,5 +1,9 @@
 return {
   {
+    "debugloop/layers.nvim",
+    opts = {},
+  },
+  {
     "nvimtools/hydra.nvim",
     opts = {
       debug = false,
