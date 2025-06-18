@@ -76,7 +76,6 @@ git:
   autoRefresh: true
   fetchAll: false
   branchLogCmd: "git log --graph --color=always --oneline --pretty=format:'%C(bold red)%h%Creset %s %C(bold blue)%an%Creset %C(yellow)(%cr)%Creset%C(bold magenta)%d%Creset' {{branchName}} --"
-  allBranchesLogCmd: git log --graph --all --color=always --abbrev-commit --decorate --date=relative  --pretty=medium
   overrideGpg: false
   disableForcePushing: false
   commitPrefixes: {}
@@ -85,6 +84,8 @@ git:
     order: default
     showGraph: always
     showWholeGraph: false
+  allBranchesLogCmds:
+    - git log --graph --all --color=always --abbrev-commit --decorate --date=relative  --pretty=medium
 update:
   method: prompt
   days: 14
@@ -147,7 +148,7 @@ keybinding:
     executeShellCommand: ":"
     createRebaseOptionsMenu: m
     pushFiles: P
-    pullFiles: p
+    pullFiles: <disabled>
     refresh: R
     createPatchOptionsMenu: <c-p>
     nextTab: "<right>"
@@ -264,7 +265,6 @@ customCommands:
     context: "worktrees"
     command: "copyuntracked {{.Form.FromWorktree}} {{.SelectedWorktree.Path }}"
     description: "Copy untracked files from another worktree"
-    showOutput: true
     prompts:
       - type: "menuFromCommand"
         title: "Which worktree to copy from?"
@@ -275,8 +275,9 @@ customCommands:
         filter: '(?P<path>.*)\s+(?P<hash>.*)\s+\[(?P<name>.*)\]'
         valueFormat: "{{ .path }}"
         labelFormat: "{{ .name }}"
+    output: popup
   - key: "t"
     context: "localBranches"
     command: "gt ls"
     description: "Show stack"
-    showOutput: true
+    output: popup
