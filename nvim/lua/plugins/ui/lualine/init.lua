@@ -89,6 +89,19 @@ return {
           require("lualine").refresh()
         end,
       })
+
+      vim.api.nvim_create_autocmd({ "ColorScheme" }, {
+        group = vim.api.nvim_create_augroup("lualine_color_scheme_change", { clear = true }),
+        callback = function()
+          -- FIXME: This _almost_ works, but any non-normal modes that were activated before
+          -- colorscheme change will have broken separator highlights.
+          require("lualine").setup()
+          require("lualine").refresh({
+            place = { "statusline", "tabline", "winbar" },
+            scope = "all",
+          })
+        end,
+      })
     end,
   },
 }
