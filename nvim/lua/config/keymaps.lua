@@ -18,6 +18,10 @@ vim.keymap.set("n", "<C-u>", "<C-u>zz", { desc = "Scroll up" })
 vim.keymap.set({ "n", "i", "v" }, "∆", "<A-j>", { remap = true, desc = "Move Down" })
 vim.keymap.set({ "n", "i", "v" }, "˚", "<A-k>", { remap = true, desc = "Move Down" })
 
+-- Ctrl+Enter to change the word under the cursor
+vim.keymap.set("n", "<C-CR>", "ciw", { desc = "Change word under cursor" })
+vim.keymap.set("i", "<C-CR>", "<C-o>diw", { desc = "Change next word under cursor" })
+
 -- buffers
 vim.keymap.set("n", "<leader>br", "<cmd>e %<cr>", { desc = "Reopen buffer" })
 vim.keymap.set("n", "<leader>bO", "<cmd>!open -R %<cr>", { desc = "Reveal file in finder" })
