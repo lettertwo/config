@@ -4,6 +4,15 @@ return {
     opts = { ensure_installed = { "beautysh" } },
   },
   {
+    "mfussenegger/nvim-lint",
+    opts = {
+      linters_by_ft = {
+        bash = { "bash" },
+        zsh = { "zsh" },
+      },
+    },
+  },
+  {
     "stevearc/conform.nvim",
     opts = {
       default_format_opts = {

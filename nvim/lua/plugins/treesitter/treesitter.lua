@@ -1,7 +1,4 @@
 return {
-  -- TODO: which-key.nvim
-  -- TODO: nvim-treesitter-textobjects
-  -- TODO: nvim-ts-autotag
   {
     "nvim-treesitter/nvim-treesitter",
     keys = {
@@ -13,9 +10,6 @@ return {
     ---@type TSConfig
     ---@diagnostic disable-next-line: missing-fields
     opts = {
-      highlight = {
-        additional_vim_regex_highlighting = { "markdown" },
-      },
       ensure_installed = {
         "css",
         "dockerfile",
@@ -26,7 +20,6 @@ return {
         "git_rebase",
         "graphql",
         "java",
-        "json5",
         "make",
         "rust",
       },
@@ -40,13 +33,6 @@ return {
         },
       },
     },
-    ---@param opts TSConfig
-    config = function(_, opts)
-      -- Associate the flowtype filetypes with the typescript parser.
-      vim.treesitter.language.register("tsx", "flowtypereact")
-      vim.treesitter.language.register("tsx", "flowtype")
-      require("nvim-treesitter.configs").setup(opts)
-    end,
   },
   {
     "nvim-treesitter/nvim-treesitter-context",
