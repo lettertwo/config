@@ -19,4 +19,14 @@ return {
       },
     },
   },
+  {
+    "folke/which-key.nvim",
+    ft = "lua",
+    keys = {
+      --  i++ expands to i = i + 1
+      { "++", " = <Esc>^yt=f=lpa+ 1", mode = "i", desc = "Increment variable" },
+      -- i+= expands to i = i + <cursor>
+      { "+=", " = <Esc>^yt=f=lpa+ ", mode = "i", desc = "Combine variable" },
+    },
+  },
 }
