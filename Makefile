@@ -226,6 +226,30 @@ luarocks: brew
 ifndef LUAROCKS
 	$(call log,"Installing luarocks...")
 	$(call run,brew install luarocks)
+	$(call log,"Configuring luarocks to use lua_version 5.1...")
+	$(call run,luarocks config lua_version 5.1)
+	$(call done)
+else
+	$(call log,"Configuring luarocks to use lua_version 5.1...")
+	$(call run,luarocks config lua_version 5.1)
+	$(call done)
+endif
+
+### luajit
+
+LUAJIT := $(shell command -v luajit 2> /dev/null)
+
+.PHONY: luajit
+luajit: brew
+ifndef LUAJIT
+	$(call log,"Installing luajit...")
+	$(call run,brew install luajit)
+	$(call log,"Configuring luarocks to include luajit...")
+	$(call run,luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1)
+	$(call done)
+else
+	$(call log,"Configuring luarocks to include luajit...")
+	$(call run,luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1)
 	$(call done)
 endif
 
@@ -234,10 +258,16 @@ endif
 NLUA := $(shell command -v nlua 2> /dev/null)
 
 .PHONY: nlua
-nlua: nvim luarocks
+nlua: nvim luarocks luajit
 ifndef NLUA
 	$(call log,"Installing nlua...")
-	$(call run,luarocks --lua-version 5.1 --local install nlua)
+	$(call run,luarocks --local install nlua)
+	$(call log,"Configuring luarocks to use nlua...")
+	$(call run,luarocks config variables.LUA "$$HOME/.luarocks/bin/nlua")
+	$(call done)
+else
+	$(call log,"Configuring luarocks to use nlua...")
+	$(call run,luarocks config variables.LUA "$$HOME/.luarocks/bin/nlua")
 	$(call done)
 endif
 
@@ -245,10 +275,10 @@ endif
 
 BUSTED := $(shell command -v busted 2> /dev/null)
 .PHONY: busted
-busted: luarocks
+busted: nlua
 ifndef BUSTED
 	$(call log,"Installing busted...")
-	$(call run,luarocks --lua-version 5.1 --local install busted)
+	$(call run,luarocks --local install busted)
 	$(call done)
 endif
 
