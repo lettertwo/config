@@ -228,6 +228,29 @@ ifndef LUAROCKS
 	$(call done)
 endif
 
+### nlua
+
+NLUA := $(shell command -v nlua 2> /dev/null)
+
+.PHONY: nlua
+nlua: nvim luarocks
+ifndef NLUA
+	$(call log,"Installing nlua...")
+	$(call run,luarocks --lua-version 5.1 --local install nlua)
+	$(call done)
+endif
+
+### busted
+
+BUSTED := $(shell command -v busted 2> /dev/null)
+.PHONY: busted
+busted: luarocks
+ifndef BUSTED
+	$(call log,"Installing busted...")
+	$(call run,luarocks --lua-version 5.1 --local install busted)
+	$(call done)
+endif
+
 ### kitty
 
 KITTY := $(shell command -v kitty 2> /dev/null)
