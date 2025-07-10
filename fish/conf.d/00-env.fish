@@ -32,12 +32,6 @@ if test "$TERM_PROGRAM" = vscode
     # in vscode, use vscode as editor.
     set -gx EDITOR code --wait
     set -gx VISUAL code --wait
-else if test -n "$NVIM" && command -v nvr >/dev/null
-    # in neovim with nvr available, use nvr as editor.
-    set -gx GIT_EDITOR nvr --nostart --remote-tab-wait +"set bufhidden=delete"
-    alias nvim='nvr -l'
-    set -gx EDITOR nvim
-    set -gx VISUAL $VISUAL
 else
     set -gx VISUAL nvim
     set -gx EDITOR $VISUAL
