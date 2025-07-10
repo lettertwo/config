@@ -181,11 +181,12 @@ NVIM := $(shell command -v nvim 2> /dev/null)
 .PHONY: cmake
 cmake: ~/.cache/cmake3.3.0.rb brew
 	$(call log,"Updating cmake...")
+	$(call run,ln -sf $< ~/.cache/cmake.rb)
 	$(call run,brew install -s ~/.cache/cmake.rb)
 	$(call done)
 
 .PHONY: nvim
-nvim: cmake ~/.local/share/neovim
+nvim: ~/.local/share/neovim cmake
 ifndef NVIM
 	$(call log,"Installing neovim...")
 	$(call run,cd $< && make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX="$$HOME/.local" install)
@@ -193,7 +194,7 @@ ifndef NVIM
 endif
 
 .PHONY: update-nvim
-update-nvim: cmake ~/.local/share/neovim
+update-nvim: ~/.local/share/neovim cmake
 	$(call log,"Updating neovim...")
 	$(call run,cd $< && git fetch --tags --force && git reset --hard tags/nightly)
 	$(call run,cd $< && make clean && make distclean && make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX="$$HOME/.local" install)
