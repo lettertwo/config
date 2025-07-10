@@ -12,7 +12,6 @@ require("lazy").setup({
     { import = "plugins.dap" },
     { import = "plugins.editor" },
     { import = "plugins.lang" },
-    { import = "plugins.linting" },
     { import = "plugins.lsp" },
     { import = "plugins.test" },
     { import = "plugins.treesitter" },

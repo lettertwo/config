@@ -2,7 +2,6 @@ return {
   {
     "folke/persistence.nvim",
     cmd = { "RestoreSession", "RestoreLastSession", "StopSession" },
-    cond = vim.g.mergetool ~= true,
     opts = { need = 1, branch = true },
     -- stylua: ignore
     keys = {

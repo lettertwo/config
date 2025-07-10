@@ -18,7 +18,6 @@ return {
   },
   {
     "neovim/nvim-lspconfig",
-    cond = vim.g.mergetool ~= true,
     cmd = { "LspInfo", "LspStart", "LspStop", "LspRestart" },
     keys = {
       {

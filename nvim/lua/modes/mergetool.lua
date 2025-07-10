@@ -62,4 +62,24 @@ return {
       },
     },
   },
+  {
+    "pmizio/typescript-tools.nvim",
+    optional = true,
+    cond = vim.g.mergetool ~= true,
+  },
+  {
+    "neovim/nvim-lspconfig",
+    optional = true,
+    cond = vim.g.mergetool ~= true,
+  },
+  {
+    "folke/persistence.nvim",
+    optional = true,
+    cond = vim.g.mergetool ~= true,
+  },
+  {
+    "mfussenegger/nvim-lint",
+    optional = true,
+    cond = vim.g.mergetool ~= true,
+  },
 }
