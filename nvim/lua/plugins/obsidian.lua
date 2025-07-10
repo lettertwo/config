@@ -3,7 +3,7 @@ local VAULT_DIR = vim.fn.expand("~") .. "/Library/Mobile Documents/iCloud~md~obs
 
 return {
   {
-    "epwalsh/obsidian.nvim",
+    "obsidian-nvim/obsidian.nvim",
     lazy = true,
     event = { "BufReadPre " .. VAULT_DIR .. "/**.md" },
     cmd = { "ObsidianOpen", "ObsidianNew", "ObsidianSearch", "ObsidianQuickSwitch", "ObsidianToday" },
@@ -24,6 +24,7 @@ return {
     },
     opts = {
       workspaces = {
+        -- TODO: get this from env or something
         {
           name = "lettertwo",
           path = VAULT_DIR,
@@ -51,8 +52,28 @@ return {
       end,
 
       completion = {
-        nvim_cmp = true,
+        nvim_cmp = false,
+        blink = true,
         min_chars = 2,
+      },
+
+      picker = {
+        -- Set your preferred picker. Can be one of 'telescope.nvim', 'fzf-lua', 'mini.pick' or 'snacks.pick'.
+        name = "snacks.pick",
+        -- Optional, configure key mappings for the picker. These are the defaults.
+        -- Not all pickers support all mappings.
+        note_mappings = {
+          -- Create a new note from your query.
+          new = "<C-x>",
+          -- Insert a link to the selected note.
+          insert_link = "<C-l>",
+        },
+        tag_mappings = {
+          -- Add tag(s) to current note.
+          tag_note = "<C-x>",
+          -- Insert a tag at the current location.
+          insert_tag = "<C-l>",
+        },
       },
 
       mappings = {
@@ -83,17 +104,108 @@ return {
       },
 
       ui = {
-        checkboxes = {
-          -- NOTE: the 'char' value has to be a single character
-          [" "] = { char = "󰄱", hl_group = "ObsidianTodo" },
-          ["x"] = { char = "", hl_group = "ObsidianDone" },
-          [">"] = { char = "", hl_group = "ObsidianRightArrow" },
-          ["~"] = { char = "󰰱", hl_group = "ObsidianTilde" },
-
-          -- You can also add more custom ones...
-        },
-        external_link_icon = { char = "", hl_group = "ObsidianExtLinkIcon" },
+        enable = false, -- disabled to allow markdown.nvim to handle rendering
+        -- TODO: extract this config and share with mkdnflow todo.symbols
+        -- checkboxes = {
+        --   -- NOTE: the 'char' value has to be a single character
+        --   [" "] = { char = icons.task.todo, hl_group = "ObsidianTodo" },
+        --   ["x"] = { char = icons.task.done, hl_group = "ObsidianDone" },
+        --   [">"] = { char = icons.task.active, hl_group = "ObsidianRightArrow" },
+        --   ["~"] = { char = icons.task.cancelled, hl_group = "ObsidianTilde" },
+        --   ["!"] = { char = icons.task.important, hl_group = "ObsidianImportant" },
+        --
+        --   -- You can also add more custom ones...
+        -- },
+        -- external_link_icon = { char = "", hl_group = "ObsidianExtLinkIcon" },
       },
     },
   },
+  -- {
+  --   "MeanderingProgrammer/render-markdown.nvim",
+  --   enabled = false,
+  --   dependencies = {
+  --     "nvim-treesitter/nvim-treesitter", -- Mandatory
+  --     "echasnovski/mini.icons",
+  --   },
+  --   ft = { "markdown" },
+  --   ---@module 'render-markdown'
+  --   ---@type render.md.UserConfig
+  --   opts = {
+  --     latex_enabled = false,
+  --     -- Characters that will replace the # at the start of headings
+  --     headings = { "󰼏 ", "󰎨 ", "󰼑 ", "󰎲 ", "󰼓 ", "󰎴 " },
+  --     -- Character to use for the horizontal break
+  --     -- dash = {"─"},
+  --     -- Character to use for the bullet points in lists
+  --     bullets = { "●", "○", "◆", "◇" },
+  --     checkbox = {
+  --       -- Character that will replace the [ ] in unchecked checkboxes
+  --       unchecked = icons.task.todo,
+  --       -- Character that will replace the [x] in checked checkboxes
+  --       checked = icons.task.done,
+  --       -- TODO: Figure out how to add these other states
+  --       --   [" "] = { char = icons.task.todo, hl_group = "ObsidianTodo" },
+  --       --   ["x"] = { char = icons.task.done, hl_group = "ObsidianDone" },
+  --       --   [">"] = { char = icons.task.active, hl_group = "ObsidianRightArrow" },
+  --       --   ["~"] = { char = icons.task.cancelled, hl_group = "ObsidianTilde" },
+  --       --   ["!"] = { char = icons.task.important, hl_group = "ObsidianImportant" },
+  --     },
+  --     -- Character that will replace the > at the start of block quotes
+  --     quote = "▋",
+  --     -- Symbol / text to use for different callouts
+  --     callout = {
+  --       note = "󰋽 Note",
+  --       tip = "󰌶 Tip",
+  --       important = "󰅾 Important",
+  --       warning = "󰀪 Warning",
+  --       caution = "󰳦 Caution",
+  --     },
+  --     -- Define the highlight groups to use when rendering various components
+  --     highlights = {
+  --       heading = {
+  --         -- Background of heading line
+  --         backgrounds = { "DiffAdd", "DiffChange", "DiffDelete" },
+  --         -- Foreground of heading character only
+  --         foregrounds = {
+  --           "markdownH1",
+  --           "markdownH2",
+  --           "markdownH3",
+  --           "markdownH4",
+  --           "markdownH5",
+  --           "markdownH6",
+  --         },
+  --       },
+  --       -- Horizontal break
+  --       dash = "LineNr",
+  --       -- Code blocks
+  --       code = "ColorColumn",
+  --       -- Bullet points in list
+  --       bullet = "Normal",
+  --       checkbox = {
+  --         -- Unchecked checkboxes
+  --         unchecked = "@markup.list.unchecked",
+  --         -- Checked checkboxes
+  --         checked = "@markup.heading",
+  --       },
+  --       table = {
+  --         -- Header of a markdown table
+  --         head = "@markup.heading",
+  --         -- Non header rows in a markdown table
+  --         row = "Normal",
+  --       },
+  --       -- LaTeX blocks
+  --       latex = "@markup.math",
+  --       -- Quote character in a block quote
+  --       quote = "@markup.quote",
+  --       -- Highlights to use for different callouts
+  --       callout = {
+  --         note = "DiagnosticInfo",
+  --         tip = "DiagnosticOk",
+  --         important = "DiagnosticHint",
+  --         warning = "DiagnosticWarn",
+  --         caution = "DiagnosticError",
+  --       },
+  --     },
+  --   },
+  -- },
 }
