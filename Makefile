@@ -216,6 +216,18 @@ update-nvim-plugins: nvim
 	$(call run,nvim --headless "+MasonInstallAll" "+silent w! /dev/stdout" +qa)
 	$(call done)
 
+### luarocks
+
+LUAROCKS := $(shell command -v luarocks 2> /dev/null)
+
+.PHONY: luarocks
+luarocks: brew
+ifndef LUAROCKS
+	$(call log,"Installing luarocks...")
+	$(call run,brew install luarocks)
+	$(call done)
+endif
+
 ### kitty
 
 KITTY := $(shell command -v kitty 2> /dev/null)
