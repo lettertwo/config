@@ -80,10 +80,14 @@ return {
     "folke/which-key.nvim",
     ft = "lua",
     keys = {
-      --  i++ expands to i = i + 1
-      { "++", " = <Esc>^yt=f=lpa+ 1", mode = "i", desc = "Increment variable" },
-      -- i+= expands to i = i + <cursor>
-      { "+=", " = <Esc>^yt=f=lpa+ ", mode = "i", desc = "Combine variable" },
+      -- i?. expands to i ~= nil and i.<cursor>
+      { "?.", " ~= <Esc>2Byt~f=a nil and <Esc>pr.a", mode = "i" },
+      -- i += expands to i = i + <cursor>
+      { "+=", "= <Esc>2Byt=f=lpa+ ", mode = "i" },
+      -- i -= expands to i = i - <cursor>
+      { "-=", "= <Esc>2Byt=f=lpa- ", mode = "i" },
+      -- i ?= expands to i ~= nil and i = <cursor>
+      { "?=", "~= <Esc>2Byt~f=a nil and <Esc>pa= ", mode = "i" },
     },
   },
 }
