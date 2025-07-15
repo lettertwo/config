@@ -13,6 +13,10 @@ vim.keymap.set("i", "<C-P>", "<nop>", { noremap = true })
 -- better scroll up/down
 vim.keymap.set("n", "<C-d>", "<C-d>zz", { desc = "Scroll down" })
 vim.keymap.set("n", "<C-u>", "<C-u>zz", { desc = "Scroll up" })
+vim.keymap.set("n", "(", "<cmd>keepj normal!(zz<cr>", { desc = "Scroll to previous sentence" })
+vim.keymap.set("n", ")", "<cmd>keepj normal!)zz<cr>", { desc = "Scroll to next sentence" })
+vim.keymap.set("n", "{", "<cmd>keepj normal!{zz<cr>", { desc = "Scroll to previous paragraph" })
+vim.keymap.set("n", "}", "<cmd>keepj normal!}zz<cr>", { desc = "Scroll to next paragraph" })
 
 -- Move Lines: on MacOS, <A-j> emits "∆", <A-k> emits "˚"
 vim.keymap.set({ "n", "i", "v" }, "∆", "<A-j>", { remap = true, desc = "Move Down" })
