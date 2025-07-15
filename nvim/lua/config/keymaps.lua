@@ -19,6 +19,7 @@ vim.keymap.set("n", "{", "<cmd>keepj normal!{zz<cr>", { desc = "Scroll to previo
 vim.keymap.set("n", "}", "<cmd>keepj normal!}zz<cr>", { desc = "Scroll to next paragraph" })
 vim.keymap.set("n", "N", "Nzz", { desc = "Scroll to previous match" })
 vim.keymap.set("n", "n", "nzz", { desc = "Scroll to next match" })
+vim.keymap.set("n", "G", "Gzz", { desc = "Scroll to end of file" })
 
 -- Move Lines: on MacOS, <A-j> emits "∆", <A-k> emits "˚"
 vim.keymap.set({ "n", "i", "v" }, "∆", "<A-j>", { remap = true, desc = "Move Down" })
