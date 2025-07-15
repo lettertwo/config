@@ -72,8 +72,7 @@ brew "node"
 brew "fnm" # fast node version manager
 
 # python
-brew "pyenv"
-brew "pyenv-virtualenv"
+brew "uv"
 
 # lua
 brew "luajit"
