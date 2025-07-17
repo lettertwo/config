@@ -1,5 +1,86 @@
 local StringUtil = require("util.string")
 
+describe("StringUtil.capcase", function()
+  it("capitalizes the first character", function()
+    assert.equals("Hello", StringUtil.capcase("hello"))
+  end)
+
+  it("returns string unchanged if already capitalized", function()
+    assert.equals("Hello", StringUtil.capcase("Hello"))
+  end)
+
+  it("handles empty string", function()
+    assert.equals("", StringUtil.capcase(""))
+  end)
+
+  it("handles single character", function()
+    assert.equals("A", StringUtil.capcase("a"))
+    assert.equals("B", StringUtil.capcase("B"))
+  end)
+
+  it("handles strings starting with non-letter", function()
+    assert.equals("1test", StringUtil.capcase("1test"))
+    assert.equals("_underscore", StringUtil.capcase("_underscore"))
+  end)
+end)
+
+describe("StringUtil.format_highlight", function()
+  it("formats string with highlight group", function()
+    assert.equals("%#ErrorMsg#hello%*", StringUtil.format_highlight("hello", "ErrorMsg"))
+  end)
+
+  it("works with empty string", function()
+    assert.equals("%#WarningMsg#%*", StringUtil.format_highlight("", "WarningMsg"))
+  end)
+
+  it("works with empty group", function()
+    assert.equals("%##hello%*", StringUtil.format_highlight("hello", ""))
+  end)
+
+  it("works with both empty", function()
+    assert.equals("%##%*", StringUtil.format_highlight("", ""))
+  end)
+
+  it("handles special characters in string", function()
+    assert.equals("%#InfoMsg#hello_world!%*", StringUtil.format_highlight("hello_world!", "InfoMsg"))
+  end)
+end)
+
+describe("StringUtil.smart_shorten_path", function()
+  it("returns path unchanged if shorter than target width", function()
+    local path = "src/main.lua"
+    assert.equals("src/main.lua", StringUtil.smart_shorten_path(path, { target_width = 20 }))
+  end)
+
+  it("shortens path if longer than target width", function()
+    local path = "src/plugins/lsp/util/main.lua"
+    local shortened = StringUtil.smart_shorten_path(path, { target_width = 15 })
+    assert.is_true(#shortened < #path)
+  end)
+
+  it("handles ambiguous segments", function()
+    local path = "src/tests/plugins/lsp/util/main.lua"
+    local shortened = StringUtil.smart_shorten_path(path, { target_width = 18 })
+    assert.is_true(#shortened <= 18)
+  end)
+
+  it("uses custom cwd for normalization", function()
+    local path = "../project/util/main.lua"
+    local shortened = StringUtil.smart_shorten_path(path, { cwd = "/home/user/project", target_width = 20 })
+    assert.equals("p/util/main.lua", shortened)
+  end)
+
+  it("returns buffer name if path is nil", function()
+    vim.api.nvim_buf_set_name(0, "tmp/test.lua")
+    assert.equals("tmp/test.lua", StringUtil.smart_shorten_path(nil))
+  end)
+
+  it("returns path unchanged if exactly at target width", function()
+    local path = "src/main.lua"
+    assert.equals("src/main.lua", StringUtil.smart_shorten_path(path, { target_width = #path }))
+  end)
+end)
+
 describe("Next.js app router patterns", function()
   it("matches page and default files", function()
     assert.is_true(StringUtil.matches_any_pattern("app/(group)/page.jsx"))
@@ -107,5 +188,32 @@ describe("StringUtil.title_path", function()
     assert.equals("example/customseg/after.js", StringUtil.title_path("neat/example/customseg/after.js", opts))
     assert.equals("ex/customseg/btw/custom.js", StringUtil.title_path("neat/ex/customseg/btw/custom.js", opts))
     assert.equals("randomseg/custom.js", StringUtil.title_path("neat/ex/randomseg/custom.js", opts))
+  end)
+end)
+
+describe("StringUtil.timeago", function()
+  it("returns 'just now' for current time", function()
+    assert.equals("just now", StringUtil.timeago(os.time()))
+  end)
+
+  it("returns minutes ago", function()
+    local t = os.time() - 60
+    assert.equals("1 minute ago", StringUtil.timeago(t))
+    t = os.time() - 120
+    assert.equals("2 minutes ago", StringUtil.timeago(t))
+  end)
+
+  it("returns hours ago", function()
+    local t = os.time() - 3600
+    assert.equals("1 hour ago", StringUtil.timeago(t))
+    t = os.time() - 7200
+    assert.equals("2 hours ago", StringUtil.timeago(t))
+  end)
+
+  it("returns days ago", function()
+    local t = os.time() - 86400
+    assert.equals("1 day ago", StringUtil.timeago(t))
+    t = os.time() - 172800
+    assert.equals("2 days ago", StringUtil.timeago(t))
   end)
 end)
