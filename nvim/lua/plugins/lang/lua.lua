@@ -1,9 +1,10 @@
 return {
-  { "HiPhish/neotest-busted", lazy = true },
-  { "LuaCATS/luassert", name = "luassert-types", lazy = true },
-  { "LuaCATS/busted", name = "busted-types", lazy = true },
   {
     "folke/lazydev.nvim",
+    dependencies = {
+      { "LuaCATS/luassert", name = "luassert-types" },
+      { "LuaCATS/busted", name = "busted-types" },
+    },
     opts = function(_, opts)
       vim.list_extend(opts.library, {
         { path = "luassert-types/library", words = { "assert" } },
@@ -14,15 +15,18 @@ return {
 
   {
     "nvim-neotest/neotest",
-    opts = {
-      adapters = {
-        "neotest-busted",
-      },
+    dependencies = {
+      "HiPhish/neotest-busted",
     },
+    optional = true,
+    opts = function(_, opts)
+      vim.list_extend(opts.adapters, { "neotest-busted" })
+    end,
   },
 
   {
     "jay-babu/mason-nvim-dap.nvim",
+    optional = true,
     opts = {
       ensure_installed = {
         "local-lua-debugger-vscode",
@@ -32,6 +36,7 @@ return {
 
   {
     "mfussenegger/nvim-dap",
+    optional = true,
     opts = function(_, opts)
       local dap = require("dap")
 
