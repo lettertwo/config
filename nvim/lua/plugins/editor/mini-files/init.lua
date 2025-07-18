@@ -6,7 +6,10 @@ return {
       {
         "<leader>e",
         function()
-          require("plugins.editor.mini-files.actions").open_buffer()
+          local actions = require("plugins.editor.mini-files.actions")
+          if not pcall(actions.open_buffer) then
+            actions.open_cwd()
+          end
         end,
         desc = "File explorer (buffer)",
       },
