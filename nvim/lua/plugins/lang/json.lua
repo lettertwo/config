@@ -1,15 +1,3 @@
-LazyVim.on_very_lazy(function()
-  vim.filetype.add({
-    pattern = {
-      ["%.eslintrc.*%.json"] = "jsonc",
-      ["%.atlaspackrc.*"] = "jsonc",
-      ["%.parcelrc.*"] = "jsonc",
-      ["tsconfig.*%.json"] = "jsonc",
-      [".*/%.vscode/.*%.json"] = "jsonc",
-    },
-  })
-end)
-
 return {
   {
     "nvim-treesitter/nvim-treesitter",

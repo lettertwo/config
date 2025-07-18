@@ -13,10 +13,6 @@ return {
         ["]"] = { output = { left = "[ ", right = " ]" } },
         ["<"] = { output = { left = "<", right = ">" } },
         [">"] = { output = { left = "< ", right = " >" } },
-        ["*"] = {
-          input = { "%/%*% ?().-()% ?%*%/" },
-          output = { left = "/* ", right = " */" },
-        },
       },
       mappings = {
         add = "gs", -- Add surrounding in Normal and Visual modes
