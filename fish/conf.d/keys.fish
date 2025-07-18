@@ -24,3 +24,15 @@ bind -M insert \cj 'commandline -P; and down-or-search'
 bind -M insert \ck 'commandline -P; and up-or-search'
 bind -M insert \ch 'commandline -P; and commandline -f backward-char'
 bind -M insert \cl 'commandline -P; and commandline -f forward-char'
+
+if test -x $XDG_DATA_HOME/nvim/lazy/kitty-scrollback.nvim/scripts/edit_command_line.sh
+    function kitty_scrollback_edit_command_buffer
+        set --local --export VISUAL $XDG_DATA_HOME/nvim/lazy/kitty-scrollback.nvim/scripts/edit_command_line.sh
+        edit_command_buffer
+        commandline ''
+    end
+
+    bind -M insert super-e kitty_scrollback_edit_command_buffer
+    bind -M visual super-e kitty_scrollback_edit_command_buffer
+    bind super-e kitty_scrollback_edit_command_buffer
+end

@@ -13,6 +13,8 @@ vim.g.ai_cmp = false
 
 vim.g.snacks_animate = false
 
+vim.g.pager = vim.env.KITTY_SCROLLBACK_NVIM == "true"
+
 -- Use blink main branch instead of cmp
 -- vim.g.lazyvim_blink_main = true
 
