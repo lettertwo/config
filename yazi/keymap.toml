@@ -1,0 +1,19 @@
+"$schema" = "https://yazi-rs.github.io/schemas/keymap.json"
+
+[mgr]
+prepend_keymap = [
+  { on = "z", run = "plugin zoxide", desc = "Jump to a directory via zoxide" },
+  { on = "Z", run = "plugin fzf", desc = "Jump to a file/directory via fzf" },
+  { on = "/", run = "filter --smart", desc = "Filter files" },
+  { on = "?", run = "help", desc = "Open help" },
+  { on = "f", run = "find --smart", desc = "Find next file" },
+  { on = "F", run = "find --previous --smart", desc = "Find previous file" },
+  { on = "n", run = "find_arrow", desc = "Next found" },
+  { on = "N", run = "find_arrow --previous", desc = "Previous found" },
+]
+
+[help]
+prepend_keymap = [
+  # Filtering
+  { on = "/", run = "filter", desc = "Filter help items" },
+]

@@ -1,0 +1,41 @@
+"$schema" = "https://yazi-rs.github.io/schemas/theme.json"
+
+# : Flavor {{{
+
+[flavor]
+dark = "laserwave"
+
+# : }}}
+
+# : Manager {{{
+
+[mgr]
+border_symbol = "│"
+
+# : }}}
+
+# : Tabs {{{
+
+[tabs]
+
+# Separator
+sep_outer = { open = "", close = "" }
+sep_inner = { open = "", close = "" }
+
+# : }}}
+
+# : Status bar {{{
+
+[status]
+sep_left = { open = "", close = "" }
+sep_right = { open = "", close = "█" }
+
+# : }}}
+
+# : Which {{{
+
+[which]
+cols = 3
+separator = "  "
+
+# : }}}
