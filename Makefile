@@ -69,6 +69,9 @@ update-laserwave: ~/.local/share/laserwave.nvim
 ~/.config/git/laserwave.gitconfig: ~/.local/share/laserwave.nvim
 	$(call run,ln -sf $</dist/delta/laserwave.gitconfig $@)
 
+~/.config/yazi/flavors/laserwave.yazi: ~/.local/share/laserwave.nvim ~/.config/yazi/flavors
+	$(call run,ln -sf $</dist/yazi/laserwave.yazi $@)
+
 ### homebrew
 
 BREW := $(shell command -v brew 2> /dev/null)

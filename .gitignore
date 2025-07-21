@@ -31,6 +31,7 @@ kitty/laserwave.conf
 alacritty/laserwave.yml
 bat/themes/laserwave.tmTheme
 wezterm/colors/laserwave.toml
+yazi/flavors/laserwave.yazi
 
 # kitty-scrollback.nvim
 kitty/kitty_scroll_prompt.py
