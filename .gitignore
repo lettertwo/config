@@ -2,7 +2,6 @@
 acra
 configstore
 git/user
-git/laserwave.gitconfig
 iterm2/AppSupport
 karabiner/automatic_backups
 lvim/plugin
@@ -18,10 +17,6 @@ nnn
 lnav
 gh
 github-copilot
-kitty/laserwave.conf
-alacritty/laserwave.yml
-bat/themes/laserwave.tmTheme
-wezterm/colors/laserwave.toml
 lazygit/state.yml
 githubnext_*
 atlassian
@@ -29,3 +24,20 @@ cloudtoken
 barn
 graphite
 gh-copilot
+
+# laserwave.nvim
+git/laserwave.gitconfig
+kitty/laserwave.conf
+alacritty/laserwave.yml
+bat/themes/laserwave.tmTheme
+wezterm/colors/laserwave.toml
+
+# kitty-scrollback.nvim
+kitty/kitty_scroll_prompt.py
+kitty/kitty_scrollback_nvim.py
+kitty/loading.py
+
+# smart-splits.nvim
+kitty/neighboring_window.py
+kitty/relative_resize.py
+kitty/split_window.py
