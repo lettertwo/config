@@ -2,7 +2,22 @@ return {
   {
     "mrjones2014/smart-splits.nvim",
     event = "VeryLazy",
-    build = "./kitty/install-kittens.bash",
+    ---@module "lazy"
+    ---@param plugin LazyPlugin
+    build = function(plugin)
+      local function resolve(filepath)
+        return vim.fs.normalize(vim.fs.joinpath(plugin.dir, filepath))
+      end
+
+      local function link(filepath)
+        local filename = vim.fs.basename(filepath)
+        return vim.fn.system(string.format("ln -sf %s $XDG_CONFIG_HOME/kitty/%s", resolve(filepath), filename))
+      end
+
+      link("kitty/neighboring_window.py")
+      link("kitty/relative_resize.py")
+      link("kitty/split_window.py")
+    end,
     opts = {
       at_edge = "stop", -- 'wrap' | 'split' | 'stop'
     },
