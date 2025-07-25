@@ -142,14 +142,6 @@ end
 local function get_hl(section, is_active)
   local highlight = require("lualine.highlight")
   local suffix = is_active and highlight.get_mode_suffix() or "_inactive"
-  local section_redirects = {
-    lualine_x = "lualine_c",
-    lualine_y = "lualine_b",
-    lualine_z = "lualine_a",
-  }
-  if section_redirects[section] then
-    section = highlight.highlight_exists(section .. suffix) and section or section_redirects[section]
-  end
   return section .. suffix
 end
 
