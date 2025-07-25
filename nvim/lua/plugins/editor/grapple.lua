@@ -18,7 +18,7 @@ return {
       { "<s-h>", "<cmd>PreviousTaggedBuffer<cr>", desc = "Previous tag" },
       { "<leader>bc", "<cmd>CloseUntaggedBuffers<cr>", desc = "Close untagged buffers" },
       { "<leader>bm", "<cmd>ToggleTaggedBuffer<cr>", desc = "Toggle buffer tag" },
-      { "<leader>bM", "<cmd>ClearTaggedBuffers<cr>", desc = "Clear buffer bags" },
+      { "<leader>bM", "<cmd>ClearTaggedBuffers<cr>", desc = "Clear buffer tags" },
     },
     opts = {
       scope = "git_branch",
