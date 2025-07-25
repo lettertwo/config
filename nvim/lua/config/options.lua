@@ -65,4 +65,6 @@ opt.diffopt:append("linematch:60")
 
 opt.showtabline = 0
 
+opt.virtualedit = "all"
+
 require("config.folding")
