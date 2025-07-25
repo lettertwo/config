@@ -8,6 +8,9 @@ return {
       "nvim-treesitter/nvim-treesitter",
       "ravitemer/mcphub.nvim",
     },
+    init = function()
+      vim.g.codecompanion_auto_tool_mode = true
+    end,
     opts = {
       extensions = {
         mcphub = {
