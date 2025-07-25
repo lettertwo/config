@@ -1,13 +1,11 @@
 return {
   _all = {
     coverage = false,
+    recursive = true,
+    verbose = true,
     lpath = "lua/?.lua;lua/?/init.lua",
-    lua = "nlua",
   },
   default = {
-    verbose = true,
-  },
-  tests = {
-    verbose = true,
+    ROOT = { "./lua" },
   },
 }

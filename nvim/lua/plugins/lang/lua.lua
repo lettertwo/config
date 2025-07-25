@@ -16,11 +16,17 @@ return {
   {
     "nvim-neotest/neotest",
     dependencies = {
-      "HiPhish/neotest-busted",
+      "MisanthropicBit/neotest-busted",
     },
     optional = true,
     opts = function(_, opts)
-      vim.list_extend(opts.adapters, { "neotest-busted" })
+      vim.list_extend(opts.adapters, {
+        require("neotest-busted")({
+          busted_paths = { "./?.lua", "./?/init.lua" },
+          busted_cpaths = { "./?.so" },
+          local_luarocks_only = false,
+        }),
+      })
     end,
   },
 
@@ -46,6 +52,16 @@ return {
         args = {
           vim.fn.expand("$MASON/share/local-lua-debugger-vscode/extension/debugAdapter.js"),
         },
+        enrich_config = function(config, on_config)
+          if not config["extensionPath"] then
+            local c = vim.deepcopy(config)
+            -- 💀 If this is missing or wrong you'll see
+            -- "module 'lldebugger' not found" errors in the dap-repl when trying to launch a debug session
+            c.extensionPath = vim.fn.expand("$MASON/share/local-lua-debugger-vscode/"), on_config(c)
+          else
+            on_config(config)
+          end
+        end,
       }
 
       dap.configurations.lua = {
