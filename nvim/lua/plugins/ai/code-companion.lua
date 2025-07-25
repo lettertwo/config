@@ -10,6 +10,16 @@ return {
     },
     init = function()
       vim.g.codecompanion_auto_tool_mode = true
+
+      --- Limit undo levels for CodeCompanion buffer. This *might* improve performance.
+      --- See https://github.com/olimorris/codecompanion.nvim/issues/552#issuecomment-2984548382
+      vim.api.nvim_create_autocmd("FileType", {
+        group = vim.api.nvim_create_augroup("LimitCCUndoBuffer", { clear = true }),
+        pattern = { "codecompanion" },
+        callback = function()
+          vim.bo.undolevels = 3
+        end,
+      })
     end,
     opts = {
       extensions = {
