@@ -63,6 +63,7 @@ return {
         caret = " ",
         multi = " ",
         eob = " ",
+        tag = "󰓹 ",
         fold = {
           foldclose = "",
           foldopen = "",

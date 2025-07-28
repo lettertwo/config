@@ -91,7 +91,7 @@ vim.api.nvim_create_autocmd("Filetype", {
 -- close some filetypes with <q>
 vim.api.nvim_create_autocmd("FileType", {
   group = vim.api.nvim_create_augroup("lazyvim_close_with_q", { clear = true }),
-  pattern = require("lazyvim.config").filetypes.ui,
+  pattern = LazyVim.config.filetypes.ui,
   callback = function(event)
     vim.bo[event.buf].buflisted = false
     vim.schedule(function()

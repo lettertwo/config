@@ -1,5 +1,4 @@
 local Util = require("util")
-local filetypes = require("lazyvim.config").filetypes
 
 -- A callable type that can be used as a conditional callback.
 -- It can be sequenced with other conditions via the `+` operator.
@@ -67,7 +66,7 @@ M.visible_for_width = Condition.new(function()
 end)
 
 M.visible_for_filetype = Condition.new(function()
-  return not vim.tbl_contains(filetypes.ui, vim.bo.filetype)
+  return not vim.tbl_contains(LazyVim.config.filetypes.ui, vim.bo.filetype)
 end)
 
 -- Only show tabline if we have more than one tab open.

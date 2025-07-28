@@ -5,7 +5,7 @@ return {
     "Bekaboo/dropbar.nvim",
     event = "VeryLazy",
     opts = function()
-      local icons = require("lazyvim.config").icons
+      local icons = LazyVim.config.icons
 
       return {
         icons = {

@@ -7,8 +7,6 @@ return {
       "lewis6991/gitsigns.nvim",
     },
     opts = function(_, opts)
-      local filetypes = require("lazyvim.config").filetypes
-
       local breadcrumbs = require("plugins.ui.lualine.components.breadcrumbs")
       local buffer = require("plugins.ui.lualine.components.buffer")
       local services = require("plugins.ui.lualine.components.services")
@@ -30,7 +28,7 @@ return {
         options = {
           component_separators = { left = "", right = "" },
           section_separators = { left = "", right = "" },
-          disabled_filetypes = filetypes.ui,
+          disabled_filetypes = LazyVim.config.filetypes.ui,
           globalstatus = true,
         },
         sections = {

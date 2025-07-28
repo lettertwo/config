@@ -58,7 +58,7 @@ return {
           bufnr = vim.api.nvim_get_current_buf()
         end
         local ft = vim.api.nvim_get_option_value("filetype", { buf = bufnr })
-        return vim.tbl_contains(require("lazyvim.config").filetypes.ui, ft)
+        return vim.tbl_contains(LazyVim.config.filetypes.ui, ft)
       end
 
       vim.api.nvim_create_user_command("CloseUntaggedBuffers", close_untagged_buffers, {})

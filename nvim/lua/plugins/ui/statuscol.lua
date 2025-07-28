@@ -9,7 +9,7 @@ return {
         separator = " ",
         relculright = true,
         setopt = true,
-        ft_ignore = require("lazyvim.config").filetypes.ui,
+        ft_ignore = LazyVim.config.filetypes.ui,
         segments = {
           -- sign
           { text = { "%s" }, click = "v:lua.ScSa" },

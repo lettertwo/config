@@ -367,7 +367,7 @@ return {
                     .. vim.fn.fnameescape(file)
                   ret[#ret + 1] = {
                     file = file,
-                    icon = "󰓹 ",
+                    icon = LazyVim.config.icons.tag,
                     action = action,
                     autokey = true,
                   }

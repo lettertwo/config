@@ -1,6 +1,6 @@
 local M = require("lualine.component"):extend()
 
-local icons = require("lazyvim.config").icons
+local icons = LazyVim.config.icons
 local Util = require("util")
 
 function M:update_status()
