@@ -9,6 +9,7 @@ local scope_sources = require("plugins.editor.snacks-picker.sources.scope")
 local symbols_sources = require("plugins.editor.snacks-picker.sources.symbols")
 
 return {
+  { "nvim-telescope/telescope.nvim", enabled = false },
   {
     "folke/snacks.nvim",
     opts = function(_, opts)
