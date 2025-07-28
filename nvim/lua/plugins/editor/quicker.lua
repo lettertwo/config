@@ -87,7 +87,7 @@ return {
     },
     config = function(_, opts)
       local quicker = require("quicker")
-      local icons = require("lazyvim.config").icons
+      local icons = LazyVim.config.icons
 
       -- Map of quickfix item type to icon
       opts.type_icons = {

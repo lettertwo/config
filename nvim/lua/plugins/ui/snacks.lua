@@ -11,7 +11,7 @@ return {
           return vim.g.snacks_indent ~= false
             and vim.b[buf].snacks_indent ~= false
             and vim.bo[buf].buftype == ""
-            and not vim.list_contains(require("lazyvim.config").filetypes.ui, vim.bo[buf].filetype)
+            and not vim.list_contains(LazyVim.config.filetypes.ui, vim.bo[buf].filetype)
         end,
         animate = { enabled = false },
         indent = { char = "│" },

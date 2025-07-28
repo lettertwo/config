@@ -19,8 +19,7 @@ local function grapple_filename(item, picker)
 
     -- Relace file icon with tag icon
     if picker.opts.icons.files.enabled then
-      -- TODO: get from config
-      local tagged = "󰓹 "
+      local tagged = LazyVim.config.icons.tag
       ret[#ret + 1] = { a(tagged, vim.api.nvim_strwidth(tagged)), "SnacksPickerSelected", virtual = true }
       local file_format = require("snacks.picker.format").filename(item, picker)
       return vim.list_extend(ret, vim.list_slice(file_format, 2))

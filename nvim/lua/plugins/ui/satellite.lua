@@ -5,9 +5,13 @@ return {
     event = "VeryLazy",
     cmd = { "SatelliteDisable", "SatelliteEnable", "SatelliteRefresh" },
     opts = function()
-      local filetypes = require("lazyvim.config").filetypes
       return {
-        excluded_filetypes = filetypes.ui,
+        excluded_filetypes = LazyVim.config.filetypes.ui,
+        handlers = {
+          marks = {
+            key = LazyVim.config.icons.tag,
+          },
+        },
       }
     end,
   },

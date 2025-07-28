@@ -5,7 +5,7 @@ return {
     event = "VeryLazy",
     opts = function()
       return {
-        ignored_filetypes = require("lazyvim.config").filetypes.ui,
+        ignored_filetypes = LazyVim.config.filetypes.ui,
       }
     end,
   },

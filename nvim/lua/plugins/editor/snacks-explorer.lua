@@ -5,8 +5,7 @@ local function grapple_file(item, picker)
   if item.tag ~= nil then
     table.insert(ret, {
       col = 0,
-      -- TODO: get icon from config
-      virt_text = { { "󰓹 ", "SnacksPickerSelected" } },
+      virt_text = { { LazyVim.config.icons.tag, "SnacksPickerSelected" } },
       virt_text_pos = "right_align",
       hl_mode = "combine",
     })

@@ -3,7 +3,7 @@ return {
     "folke/which-key.nvim",
     opts = function(_, opts)
       opts.preset = "modern"
-      opts.disable = { ft = require("lazyvim.config").filetypes.ui }
+      opts.disable = { ft = LazyVim.config.filetypes.ui }
       opts.delay = function(ctx)
         return ctx.mode == "x" and 500 or 0
       end

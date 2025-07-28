@@ -22,8 +22,7 @@ function M.setup()
         local ok, tag = pcall(grapple.name_or_index, { path = entry.path })
         if ok and tag then
           vim.api.nvim_buf_set_extmark(buf_id, nsMiniFiles, i - 1, 0, {
-            -- TODO: get icon from config
-            virt_text = { { "󰓹 ", "SnacksPickerSelected" } },
+            virt_text = { { LazyVim.config.icons.tag, "SnacksPickerSelected" } },
             virt_text_pos = "right_align",
             hl_mode = "combine",
           })
