@@ -65,6 +65,7 @@ opt.diffopt:append("linematch:60")
 
 opt.showtabline = 0
 
-opt.virtualedit = "all"
+-- A more intuitive visual block mode.
+opt.virtualedit = "block"
 
 require("config.folding")
