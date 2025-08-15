@@ -10,6 +10,8 @@ return {
       "ToggledTaggedBuffer",
       "NextTaggedBuffer",
       "PreviousTaggedBuffer",
+      "DeleteAndUntagBuffer",
+      "DeleteAndUntagOthers",
     },
     keys = {
       { "<leader>m", "<cmd>ToggleTaggedBuffer<cr>", desc = "Toggle buffer tag" },
@@ -19,6 +21,8 @@ return {
       { "<leader>bc", "<cmd>CloseUntaggedBuffers<cr>", desc = "Close untagged buffers" },
       { "<leader>bm", "<cmd>ToggleTaggedBuffer<cr>", desc = "Toggle buffer tag" },
       { "<leader>bM", "<cmd>ClearTaggedBuffers<cr>", desc = "Clear buffer tags" },
+      { "<leader>bd", "<cmd>DeleteAndUntagBuffer<cr>", desc = "Delete and untag buffer" },
+      { "<leader>bo", "<cmd>DeleteAndUntagOthers<cr>", desc = "Delete and untag others" },
     },
     opts = {
       scope = "git_branch",
@@ -95,6 +99,30 @@ return {
         else
           require("grapple").cycle_tags("prev")
         end
+      end, {})
+
+      vim.api.nvim_create_user_command("DeleteAndUntagBuffer", function()
+        local buf = vim.api.nvim_get_current_buf()
+        if not is_ui_buffer(buf) and require("grapple").find({ buffer = buf }) then
+          require("grapple").untag({ buffer = buf })
+        end
+        Snacks.bufdelete.delete(buf)
+      end, {})
+
+      vim.api.nvim_create_user_command("DeleteAndUntagOthers", function()
+        Snacks.bufdelete.delete({
+          filter = function(b)
+            if b == vim.api.nvim_get_current_buf() then
+              return false
+            end
+
+            if not is_ui_buffer(b) and require("grapple").find({ buffer = b }) then
+              require("grapple").untag({ buffer = b })
+            end
+
+            return true
+          end,
+        })
       end, {})
     end,
   },
