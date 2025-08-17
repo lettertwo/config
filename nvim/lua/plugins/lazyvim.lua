@@ -73,7 +73,7 @@ return {
         diagnostics = {
           Error = " ",
           Warn = " ",
-          Hint = "󰌵 ",
+          Hint = " ",
           Info = " ",
         },
         diff = {
@@ -82,15 +82,14 @@ return {
           removed = " ",
         },
         git = {
-          added = " ",
-          modified = " ",
-          removed = " ",
-          renamed = " ",
-          untracked = " ",
-          ignored = "",
-          unstaged = "󰛄 ",
           staged = " ",
-          conflict = " ",
+          added = "󰐕 ",
+          deleted = " ",
+          ignored = " ",
+          modified = " ",
+          renamed = " ",
+          unmerged = " ",
+          untracked = " ",
         },
         task = {
           todo = "󰄰 ",

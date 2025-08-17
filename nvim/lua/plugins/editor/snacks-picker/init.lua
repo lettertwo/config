@@ -20,6 +20,7 @@ return {
           layout = {
             preset = "mini",
           },
+          icons = LazyVim.config.icons,
           layouts = {
             mini = {
               preview = false,
