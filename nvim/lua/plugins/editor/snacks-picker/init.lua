@@ -129,7 +129,7 @@ return {
                 -- ["<c-q>"] = { "qflist", mode = { "i", "n" } },
                 ["<C-i>"] = { "toggle_ignored", mode = { "i", "n" } },
                 ["<C-h>"] = { "toggle_hidden", mode = { "i", "n" } },
-                ["<C-e>"] = { "mini_files", mode = { "i", "n" } },
+                ["<C-e>"] = { "reveal_in_oil", mode = { "i", "n" } },
                 ["<C-y>"] = { "yank_to_clipboard", mode = { "i", "n" } },
               },
             },

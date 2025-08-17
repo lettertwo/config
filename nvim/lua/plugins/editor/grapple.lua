@@ -124,6 +124,26 @@ return {
           end,
         })
       end, {})
+
+      vim.api.nvim_create_autocmd("User", {
+        pattern = "OilActionsPost",
+        callback = function(args)
+          if args.data.err == nil then
+            for _, action in ipairs(args.data.actions) do
+              if action.type == "delete" then
+                local path = action.url:match("^.*://(.*)$")
+                local bufnr = vim.fn.bufnr(path)
+                if bufnr == -1 then
+                  return
+                end
+                if require("grapple").find({ buffer = bufnr }) then
+                  require("grapple").untag({ buffer = bufnr })
+                end
+              end
+            end
+          end
+        end,
+      })
     end,
   },
 }
