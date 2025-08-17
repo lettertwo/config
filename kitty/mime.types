@@ -1,0 +1,19 @@
+text/conf conf cfg
+text/css css
+text/csv csv
+text/go go
+text/html html htm xhtml
+text/javascript js cjs mjs jsx
+text/json json json5
+text/lockfile lock lockfile
+text/lua lua
+text/makefile mk mkfile make
+text/markdown md mdx markdown
+text/python py
+text/rst rst
+text/rust rs
+text/sql sql
+text/toml toml
+text/typescript ts tsx
+text/xml xml
+text/yaml yaml yml
