@@ -1,7 +1,7 @@
 return {
   -- operators, evals
   {
-    "echasnovski/mini.operators",
+    "nvim-mini/mini.operators",
     event = "VeryLazy",
     opts = {
       evaluate = {

@@ -1,7 +1,7 @@
 return {
   -- whitespace
   {
-    "echasnovski/mini.trailspace",
+    "nvim-mini/mini.trailspace",
     event = "BufReadPost",
     config = true,
   },

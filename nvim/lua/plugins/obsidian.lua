@@ -125,7 +125,7 @@ return {
   --   enabled = false,
   --   dependencies = {
   --     "nvim-treesitter/nvim-treesitter", -- Mandatory
-  --     "echasnovski/mini.icons",
+  --     "nvim-mini/mini.icons",
   --   },
   --   ft = { "markdown" },
   --   ---@module 'render-markdown'

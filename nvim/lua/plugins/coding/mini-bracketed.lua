@@ -1,3 +1,3 @@
 return {
-  { "echasnovski/mini.bracketed", version = false, event = "VeryLazy", opts = {} },
+  { "nvim-mini/mini.bracketed", version = false, event = "VeryLazy", opts = {} },
 }
