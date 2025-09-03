@@ -1,6 +1,6 @@
 return {
   {
-    "echasnovski/mini.surround",
+    "nvim-mini/mini.surround",
     opts = {
       custom_surroundings = {
         -- Invert the balanced bracket behaviors.

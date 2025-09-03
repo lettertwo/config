@@ -3,7 +3,7 @@ return {
   {
     "nvim-lualine/lualine.nvim",
     dependencies = {
-      "echasnovski/mini.icons",
+      "nvim-mini/mini.icons",
       "lewis6991/gitsigns.nvim",
     },
     opts = function(_, opts)
