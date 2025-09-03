@@ -32,6 +32,10 @@ return {
       },
       strategies = {
         chat = {
+          adapter = {
+            name = "copilot",
+            model = "claude-sonnet-4",
+          },
           opts = {
             goto_file_action = "edit", -- Action to perform when clicking on a file link in the chat
           },
