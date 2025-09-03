@@ -53,6 +53,7 @@ return {
         ["<c-u>"] = "actions.preview_scroll_up",
         ["<c-r>"] = "actions.refresh",
         ["<c-p>"] = "actions.preview",
+        ["<c-h>"] = "actions.toggle_hidden",
         ["<c-y>"] = "actions.copy_to_system_clipboard",
         ["<c-q>"] = { "actions.send_to_qflist", opts = { only_matching_search = true, close = true } },
         ["<c-v>"] = { "actions.select", opts = { vertical = true } },

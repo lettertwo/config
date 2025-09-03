@@ -55,6 +55,8 @@ return {
             list = {
               keys = {
                 ["<C-m>"] = "toggle_tag",
+                ["<C-i>"] = "toggle_ignored",
+                ["<C-h>"] = "toggle_hidden",
               },
             },
           },
