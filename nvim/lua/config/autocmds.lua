@@ -98,6 +98,13 @@ vim.api.nvim_create_autocmd("FileType", {
       if not vim.api.nvim_buf_is_valid(event.buf) then
         return
       end
+      -- first check if buffer already has a mapping for q
+      local existing_mapping = vim.api.nvim_buf_get_keymap(event.buf, "n")
+      for _, map in ipairs(existing_mapping) do
+        if map.lhs == "q" then
+          return
+        end
+      end
       vim.keymap.set("n", "q", function()
         vim.cmd("close")
         pcall(vim.api.nvim_buf_delete, event.buf, { force = true })
