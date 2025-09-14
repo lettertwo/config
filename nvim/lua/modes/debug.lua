@@ -115,28 +115,39 @@ return {
         end
       end
 
+      local function toggle_debug_mode()
+        if DEBUG_MODE:active() then
+          dap_view.close(true)
+          DEBUG_MODE:deactivate()
+        else
+          dap_view.open()
+          DEBUG_MODE:activate()
+        end
+      end
+
       -- map our custom mode keymaps
       DEBUG_MODE:keymaps({
         -- stylua: ignore
         n = {
+          { "<cr>", function() dap.continue() end, { desc = "Run/Continue" } },
           { "<tab>", function() dap.toggle_breakpoint(nil, tostring(vim.v.count1)) end, { desc = "Breakpoint" } },
           { "S<tab>", function() dap.set_breakpoint(vim.fn.input('Breakpoint condition: ')) end, { desc = "Breakpoint Condition" } },
           { "m", function() dap.set_breakpoint(nil, nil, vim.fn.input('Log point message: ')) end, { desc = "Log Point" } },
           { "M", function() dap.set_breakpoint(vim.fn.input("Log point condition: "), nil, vim.fn.input('Log point message: ')) end, { desc = "Log Point Condition" } },
           { "x", function() dap.list_breakpoints(true) end, { desc = "List Breakpoints" } },
           { "c", function() dap.continue() end, { desc = "Run/Continue" } },
-          { "<cr>", function() dap.run_to_cursor() end, { desc = "Run to Cursor" } },
+          { "C", function() dap.run_to_cursor() end, { desc = "Run to Cursor" } },
           { "i", function() dap.step_into() end, { desc = "Step Into" } },
           { "o", function() dap.step_over() end, { desc = "Step Over" } },
           { "O", function() dap.step_out() end, { desc = "Step Out" } },
           { "u", function() dap_view.toggle() end, { desc = "DAP View" } },
+          { "dd", toggle_debug_mode, { desc = "Debug Mode" } },
           { "e", function() dap_view.add_expr() end, { desc = "Add Expression" } },
-          { "E", function() dap_view.jump_to_view("exceptions") end, { desc = "Add Expression" } },
-          { "R", function() dap_view.jump_to_view("repl") end, { desc = "REPL" } },
-          { "S", function() dap_view.jump_to_view("scopes") end, { desc = "Scopes" } },
-          { "T", function() dap_view.jump_to_view("threads") end, { desc = "Threads" } },
-          { "W", function() dap_view.jump_to_view("watches") end, { desc = "Watches" } },
-          { "q", function() DEBUG_MODE:toggle() end, { desc = "Quit Debug Mode" } },
+          { "E", function() dap_view.open(); dap_view.jump_to_view("exceptions") end, { desc = "Add Expression" } },
+          { "R", function() dap_view.open(); dap_view.jump_to_view("repl") end, { desc = "REPL" } },
+          { "S", function() dap_view.open(); dap_view.jump_to_view("scopes") end, { desc = "Scopes" } },
+          { "T", function() dap_view.open(); dap_view.jump_to_view("threads") end, { desc = "Threads" } },
+          { "W", function() dap_view.open(); dap_view.jump_to_view("watches") end, { desc = "Watches" } },
           { "t", function() dap.terminate() end, { desc = "Terminate" } },
           { "K", function() require("dap.ui.widgets").hover() end, { desc = "Widgets" } },
 
@@ -148,9 +159,7 @@ return {
         },
       })
 
-      vim.keymap.set("n", "<leader>dd", function()
-        DEBUG_MODE:toggle()
-      end, { desc = "Debug Mode" })
+      vim.keymap.set("n", "<leader>dd", toggle_debug_mode, { desc = "Debug Mode" })
     end,
   },
 }
