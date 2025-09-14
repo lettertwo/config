@@ -13,9 +13,6 @@
 --     vim.notify("Mode changed to " .. e.match, "debug")
 --   end,
 -- })
-vim.api.nvim_create_autocmd("ModeChanged", { pattern = { "[vV\x16]*:*" }, command = ":setlocal norelativenumber" })
-vim.api.nvim_create_autocmd("ModeChanged", { pattern = { "*:[vV\x16]*" }, command = ":setlocal relativenumber" })
-
 -- -- stylua: ignore
 -- Mode.map = {
 --   ['n']      = 'NORMAL',
@@ -64,6 +61,24 @@ vim.api.nvim_create_autocmd("ModeChanged", { pattern = { "*:[vV\x16]*" }, comman
 --   end
 --   return Mode.map[mode_code]
 -- end
+
+vim.api.nvim_create_autocmd("ModeChanged", {
+  pattern = { "[vV\x16]*:*" },
+  callback = function()
+    if vim.wo.number and vim.wo.relativenumber then
+      vim.wo.relativenumber = false
+    end
+  end,
+})
+
+vim.api.nvim_create_autocmd("ModeChanged", {
+  pattern = { "*:[vV\x16]*" },
+  callback = function()
+    if vim.wo.number and not vim.wo.relativenumber then
+      vim.wo.relativenumber = true
+    end
+  end,
+})
 
 vim.api.nvim_create_autocmd({
   "InsertEnter",
