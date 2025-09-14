@@ -401,6 +401,25 @@ ifndef RUSTC
 	$(call done)
 endif
 
+### claude
+
+CLAUDE := $(shell command -v claude 2> /dev/null)
+
+.PHONY: claude
+claude:
+ifndef CLAUDE
+	$(call err,"claude not found!")
+	$(call log,"Installing claude...")
+	$(call run,curl -fsSL https://claude.ai/install.sh | /bin/bash /dev/stdin)
+	$(call done)
+endif
+
+.PHONY: update-claude
+update-claude: claude
+	$(call log,"Updating claude...")
+	$(call run,claude update)
+	$(call done)
+
 ### config
 
 .PHONY: update-config

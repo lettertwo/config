@@ -76,3 +76,9 @@ local_settings.py
 .sass-cache
 
 src/sheldon/plugins.lock
+
+**/.claude/settings.local.json
+
+**/.claude/settings.local.json
+
+**/.claude/settings.local.json
