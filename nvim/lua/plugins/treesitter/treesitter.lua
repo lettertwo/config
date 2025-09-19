@@ -7,7 +7,6 @@ return {
       -- { "<leader>uT", "<cmd>InspectTree<CR>", desc = "Inspect TS Tree" },
       { "<leader>uQ", "<cmd>EditQuery<CR>", desc = "Edit TS Query" },
     },
-    ---@type TSConfig
     ---@diagnostic disable-next-line: missing-fields
     opts = {
       ensure_installed = {
@@ -23,14 +22,25 @@ return {
         "make",
         "rust",
       },
-      incremental_selection = {
-        enable = true,
-        keymaps = {
-          init_selection = "<S-CR>",
-          node_incremental = "<S-CR>",
-          scope_incremental = "<C-CR>",
-          node_decremental = "<BS>",
-        },
+    },
+  },
+  {
+    "folke/flash.nvim",
+    optional = true,
+    keys = {
+      { "<c-space>", false },
+      {
+        "<S-CR>",
+        mode = { "n", "o", "x" },
+        function()
+          require("flash").treesitter({
+            actions = {
+              ["<S-CR>"] = "next",
+              ["<BS>"] = "prev",
+            },
+          })
+        end,
+        desc = "Treesitter Incremental Selection",
       },
     },
   },

@@ -59,6 +59,7 @@ brew "libtool" if OS.mac?
 brew "automake" if OS.mac?
 brew "pkg-config" if OS.mac?
 brew "gettext" if OS.mac?
+brew "tree-sitter-cli"
 
 # git
 brew "gh" if OS.mac?

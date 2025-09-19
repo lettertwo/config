@@ -93,14 +93,15 @@ local mason_check = setmetatable({ status = nil, pending = false }, {
         local update_count = 0
         local pending = #installed_packages
         for _, name in ipairs(installed_packages) do
-          mason_registry.get_package(name):check_new_version(function(ok)
-            update_count = ok and update_count + 1 or update_count
-            pending = pending - 1
-            if pending < 1 then
-              self.status = update_count
-              self.pending = false
-            end
-          end)
+          local pkg = mason_registry.get_package(name)
+          local installed = pkg:get_installed_version()
+          local latest = pkg:get_latest_version()
+          update_count = installed ~= latest and update_count + 1 or update_count
+          pending = pending - 1
+          if pending < 1 then
+            self.status = update_count
+            self.pending = false
+          end
         end
       end)
     end
