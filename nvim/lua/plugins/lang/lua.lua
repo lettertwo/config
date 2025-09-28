@@ -21,11 +21,7 @@ return {
     optional = true,
     opts = function(_, opts)
       vim.list_extend(opts.adapters, {
-        require("neotest-busted")({
-          busted_paths = { "./?.lua", "./?/init.lua" },
-          busted_cpaths = { "./?.so" },
-          local_luarocks_only = false,
-        }),
+        require("neotest-busted")({}),
       })
     end,
   },
