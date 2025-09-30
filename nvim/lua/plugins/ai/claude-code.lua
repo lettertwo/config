@@ -37,6 +37,7 @@ return {
               { "<c-j>", "<c-\\><c-n><c-w>j", expr = true, desc = "Move to lower window", mode = { "t" } },
               { "<c-k>", "<c-\\><c-n><c-w>k", expr = true, desc = "Move to upper window", mode = { "t" } },
               { "<c-l>", "<c-\\><c-n><c-w>l", expr = true, desc = "Move to right window", mode = { "t" } },
+              { "<s-cr>", "\\<cr>", expr = true, desc = "new line", mode = { "t" } },
               {
                 "i",
                 function()
