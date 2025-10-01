@@ -24,6 +24,7 @@ cloudtoken
 barn
 graphite
 gh-copilot
+.copilot
 
 # laserwave.nvim
 git/laserwave.gitconfig

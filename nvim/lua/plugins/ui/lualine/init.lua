@@ -23,6 +23,7 @@ return {
       local searchcount = components.searchcount
       local tabs = components.tabs
       local tabstop = components.tabstop
+      local sidekick = components.sidekick
 
       local local_opts = {
         options = {
@@ -36,7 +37,7 @@ return {
           lualine_b = { macro, branch },
           lualine_c = { filepath },
           lualine_x = { diff, diagnostics },
-          lualine_y = { tabstop },
+          lualine_y = { tabstop, sidekick },
           lualine_z = { services },
         },
         inactive_sections = {
@@ -93,7 +94,7 @@ return {
         callback = function()
           -- FIXME: This _almost_ works, but any non-normal modes that were activated before
           -- colorscheme change will have broken separator highlights.
-          require("lualine").setup()
+          require("lualine").setup({})
           require("lualine").refresh({
             place = { "statusline", "tabline", "winbar" },
             scope = "all",

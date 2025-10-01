@@ -17,11 +17,6 @@ function M:update_status()
     table.insert(display, icons.services.formatting)
   end
 
-  -- add copilot
-  if status.copilot_active then
-    table.insert(display, icons.services.copilot)
-  end
-
   -- add treesitter
   if status.treesitter_active then
     table.insert(display, icons.services.treesitter)
