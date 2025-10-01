@@ -22,26 +22,22 @@ function actions.smart_scroll_up(picker)
   end
 end
 
-function actions.reveal_in_oil(picker, item)
+function actions.mini_files(picker, item)
   picker:close()
 
-  local ok, oil = pcall(require, "oil")
-  if ok and oil then
-    local dir = Snacks.picker.util.dir(item)
-    if dir then
-      local basename = vim.fs.basename(Snacks.picker.util.path(item))
-      local open_ok = pcall(oil.open_float, dir, { preview = { horizontal = true } }, function()
-        --- select the item in oil
-        vim.fn.search("\\V" .. basename, "w")
-      end)
+  local filepath = Snacks.picker.util.path(item)
+  if filepath then
+    local ok, MiniFiles = pcall(require, "mini.files")
+    if ok and MiniFiles then
+      local open_ok = pcall(MiniFiles.open, filepath)
       if not open_ok then
-        Snacks.notify.warn("Failed to open file in oil", { title = picker.title })
+        Snacks.notify.warn("Failed to open file in mini.files", { title = picker.title })
       end
     else
-      Snacks.notify.warn("No file to open", { title = picker.title })
+      Snacks.notify.warn("mini.files is not installed", { title = picker.title })
     end
   else
-    Snacks.notify.warn("oil is not installed", { title = picker.title })
+    Snacks.notify.warn("No file to open", { title = picker.title })
   end
 end
 
