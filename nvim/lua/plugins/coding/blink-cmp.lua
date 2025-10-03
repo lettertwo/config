@@ -12,7 +12,7 @@ return {
       group = group,
       callback = function()
         if cmp.is_visible() and cmp.get_selected_item() ~= nil then
-          vim.lsp.inline_completion.enable(false)
+          vim.lsp.inline_completion.enable(false, { bufnr = 0 })
         end
       end,
     })
@@ -20,38 +20,30 @@ return {
       pattern = "BlinkCmpMenuClose",
       group = group,
       callback = function()
-        vim.lsp.inline_completion.enable(true)
+        vim.lsp.inline_completion.enable(true, { bufnr = 0 })
       end,
     })
 
-    LazyVim.cmp.actions.show_or_inline_show = function()
-      if not cmp.is_visible() and cmp.show() then
-        return true
-      else
-        cmp.hide()
-        if not vim.lsp.inline_completion.is_enabled() then
-          vim.lsp.inline_completion.enable(true)
-          return true
-        end
-      end
+    LazyVim.cmp.actions.toggle = function()
+      return cmp.is_visible() and cmp.hide() or cmp.show()
     end
 
     LazyVim.cmp.actions.inline_select_prev = function()
-      if vim.lsp.inline_completion.is_enabled() then
+      if vim.lsp.inline_completion.is_enabled({ bufnr = 0 }) then
         vim.lsp.inline_completion.select({ count = -1 })
         return true
       end
     end
 
     LazyVim.cmp.actions.inline_select_next = function()
-      if vim.lsp.inline_completion.is_enabled() then
+      if vim.lsp.inline_completion.is_enabled({ bufnr = 0 }) then
         vim.lsp.inline_completion.select({ count = 1 })
         return true
       end
     end
 
     LazyVim.cmp.actions.inline_accept = function()
-      if vim.lsp.inline_completion.is_enabled() then
+      if vim.lsp.inline_completion.is_enabled({ bufnr = 0 }) then
         return vim.lsp.inline_completion.get()
       end
     end
@@ -83,11 +75,10 @@ return {
       keymap = {
         preset = "none",
 
-        ["<C-space>"] = { LazyVim.cmp.map({ "show_or_inline_show" }), "show_documentation", "hide_documentation" },
+        ["<C-space>"] = { LazyVim.cmp.map({ "toggle" }), "show_documentation", "hide_documentation" },
         ["<C-e>"] = { "hide", "fallback" },
 
-        ["<CR>"] = { "accept", LazyVim.cmp.map({ "inline_accept" }), "fallback" },
-        ["<Right>"] = { "accept", LazyVim.cmp.map({ "inline_accept" }), "fallback" },
+        ["<Right>"] = { "accept", LazyVim.cmp.map({ "ai_nes", "inline_accept" }), "fallback" },
 
         ["<C-k>"] = { "select_prev", "fallback" },
         ["<C-p>"] = { "select_prev", LazyVim.cmp.map({ "inline_select_prev" }), "fallback" },
@@ -95,7 +86,7 @@ return {
 
         ["<C-j>"] = { "select_next", "fallback" },
         ["<C-n>"] = { "select_next", LazyVim.cmp.map({ "inline_select_next" }), "fallback" },
-        ["<Down>"] = { "select_next", LazyVim.cmp.map({ "inline_accept" }), "fallback" },
+        ["<Down>"] = { "select_next", LazyVim.cmp.map({ "ai_nes", "inline_accept" }), "fallback" },
 
         ["<C-b>"] = { "scroll_documentation_up", "fallback" },
         ["<C-u>"] = { "scroll_documentation_up", "fallback" },
