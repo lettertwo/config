@@ -4,14 +4,6 @@ return {
     event = "LazyFile",
     -- enabled = true,
     opts = {
-      -- signs = {
-      --   add = { text = "▌" },
-      --   change = { text = "▌" },
-      --   topdelete = { text = "▔" },
-      --   delete = { text = "▁" },
-      --   changedelete = { text = "▌" },
-      --   untracked = { text = "▌" },
-      -- },
       numhl = true,
       -- linehl = true,
       sign_priority = 6,
@@ -88,9 +80,9 @@ return {
         -- map("n", "<leader>gb", function()
         --   gs.blame_line()
         -- end, "Blame")
-        map("n", "<leader>gB", function()
+        map("n", "<leader>gb", function()
           gs.blame()
-        end, "Blame Buffer")
+        end, "Blame")
 
         -- diff
         -- map("n", "<leader>gd", gs.diffthis, "Diff This")

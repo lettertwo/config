@@ -161,8 +161,6 @@ return {
       { "<leader>fw", LazyVim.pick("recent", { scope = "workspace" }), desc = "Recent (workspace)" },
 
       -- git
-      -- TODO: Add actions to open git artifacts in browser
-      -- TODO: Add action to navigate git hunks in the current file
       { "<leader>gb", LazyVim.pick("git_log_line"),  desc = "Git Blame Line" },
       { "<leader>gB", LazyVim.pick("git_branches"),  desc = "Git Branches" },
       { "<leader>gd", LazyVim.pick("git_diff_file"), desc = "Git Diff (hunks)" },
