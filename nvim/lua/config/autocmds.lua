@@ -2,80 +2,22 @@
 -- Default autocmds that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/autocmds.lua
 -- Add any additional autocmds here
 
--- Show relative line numbers in visual modes
--- FIXME: ModeChanged doesn't fire when visual mode is pending a motion,
--- but does fire after visual mode is exited, even if no motion was specified.
--- We need a way to flip the relative number bit when visual mode is pending.
--- Ideally, we'd do so for any pending operator?
--- vim.api.nvim_create_autocmd("ModeChanged", {
---   pattern = { "*:*" },
---   callback = function(e)
---     vim.notify("Mode changed to " .. e.match, "debug")
---   end,
--- })
--- -- stylua: ignore
--- Mode.map = {
---   ['n']      = 'NORMAL',
---   ['no']     = 'O-PENDING',
---   ['nov']    = 'O-PENDING',
---   ['noV']    = 'O-PENDING',
---   ['no\22'] = 'O-PENDING',
---   ['niI']    = 'NORMAL',
---   ['niR']    = 'NORMAL',
---   ['niV']    = 'NORMAL',
---   ['nt']     = 'NORMAL',
---   ['ntT']    = 'NORMAL',
---   ['v']      = 'VISUAL',
---   ['vs']     = 'VISUAL',
---   ['V']      = 'V-LINE',
---   ['Vs']     = 'V-LINE',
---   ['\22']   = 'V-BLOCK',
---   ['\22s']  = 'V-BLOCK',
---   ['s']      = 'SELECT',
---   ['S']      = 'S-LINE',
---   ['\19']   = 'S-BLOCK',
---   ['i']      = 'INSERT',
---   ['ic']     = 'INSERT',
---   ['ix']     = 'INSERT',
---   ['R']      = 'REPLACE',
---   ['Rc']     = 'REPLACE',
---   ['Rx']     = 'REPLACE',
---   ['Rv']     = 'V-REPLACE',
---   ['Rvc']    = 'V-REPLACE',
---   ['Rvx']    = 'V-REPLACE',
---   ['c']      = 'COMMAND',
---   ['cv']     = 'EX',
---   ['ce']     = 'EX',
---   ['r']      = 'REPLACE',
---   ['rm']     = 'MORE',
---   ['r?']     = 'CONFIRM',
---   ['!']      = 'SHELL',
---   ['t']      = 'TERMINAL',
--- }
---
--- ---@return string current mode name
--- function Mode.get_mode()
---   local mode_code = vim.api.nvim_get_mode().mode
---   if Mode.map[mode_code] == nil then
---     return mode_code
---   end
---   return Mode.map[mode_code]
--- end
+-- Show relative line numbers in visual and operator-pending modes.
+-- HACK: ModeChanged doesn't fire consistently when pending a motion,
+-- so, we bind directly to keys that enter visual and operator-pending mode.
+vim.on_key(function(char)
+  if char:match("^[cdyvV\x16]$") then
+    if vim.wo.number and not vim.wo.relativenumber then
+      vim.wo.relativenumber = true
+    end
+  end
+end)
 
 vim.api.nvim_create_autocmd("ModeChanged", {
-  pattern = { "[vV\x16]*:*" },
+  pattern = { "*[ovV\x16]*:*" },
   callback = function()
     if vim.wo.number and vim.wo.relativenumber then
       vim.wo.relativenumber = false
-    end
-  end,
-})
-
-vim.api.nvim_create_autocmd("ModeChanged", {
-  pattern = { "*:[vV\x16]*" },
-  callback = function()
-    if vim.wo.number and not vim.wo.relativenumber then
-      vim.wo.relativenumber = true
     end
   end,
 })
