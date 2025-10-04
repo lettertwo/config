@@ -26,7 +26,7 @@ return {
         suffix_next = "", -- Suffix to search with "next" method
         update_n_lines = "", -- Update `n_lines`
       },
-      n_lines = 100,
+      n_lines = 500,
       search_method = "cover_or_next",
       respect_selection_type = true,
     },
