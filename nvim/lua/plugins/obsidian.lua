@@ -1,12 +1,63 @@
--- TODO: get this from env or something
-local VAULT_DIR = vim.fn.expand("~") .. "/Library/Mobile Documents/iCloud~md~obsidian/Documents/lettertwo"
+-- Get vault directory from state file
+local STATE_FILE = vim.fn.stdpath("state") .. "/obsidian_vault_dir.txt"
+
+local function get_default_vault_location()
+  -- macOS iCloud Obsidian location
+  return vim.fn.escape(vim.fn.expand("~") .. [[/Library/Mobile Documents/iCloud~md~obsidian/Documents/]], " ")
+end
+
+local function read_vault_dir()
+  local file = io.open(STATE_FILE, "r")
+  if file then
+    local path = file:read("*line")
+    file:close()
+    return path
+      :gsub("\\ ", " ") -- Unescape spaces
+      :gsub("%s+$", "") -- Trim trailing whitespace
+  end
+  return nil
+end
+
+local function save_vault_dir(path)
+  local file = io.open(STATE_FILE, "w")
+  if file then
+    file:write(path)
+    file:close()
+  else
+    error("Could not open state file for writing: " .. STATE_FILE)
+  end
+end
+
+local VAULT_DIR = read_vault_dir()
 
 return {
   {
     "obsidian-nvim/obsidian.nvim",
-    lazy = true,
-    event = { "BufReadPre " .. VAULT_DIR .. "/**.md" },
-    cmd = { "ObsidianOpen", "ObsidianNew", "ObsidianSearch", "ObsidianQuickSwitch", "ObsidianToday" },
+    cond = vim.uv.os_uname().sysname == "Darwin",
+    event = VAULT_DIR and { "BufReadPre " .. VAULT_DIR .. "/**.md" } or nil,
+    cmd = { "ObsidianSetup", "ObsidianOpen", "ObsidianNew", "ObsidianSearch", "ObsidianQuickSwitch", "ObsidianToday" },
+    init = function()
+      vim.api.nvim_create_user_command("ObsidianSetup", function()
+        local path = vim.fn.input({
+          prompt = "Enter Obsidian vault directory: ",
+          default = get_default_vault_location(),
+          completion = "file",
+          cancelreturn = false,
+        })
+        if path and path ~= "" then
+          local save_ok = pcall(save_vault_dir, path)
+          if save_ok then
+            VAULT_DIR = path
+            vim.notify("Obsidian vault directory set to: " .. VAULT_DIR, vim.log.levels.INFO)
+            return
+          end
+        end
+        vim.notify("Obsidian vault directory not set!", vim.log.levels.ERROR)
+      end, { desc = "Setup Obsidian vault directory" })
+      if not VAULT_DIR then
+        vim.notify("Obsidian vault directory not set. Use :ObsidianSetup to set it.", vim.log.levels.WARN)
+      end
+    end,
     keys = {
       { "<leader>oc", "<cmd>ObsidianNew<CR>", desc = "New note" },
       { "<leader>os", "<cmd>ObsidianSearch<CR>", desc = "Search" },
@@ -18,18 +69,8 @@ return {
       { "<leader>oT", "<cmd>ObsidianTemplate<CR>", desc = "Insert from template" },
       { "<leader>o#", "<cmd>ObsidianTags<CR>", desc = "Search tags" },
     },
-    dependencies = {
-      -- Required.
-      "nvim-lua/plenary.nvim",
-    },
     opts = {
-      workspaces = {
-        -- TODO: get this from env or something
-        {
-          name = "lettertwo",
-          path = VAULT_DIR,
-        },
-      },
+      workspaces = { { name = "vault", path = VAULT_DIR } },
       notes_subdir = "notes",
       new_notes_location = "notes_subdir",
       preferred_link_style = "markdown",
@@ -43,8 +84,11 @@ return {
       templates = {
         subdir = "Templates",
       },
-      -- https://github.com/Vinzent03/obsidian-advanced-uri
-      use_advanced_uri = true,
+
+      open = {
+        -- https://github.com/Vinzent03/obsidian-advanced-uri
+        use_advanced_uri = true,
+      },
 
       note_id_func = function(title)
         assert(title, "title is required")
@@ -75,137 +119,36 @@ return {
           insert_tag = "<C-l>",
         },
       },
+      callbacks = {
+        enter_note = function(note)
+          -- Overrides the 'gf' mapping to work on markdown/wiki links within your vault.
+          vim.keymap.set("n", "gf", function()
+            if require("obsidian").util.cursor_link() then
+              return "<cmd>Obsidian follow_link<cr>"
+            else
+              return "gf"
+            end
+          end, { expr = true, desc = "Go to file under cursor" })
 
-      mappings = {
-        -- TODO: buffer mappings for these:
-        -- :ObsidianLink [QUERY] to link an inline visual selection of text to a note. This command has one optional argument: a query that will be used to resolve the note by ID, path, or alias. If not given, the selected text will be used as the query.
-        -- :ObsidianLinkNew [TITLE] to create a new note and link it to an inline visual selection of text. This command has one optional argument: the title of the new note. If not given, the selected text will be used as the title.
-        -- :ObsidianLinks to collect all links within the current buffer into a picker window.
-        -- :ObsidianExtractNote [TITLE] to extract the visually selected text into a new note and link to it.
-        -- :ObsidianPasteImg [IMGNAME] to paste an image from the clipboard into the note at the cursor position by saving it to the vault and adding a markdown image link. You can configure the default folder to save images to with the attachments.img_folder option.
-        -- :ObsidianRename [NEWNAME] [--dry-run] to rename the note of the current buffer or reference under the cursor, updating all backlinks across the vault. Since this command is still relatively new and could potentially write a lot of changes to your vault, I highly recommend committing the current state of your vault (if you're using version control) before running it, or doing a dry-run first by appending "--dry-run" to the command, e.g. :ObsidianRename new-id --dry-run.
-        -- :ObsidianFollowLink [vsplit|hsplit] to follow a note reference under the cursor, optionally opening it in a vertical or horizontal split.
-        -- :ObsidianToggleCheckbox to cycle through checkbox options.
-
-        -- Overrides the 'gf' mapping to work on markdown/wiki links within your vault.
-        ["gf"] = {
-          action = function()
-            return require("obsidian").util.gf_passthrough()
-          end,
-          opts = { noremap = false, expr = true, buffer = true },
-        },
-        -- Smart action depending on context, either follow link or toggle checkbox.
-        ["<cr>"] = {
-          action = function()
+          -- Smart action depending on context, either follow link or toggle checkbox.
+          vim.keymap.set("n", "<cr>", function()
             return require("obsidian").util.smart_action()
-          end,
-          opts = { buffer = true, expr = true },
-        },
+          end, { buffer = true, expr = true, desc = "Obsidian smart action" })
+        end,
       },
 
       ui = {
         enable = false, -- disabled to allow markdown.nvim to handle rendering
-        -- TODO: extract this config and share with mkdnflow todo.symbols
-        -- checkboxes = {
-        --   -- NOTE: the 'char' value has to be a single character
-        --   [" "] = { char = icons.task.todo, hl_group = "ObsidianTodo" },
-        --   ["x"] = { char = icons.task.done, hl_group = "ObsidianDone" },
-        --   [">"] = { char = icons.task.active, hl_group = "ObsidianRightArrow" },
-        --   ["~"] = { char = icons.task.cancelled, hl_group = "ObsidianTilde" },
-        --   ["!"] = { char = icons.task.important, hl_group = "ObsidianImportant" },
-        --
-        --   -- You can also add more custom ones...
-        -- },
-        -- external_link_icon = { char = "", hl_group = "ObsidianExtLinkIcon" },
       },
     },
   },
-  -- {
-  --   "MeanderingProgrammer/render-markdown.nvim",
-  --   enabled = false,
-  --   dependencies = {
-  --     "nvim-treesitter/nvim-treesitter", -- Mandatory
-  --     "nvim-mini/mini.icons",
-  --   },
-  --   ft = { "markdown" },
-  --   ---@module 'render-markdown'
-  --   ---@type render.md.UserConfig
-  --   opts = {
-  --     latex_enabled = false,
-  --     -- Characters that will replace the # at the start of headings
-  --     headings = { "󰼏 ", "󰎨 ", "󰼑 ", "󰎲 ", "󰼓 ", "󰎴 " },
-  --     -- Character to use for the horizontal break
-  --     -- dash = {"─"},
-  --     -- Character to use for the bullet points in lists
-  --     bullets = { "●", "○", "◆", "◇" },
-  --     checkbox = {
-  --       -- Character that will replace the [ ] in unchecked checkboxes
-  --       unchecked = icons.task.todo,
-  --       -- Character that will replace the [x] in checked checkboxes
-  --       checked = icons.task.done,
-  --       -- TODO: Figure out how to add these other states
-  --       --   [" "] = { char = icons.task.todo, hl_group = "ObsidianTodo" },
-  --       --   ["x"] = { char = icons.task.done, hl_group = "ObsidianDone" },
-  --       --   [">"] = { char = icons.task.active, hl_group = "ObsidianRightArrow" },
-  --       --   ["~"] = { char = icons.task.cancelled, hl_group = "ObsidianTilde" },
-  --       --   ["!"] = { char = icons.task.important, hl_group = "ObsidianImportant" },
-  --     },
-  --     -- Character that will replace the > at the start of block quotes
-  --     quote = "▋",
-  --     -- Symbol / text to use for different callouts
-  --     callout = {
-  --       note = "󰋽 Note",
-  --       tip = "󰌶 Tip",
-  --       important = "󰅾 Important",
-  --       warning = "󰀪 Warning",
-  --       caution = "󰳦 Caution",
-  --     },
-  --     -- Define the highlight groups to use when rendering various components
-  --     highlights = {
-  --       heading = {
-  --         -- Background of heading line
-  --         backgrounds = { "DiffAdd", "DiffChange", "DiffDelete" },
-  --         -- Foreground of heading character only
-  --         foregrounds = {
-  --           "markdownH1",
-  --           "markdownH2",
-  --           "markdownH3",
-  --           "markdownH4",
-  --           "markdownH5",
-  --           "markdownH6",
-  --         },
-  --       },
-  --       -- Horizontal break
-  --       dash = "LineNr",
-  --       -- Code blocks
-  --       code = "ColorColumn",
-  --       -- Bullet points in list
-  --       bullet = "Normal",
-  --       checkbox = {
-  --         -- Unchecked checkboxes
-  --         unchecked = "@markup.list.unchecked",
-  --         -- Checked checkboxes
-  --         checked = "@markup.heading",
-  --       },
-  --       table = {
-  --         -- Header of a markdown table
-  --         head = "@markup.heading",
-  --         -- Non header rows in a markdown table
-  --         row = "Normal",
-  --       },
-  --       -- LaTeX blocks
-  --       latex = "@markup.math",
-  --       -- Quote character in a block quote
-  --       quote = "@markup.quote",
-  --       -- Highlights to use for different callouts
-  --       callout = {
-  --         note = "DiagnosticInfo",
-  --         tip = "DiagnosticOk",
-  --         important = "DiagnosticHint",
-  --         warning = "DiagnosticWarn",
-  --         caution = "DiagnosticError",
-  --       },
-  --     },
-  --   },
-  -- },
+  {
+    "folke/which-key.nvim",
+    optional = true,
+    opts = {
+      spec = {
+        { "<leader>o", group = "obsidian" },
+      },
+    },
+  },
 }
