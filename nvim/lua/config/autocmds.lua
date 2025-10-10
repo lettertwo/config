@@ -7,26 +7,28 @@
 -- so, we bind directly to keys that enter visual and operator-pending mode.
 vim.on_key(function(char)
   if char:match("^[cdyvV\x16]$") then
-    if vim.wo.number and not vim.wo.relativenumber then
-      vim.wo.relativenumber = true
-    end
+    vim.opt_local.relativenumber = true
   end
 end)
 
 vim.api.nvim_create_autocmd("ModeChanged", {
   pattern = { "*[ovV\x16]*:*" },
   callback = function()
-    if vim.wo.number and vim.wo.relativenumber then
-      vim.wo.relativenumber = false
-    end
+    vim.opt_local.relativenumber = false
   end,
 })
 
-vim.api.nvim_create_autocmd({
-  "InsertEnter",
-}, {
+vim.api.nvim_create_autocmd("InsertEnter", {
   callback = function()
     vim.opt_local.relativenumber = false
+  end,
+})
+
+vim.api.nvim_create_autocmd({ "BufReadPre", "BufEnter" }, {
+  callback = function()
+    vim.schedule(function()
+      vim.opt_local.relativenumber = false
+    end)
   end,
 })
 
