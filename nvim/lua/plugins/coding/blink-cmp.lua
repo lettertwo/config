@@ -78,6 +78,7 @@ return {
         ["<C-space>"] = { LazyVim.cmp.map({ "toggle" }), "show_documentation", "hide_documentation" },
         ["<C-e>"] = { "hide", "fallback" },
 
+        ["<CR>"] = { "accept", LazyVim.cmp.map({ "ai_nes" }), "fallback" },
         ["<Right>"] = { "accept", LazyVim.cmp.map({ "ai_nes", "inline_accept" }), "fallback" },
 
         ["<C-k>"] = { "select_prev", "fallback" },

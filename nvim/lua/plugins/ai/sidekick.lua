@@ -16,17 +16,6 @@ local claude_keys = {
       t:send("\\")
       t:submit()
     end,
-    mode = "t",
-  },
-  start_insert = {
-    "i",
-    function(t)
-      if vim.fn.search([[-- INSERT]], "nw") == 0 then
-        t:send(vim.keycode("i"))
-      end
-      vim.cmd("startinsert")
-    end,
-    mode = "n",
   },
   term_normal = {
     "<Esc>",
@@ -39,7 +28,6 @@ local claude_keys = {
         vim.cmd("stopinsert")
       end
     end,
-    mode = "t",
   },
 }
 
@@ -65,15 +53,14 @@ return {
           wo = { winbar = "%!v:lua.require'edgy.window'.edgy_winbar()" },
           -- stylua: ignore
           keys = {
-            hide_n = false,
-            hide_t = false,
-            win_p = false,
-            blur = false,
-            hide = { "<c-q>", mode = { "t", "n" } },
-            move_l = { "<c-h>", function() feedkeys("<c-h>") end },
-            move_d = { "<c-j>", function() feedkeys("<c-j>") end },
-            move_u = { "<c-k>", function() feedkeys("<c-k>") end },
-            move_r = { "<c-l>", function() feedkeys("<c-l>") end },
+            hide_n        = false,
+            hide_ctrl_z   = false,
+            stopinsert    = false,
+            hide_ctrl_q   = { "<c-q>", "hide", mode = "nt" },
+            nav_left      = { "<c-h>", function() feedkeys("<c-h>") end },
+            nav_down      = { "<c-j>", function() feedkeys("<c-j>") end },
+            nav_up        = { "<c-k>", function() feedkeys("<c-k>") end },
+            nav_right     = { "<c-l>", function() feedkeys("<c-l>") end },
           },
         },
       },
