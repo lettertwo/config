@@ -18,22 +18,6 @@ err = @>&2 echo "$(ERROR)$(1)$(END)"
 done = $(call log,"Done!")
 run = @$(1) || (n=$$?; >&2 echo "$(ERROR)Failed!$(END)"; exit $$n)
 
-### ZDOTDIR
-
-define ZDOTDIR
-export ZDOTDIR="$$HOME/.config/zsh"
-endef
-
-export ZDOTDIR
-~/.zshenv:
-ifneq ($(ZDOTDIR), "$$HOME/.config/zsh")
-	$(call err,"ZDOTDIR misconfigured!")
-	$(call log,"Configuring ZDOTDIR...")
-	$(call run,echo "$$ZDOTDIR" | tee -a $@ > /dev/null)
-	$(call run,echo 'source $$ZDOTDIR/.zshenv' | tee -a $@ > /dev/null)
-	$(call done)
-endif
-
 ### mkdirs
 
 ~/.%:
@@ -91,25 +75,6 @@ update-brew: brew
 	$(call run,brew bundle)
 	$(call log,"Cleaning up...")
 	$(call run,brew cleanup)
-	$(call done)
-
-### sheldon
-
-SHELDON := $(shell command -v sheldon 2> /dev/null)
-
-.PHONY: sheldon
-sheldon: brew
-ifndef SHELDON
-	$(call err,"sheldon not found!")
-	$(call log,"Installing sheldon...")
-	$(call run,brew install sheldon)
-	$(call done)
-endif
-
-.PHONY: update-sheldon
-update-sheldon: sheldon
-	$(call log,"Updating sheldon plugins...")
-	$(call run,sheldon lock)
 	$(call done)
 
 ### fish
@@ -421,10 +386,10 @@ update-config:
 	$(call done)
 
 .PHONY: mkdirs
-mkdirs: ~/.cache/zsh ~/.local/bin ~/.local/share ~/.local/state/zsh/completions
+mkdirs: ~/.local/bin ~/.local/share
 
 .PHONY: install
-install: mkdirs ~/.zshenv ~/.local/share/laserwave.nvim brew set-fish-as-default
+install: mkdirs  ~/.local/share/laserwave.nvim brew set-fish-as-default
 	@echo ""
 	$(call done)
 	@echo ""

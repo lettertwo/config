@@ -14,7 +14,6 @@ The following are used for managing dependencies and installation.
 The install task will attempt to bootstrap these things if they are missing.
 
 - [Homebrew] for most things
-- [Sheldon] for zsh things
 - [Fisher] for fish shell things
 - [Neovim] for vim things
 - [Kitty] for term things
