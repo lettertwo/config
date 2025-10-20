@@ -47,10 +47,6 @@ brew "graphviz"
 brew "hyperfine"
 brew "jq"
 
-# taskwarrior
-brew "task"
-brew "tasksh"
-
 # neovim dependencies
 # See https://github.com/neovim/neovim/wiki/Building-Neovim#macos--homebrew
 brew "ninja"
