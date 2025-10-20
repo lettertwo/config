@@ -6,6 +6,7 @@
 	attributesfile = ./attributes
 	whitespace = space-before-tab,trailing-space
 	pager = delta
+	hooksPath = "~/.config/git/hooks"
 [branch]
 	autosetupmerge = true
 [fetch]

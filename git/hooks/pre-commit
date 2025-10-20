@@ -1,0 +1,43 @@
+#!/bin/bash
+# Pre-commit hook to verify git user info is configured
+
+CURRENT_EMAIL=$(git config user.email)
+CURRENT_NAME=$(git config user.name)
+
+# Check if user email is set
+if [ -z "$CURRENT_EMAIL" ]; then
+    echo "❌ ERROR: Git user email is not configured!"
+    echo ""
+    echo "Please configure your user info in ~/.config/git/user:"
+    echo "  [user]"
+    echo "    name = Your Name"
+    echo "    email = your.email@example.com"
+    exit 1
+fi
+
+# Check if user name is set
+if [ -z "$CURRENT_NAME" ]; then
+    echo "❌ ERROR: Git user name is not configured!"
+    echo ""
+    echo "Please configure your user info in ~/.config/git/user:"
+    echo "  [user]"
+    echo "    name = Your Name"
+    echo "    email = your.email@example.com"
+    exit 1
+fi
+
+# Warn if email appears to be a machine-local email
+if [[ "$CURRENT_EMAIL" =~ @.*\.lan$ ]] || [[ "$CURRENT_EMAIL" =~ @.*\.local$ ]]; then
+    echo "⚠️  WARNING: Git user email appears to be a local machine email: $CURRENT_EMAIL"
+    echo "   This may not be your intended email address."
+    echo ""
+    echo "If this is incorrect, update ~/.config/git/user"
+    echo ""
+    read -p "Continue with this email? (y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        exit 1
+    fi
+fi
+
+exit 0
