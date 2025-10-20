@@ -41,9 +41,6 @@ update-laserwave: ~/.local/share/laserwave.nvim
 ~/.config/kitty/laserwave.conf: ~/.local/share/laserwave.nvim ~/.config/kitty
 	$(call run,ln -sf $</dist/kitty/laserwave.conf $@)
 
-~/.config/wezterm/colors/laserwave.toml: ~/.local/share/laserwave.nvim ~/.config/wezterm/colors
-	$(call run,ln -sf $</dist/wezterm/laserwave.toml $@)
-
 ~/.config/bat/themes/laserwave.tmTheme: ~/.local/share/laserwave.nvim ~/.config/bat/themes
 	$(call run,ln -sf $</dist/laserwave.tmTheme $@)
 
@@ -269,24 +266,6 @@ ifdef MACOS
 else
 	$(call err,"Not on macOS!")
 endif
-
-### wezterm
-
-WEZTERM := $(shell command -v wezterm 2> /dev/null)
-
-.PHONY: wezterm
-wezterm: brew ~/.config/wezterm/colors/laserwave.toml
-ifndef WEZTERM
-	$(call err,"wezterm not found!")
-	$(call log,"Installing wezterm...")
-else
-	$(call log,"Updating wezterm...")
-endif
-	$(call run,brew install wezterm)
-	$(call done)
-
-.PHONY: update-wezterm
-update-wezterm: wezterm
 
 ### qmk
 
