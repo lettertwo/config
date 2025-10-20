@@ -201,12 +201,6 @@ update-nvim: ~/.local/share/neovim cmake
 	$(call log,"Updating neovim...")
 	$(call run,cd $< && git fetch --tags --force && git reset --hard tags/nightly)
 	$(call run,cd $< && make clean && make distclean && make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX="$$HOME/.local" install)
-	$(call log,"Updating Plugins...")
-	$(call run,nvim --headless "+Lazy! sync" "+silent w! /dev/stdout" +qa)
-	$(call log,"Updating Parsers...")
-	$(call run,nvim --headless "+TSUpdateSync" "+silent w! /dev/stdout" +qa)
-	$(call log,"Updating Packages...")
-	$(call run,nvim --headless "+MasonInstallAll" "+silent w! /dev/stdout" +qa)
 	$(call done)
 
 
@@ -215,9 +209,7 @@ update-nvim-plugins: nvim
 	$(call log,"Updating Plugins...")
 	$(call run,nvim --headless "+Lazy! install" "+silent w! /dev/stdout" +qa)
 	$(call log,"Updating Parsers...")
-	$(call run,nvim --headless "+TSUpdateSync" "+silent w! /dev/stdout" +qa)
-	$(call log,"Updating Packages...")
-	$(call run,nvim --headless "+MasonInstallAll" "+silent w! /dev/stdout" +qa)
+	$(call run,nvim --headless "+lua require('nvim-treesitter').update():wait(300000)" "+silent w! /dev/stdout" +qa)
 	$(call done)
 
 ### luarocks
