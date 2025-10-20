@@ -41,9 +41,6 @@ update-laserwave: ~/.local/share/laserwave.nvim
 ~/.config/kitty/laserwave.conf: ~/.local/share/laserwave.nvim ~/.config/kitty
 	$(call run,ln -sf $</dist/kitty/laserwave.conf $@)
 
-~/.config/alacritty/laserwave.yml: ~/.local/share/laserwave.nvim ~/.config/alacritty
-	$(call run,ln -sf $</dist/alacritty/laserwave.yml $@)
-
 ~/.config/wezterm/colors/laserwave.toml: ~/.local/share/laserwave.nvim ~/.config/wezterm/colors
 	$(call run,ln -sf $</dist/wezterm/laserwave.toml $@)
 
