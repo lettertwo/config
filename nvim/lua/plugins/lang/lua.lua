@@ -24,24 +24,24 @@ return {
         require("neotest-busted")({
           busted_paths = { "./?.lua", "./?/init.lua" },
           busted_cpaths = { "./?.so" },
+          local_luarocks_only = true,
         }),
       })
     end,
   },
 
   {
-    "jay-babu/mason-nvim-dap.nvim",
-    optional = true,
-    opts = {
-      ensure_installed = {
-        "local-lua-debugger-vscode",
-      },
-    },
-  },
-
-  {
     "mfussenegger/nvim-dap",
     optional = true,
+    dependencies = {
+      {
+        "mason-org/mason.nvim",
+        opts = function(_, opts)
+          opts.ensure_installed = opts.ensure_installed or {}
+          table.insert(opts.ensure_installed, "local-lua-debugger-vscode")
+        end,
+      },
+    },
     opts = function(_, opts)
       local dap = require("dap")
 
