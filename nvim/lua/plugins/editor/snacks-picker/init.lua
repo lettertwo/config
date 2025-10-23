@@ -159,11 +159,13 @@ return {
       { "<leader>fr", LazyVim.pick("recent", { scope = "root" }), desc = "Recent (root)" },
       { "<leader>fR", LazyVim.pick("recent"), desc = "Recent" },
       { "<leader>fw", LazyVim.pick("recent", { scope = "workspace" }), desc = "Recent (workspace)" },
+      {"<leader>f<space>", LazyVim.pick("pickers"), desc = "Find Pickers" },
 
       -- git
       { "<leader>gb", LazyVim.pick("git_log_line"),  desc = "Git Blame Line" },
       { "<leader>gB", LazyVim.pick("git_branches"),  desc = "Git Branches" },
-      { "<leader>gd", LazyVim.pick("git_diff_file"), desc = "Git Diff (hunks)" },
+      { "<leader>gd", LazyVim.pick("git_diff"), desc = "Git Diff (hunks)" },
+      { "<leader>go", LazyVim.pick("git_diff", { base = "origin" }), desc = "Git Diff (origin)" },
       { "<leader>gf", LazyVim.pick("git_files"), desc = "Find Git Files" },
       { "<leader>gl", LazyVim.pick("git_log"), desc = "Git Log" },
       { "<leader>gL", LazyVim.pick("git_log_file"), desc = "Git Log File" },
@@ -231,11 +233,13 @@ return {
       local Keys = require("lazyvim.plugins.lsp.keymaps").get()
       -- stylua: ignore
       vim.list_extend(Keys, {
-        { "grd", function() Snacks.picker.lsp_definitions() end, desc = "Goto Definition", has = "definition" },
-        { "grD", function() Snacks.picker.lsp_declarations() end, desc = "Goto Declaration" },
+        { "grd", function() Snacks.picker.lsp_definitions() end, desc = "Definitions", has = "definition" },
+        { "grD", function() Snacks.picker.lsp_declarations() end, desc = "Declarations" },
         { "grr", function() Snacks.picker.lsp_references() end, nowait = true, desc = "References" },
-        { "gri", function() Snacks.picker.lsp_implementations() end, desc = "Goto Implementation" },
-        { "grt", function() Snacks.picker.lsp_type_definitions() end, desc = "Goto T[y]pe Definition" },
+        { "grI", function() Snacks.picker.lsp_implementations() end, desc = "Implementations" },
+        { "grt", function() Snacks.picker.lsp_type_definitions() end, desc = "Type Definitions" },
+        { "gri", function() Snacks.picker.lsp_incoming_calls() end, desc = "Incoming Calls", has = "callHierarchy/incomingCalls" },
+        { "gro", function() Snacks.picker.lsp_outgoing_calls() end, desc = "Outgoing Calls", has = "callHierarchy/outgoingCalls" },
         { "<leader>ss", function() Snacks.picker.pick("symbols") end, desc = "Symbols" },
         { "<leader>sl", function() Snacks.picker.lsp_symbols({ filter = {default = true }, layout = { preset = "vscode", preview = "main" } }) end, desc = "LSP Symbols" },
         -- { "<leader>st", function() Snacks.picker.treesitter({ layout = { preset = "vscode", preview = "main" } }) end, desc = "TS Symbols" },

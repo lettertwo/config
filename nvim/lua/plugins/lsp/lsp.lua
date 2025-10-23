@@ -7,12 +7,6 @@ return {
         { "gr", proxy = "<leader>c", group = "LSP references/actions", icon = { icon = " ", color = "orange" } },
         -- "gra" is mapped in Normal and Visual mode to |vim.lsp.buf.code_action()|
         { "gra", desc = "Code action" },
-        -- "grn" is mapped in Normal mode to |vim.lsp.buf.rename()|
-        { "grn", desc = "Rename (live-rename.nvim)" },
-        -- "grr" is mapped in Normal mode to |vim.lsp.buf.references()|
-        { "grr", desc = "Show references" },
-        -- "gri" is mapped in Normal mode to |vim.lsp.buf.implementation()|
-        { "gri", desc = "Show implementations" },
       },
     },
   },
@@ -38,6 +32,8 @@ return {
       local function rename()
         require("live-rename").rename()
       end
+
+      vim.lsp.on_type_formatting.enable()
 
       vim.list_extend(require("lazyvim.plugins.lsp.keymaps").get(), {
         { "<leader>.", vim.lsp.buf.code_action, desc = "Code Action", mode = { "n", "v" }, has = "codeAction" },

@@ -15,23 +15,29 @@ end
 
 ---@param picker snacks.Picker
 local function resize_list_to_fit_vertical(picker)
-  picker.matcher.opts.on_match = require("snacks.util").debounce(function()
+  local debounced_resize = require("snacks.util").debounce(function()
     if picker.opts.live then
       return
     end
-
     -- TODO: get this from opts
     local max_height = 0.6
-    local height = math.min(max_height, (#picker:items() + 3) / vim.o.lines)
-    if picker.layout.opts.layout.height ~= height then
-      picker.layout.opts.layout.height = height
-      -- FIXME: this is a hack to force a recalc of the layout, but there are 2 problems:
-      -- 1. it causes a flicker of the preview window
-      -- 2. the method is private and may change in the future
-      ---@diagnostic disable-next-line: invisible
-      picker.layout:update()
+    local list_height = math.max(math.min(#picker:items(), vim.o.lines * max_height - 10), 2)
+    for _, box in ipairs(picker.layout.opts.layout) do
+      if box.win == "list" then
+        if box.height ~= list_height then
+          box.height = list_height
+          -- HACK: this is a hack to force a recalc of the layout,
+          -- but the method is private and may change in the future.
+          ---@diagnostic disable-next-line: invisible
+          picker.layout:update()
+        end
+        break
+      end
     end
   end, { ms = 16 })
+
+  picker.matcher.opts.on_match = debounced_resize
+  debounced_resize()
 end
 
 symbols_sources.symbols = {
@@ -66,6 +72,7 @@ symbols_sources.symbols = {
   },
   layout = {
     preview = "main",
+    preset = "vscode",
     layout = {
       row = 0.2,
       width = 0.3,

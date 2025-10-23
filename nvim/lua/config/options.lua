@@ -31,6 +31,7 @@ opt.hidden = true -- Enable modified buffers in background
 
 opt.winblend = 0
 opt.pumblend = 0
+opt.winborder = "rounded"
 
 opt.listchars:remove("trail") -- don't show trailing whitespace char
 

@@ -14,4 +14,10 @@ sources.git_diff = {
   },
 }
 
+sources.scratch = {
+  layout = {
+    preview = true,
+  },
+}
+
 return sources
