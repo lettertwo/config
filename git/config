@@ -28,18 +28,16 @@
 	autocorrect = prompt
 [difftool]
 	prompt = true
-[difftool "nvimdiff"]
-	cmd = nvim -d --cmd 'lua vim.g.difftool=true' $LOCAL $REMOTE
+[difftool "nvim_difftool"]
+	cmd = nvim -c 'lua vim.g.difftool=true' -c 'packadd nvim.difftool' -c \"DiffTool $LOCAL $REMOTE\"
 [difftool "kitty"]
 	cmd = kitten diff $LOCAL $REMOTE
-[difftool "kitty.gui"]
-	cmd = kitten diff $LOCAL $REMOTE'
 [difftool "ksdiff"]
   cmd = ksdiff --diff $LOCAL $REMOTE
 [merge]
 	log = true
 	tool = nvimdiff
-	conflictStyle = diff3
+	conflictStyle = zdiff3
 [mergetool]
 	prompt = false
 	keepBackup = false
@@ -54,7 +52,10 @@
 	autoSquash = true
 	updateRefs = true
 [diff]
+	algorithm = histogram
 	compactionHeuristic = true
+	colorMoved = true
+	tool = nvim_difftool
 [worktree]
 	guessRemote = true
 [maintenance]

@@ -65,21 +65,21 @@ return {
   {
     "pmizio/typescript-tools.nvim",
     optional = true,
-    cond = vim.g.mergetool ~= true,
+    cond = vim.g.mergetool ~= true and vim.g.difftool ~= true,
   },
   {
     "neovim/nvim-lspconfig",
     optional = true,
-    cond = vim.g.mergetool ~= true,
+    cond = vim.g.mergetool ~= true and vim.g.difftool ~= true,
   },
   {
     "folke/persistence.nvim",
     optional = true,
-    cond = vim.g.mergetool ~= true,
+    cond = vim.g.mergetool ~= true and vim.g.difftool ~= true,
   },
   {
     "mfussenegger/nvim-lint",
     optional = true,
-    cond = vim.g.mergetool ~= true,
+    cond = vim.g.mergetool ~= true and vim.g.difftool ~= true,
   },
 }

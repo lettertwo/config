@@ -79,8 +79,8 @@
 	ap = add -p
 	ar = !git add-removed
 	d = diff
-	wd = !git d --no-ext-diff
-	ad = !git wd --cached
+	dd = difftool --dir-diff
+	da = !git dd --cached
 	p = push
 	pt = push-tags
 	ab = !git absorb --and-rebase
