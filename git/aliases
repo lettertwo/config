@@ -81,6 +81,7 @@
 	d = diff
 	dd = difftool --dir-diff
 	da = !git dd --cached
+	m = mergetool
 	p = push
 	pt = push-tags
 	ab = !git absorb --and-rebase
