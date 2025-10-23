@@ -9,6 +9,9 @@
 	hooksPath = "~/.config/git/hooks"
 [branch]
 	autosetupmerge = true
+	sort = -committerdate
+[tag]
+	sort = -version:refname
 [fetch]
   prune = true
 [pull]
@@ -20,8 +23,9 @@
 	followTags = false
 [rerere]
 	enabled = false
+	autoUpdate = true
 [help]
-	autocorrect = 1
+	autocorrect = prompt
 [difftool]
 	prompt = true
 [difftool "nvimdiff"]
@@ -53,6 +57,11 @@
 	compactionHeuristic = true
 [worktree]
 	guessRemote = true
+[maintenance]
+	auto = true
+	strategy = incremental
+[status]
+	branch = true
 
 # color config
 [color]
