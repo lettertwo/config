@@ -52,16 +52,23 @@ opt.iskeyword:append("-") -- add dash to iskeyword for motion commands
 opt.scrolloff = 10 -- keep lines below cursor when scrolling
 opt.sidescrolloff = 15 -- keep columns after cursor when scrolling
 
--- diffing (default "internal,filler,closeoff")
--- Start diff mode with vertical splits by default
-opt.diffopt:append("vertical")
--- Use a context of {n} lines between a change
--- and a fold that contains unchanged lines.
-opt.diffopt:append("context:3")
--- When the total number of lines in a hunk exceeds {n},
--- the second stage diff will not be performed as
--- very large hunks can cause noticeable lag.
-opt.diffopt:append("linematch:60")
+opt.diffopt = {
+  "internal", -- default
+  "filler", -- default
+  "closeoff", -- default
+  "indent-heuristic", --default
+  "inline:char", -- default
+  "vertical", -- Start diff mode with vertical split
+  -- Use a context of {n} lines between a change
+  -- and a fold that contains unchanged lines.
+  "context:12",
+  -- Use the histogram algorithm for the first stage diff.
+  "algorithm:histogram",
+  -- When the total number of lines in a hunk exceeds {n},
+  -- the second stage diff will not be performed as
+  -- very large hunks can cause noticeable lag.
+  "linematch:200",
+}
 
 opt.showtabline = 0
 
