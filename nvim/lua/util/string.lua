@@ -155,6 +155,10 @@ function StringUtil.title_path(path, opts)
     end
   end
 
+  titlepath = vim.tbl_filter(function(s)
+    return s ~= nil and s ~= ""
+  end, titlepath)
+
   return table.concat(titlepath, StringUtil.SEP)
 end
 
