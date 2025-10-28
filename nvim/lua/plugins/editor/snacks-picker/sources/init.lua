@@ -20,4 +20,46 @@ sources.scratch = {
   },
 }
 
+sources.lsp_references = {
+  layout = {
+    preview = true,
+  },
+}
+
+sources.lsp_definitions = {
+  layout = {
+    preview = true,
+  },
+}
+
+sources.lsp_declarations = {
+  layout = {
+    preview = true,
+  },
+}
+
+sources.lsp_implementations = {
+  layout = {
+    preview = true,
+  },
+}
+
+sources.lsp_type_definitions = {
+  layout = {
+    preview = true,
+  },
+}
+
+sources.lsp_incoming_calls = {
+  layout = {
+    preview = true,
+  },
+}
+
+sources.lsp_outgoing_calls = {
+  layout = {
+    preview = true,
+  },
+}
+
 return sources
