@@ -40,41 +40,211 @@ local function resize_list_to_fit_vertical(picker)
   debounced_resize()
 end
 
-symbols_sources.symbols = {
-  multi = { "treesitter", "lsp_symbols" },
-  -- TODO: custom formatter that gives more context to common patterns.
-  -- anonymous function expressions (in lua, in JS)
-  -- const function expressions (in JS)
-  format = "lsp_symbol",
-  tree = true,
-  -- sort = { fields = { "line" } },
-  -- matcher = {
-  --   sort_empty = true,
-  -- },
-  filter = {
-    default = {
-      "Class",
-      "Constructor",
-      "Constant",
-      "Enum",
-      "Field",
-      "Function",
-      "Interface",
-      "Method",
-      "Module",
-      "Namespace",
-      "Package",
-      "Property",
-      "Struct",
-      "Trait",
-      "Variable",
-    },
+---@param item snacks.picker.finder.Item
+local function is_top_level_symbol(item)
+  return item.parent and item.parent.root
+end
+
+---@type table<string, true | string[]>
+local INCLUDED = {
+  markdown = true,
+  help = true,
+  default = {
+    "Class",
+    "Constant",
+    "Constructor",
+    "Enum",
+    "Field",
+    "Function",
+    "Interface",
+    "Method",
+    "Module",
+    "Namespace",
+    "Package",
+    "Struct",
+    "Trait",
   },
+}
+
+---@type table<string, true | string[]>
+local TOP_LEVEL_ONLY = {
+  default = {
+    "Object",
+    "Constant",
+    "Variable",
+    "Package",
+  },
+}
+
+---@param item snacks.picker.finder.Item
+---@param ctx snacks.picker.finder.ctx
+local function want(item, ctx)
+  local filetype = ctx.meta.filetype or "default"
+
+  local top_level_only = TOP_LEVEL_ONLY[filetype] or TOP_LEVEL_ONLY.default
+  if type(top_level_only) == "boolean" or vim.tbl_contains(top_level_only, item.kind) then
+    return is_top_level_symbol(item)
+  end
+
+  local included = INCLUDED[filetype] or INCLUDED.default
+  if type(included) == "boolean" or vim.tbl_contains(included, item.kind) then
+    return true
+  end
+
+  return false
+end
+
+---@param item snacks.picker.finder.Item
+local function get_symbol_key(item)
+  local line = item.pos and item.pos[1] or 0
+  local kind = item.kind
+  local normalized_name = item.name or item.text
+  -- strip class/module/table prefixes for better matching
+  -- "Class:method" -> "method"
+  -- "object.key" -> "key"
+  normalized_name = normalized_name:match("[^:.]+$") or normalized_name
+  return string.format("%d:%s:%s", line, kind, normalized_name)
+end
+
+-- Get the normalized symbol
+---@param item snacks.picker.finder.Item
+---@param ctx snacks.picker.finder.ctx
+---@return snacks.picker.finder.Item | nil
+local function get_normalized_symbol(item, ctx)
+  if not ctx.meta.symbols then
+    return nil
+  end
+  local key = get_symbol_key(item)
+  return ctx.meta.symbols[key]
+end
+
+-- Normalize a symbol item by adding  `sort_key` and `kind` fields.
+-- If this symbol has been seen before, merge this symbol item into the existing one.
+---@param item snacks.picker.finder.Item
+---@param ctx snacks.picker.finder.ctx
+local function normalize_symbol(item, ctx)
+  -- Add sortable key for position-based sorting
+  -- Combine line and column into a single number: line * 10000 + column
+  item.sort_key = item.pos and (item.pos[1] * 10000 + (item.pos[2] or 0)) or 0
+
+  -- Normalize kind field - handle missing or malformed kind
+  local kind = item.kind or "Unknown"
+  -- Some LSP items have kind in the text field (e.g., "Function callable")
+  if kind == "Unknown" and item.text and item.text:match("^%w+ ") then
+    kind = item.text:match("^(%w+) ")
+  end
+  -- Ensure item has kind field for downstream consumers
+  item.kind = kind
+
+  local existing = get_normalized_symbol(item, ctx)
+
+  -- This is a duplicate symbol! Use the original one instead of this one.
+  if existing then
+    -- If this is an LSP item and the existing is treesitter, enrich the treesitter item
+    if not item.ts_kind and existing.ts_kind then
+      for k, v in pairs(item) do
+        existing[k] = v
+      end
+    end
+    item = existing
+  end
+
+  local parent = item.parent
+  while parent and not parent.root and not want(parent, ctx) do
+    parent = parent.parent
+  end
+
+  if parent then
+    item.parent = normalize_symbol(parent, ctx)
+  else
+    item.root = true
+  end
+
+  return item
+end
+
+---Transform that deduplicates and enriches treesitter items with LSP metadata
+---@param item snacks.picker.finder.Item
+---@param ctx snacks.picker.finder.ctx
+---@return boolean|nil false to filter out duplicate, nil to keep
+local function deduplicate_symbols(item, ctx)
+  if not ctx.meta.symbols then
+    return
+  end
+  local normalized = normalize_symbol(item, ctx)
+  local existing = get_normalized_symbol(normalized, ctx)
+  if existing then
+    -- Filter out the duplicate
+    return false
+  else
+    -- Mark this symbol as seen
+    local key = get_symbol_key(normalized)
+    ctx.meta.symbols[key] = normalized
+  end
+end
+
+---@type snacks.picker.finder
+local function find_symbols(opts, ctx)
+  -- Track seen symbols by position, kind, and name
+  ctx.meta.symbols = ctx.meta.symbols or {}
+  ctx.meta.filetype = vim.bo[ctx.filter.current_buf].filetype
+
+  local ts_symbols = require("snacks.picker.source.treesitter").symbols(
+    Snacks.config.merge({ tree = true, filter = INCLUDED }, opts),
+    ctx
+  ) --[[ @as snacks.picker.finder.Item[] ]]
+
+  local lsp_symbols = require("snacks.picker.source.lsp").symbols(
+    Snacks.config.merge({ tree = true, filter = { default = true } }, opts),
+    ctx
+  ) --[[ @as snacks.picker.finder.async ]]
+
+  ---@async
+  ---@type snacks.picker.finder.async
+  local function collect(cb)
+    for _, item in ipairs(ts_symbols) do
+      if deduplicate_symbols(item, ctx) ~= false then
+        cb(item)
+      end
+    end
+
+    lsp_symbols(function(item)
+      if want(item, ctx) and deduplicate_symbols(item, ctx) ~= false then
+        cb(item)
+      end
+    end)
+  end
+  return collect
+end
+
+symbols_sources.symbols = {
+  finder = find_symbols,
+  matcher = {
+    sort_empty = true,
+    keep_parents = true,
+    on_match = function(_, item)
+      local parent = item.parent
+      -- HACK: make sure the top-level parent is marked as root.
+      -- There are cases (maybe with treesitter?) where the root node is not marked.
+      while parent and not parent.root do
+        if parent.text == "root" and not parent.parent then
+          parent.root = true
+          break
+        end
+        parent = parent.parent
+      end
+    end,
+  },
+  sort = { fields = { "sort_key" } },
+  format = "lsp_symbol",
   layout = {
-    preview = "main",
     preset = "vscode",
+    preview = "main",
+    hidden = {},
     layout = {
+      relative = "win",
       row = 0.2,
+      col = 0.6,
       width = 0.3,
       min_width = 50,
     },
@@ -83,61 +253,36 @@ symbols_sources.symbols = {
     disable_main_preview_winbar(picker)
     resize_list_to_fit_vertical(picker)
   end,
-  transform = function(item, ctx)
-    if item.source_id == 1 and item.text == "root" then
-      return false
-      -- ctx.meta.root = ctx.meta.root or item
-      -- elseif item.source_id == 2 and item.text == "" then
-      --   ctx.meta.root = ctx.meta.root or item
-    end
-
-    if ctx.meta.root then
-      vim.print(vim.inspect(ctx.meta.root))
-      return false
-    end
-
-    --   ctx.meta.done = ctx.meta.done or {} ---@type table<number, table<string, table<string, boolean>>>
-    --   local kind, name, line = item.kind, item.name, item.pos[1]
-    --
-    --   if not kind or not name or not line then
-    --     return false
-    --   end
-    --
-    --   item.line = line
-    --
-    --   kind = kind:lower()
-    --
-    --   local kinds = ctx.meta.done[line]
-    --
-    --   if not kinds or not kinds[kind] then
-    --     kinds = {}
-    --     kinds[kind] = {}
-    --     kinds[kind][name] = item
-    --     ctx.meta.done[line] = kinds
-    --   else
-    --     local names = kinds[kind]
-    --     for n in pairs(names) do
-    --       -- if names end the same, assume its the same symbol.
-    --       if name:find(n .. "$") or n:find(name .. "$") then
-    --         local original_item = names[n]
-    --         -- prefer details of non-ts items over ts items.
-    --         if item.ts_kind == nil then
-    --           for k, v in pairs(item) do
-    --             original_item[k] = v
-    --           end
-    --         end
-    --         return false
-    --       end
-    --     end
-    --   end
-  end,
 }
 
--- TODO: source that acts like symbols source but for jumps.
--- could bind on C-o/C-i and C-n/C-p to work like bufjump.
--- source.bufjump
+-- Jump list source configuration
+-- Snacks already has a built-in jumps source, this just customizes the layout
+-- Use with: Snacks.picker.jumps() or LazyVim.pick("jumps")
+symbols_sources.jumps = {
+  layout = {
+    preset = "vscode",
+    preview = "main",
+    hidden = {},
+    layout = {
+      row = 0.2,
+      width = 0.3,
+      min_width = 50,
+    },
+  },
+  on_show = disable_main_preview_winbar,
+}
 
 symbols_sources.lines = {
+  layout = {
+    preset = "vscode",
+    preview = "main",
+    hidden = {},
+    layout = {
+      row = 0.2,
+      width = 0.3,
+      min_width = 50,
+    },
+  },
   on_show = disable_main_preview_winbar,
 }
 
