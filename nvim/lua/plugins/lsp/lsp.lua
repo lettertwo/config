@@ -28,27 +28,19 @@ return {
         desc = "Toggle LSP clients",
       },
     },
-    opts = function()
-      local function rename()
-        require("live-rename").rename()
-      end
-
-      vim.lsp.on_type_formatting.enable()
-
-      vim.list_extend(require("lazyvim.plugins.lsp.keymaps").get(), {
-        { "<leader>.", vim.lsp.buf.code_action, desc = "Code Action", mode = { "n", "v" }, has = "codeAction" },
-        { "grn", rename, desc = "Rename (live-rename.nvim)" },
-        -- Disable these keymaps from the picker extras (fzf, telescope).
-        -- They conflict with builtin keymaps.
-        { "gd", false },
-        { "gD", false },
-        { "gr", false },
-        { "gI", false },
-        { "gy", false },
-        -- Disable signature help binding in insert mode.
-        -- blink.cmp has experimental signature help.
-        { "<c-k>", false, mode = { "i" } },
-      })
-    end,
+    opts = {
+      servers = {
+        ["*"] = {
+          -- stylua: ignore
+          keys = {
+            { "<leader>.", vim.lsp.buf.code_action, desc = "Code Action", mode = { "n", "v" }, has = "codeAction" },
+            { "grn", function() require("live-rename").rename() end, desc = "Rename (live-rename.nvim)" },
+            -- Disable signature help binding in insert mode.
+            -- blink.cmp has experimental signature help.
+            -- { "<c-k>", false, mode = { "i" } },
+          },
+        },
+      },
+    },
   },
 }

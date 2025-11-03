@@ -17,18 +17,6 @@ local claude_keys = {
       t:submit()
     end,
   },
-  term_normal = {
-    "<Esc>",
-    function(t)
-      -- Just a couple of dumb heuristics to determine if claude is looking for <esc>.
-      -- It's quite possible that we don't cover all scenarios here.
-      if vim.fn.search([[-- INSERT\|Esc to\|Esc/Tab to]], "nw") ~= 0 then
-        t:send(vim.keycode("<Esc>"))
-      else
-        vim.cmd("stopinsert")
-      end
-    end,
-  },
 }
 
 return {
@@ -55,7 +43,7 @@ return {
           keys = {
             hide_n        = false,
             hide_ctrl_z   = false,
-            stopinsert    = false,
+            stopinsert    = { "<c-c>", "stopinsert", mode = "t" },
             hide_ctrl_q   = { "<c-q>", "hide", mode = "nt" },
             nav_left      = { "<c-h>", function() feedkeys("<c-h>") end },
             nav_down      = { "<c-j>", function() feedkeys("<c-j>") end },

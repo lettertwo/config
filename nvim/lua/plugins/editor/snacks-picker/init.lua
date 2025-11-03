@@ -229,22 +229,30 @@ return {
   },
   {
     "neovim/nvim-lspconfig",
-    opts = function()
-      local Keys = require("lazyvim.plugins.lsp.keymaps").get()
-      -- stylua: ignore
-      vim.list_extend(Keys, {
-        { "grd", function() Snacks.picker.lsp_definitions() end, desc = "Definitions", has = "definition" },
-        { "grD", function() Snacks.picker.lsp_declarations() end, desc = "Declarations" },
-        { "grr", function() Snacks.picker.lsp_references() end, nowait = true, desc = "References" },
-        { "grI", function() Snacks.picker.lsp_implementations() end, desc = "Implementations" },
-        { "grt", function() Snacks.picker.lsp_type_definitions() end, desc = "Type Definitions" },
-        { "gri", function() Snacks.picker.lsp_incoming_calls() end, desc = "Incoming Calls", has = "callHierarchy/incomingCalls" },
-        { "gro", function() Snacks.picker.lsp_outgoing_calls() end, desc = "Outgoing Calls", has = "callHierarchy/outgoingCalls" },
-        { "<leader>ss", function() Snacks.picker.pick("symbols") end, desc = "Symbols" },
-        { "<leader>sl", function() Snacks.picker.lsp_symbols({ filter = {default = true }, layout = { preset = "vscode", preview = "main" } }) end, desc = "LSP Symbols" },
-        -- { "<leader>st", function() Snacks.picker.treesitter({ layout = { preset = "vscode", preview = "main" } }) end, desc = "TS Symbols" },
-        { "<leader>sS", function() Snacks.picker.lsp_workspace_symbols() end, desc = "LSP Workspace Symbols" },
-      })
-    end,
+    opts = {
+      servers = {
+        ["*"] = {
+          -- stylua: ignore
+          keys = {
+            { "grd", function() Snacks.picker.lsp_definitions() end, desc = "Definitions", has = "definition" },
+            { "grD", function() Snacks.picker.lsp_declarations() end, desc = "Declarations" },
+            { "grr", function() Snacks.picker.lsp_references() end, nowait = true, desc = "References" },
+            { "grI", function() Snacks.picker.lsp_implementations() end, desc = "Implementations" },
+            { "grt", function() Snacks.picker.lsp_type_definitions() end, desc = "Type Definitions" },
+            { "gri", function() Snacks.picker.lsp_incoming_calls() end, desc = "Incoming Calls", has = "callHierarchy/incomingCalls" },
+            { "gro", function() Snacks.picker.lsp_outgoing_calls() end, desc = "Outgoing Calls", has = "callHierarchy/outgoingCalls" },
+            { "<leader>ss", function() Snacks.picker.pick("symbols") end, desc = "Symbols" },
+            -- Disable these keymaps from the picker extras in favor of unified `gr` prefix.
+            { "gd", false },
+            { "gD", false },
+            { "gr", false },
+            { "gI", false },
+            { "gy", false },
+            { "gai", false },
+            { "gao", false },
+          },
+        },
+      },
+    },
   },
 }

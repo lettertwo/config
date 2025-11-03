@@ -23,9 +23,8 @@ directories_sources.directories = {
       cwd,
     }
 
-    return require("snacks.picker.source.proc").proc({
-      opts,
-      {
+    return require("snacks.picker.source.proc").proc(
+      vim.tbl_deep_extend("force", opts, {
         notify = false,
         cmd = cmd,
         args = args,
@@ -40,8 +39,9 @@ directories_sources.directories = {
           item.basename = vim.fs.basename(item.dirname)
           item.dir = true
         end,
-      },
-    }, ctx)
+      }),
+      ctx
+    )
   end,
 
   format = "file",
