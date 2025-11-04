@@ -7,10 +7,8 @@ return {
         return vim.diagnostic.open_float({ scope = "cursor" })
       end
 
-      local lsp = require("lazyvim.util").lsp
-
       -- Show diagnostics popup on cursor hold
-      lsp.on_attach(function(_, bufnr)
+      Snacks.util.lsp.on(function(bufnr)
         local line, col = unpack(vim.api.nvim_win_get_cursor(0))
         vim.api.nvim_create_autocmd("CursorHold", {
           group = vim.api.nvim_create_augroup("Diagnostics" .. bufnr, { clear = true }),
