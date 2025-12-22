@@ -183,16 +183,30 @@ local function deduplicate_symbols(item, ctx)
   end
 end
 
+-- Treesitter symbols will be merged with LSP symbols by default.
+-- This is primarily useful for mitigating slow LSP performance
+-- when trying to quickly navigate symbols.
+-- However, for some languages, the Treesitter symbols are not as useful,
+-- or don't easily match LSP symbols (e.g., Rust), so we can disable
+-- Treesitter symbol inclusion on a per-language basis.
+---@type table<string, boolean>
+local EXCLUDE_TREESITTER_SYMBOLS = {
+  rust = true,
+}
+
 ---@type snacks.picker.finder
 local function find_symbols(opts, ctx)
   -- Track seen symbols by position, kind, and name
   ctx.meta.symbols = ctx.meta.symbols or {}
   ctx.meta.filetype = vim.bo[ctx.filter.current_buf].filetype
 
-  local ts_symbols = require("snacks.picker.source.treesitter").symbols(
-    Snacks.config.merge({ tree = true, filter = INCLUDED }, opts),
-    ctx
-  ) --[[ @as snacks.picker.finder.Item[] ]]
+  local ts_symbols = nil
+  if not EXCLUDE_TREESITTER_SYMBOLS[ctx.meta.filetype] then
+    ts_symbols = require("snacks.picker.source.treesitter").symbols(
+      Snacks.config.merge({ tree = true, filter = INCLUDED }, opts),
+      ctx
+    ) --[[ @as snacks.picker.finder.Item[] ]]
+  end
 
   local lsp_symbols = require("snacks.picker.source.lsp").symbols(
     Snacks.config.merge({ tree = true, filter = { default = true } }, opts),
@@ -202,9 +216,11 @@ local function find_symbols(opts, ctx)
   ---@async
   ---@type snacks.picker.finder.async
   local function collect(cb)
-    for _, item in ipairs(ts_symbols) do
-      if deduplicate_symbols(item, ctx) ~= false then
-        cb(item)
+    if ts_symbols then
+      for _, item in ipairs(ts_symbols) do
+        if deduplicate_symbols(item, ctx) ~= false then
+          cb(item)
+        end
       end
     end
 
