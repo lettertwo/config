@@ -2,33 +2,41 @@
 -- Default autocmds that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/autocmds.lua
 -- Add any additional autocmds here
 
--- Show relative line numbers in visual and operator-pending modes.
--- HACK: ModeChanged doesn't fire consistently when pending a motion,
--- so, we bind directly to keys that enter visual and operator-pending mode.
-vim.on_key(function(char)
-  if char:match("^[cdyvV\x16]$") then
+-- Enable relative line numbers and disable inlay hints when:
+--   - entering visual (char|line|block) mode
+--   - entering operator-pending mode
+vim.api.nvim_create_autocmd("ModeChanged", {
+  pattern = { "*:*[ovV\x16]*" },
+  callback = function()
     vim.opt_local.relativenumber = true
-  end
-end)
+    vim.lsp.inlay_hint.enable(false, { bufnr = 0 })
+  end,
+})
 
+-- Disable relative line numbers and enable inlay hints when:
+--   - leaving visual (char|line|block) mode
+--   - leaving operator-pending mode
 vim.api.nvim_create_autocmd("ModeChanged", {
   pattern = { "*[ovV\x16]*:*" },
   callback = function()
     vim.opt_local.relativenumber = false
+    vim.lsp.inlay_hint.enable(true, { bufnr = 0 })
   end,
 })
 
+-- Disable relative line numbers and enable inlay hints when leaving insert mode
+vim.api.nvim_create_autocmd("InsertLeave", {
+  callback = function()
+    vim.opt_local.relativenumber = false
+    vim.lsp.inlay_hint.enable(true, { bufnr = 0 })
+  end,
+})
+
+-- Disable relative line numbers and inlay hints when entering insert mode
 vim.api.nvim_create_autocmd("InsertEnter", {
   callback = function()
     vim.opt_local.relativenumber = false
-  end,
-})
-
-vim.api.nvim_create_autocmd({ "BufReadPre", "BufEnter" }, {
-  callback = function()
-    vim.schedule(function()
-      vim.opt_local.relativenumber = false
-    end)
+    vim.lsp.inlay_hint.enable(false, { bufnr = 0 })
   end,
 })
 
