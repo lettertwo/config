@@ -25,6 +25,7 @@ brew "tldr" if OS.mac?
 brew "lnav" if OS.mac?
 
 brew "fzf"
+brew "sk" # skim-rs/skim, replacement for fzf?
 brew "ripgrep" # BurntSushi/ripgrep
 brew "fd" # sharkdp/fd, replacement for find
 brew "bat" # sharkdp/bat, replacement for cat

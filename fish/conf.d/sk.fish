@@ -1,20 +1,50 @@
 type -q sk || return 1
 
-# # set -q FZF_DEFAULT_OPTS; or set -Ux FZF_DEFAULT_OPTS "--layout reverse --info inline"
-# set -q FZF_DEFAULT_OPTS; or set -Ux FZF_DEFAULT_OPTS "--layout reverse --info inline --height 80%"
-# # set -q FZF_DEFAULT_OPTS; or set -Ux FZF_DEFAULT_OPTS "--layout reverse --info inline --height 40% --no-bold --bind='start:kitty @ set-user-vars IS_FZF' --bind='result:kitty @ set-user-vars IS_FZF'"
-# set -q FZF_DEFAULT_COMMAND; or set -Ux FZF_DEFAULT_COMMAND 'rg --files --no-ignore --hidden --follow --glob "!.git/*"'
-# set -q FZF_CTRL_T_OPTS; or set -Ux FZF_CTRL_T_OPTS "--height 40% --preview \"bat --style=numbers --color=always --line-range :500 {}\""
+set -q SKIM_DEFAULT_OPTIONS; or set -Ux SKIM_DEFAULT_OPTIONS "--reverse --info inline --height 40% --color=dark,\
+fg:#FFFFFF,\
+bg:#27212E,\
+matched:#75DFC4,\
+matched_bg:#3E3248,\
+current_bg:#3E3248,\
+current_match:#EB65B9,\
+current_match_bg:#3E3248,\
+spinner:#554C47,\
+info:#7C6A96,\
+prompt:#7C6A96,\
+cursor:#75DFC4,\
+selected:#FFE25F,\
+header:#41B5C5,\
+border:#EB65B9"
 
-cachecmd -- sk --shell fish | source
+# Customizable UI Elements
+# - fg: Normal text foreground color
+# - bg: Normal text background color
+# - matched (or hl): Matched text in search results
+# - matched_bg: Background of matched text
+# - current (or fg+): Current line foreground color
+# - current_bg (or bg+): Current line background color
+# - current_match (or hl+): Matched text in current line
+# - current_match_bg: Background of matched text in current line
+# - spinner: Progress indicator color
+# - info: Information line color
+# - prompt: Prompt color
+# - cursor (or pointer): Cursor color
+# - selected (or marker): Selected item marker color
+# - header: Header text color
+# - border: Border color for preview/layout
 
-# if type -q fzf_configure_bindings
-#     # COMMAND            |  DEFAULT KEY SEQUENCE         |  CORRESPONDING OPTION
-#     # Search Directory   |  Ctrl+Alt+F (F for file)      |  --directory
-#     # Search Git Log     |  Ctrl+Alt+L (L for log)       |  --git_log
-#     # Search Git Status  |  Ctrl+Alt+S (S for status)    |  --git_status
-#     # Search History     |  Ctrl+R     (R for reverse)   |  --history
-#     # Search Processes   |  Ctrl+Alt+P (P for process)   |  --processes
-#     # Search Variables   |  Ctrl+V     (V for variable)  |  --variables
-#     fzf_configure_bindings --directory=\ct --git_log=\cg\cg --git_status=\cg\cs --history=\cr --processes=\cp --variables=\cv
-# end
+if test -e "$HOMEBREW_PREFIX/share/fish/vendor_completions.d/skim.fish"
+    source "$HOMEBREW_PREFIX/share/fish/vendor_completions.d/skim.fish"
+end
+
+if type -q skim_key_bindings
+    # - $SKIM_TMUX_OPTS
+    # - $SKIM_CTRL_T_COMMAND
+    # - $SKIM_CTRL_T_OPTS
+    # - $SKIM_CTRL_R_OPTS
+    # - $SKIM_ALT_C_COMMAND
+    # - $SKIM_ALT_C_OPTS
+    # - $SKIM_COMPLETION_TRIGGER (default: '**')
+    # - $SKIM_COMPLETION_OPTS    (default: empty)
+    skim_key_bindings
+end

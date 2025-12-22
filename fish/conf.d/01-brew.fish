@@ -17,4 +17,7 @@ if test -x $HOMEBREW_BIN
     if test -e "$HOMEBREW_PREFIX/share/fish/completions"
         set -a fish_complete_path "$HOMEBREW_PREFIX/share/fish/completions"
     end
+    if test -e "$HOMEBREW_PREFIX/share/fish/vendor_completions.d"
+        set -a fish_complete_path "$HOMEBREW_PREFIX/share/fish/vendor_completions.d"
+    end
 end
