@@ -47,6 +47,7 @@ brew "watchman"
 brew "graphviz"
 brew "hyperfine"
 brew "jq"
+brew "direnv"
 
 # neovim dependencies
 # See https://github.com/neovim/neovim/wiki/Building-Neovim#macos--homebrew
