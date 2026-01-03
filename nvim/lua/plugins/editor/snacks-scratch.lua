@@ -47,6 +47,7 @@ return {
       { "<leader>bn", function() return new_scratch(FILETYPES) end, desc = "New Scratch Buffer" },
       { "<leader>bs", function() require('snacks').scratch() end, desc = "Toggle Scratch Buffer" },
       { "<leader>bS", function() require('snacks.picker').scratch() end, desc = "Select Scratch Buffer" },
+      { "<leader>bt", function() require('snacks').scratch.open({name = "TODO", ft = "markdown", icon = " " }) end, desc = "Toggle Todo Buffer" },
     },
     opts = {
       scratch = {
