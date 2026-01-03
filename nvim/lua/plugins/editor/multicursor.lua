@@ -9,8 +9,8 @@ return {
 
       local set = vim.keymap.set
 
-      -- set("x", "I", mc.insertVisual)
-      -- set("x", "A", mc.appendVisual)
+      set("x", "I", mc.insertVisual)
+      set("x", "A", mc.appendVisual)
       -- set("x", "c", function()
       --   -- perform default change operation
       --   vim.api.nvim_feedkeys("c", "n", true)

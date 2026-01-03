@@ -72,12 +72,6 @@ vim.keymap.set("n", "˙", "<<", { desc = "Indent left" })
 vim.keymap.set("x", "˙", "<gv", { desc = "Indent left" })
 
 -- Block insert in line visual mode
-vim.keymap.set("x", "I", function()
-  return vim.fn.mode() == "V" and "^<C-v>I" or "I"
-end, { expr = true })
-vim.keymap.set("x", "A", function()
-  return vim.fn.mode() == "V" and "$<C-v>A" or "A"
-end, { expr = true })
 
 -- diagnostics
 vim.keymap.set("n", "]x", "]d", { desc = "Next diagnostic", remap = true })
