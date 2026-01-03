@@ -1,4 +1,13 @@
-local Util = require("util")
+local function is_callable(callback)
+  if type(callback) == "function" then
+    return true
+  end
+  local cb_meta = getmetatable(callback)
+  if cb_meta ~= nil then
+    return is_callable(cb_meta.__call)
+  end
+  return false
+end
 
 -- A callable type that can be used as a conditional callback.
 -- It can be sequenced with other conditions via the `+` operator.
@@ -16,7 +25,7 @@ function Condition.new(callback)
 
   local condition = {}
   local meta = Condition
-  if not Util.is_callable(callback) then
+  if not is_callable(callback) then
     error("callback must be callable")
   else
     condition.callback = callback
@@ -38,7 +47,7 @@ end
 ---@param right Condition | fun(): boolean
 ---@return self
 function Condition.add(left, right)
-  if Util.is_callable(right) and Util.is_callable(left) then
+  if is_callable(right) and is_callable(left) then
     return Condition.new(function()
       return left() and right()
     end)
