@@ -257,6 +257,37 @@ return {
       },
     },
   },
+  {
+    "lettertwo/occurrence.nvim",
+    optional = true,
+    keys = {
+      { "g~o", "<cmd>Occurrence modify_operator g~<CR>", desc = "marked occurrences" },
+    },
+    opts = {
+      operators = {
+        ["g~"] = {
+          desc = "Swap text case of marked occurrences",
+          before = function(_, ctx)
+            return function(done)
+              select_text_case(function(item)
+                if item == nil then
+                  done(false)
+                else
+                  ctx.textcase = item
+                  done()
+                end
+              end)()
+            end
+          end,
+          operator = function(current, ctx)
+            if ctx.textcase == nil or ctx.textcase.apply == nil then
+              -- Fallback to builtin case toggle operator
+              return require("occurrence.api").toggle_case.operator(current, ctx)
+            end
+            return apply_per_line(current.text, ctx.textcase.apply)
+          end,
+        },
+      },
     },
   },
 }

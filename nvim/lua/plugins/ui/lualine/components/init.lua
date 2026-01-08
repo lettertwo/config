@@ -116,8 +116,33 @@ M.diagnostics = {
 }
 
 M.searchcount = {
-  "searchcount",
-  timeout = 200,
+  function()
+    local count
+    local icon = ""
+    if vim.v.hlsearch == 0 then
+      if package.loaded["occurrence"] ~= nil then
+        local ok, occurrence = pcall(require, "occurrence")
+        if ok and occurrence then
+          ok, count = pcall(occurrence.status)
+          if ok and count then
+            icon = "󱡴 "
+          end
+        end
+      end
+    else
+      local ok, result = pcall(vim.fn.searchcount, { maxcount = 999, timeout = 200 })
+      if ok and result then
+        count = result
+        icon = "󰍉 "
+      end
+    end
+
+    if not count or not count.current or not count.total then
+      return ""
+    end
+    local denominator = math.min(count.total, 999)
+    return string.format("%s[%d/%d]", icon, count.current, denominator)
+  end,
 }
 
 local sidekick_icons = {
