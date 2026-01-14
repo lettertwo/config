@@ -243,6 +243,10 @@ vim.api.nvim_create_autocmd("User", {
       end),
       { desc = "Select text case" }
     )
+
+    if package.loaded["occurrence"] then
+      vim.keymap.set({ "n", "v" }, "g~o", "<cmd>Occurrence modify_operator g~<CR>", { desc = "marked occurrences" })
+    end
   end,
 })
 
@@ -260,9 +264,6 @@ return {
   {
     "lettertwo/occurrence.nvim",
     optional = true,
-    keys = {
-      { "g~o", "<cmd>Occurrence modify_operator g~<CR>", desc = "marked occurrences" },
-    },
     opts = {
       operators = {
         ["g~"] = {
