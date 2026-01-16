@@ -48,7 +48,6 @@ return {
           },
           windows = {
             terminal = {
-              start_hidden = true,
               hide = {},
             },
           },
