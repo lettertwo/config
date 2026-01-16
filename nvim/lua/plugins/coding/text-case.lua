@@ -174,11 +174,15 @@ end
 
 local function current_word(method)
   return function()
-    local cpos = vim.fn.searchpos("\\W", "Wbcn")
-    local cword = vim.fn.expand("<cword>")
+    local cword = vim.fn.escape(vim.fn.expand("<cword>"), [[\/]])
+    if cword == "" then
+      vim.notify("No word under cursor", vim.log.levels.WARN, { title = "Text Case" })
+      return false
+    end
+    local cpos = vim.fn.searchpos(cword, "Wbcn")
     local replacement = apply_per_line(cword, method.apply)
     if replacement ~= nil then
-      vim.api.nvim_buf_set_text(0, cpos[1] - 1, cpos[2], cpos[1] - 1, cpos[2] + #cword, replacement)
+      vim.api.nvim_buf_set_text(0, cpos[1] - 1, cpos[2] - 1, cpos[1] - 1, cpos[2] + #cword - 1, replacement)
     end
   end
 end
