@@ -10,13 +10,16 @@ return {
       }
 
       local function update_transforms()
-        local hex = "#000000"
+        local hex = vim.o.background == "dark" and "#000000" or "#FFFFFF"
         local bg = vim.api.nvim_get_hl(0, { name = "Normal" }).bg
         if bg then
           hex = "#" .. require("tint.colors").get_hex(bg)
-        else
         end
-        transforms[1] = require("tint.transforms").tint_with_threshold(-50, hex, 125)
+        if vim.o.background == "dark" then
+          transforms[1] = require("tint.transforms").tint_with_threshold(-50, hex, 125)
+        else
+          transforms[1] = require("tint.transforms").tint_with_threshold(100, hex, 200)
+        end
       end
 
       vim.api.nvim_create_autocmd({ "ColorScheme" }, {
