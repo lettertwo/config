@@ -1,3 +1,4 @@
+local assert = require("luassert")
 local StringUtil = require("util.string")
 
 describe("StringUtil.capcase", function()
