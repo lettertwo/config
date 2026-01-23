@@ -336,47 +336,36 @@ return {
         }
       end
 
-      function Snacks.dashboard.sections.last_session_files(opts)
+      function Snacks.dashboard.sections.last_session_files(last_session_files_opts)
         return function()
-          opts = opts or {}
-          local limit = opts.limit or 10
+          last_session_files_opts = last_session_files_opts or {}
+          local limit = last_session_files_opts.limit or 10
 
-          local ret = {} ---@type snacks.dashboard.Section
+          local ret = {} ---@type snacks.dashboard.Item[]
           local added = {} ---@type table<string, true>
 
-          -- Add tagged buffers from the previous session up to the limit.
-          -- NOTE: Grapple tags aren't actually persisted as part of the session,
-          -- but they are scoped to git branch by default, as are sessions, so they _roughly_ correlate.
-          local tags = nil
-          local grapple_ok, grapple = pcall(require, "grapple")
-          if grapple_ok and grapple then
-            tags = grapple.tags()
-          end
-
-          if tags ~= nil then
-            local i = 1
-            while #ret < limit and i <= #tags do
-              local tag = tags[i]
-              if tag then
-                local file, cursor = tag.path, tag.cursor
-                if vim.fn.filereadable(vim.fn.fnamemodify(file, ":~:.")) == 1 then
-                  file = vim.fn.fnamemodify(file, ":~:.")
-                end
-                if vim.fn.filereadable(file) == 1 and not added[file] then
-                  local action = ":e"
-                    .. (cursor and cursor[1] and cursor[2] and "+call\\ cursor(" .. cursor[1] .. "," .. cursor[2] + 1 .. ") " or " ")
-                    .. vim.fn.fnameescape(file)
-                  ret[#ret + 1] = {
-                    file = file,
-                    icon = LazyVim.config.icons.tag,
-                    action = action,
-                    autokey = true,
-                  }
-                  added[file] = true
-                end
+          -- Add marked buffers from the previous session up to the limit.
+          -- NOTE: Recall marks are persisted in the shada file.
+          local recall_ok, recall_util = pcall(require, "util.recall")
+          if recall_ok and recall_util then
+            recall_util.iter_marked_files():each(function(file)
+              if #ret >= limit then
+                return
               end
-              i = i + 1
-            end
+              if vim.fn.filereadable(vim.fn.fnamemodify(file, ":~:.")) == 1 then
+                file = vim.fn.fnamemodify(file, ":~:.")
+              end
+              if vim.fn.filereadable(file) == 1 and not added[file] then
+                ret[#ret + 1] = {
+                  file = file,
+                  ---@diagnostic disable-next-line: assign-type-mismatch
+                  icon = { LazyVim.config.icons.tag, hl = "@tag" },
+                  action = ":e " .. vim.fn.fnameescape(file),
+                  autokey = true,
+                }
+                added[file] = true
+              end
+            end)
           end
 
           if #ret >= limit then
@@ -400,16 +389,23 @@ return {
             session = nil
           end
 
-          local files = {} ---@type [string, string?][]
-
-          for line in io.lines(session) do
+          vim.iter(io.lines(session)):each(function(line)
+            if #ret >= limit then
+              return
+            end
             local lineno, file = line:match("^badd%s+%+([^%s]+)%s+(.+)")
             if file then
               if vim.fn.filereadable(vim.fn.fnamemodify(file, ":~:.")) == 1 then
                 file = vim.fn.fnamemodify(file, ":~:.")
               end
               if vim.fn.filereadable(file) == 1 and not added[file] then
-                table.insert(files, { file, lineno })
+                ret[#ret + 1] = {
+                  file = file,
+                  icon = "file",
+                  action = ":e +" .. lineno .. " " .. vim.fn.fnameescape(file),
+                  autokey = true,
+                }
+                added[file] = true
               end
             else
               file = line:match("^edit%s+(.+)")
@@ -418,29 +414,19 @@ return {
                   file = vim.fn.fnamemodify(file, ":~:.")
                 end
                 if vim.fn.filereadable(file) == 1 and not added[file] then
-                  table.insert(files, { file })
+                  ret[#ret + 1] = {
+                    file = file,
+                    icon = "file",
+                    action = ":e " .. vim.fn.fnameescape(file),
+                    autokey = true,
+                  }
+                  added[file] = true
                 end
               end
             end
-          end
+          end)
 
-          local i = 1
-          while #ret < limit and i <= #files do
-            local file, lineno = files[i][1], files[i][2]
-            if file and not added[file] then
-              local action = ":e" .. (lineno ~= nil and " +" .. lineno .. " " or " ") .. vim.fn.fnameescape(file)
-              ret[#ret + 1] = {
-                file = file,
-                icon = "file",
-                action = action,
-                autokey = true,
-              }
-              added[file] = true
-            end
-            i = i + 1
-          end
-
-          return ret
+          return vim.list_slice(ret, 1, limit)
         end
       end
 

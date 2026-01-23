@@ -43,7 +43,6 @@ M.filepath = {
   file_status = false,
   path = 3, -- 3: Absolute path, with tilde as the home directory
   shorting_target = 20, -- Shortens path to leave 40 spaces in the window for other components.
-  color = "Comment",
   cond = visible_for_filetype,
 }
 
@@ -57,27 +56,9 @@ M.filepath_inactive = {
 }
 
 M.filetype = {
-  function()
-    local buf = vim.api.nvim_get_current_buf()
-    local win = vim.api.nvim_get_current_win()
-
-    local MiniIcons = require("mini.icons")
-    local current_path = vim.fs.normalize(
-      ---@diagnostic disable-next-line: param-type-mismatch
-      vim.fn.fnamemodify((vim.api.nvim_buf_get_name(buf)), ":p")
-    )
-    local icon = MiniIcons.get("file", current_path)
-
-    if vim.w[win].sticky_win ~= nil then
-      icon = "󰐃 " .. icon
-    end
-
-    if package.loaded["grapple"] and require("grapple").exists() then
-      icon = "󰛢 " .. icon
-    end
-
-    return icon
-  end,
+  "filetype",
+  colored = false,
+  icon_only = true,
   cond = visible_for_filetype,
 }
 

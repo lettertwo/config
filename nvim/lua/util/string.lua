@@ -48,6 +48,7 @@ end
 ---@class TitlePathOpts
 ---@field cwd string?
 ---@field target_width number?
+---@field disambiguate boolean?
 ---@field ambiguous_filetypes string[]?
 ---@field ambiguous_segments string[]?
 ---@field nextjs_segment_patterns string[]?
@@ -117,6 +118,17 @@ end
 --- @param opts? TitlePathOpts Options for title path to be merged with default options.
 function StringUtil.title_path(path, opts)
   opts = vim.tbl_deep_extend("keep", opts or {}, DEFAULT_TITLE_PATH_OPTS)
+  ---@cast opts -nil
+
+  if opts.disambiguate then
+    local to_disambiguate = StringUtil.title_path(path, vim.tbl_extend("keep", { disambiguate = false }, opts))
+    local segments = vim.split(to_disambiguate, StringUtil.SEP)
+    opts = vim.tbl_extend("keep", {
+      ambiguous_segments = vim.list_slice(segments, 1, #segments - 1),
+      ambiguous_filetypes = vim.list_slice(segments, #segments),
+    }, opts)
+  end
+
   path = StringUtil.smart_shorten_path(path, { cwd = opts.cwd, target_width = opts.target_width })
 
   local segments = vim.split(path, StringUtil.SEP)

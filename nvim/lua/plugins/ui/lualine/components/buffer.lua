@@ -1,5 +1,6 @@
 local filetype = require("plugins.ui.lualine.components").filetype
 local Util = require("util")
+local _, recall_util = pcall(require, "util.recall")
 
 local Buffer = require("lualine.utils.class"):extend()
 
@@ -9,19 +10,18 @@ local Buffer = require("lualine.utils.class"):extend()
 ---@field beforecurrent boolean?
 ---@field first boolean?
 ---@field last boolean?
+---@field disambiguate boolean?
 
 ---@class BufferOpts
 ---@field bufnr number
----@field tag_id number?
----@field tag_name string?
+---@field tag number?
 ---@field options table
 ---@field highlights table
 
 function Buffer:init(opts)
   assert(opts.bufnr, "Cannot create Buffer without bufnr")
   self.bufnr = opts.bufnr
-  self.tag_id = opts.tag_id
-  self.tag_name = opts.tag_name
+  self.tag = opts.tag
   self.options = opts.options
   self.highlights = opts.highlights
 
@@ -38,24 +38,23 @@ end
 function Buffer:name(props)
   local name = {}
 
-  if self.tag_name then
-    table.insert(name, self.tag_name)
-  elseif self.tag_id then
-    table.insert(name, tostring(self.tag_id))
+  if self.tag then
+    table.insert(name, tostring(self.tag))
   end
 
   if props.current then
     table.insert(name, self.icon)
-    table.insert(name, Util.title_path(self.file))
+    table.insert(name, Util.title_path(self.file, { disambiguate = props.disambiguate }))
   elseif #name == 0 then
-    table.insert(name, Util.title_path(self.file))
+    table.insert(name, Util.title_path(self.file, { disambiguate = props.disambiguate }))
   end
 
   return table.concat(name, " ")
 end
 
 function Buffer:is_current()
-  return self.bufnr == vim.api.nvim_get_current_buf()
+  local current_bufnr = vim.api.nvim_get_current_buf()
+  return self.bufnr == current_bufnr
 end
 
 ---returns line configured for handling mouse click
@@ -165,29 +164,25 @@ function M:buffers()
   local bufnr = vim.api.nvim_get_current_buf()
   local found_current = false
 
-  if package.loaded["grapple"] then
-    local Grapple = require("grapple")
-    local app = Grapple.app()
-    local quick_select = app.settings:quick_select()
-    local tags = Grapple.tags()
-    if tags then
-      local current = Grapple.find({ buffer = bufnr })
-      for i, tag in ipairs(tags) do
-        table.insert(
-          buffers,
-          Buffer:new({
-            bufnr = vim.fn.bufnr(tag.path),
+  if recall_util then
+    buffers = recall_util
+      .iter_marked_files()
+      :enumerate()
+      :map(function(tag, file)
+        local mark_bufnr = vim.fn.bufnr(file)
+        if mark_bufnr ~= -1 then
+          if mark_bufnr == bufnr then
+            found_current = true
+          end
+          return Buffer:new({
+            bufnr = mark_bufnr,
+            tag = tag,
             options = self.options,
             highlights = self.highlights,
-            tag_id = quick_select[i] and quick_select[i] or i,
-            tag_name = tag.name,
           })
-        )
-        if current and current.path == tag.path then
-          found_current = true
         end
-      end
-    end
+      end)
+      :totable()
   end
 
   if not found_current then
@@ -208,7 +203,17 @@ function M:update_status()
   local data = {}
   local buffers = self:buffers()
   local current = 0
+  -- disambiguate buffers with same name
+  local buffers_by_name = {}
 
+  -- first pass: group buffers by name
+  for _, buffer in ipairs(buffers) do
+    local name = Util.title_path(buffer.file)
+    buffers_by_name[name] = buffers_by_name[name] or {}
+    table.insert(buffers_by_name[name], buffer)
+  end
+
+  -- second pass: render buffers
   for i, buffer in ipairs(buffers) do
     if current == 0 and buffer:is_current() then
       current = i
@@ -222,6 +227,7 @@ function M:update_status()
         aftercurrent = i == current + 1,
         first = i == 1,
         last = i == #buffers,
+        disambiguate = #buffers_by_name[Util.title_path(buffer.file)] > 1,
       })
     )
   end

@@ -101,6 +101,13 @@ return {
           })
         end,
       })
+
+      vim.api.nvim_create_autocmd("User", {
+        pattern = "RecallUpdate",
+        callback = function()
+          require("lualine").refresh({ place = { "winbar" }, scope = "all" })
+        end,
+      })
     end,
   },
 }

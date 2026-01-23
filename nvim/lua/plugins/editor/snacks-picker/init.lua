@@ -1,8 +1,8 @@
 local actions = require("plugins.editor.snacks-picker.actions")
-local grapple_actions = require("plugins.editor.snacks-picker.actions.grapple")
+local recall_actions = require("plugins.editor.snacks-picker.actions.recall")
 local refine_actions = require("plugins.editor.snacks-picker.actions.refine")
 local sources = require("plugins.editor.snacks-picker.sources")
-local grapple_sources = require("plugins.editor.snacks-picker.sources.grapple")
+local recall_sources = require("plugins.editor.snacks-picker.sources.recall")
 local directories_sources = require("plugins.editor.snacks-picker.sources.directories")
 local packages_sources = require("plugins.editor.snacks-picker.sources.packages")
 local scope_sources = require("plugins.editor.snacks-picker.sources.scope")
@@ -66,14 +66,14 @@ return {
             "error",
             (opts and opts.actions) or {},
             actions,
-            grapple_actions,
+            recall_actions,
             refine_actions
           ),
           sources = vim.tbl_deep_extend(
             "error",
             (opts and opts.sources) or {},
             sources,
-            grapple_sources,
+            recall_sources,
             directories_sources,
             packages_sources,
             scope_sources,
@@ -145,7 +145,7 @@ return {
       { "<leader><space>", LazyVim.pick("switch", { scope = "workspace" }), desc = "Switch (workspace)" },
       { "<leader>r", LazyVim.pick("switch", { scope = "root" }), desc = "Switch (root)" },
       { "<leader>R", LazyVim.pick("switch"), desc = "Switch (global)" },
-      { "<leader>'", LazyVim.pick("grapple"), desc = "Grapple" },
+      { "<leader>'", LazyVim.pick("recall"), desc = "Recall" },
       { "<leader>nn", function() Snacks.picker.notifications() end, desc = "Notification History" },
       { "<leader>qp", LazyVim.pick("projects"), desc = "Projects" },
 
