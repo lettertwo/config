@@ -36,11 +36,15 @@ vim.keymap.set("n", "<leader>by", function()
   vim.fn.setreg("+", vim.fn.expand("%:p"))
 end, { desc = "Copy current file path" })
 
--- lazy
-vim.keymap.set("n", "<leader>L", "<cmd>:LazyExtras<cr>", { desc = "Lazy Extras" })
-
--- mason
-vim.keymap.set("n", "<leader>M", "<cmd>:Mason<cr>", { desc = "Mason" })
+-- lazy/mason
+vim.keymap.del("n", "<leader>l")
+vim.keymap.del("n", "<leader>L")
+vim.keymap.set("n", "<leader>ll", "<cmd>:Lazy<cr>", { desc = "Lazy" })
+vim.keymap.set("n", "<leader>lL", function()
+  LazyVim.news.changelog()
+end, { desc = "LazyVim Changelog" })
+vim.keymap.set("n", "<leader>le", "<cmd>:LazyExtras<cr>", { desc = "Lazy Extras" })
+vim.keymap.set("n", "<leader>lm", "<cmd>:Mason<cr>", { desc = "Mason" })
 
 -- toggle options
 vim.keymap.del("n", "<leader>ul")
