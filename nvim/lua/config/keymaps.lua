@@ -30,8 +30,8 @@ vim.keymap.set("n", "<C-CR>", "ciw", { desc = "Change word under cursor" })
 vim.keymap.set("i", "<C-CR>", "<C-o>diw", { desc = "Change next word under cursor" })
 
 -- buffers
-vim.keymap.set("n", "<leader>br", "<cmd>e %<cr>", { desc = "Reopen buffer" })
-vim.keymap.set("n", "<leader>bO", "<cmd>!open -R %<cr>", { desc = "Reveal file in finder" })
+vim.keymap.set("n", "<leader>br", "<cmd>e '%'<cr>", { desc = "Reopen buffer" })
+vim.keymap.set("n", "<leader>bO", "<cmd>!open -R '%'<cr>", { desc = "Reveal file in finder" })
 vim.keymap.set("n", "<leader>by", function()
   vim.fn.setreg("+", vim.fn.expand("%:p"))
 end, { desc = "Copy current file path" })
