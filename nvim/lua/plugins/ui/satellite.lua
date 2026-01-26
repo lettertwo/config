@@ -10,7 +10,7 @@ local RecallHandler = {
 }
 
 function RecallHandler.enabled()
-  return pcall(require, "util.recall")
+  return pcall(require, "plugins.editor.recall.util")
 end
 
 function RecallHandler.setup(config, update)
@@ -30,7 +30,7 @@ function RecallHandler.update(bufnr, winid)
     return {}
   end
 
-  return require("util.recall")
+  return require("plugins.editor.recall.util")
     .iter_marks(bufnr)
     :map(function(mark)
       local line = mark.pos and mark.pos[1] or 1

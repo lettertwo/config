@@ -3,7 +3,7 @@
 local recall_actions = {}
 
 function recall_actions.recall_toggle(picker, item)
-  local recall_util_ok, recall_util = pcall(require, "util.recall")
+  local recall_util_ok, recall_util = pcall(require, "plugins.editor.recall.util")
   if not recall_util_ok or not recall_util then
     Snacks.notify.warn("recall utility not found", { title = picker.title })
     return
@@ -23,7 +23,7 @@ function recall_actions.recall_toggle(picker, item)
 end
 
 function recall_actions.bufdelete_and_recall_unmark(picker)
-  local recall_util_ok, recall_util = pcall(require, "util.recall")
+  local recall_util_ok, recall_util = pcall(require, "plugins.editor.recall.util")
 
   if recall_util_ok and recall_util then
     for _, item in ipairs(picker:selected({ fallback = true })) do
@@ -35,7 +35,7 @@ function recall_actions.bufdelete_and_recall_unmark(picker)
 end
 
 function recall_actions.recall_move_up(picker, item)
-  local recall_util_ok, recall_util = pcall(require, "util.recall")
+  local recall_util_ok, recall_util = pcall(require, "plugins.editor.recall.util")
   if not recall_util_ok or not recall_util then
     Snacks.notify.warn("recall utility not found", { title = picker.title })
     return
@@ -73,7 +73,7 @@ function recall_actions.recall_move_up(picker, item)
 end
 
 function recall_actions.recall_move_down(picker, item)
-  local recall_util_ok, recall_util = pcall(require, "util.recall")
+  local recall_util_ok, recall_util = pcall(require, "plugins.editor.recall.util")
   if not recall_util_ok or not recall_util then
     Snacks.notify.warn("recall utility not found", { title = picker.title })
     return

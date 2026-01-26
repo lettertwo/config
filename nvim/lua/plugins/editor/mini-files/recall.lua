@@ -1,7 +1,7 @@
 local nsMiniFiles = vim.api.nvim_create_namespace("mini_files_recall")
 local autocmd = vim.api.nvim_create_autocmd
 local _, MiniFiles = pcall(require, "mini.files")
-local _, recall_util = pcall(require, "util.recall")
+local _, recall_util = pcall(require, "plugins.editor.recall.util")
 
 local function augroup(name)
   return vim.api.nvim_create_augroup("MiniFiles_recall_" .. name, { clear = true })

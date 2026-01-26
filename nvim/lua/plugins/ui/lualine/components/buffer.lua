@@ -1,6 +1,6 @@
 local filetype = require("plugins.ui.lualine.components").filetype
 local Util = require("util")
-local _, recall_util = pcall(require, "util.recall")
+local _, recall_util = pcall(require, "plugins.editor.recall.util")
 
 local Buffer = require("lualine.utils.class"):extend()
 

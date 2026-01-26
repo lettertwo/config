@@ -76,7 +76,7 @@ function M.toggle_mark()
   local entry = MiniFiles.get_fs_entry()
   if entry ~= nil and entry.path ~= nil then
     -- Toggle mark without opening the buffer
-    local recall_util_ok, recall_util = pcall(require, "util.recall")
+    local recall_util_ok, recall_util = pcall(require, "plugins.editor.recall.util")
     if recall_util_ok then
       recall_util.toggle(entry.path)
       local new_filter = show_dotfiles and filter_show or filter_hide

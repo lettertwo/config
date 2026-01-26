@@ -346,7 +346,7 @@ return {
 
           -- Add marked buffers from the previous session up to the limit.
           -- NOTE: Recall marks are persisted in the shada file.
-          local recall_ok, recall_util = pcall(require, "util.recall")
+          local recall_ok, recall_util = pcall(require, "plugins.editor.recall.util")
           if recall_ok and recall_util then
             recall_util.iter_marked_files():each(function(file)
               if #ret >= limit then

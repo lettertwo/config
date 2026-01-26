@@ -1,3 +1,5 @@
+---@module "lazy"
+---@type LazyPluginSpec[]
 return {
   {
     "fnune/recall.nvim",
@@ -39,7 +41,7 @@ return {
         sign_highlight = "@tag",
       }))
 
-      local recall_util = require("util.recall")
+      local recall_util = require("plugins.editor.recall.util")
 
       -- Wrapped Commands
       -- stylua: ignore start
