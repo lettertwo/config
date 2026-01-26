@@ -223,6 +223,60 @@ return {
           })
         end,
       },
+      {
+        "lewis6991/satellite.nvim",
+        optional = true,
+        opts = function(_, opts)
+          ---@module "satellite"
+          ---@class RecallHandler: Satellite.Handler
+          local RecallHandler = {
+            name = "recall_marks",
+            config = {
+              enable = true,
+              overlap = true,
+              priority = 100,
+            },
+          }
+
+          function RecallHandler.setup(config, update)
+            RecallHandler.config = vim.tbl_deep_extend("force", RecallHandler.config, config or {})
+            vim.api.nvim_create_autocmd("User", {
+              group = vim.api.nvim_create_augroup("satellite_recall_marks", {}),
+              pattern = "RecallUpdate",
+              callback = vim.schedule_wrap(update),
+            })
+          end
+
+          ---@param bufnr number
+          ---@param winid number
+          ---@return Satellite.Mark[]
+          function RecallHandler.update(bufnr, winid)
+            if not vim.api.nvim_buf_is_valid(bufnr) then
+              return {}
+            end
+
+            return require("plugins.editor.recall.util")
+              .iter_marks(bufnr)
+              :map(function(mark)
+                local line = mark.pos and mark.pos[1] or 1
+                return {
+                  pos = require("satellite.util").row_to_barpos(winid, line - 1),
+                  highlight = "@tag",
+                  symbol = LazyVim.config.icons.tag,
+                }
+              end)
+              :totable()
+          end
+
+          require("satellite.handlers").register(RecallHandler)
+
+          return vim.tbl_deep_extend("force", opts or {}, {
+            handlers = {
+              recall_marks = { enable = true },
+            },
+          })
+        end,
+      },
     },
   },
 }
