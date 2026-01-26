@@ -72,19 +72,4 @@ function M.reveal_in_finder()
   end
 end
 
-function M.toggle_mark()
-  local entry = MiniFiles.get_fs_entry()
-  if entry ~= nil and entry.path ~= nil then
-    -- Toggle mark without opening the buffer
-    local recall_util_ok, recall_util = pcall(require, "plugins.editor.recall.util")
-    if recall_util_ok then
-      recall_util.toggle(entry.path)
-      local new_filter = show_dotfiles and filter_show or filter_hide
-      MiniFiles.refresh({ content = { filter = new_filter } })
-    else
-      vim.notify("recall utility not found", vim.log.levels.WARN)
-    end
-  end
-end
-
 return M

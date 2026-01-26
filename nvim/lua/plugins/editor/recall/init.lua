@@ -159,5 +159,70 @@ return {
         end,
       })
     end,
+    specs = {
+      {
+        "nvim-mini/mini.files",
+        optional = true,
+        opts = function()
+          local ns_mini_files_recall = vim.api.nvim_create_namespace("mini_files_recall")
+          local MiniFiles = require("mini.files")
+          local recall = require("plugins.editor.recall.util")
+          local group = vim.api.nvim_create_augroup("mini_files_recall_integration", { clear = true })
+
+          local function toggle_mark()
+            local entry = MiniFiles.get_fs_entry()
+            if entry ~= nil and entry.path ~= nil and entry.fs_type == "file" then
+              -- Toggle mark without opening the buffer
+              recall.toggle(entry.path)
+              --- HACK: `force = true` is not documented
+              --- but has the effect of forcing a refresh.
+              MiniFiles.refresh({ content = { force = true } })
+            end
+          end
+
+          local function update_extmarks(buf_id)
+            local marked_files = recall.iter_marked_files():totable() or nil
+            if marked_files and #marked_files then
+              -- Update extmarks for each file entry
+              for i = 1, vim.api.nvim_buf_line_count(buf_id) do
+                local entry = MiniFiles.get_fs_entry(buf_id, i)
+                if not entry or not entry.path then
+                  break
+                end
+
+                local normalized_path = recall.normalize_filepath(entry.path)
+                if vim.list_contains(marked_files, normalized_path) then
+                  vim.api.nvim_buf_set_extmark(buf_id, ns_mini_files_recall, i - 1, 0, {
+                    virt_text = { { LazyVim.config.icons.tag, "@tag" } },
+                    virt_text_pos = "right_align",
+                    hl_mode = "combine",
+                  })
+                end
+              end
+            end
+          end
+
+          vim.api.nvim_create_autocmd("User", {
+            pattern = "MiniFilesBufferCreate",
+            group = group,
+            callback = function(args)
+              if args.data.buf_id ~= nil then
+                vim.keymap.set("n", "<C-m>", toggle_mark, { desc = "Toggle mark", buffer = args.data.buf_id })
+              end
+            end,
+          })
+
+          vim.api.nvim_create_autocmd("User", {
+            pattern = "MiniFilesBufferUpdate",
+            group = group,
+            callback = function(args)
+              if args.data.buf_id ~= nil then
+                update_extmarks(args.data.buf_id)
+              end
+            end,
+          })
+        end,
+      },
+    },
   },
 }

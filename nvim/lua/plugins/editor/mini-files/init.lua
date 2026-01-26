@@ -72,7 +72,6 @@ return {
               { "<C-s>", actions.split, desc = "Open in split" },
               { "<C-v>", actions.vsplit, desc = "Open in vsplit" },
               { "<C-o>", actions.reveal_in_finder, desc = "Reveal in finder" },
-              { "<C-m>", actions.toggle_mark, desc = "Toggle mark" },
             })
           end
         end,
@@ -80,7 +79,6 @@ return {
 
       require("plugins.editor.mini-files.status").setup()
       require("plugins.editor.mini-files.severity").setup()
-      require("plugins.editor.mini-files.recall").setup()
     end,
   },
 }
