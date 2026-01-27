@@ -8,14 +8,11 @@ require("lazy").setup({
     -- NOTE: Order is important! Specs that come later
     -- have the opportunity to modify earlier specs.
     { import = "plugins" },
-    { import = "plugins.colorscheme" },
-    { import = "plugins.treesitter" },
-    { import = "plugins.lsp" },
     { import = "plugins.ui" },
     { import = "plugins.editor" },
     { import = "plugins.coding" },
-    { import = "plugins.ai" },
     { import = "plugins.lang" },
+    { import = "plugins.ai" },
     { import = "modes" },
     { import = "local" },
   },

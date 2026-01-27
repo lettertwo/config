@@ -7,6 +7,7 @@ if is_plugin_dir then
 end
 
 return {
+  { "LazyVim/LazyVim", opts = { colorscheme = "laserwave" } },
   {
     "lettertwo/laserwave.nvim",
     dir = is_plugin_dir and vim.loop.cwd() or nil,
