@@ -11,6 +11,7 @@ function ServiceUtil.service_status()
   ---@field copilot_active boolean
   ---@field treesitter_active boolean
   ---@field session_active boolean
+  ---@field debug_active boolean
   ---@field lazy_updates boolean
   local status = {
     diagnostic_providers = {},
@@ -19,6 +20,7 @@ function ServiceUtil.service_status()
     treesitter_active = vim.treesitter.highlighter.active[buf] ~= nil
       and next(vim.treesitter.highlighter.active[buf]) ~= nil,
     session_active = package.loaded["persistence"] and require("persistence").current ~= nil,
+    debug_active = package.loaded["dap"] and require("dap").status() ~= "",
     lazy_updates = require("lazy.status").has_updates(),
     -- TODO: check for mason updates
     -- mason_updates

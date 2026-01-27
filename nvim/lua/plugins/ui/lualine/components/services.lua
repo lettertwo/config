@@ -8,6 +8,13 @@ function M:update_status()
   local display = {}
   local status = Util.service_status()
 
+  if status.debug_active then
+    local dap_ok, dap = pcall(require, "dap")
+    if dap_ok then
+      table.insert(display, "  " .. dap.status())
+    end
+  end
+
   if #status.diagnostic_providers > 0 then
     table.insert(display, icons.services.diagnostics .. table.concat(status.diagnostic_providers, ", "))
   end
