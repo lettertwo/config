@@ -12,7 +12,6 @@ require("lazy").setup({
     { import = "plugins.editor" },
     { import = "plugins.coding" },
     { import = "plugins.lang" },
-    { import = "plugins.ai" },
     { import = "modes" },
   },
   defaults = {
