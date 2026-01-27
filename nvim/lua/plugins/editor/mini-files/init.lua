@@ -53,7 +53,6 @@ return {
     config = function(_, opts)
       local MiniFiles = require("mini.files")
       local actions = require("plugins.editor.mini-files.actions")
-      local keymaps = require("util").create_buffer_keymap({})
 
       MiniFiles.setup(opts)
 
@@ -63,16 +62,15 @@ return {
         pattern = "MiniFilesBufferCreate",
         group = group,
         callback = function(args)
-          local buf_id = args.data.buf_id
-          if buf_id ~= nil then
-            keymaps.apply(buf_id, {
-              { "<esc>", actions.close, desc = "Close minifiles" },
-              { "g.", actions.toggle_dotfiles, desc = "Toggle dotfiles" },
-              { "<C-.>", actions.files_set_cwd, desc = "Set cwd" },
-              { "<C-s>", actions.split, desc = "Open in split" },
-              { "<C-v>", actions.vsplit, desc = "Open in vsplit" },
-              { "<C-o>", actions.reveal_in_finder, desc = "Reveal in finder" },
-            })
+          if args.data.buf_id ~= nil then
+            -- stylua: ignore start
+            vim.keymap.set("n", "<esc>", actions.close,            { desc = "Close minifiles",  buffer = args.data.buf_id })
+            vim.keymap.set("n", "g.",    actions.toggle_dotfiles,  { desc = "Toggle dotfiles",  buffer = args.data.buf_id })
+            vim.keymap.set("n", "<C-.>", actions.files_set_cwd,    { desc = "Set cwd",          buffer = args.data.buf_id })
+            vim.keymap.set("n", "<C-s>", actions.split,            { desc = "Open in split",    buffer = args.data.buf_id })
+            vim.keymap.set("n", "<C-v>", actions.vsplit,           { desc = "Open in vsplit",   buffer = args.data.buf_id })
+            vim.keymap.set("n", "<C-o>", actions.reveal_in_finder, { desc = "Reveal in finder", buffer = args.data.buf_id })
+            -- stylua: ignore end
           end
         end,
       })
