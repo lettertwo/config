@@ -1,27 +1,19 @@
-local M = require("lualine.component"):extend()
-local filetype = require("plugins.ui.lualine.components").filetype
+local trouble_ok, trouble = pcall(require, "trouble")
 
-function M:update_status()
-  if package.loaded["dropbar"] then
-    -- TODO: update opts.menu.win_configs.col to match the size of the filepath section.
-    -- from https://github.com/Bekaboo/dropbar.nvim/issues/19#issuecomment-1574760272
-    return " %{%v:lua.dropbar()%}"
-  end
-end
+local symbols = trouble_ok
+  and trouble
+  and trouble.statusline({
+    mode = "symbols",
+    groups = {},
+    title = false,
+    filter = { range = true },
+    format = "{kind_icon}{symbol.name:Normal}",
+    hl_group = "lualine_c_normal",
+  })
 
-function M:draw()
-  self.status = ""
-
-  if not filetype.cond() then
-    return self.status
-  end
-  if self.options.cond ~= nil and self.options.cond() ~= true then
-    return self.status
-  end
-
-  self.status = self:update_status()
-
-  return self.status
-end
-
-return M
+return {
+  symbols and symbols.get,
+  cond = function()
+    return symbols and symbols.has()
+  end,
+}
