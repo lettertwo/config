@@ -8,7 +8,6 @@ return {
     },
     opts = function(_, opts)
       local breadcrumbs = require("plugins.ui.lualine.components.breadcrumbs")
-      local buffer = require("plugins.ui.lualine.components.buffer")
       local services = require("plugins.ui.lualine.components.services")
       local mode = require("plugins.ui.lualine.components.mode")
 
@@ -17,6 +16,7 @@ return {
       local diagnostics = components.diagnostics
       local diff = components.diff
       local filepath = components.filepath
+      local titlepath = components.titlepath
       local filepath_inactive = components.filepath_inactive
       local filetype = components.filetype
       local macro = components.macro
@@ -51,7 +51,7 @@ return {
         },
         tabline = {},
         winbar = {
-          lualine_a = { buffer },
+          lualine_a = { filetype, titlepath },
           lualine_b = {},
           lualine_c = { breadcrumbs },
           lualine_x = {},
@@ -100,13 +100,6 @@ return {
             place = { "statusline", "tabline", "winbar" },
             scope = "all",
           })
-        end,
-      })
-
-      vim.api.nvim_create_autocmd("User", {
-        pattern = "RecallUpdate",
-        callback = function()
-          require("lualine").refresh({ place = { "winbar" }, scope = "all" })
         end,
       })
     end,

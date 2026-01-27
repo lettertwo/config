@@ -46,6 +46,14 @@ M.filepath = {
   cond = visible_for_filetype,
 }
 
+M.titlepath = {
+  function()
+    local filepath = vim.fn.expand("%:~:.")
+    return require("util").title_path(filepath, { disambiguate = true })
+  end,
+  cond = visible_for_filetype,
+}
+
 -- TODO: add exception for DAP windows; maybe look at the included extension,
 -- or otherwise figure out a way to conditionally configure filename.
 M.filepath_inactive = {
