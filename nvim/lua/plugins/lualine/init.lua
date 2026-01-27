@@ -7,11 +7,11 @@ return {
       "lewis6991/gitsigns.nvim",
     },
     opts = function(_, opts)
-      local breadcrumbs = require("plugins.ui.lualine.components.breadcrumbs")
-      local services = require("plugins.ui.lualine.components.services")
-      local mode = require("plugins.ui.lualine.components.mode")
+      local breadcrumbs = require("plugins.lualine.components.breadcrumbs")
+      local services = require("plugins.lualine.components.services")
+      local mode = require("plugins.lualine.components.mode")
 
-      local components = require("plugins.ui.lualine.components")
+      local components = require("plugins.lualine.components")
       local branch = components.branch
       local diagnostics = components.diagnostics
       local diff = components.diff

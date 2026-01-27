@@ -1,4 +1,4 @@
-local _, recall_util = pcall(require, "plugins.editor.recall.util")
+local _, recall_util = pcall(require, "plugins.recall.util")
 
 ---@module "snacks"
 

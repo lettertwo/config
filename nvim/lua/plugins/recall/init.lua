@@ -41,7 +41,7 @@ return {
         sign_highlight = "@tag",
       }))
 
-      local recall_util = require("plugins.editor.recall.util")
+      local recall_util = require("plugins.recall.util")
 
       -- Wrapped Commands
       -- stylua: ignore start
@@ -166,7 +166,7 @@ return {
         opts = function()
           local ns_mini_files_recall = vim.api.nvim_create_namespace("mini_files_recall")
           local MiniFiles = require("mini.files")
-          local recall = require("plugins.editor.recall.util")
+          local recall = require("plugins.recall.util")
           local group = vim.api.nvim_create_augroup("mini_files_recall_integration", { clear = true })
 
           local function toggle_mark()
@@ -255,7 +255,7 @@ return {
               return {}
             end
 
-            return require("plugins.editor.recall.util")
+            return require("plugins.recall.util")
               .iter_marks(bufnr)
               :map(function(mark)
                 local line = mark.pos and mark.pos[1] or 1
@@ -282,9 +282,9 @@ return {
         optional = true,
         event = "VeryLazy",
         opts = function(_, opts)
-          local filetype = require("plugins.ui.lualine.components").filetype
+          local filetype = require("plugins.lualine.components").filetype
           local Util = require("util")
-          local _, recall_util = pcall(require, "plugins.editor.recall.util")
+          local _, recall_util = pcall(require, "plugins.recall.util")
 
           local Buffer = require("lualine.utils.class"):extend()
 

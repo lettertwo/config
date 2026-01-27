@@ -3,6 +3,7 @@ return {
     "LazyVim/LazyVim",
     ---@class LazyVimConfig
     opts = {
+      colorscheme = "laserwave",
       filetypes = {
         ui = {
           "DiffviewFiles",

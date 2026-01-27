@@ -1,8 +1,8 @@
 local icons = LazyVim.config.icons
 
-local visible_for_width = require("plugins.ui.lualine.condition").visible_for_width
-local visible_for_filetype = require("plugins.ui.lualine.condition").visible_for_filetype
-local tabline_active = require("plugins.ui.lualine.condition").tabline_active
+local visible_for_width = require("plugins.lualine.condition").visible_for_width
+local visible_for_filetype = require("plugins.lualine.condition").visible_for_filetype
+local tabline_active = require("plugins.lualine.condition").tabline_active
 
 --- @class Components
 local M = {}

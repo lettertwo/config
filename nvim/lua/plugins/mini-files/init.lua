@@ -6,7 +6,7 @@ return {
       {
         "<leader>e",
         function()
-          local actions = require("plugins.editor.mini-files.actions")
+          local actions = require("plugins.mini-files.actions")
           if not pcall(actions.open_buffer) then
             actions.open_cwd()
           end
@@ -16,7 +16,7 @@ return {
       {
         "<leader>~",
         function()
-          require("plugins.editor.mini-files.actions").open_cwd()
+          require("plugins.mini-files.actions").open_cwd()
         end,
         desc = "File explorer (cwd)",
       },
@@ -52,7 +52,7 @@ return {
     },
     config = function(_, opts)
       local MiniFiles = require("mini.files")
-      local actions = require("plugins.editor.mini-files.actions")
+      local actions = require("plugins.mini-files.actions")
 
       MiniFiles.setup(opts)
 
@@ -75,8 +75,8 @@ return {
         end,
       })
 
-      require("plugins.editor.mini-files.status").setup()
-      require("plugins.editor.mini-files.severity").setup()
+      require("plugins.mini-files.status").setup()
+      require("plugins.mini-files.severity").setup()
     end,
   },
 }

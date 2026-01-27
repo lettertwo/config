@@ -224,7 +224,7 @@ recall_sources.buffers = {
       ctx
     ) --[[@as snacks.picker.finder.Item[]]
 
-    local recall_ok, recall_util = pcall(require, "plugins.editor.recall.util")
+    local recall_ok, recall_util = pcall(require, "plugins.recall.util")
     local marked_files = recall_util.iter_marked_files():totable()
     if recall_ok and recall_util then
       items = vim.tbl_map(function(item)
@@ -285,7 +285,7 @@ recall_sources.recall = {
   on_show = select_current_buffer,
   transform = titlepath,
   finder = function(_, ctx)
-    local recall_ok, recall_util = pcall(require, "plugins.editor.recall.util")
+    local recall_ok, recall_util = pcall(require, "plugins.recall.util")
     if not recall_ok then
       error("recall is required for this source")
     end
