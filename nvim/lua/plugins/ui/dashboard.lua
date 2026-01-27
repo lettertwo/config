@@ -344,14 +344,20 @@ return {
           local ret = {} ---@type snacks.dashboard.Item[]
           local added = {} ---@type table<string, true>
 
-          -- Add marked buffers from the previous session up to the limit.
-          -- NOTE: Recall marks are persisted in the shada file.
-          local recall_ok, recall_util = pcall(require, "plugins.editor.recall.util")
-          if recall_ok and recall_util then
-            recall_util.iter_marked_files():each(function(file)
+          -- Add files with global marks (A-Z) from the previous session
+          local marks_ok, mark_info = pcall(vim.fn.getmarklist)
+          if marks_ok and mark_info then
+            table.sort(mark_info, function(a, b)
+              return a.mark < b.mark
+            end)
+            vim.iter(mark_info):each(function(mark)
               if #ret >= limit then
                 return
               end
+              if not mark.mark:match("^'([A-Z])$") then
+                return
+              end
+              local file = mark.file
               if vim.fn.filereadable(vim.fn.fnamemodify(file, ":~:.")) == 1 then
                 file = vim.fn.fnamemodify(file, ":~:.")
               end
