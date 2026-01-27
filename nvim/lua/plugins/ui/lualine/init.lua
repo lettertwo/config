@@ -24,6 +24,7 @@ return {
       local tabs = components.tabs
       local tabstop = components.tabstop
       local sidekick = components.sidekick
+      local location = { "location", padding = { left = 0, right = 0 } }
 
       local local_opts = {
         options = {
@@ -34,8 +35,8 @@ return {
         },
         sections = {
           lualine_a = { tabs, mode, searchcount },
-          lualine_b = { macro, branch },
-          lualine_c = { filepath },
+          lualine_b = { macro, branch, LazyVim.lualine.root_dir() },
+          lualine_c = { filepath, location },
           lualine_x = { diff, diagnostics },
           lualine_y = { tabstop, sidekick },
           lualine_z = { services },
