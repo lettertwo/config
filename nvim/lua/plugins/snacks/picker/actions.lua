@@ -1,7 +1,5 @@
-local recall_actions = require("plugins.snacks.picker.actions.recall")
-local refine_actions = require("plugins.snacks.picker.actions.refine")
-
 ---@module "snacks"
+
 ---@type table<string, snacks.picker.Action.spec>
 local actions = {}
 
@@ -147,28 +145,27 @@ function actions.yank_to_clipboard(picker)
 end
 
 return {
-  {
-    "folke/snacks.nvim",
-    ---@type snacks.Config
-    opts = {
-      picker = {
-        actions = vim.tbl_deep_extend("error", actions, recall_actions, refine_actions),
-        win = {
-          input = {
-            keys = {
-              -- Close the picker on ESC instead of going to normal mode
-              ["<Esc>"] = { "close_normal", mode = { "n", "i" } },
-              ["<C-d>"] = { "smart_scroll_down", mode = { "i", "n" } },
-              ["<C-u>"] = { "smart_scroll_up", mode = { "i", "n" } },
-              ["<C-e>"] = { "mini_files", mode = { "i", "n" } },
-              ["<C-y>"] = { "yank_to_clipboard", mode = { "i", "n" } },
-
-              -- Refine actions
-              ["<C-g>"] = { "grep_in_dir", mode = { "i", "n" } },
-              ["<C-f>"] = { "files_in_dir", mode = { "i", "n" } },
-              ["<C-space>"] = { "refine_or_cycle_picker", mode = { "i", "n" } },
-              ["<bs>"] = { "delete_char_or_pop_refine", mode = { "i", "n" } },
-            },
+  "folke/snacks.nvim",
+  ---@type snacks.Config
+  opts = {
+    picker = {
+      actions = actions,
+      -- stylua: ignore
+      sources = {
+        directories  = { confirm = "mini_files" },
+        node_modules = { confirm = "mini_files" },
+        packages     = { confirm = "mini_files" },
+        plugins      = { confirm = "help_or_readme" },
+      },
+      win = {
+        input = {
+          -- stylua: ignore
+          keys = {
+            ["<Esc>"] = { "close_normal",      mode = { "n", "i" } },
+            ["<C-d>"] = { "smart_scroll_down", mode = { "n", "i" } },
+            ["<C-u>"] = { "smart_scroll_up",   mode = { "n", "i" } },
+            ["<C-e>"] = { "mini_files",        mode = { "n", "i" } },
+            ["<C-y>"] = { "yank_to_clipboard", mode = { "n", "i" } },
           },
         },
       },

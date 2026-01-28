@@ -1,4 +1,5 @@
 ---@module "snacks"
+
 ---@type table<string, snacks.picker.Action.spec>
 local refine_actions = {}
 
@@ -276,4 +277,23 @@ function refine_actions.delete_char_or_pop_refine(picker)
   end
 end
 
-return refine_actions
+return {
+  "folke/snacks.nvim",
+  ---@type snacks.Config
+  opts = {
+    picker = {
+      actions = refine_actions,
+      win = {
+        input = {
+          -- stylua: ignore
+          keys = {
+            ["<C-g>"]     = { "grep_in_dir",               mode = { "n", "i" } },
+            ["<C-f>"]     = { "files_in_dir",              mode = { "n", "i" } },
+            ["<C-space>"] = { "refine_or_cycle_picker",    mode = { "n", "i" } },
+            ["<bs>"]      = { "delete_char_or_pop_refine", mode = { "n", "i" } },
+          },
+        },
+      },
+    },
+  },
+}

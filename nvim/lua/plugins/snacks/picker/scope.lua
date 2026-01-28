@@ -1,6 +1,4 @@
 ---@module "snacks"
----@type snacks.picker.sources.Config | {} | table<string, snacks.picker.Config | {}>
-local scope_sources = {}
 
 ---@alias FindScope 'cwd' | 'root' | 'workspace'  | 'package'
 ---@alias FindSource 'files' | 'packages' | 'node_modules' | 'plugins'
@@ -52,62 +50,45 @@ local function get_title(source, scope, cwd)
   return title
 end
 
-scope_sources.files = {
+---@param title string
+local function scope(title)
   ---@param opts PickerConfigWithScope
-  config = function(opts)
-    local scope = opts and opts.scope
+  return function(opts)
+    opts = opts or {}
     local cwd = get_scope_dir(opts)
-    opts.title = get_title("files", scope, cwd)
-    if scope or cwd then
+    opts.title = get_title(title, opts.scope, cwd)
+    if opts.scope or cwd then
       opts.cwd = cwd
+      if type(opts.filter) == "table" then
+        opts.filter.cwd = cwd
+      end
     end
     return opts
-  end,
-}
+  end
+end
 
-scope_sources.recent = {
-  ---@param opts PickerConfigWithScope
-  config = function(opts)
-    local scope = opts and opts.scope
-    local cwd = get_scope_dir(opts)
-    opts.title = get_title("recent", scope, cwd)
-    if scope or cwd then
-      opts.cwd = cwd
-      opts.filter = vim.tbl_deep_extend("force", opts.filter or {}, {
-        cwd = cwd,
-      })
-    end
-    return opts
-  end,
+return {
+  "folke/snacks.nvim",
+  -- stylua: ignore
+  keys = {
+    { "<leader>ff", LazyVim.pick("files",   { scope = "root" }),      desc = "Find Files (root dir)" },
+    { "<leader>f.", LazyVim.pick("files",   { scope = "package" }),   desc = "Find Files (package)" },
+    { "<leader>fF", LazyVim.pick("files",   { scope = "cwd" }),       desc = "Find Files (cwd)" },
+    { "<leader>fw", LazyVim.pick("files",   { scope = "workspace" }), desc = "Find Files (workspace)" },
+    { "<leader>fR", LazyVim.pick("recent"),                           desc = "Recent (global)" },
+    { "<leader>fr", LazyVim.pick("recent",  { scope = "root" }),      desc = "Recent (root)" },
+  },
+  ---@type snacks.Config
+  opts = {
+    picker = {
+      -- stylua: ignore
+      sources = {
+        buffers = { config = scope("buffers") },
+        files   = { config = scope("files") },
+        recent  = { config = scope("recent") },
+        grep    = { config = scope("grep") },
+        switch  = { config = scope("switch") },
+      },
+    },
+  },
 }
-
-scope_sources.switch = {
-  ---@param opts PickerConfigWithScope
-  config = function(opts)
-    local scope = opts and opts.scope
-    local cwd = get_scope_dir(opts)
-    opts.title = get_title("switch", scope, cwd)
-    if scope or cwd then
-      opts.cwd = cwd
-      opts.filter = vim.tbl_deep_extend("force", opts.filter or {}, {
-        cwd = cwd,
-      })
-    end
-    return opts
-  end,
-}
-
-scope_sources.grep = {
-  ---@param opts PickerConfigWithScope
-  config = function(opts)
-    local scope = opts and opts.scope
-    local cwd = get_scope_dir(opts)
-    opts.title = get_title("grep", scope, cwd)
-    if scope or cwd then
-      opts.cwd = cwd
-    end
-    return opts
-  end,
-}
-
-return scope_sources

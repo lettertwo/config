@@ -127,8 +127,8 @@ return {
 
       -- Command: Delete buffer and remove its mark
       vim.api.nvim_create_user_command("RecallDeleteAndUnmarkBuffer", function()
-        recall_util.unmark()
-        Snacks.bufdelete.delete()
+        recall_util.unmark(0)
+        Snacks.bufdelete.delete(0)
       end, {})
 
       -- Command: Delete all other buffers and remove their marks
