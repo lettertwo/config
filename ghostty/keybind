@@ -1,0 +1,101 @@
+# Keybindings
+# -----------
+# The format is trigger=action.
+#
+# Trigger: +-separated list of keys and modifiers
+#
+# Valid modifiers are:
+# - shift
+# - ctrl (alias control)
+# - alt (alias: opt, option)
+# - super (alias: cmd, command).
+#
+# Use > to define a sequence (chord) of key presses.
+# Sequences are not allowed for global: or all:-prefixed triggers.
+#
+# Action is the action to take when the trigger is satisfied.
+# It takes the format prefix:action:param.
+#
+# Params are only valid if the action requires them.
+# They are taken as-is, so quote the entire action if there are spaces.
+#
+# Valid prefixes are:
+# - all - send the keybind action to all terminals.
+# - global - The keybind is active globally, even when ghostty is not focused.
+# - unconsumed - The keybind is passed through to the running program.
+# - performable - The keybind is active only if the action can be performed in the current context.
+#
+# Valid actions are:
+# - ignore - Do nothing, ignore the key input.
+# - unbind - Remove the binding.
+# - csi:text - Send a CSI sequence. e.g. csi:A sends "cursor up".
+# - esc:text - Send an escape sequence. e.g. esc:d deletes to the end of the word to the right.
+# - text:text - Send a string. Uses Zig string literal syntax. e.g. text:\x15 sends Ctrl-U.
+# - any action that can be found using `ghostty +list-actions`.
+#
+# ghostty +list-actions:
+# cursor_key
+# reset
+# copy_to_clipboard
+# paste_from_clipboard
+# paste_from_selection
+# copy_url_to_clipboard
+# copy_title_to_clipboard
+# increase_font_size
+# decrease_font_size
+# reset_font_size
+# set_font_size
+# clear_screen
+# select_all
+# scroll_to_top
+# scroll_to_bottom
+# scroll_to_selection
+# scroll_page_up
+# scroll_page_down
+# scroll_page_fractional
+# scroll_page_lines
+# adjust_selection
+# jump_to_prompt
+# write_scrollback_file
+# write_screen_file
+# write_selection_file
+# new_window
+# new_tab
+# previous_tab
+# next_tab
+# last_tab
+# goto_tab
+# move_tab
+# toggle_tab_overview
+# prompt_surface_title
+# new_split
+# goto_split
+# toggle_split_zoom
+# resize_split
+# equalize_splits
+# reset_window_size
+# inspector
+# show_gtk_inspector
+# show_on_screen_keyboard
+# open_config
+# reload_config
+# close_surface
+# close_tab
+# close_window
+# close_all_windows
+# toggle_maximize
+# toggle_fullscreen
+# toggle_window_decorations
+# toggle_window_float_on_top
+# toggle_secure_input
+# toggle_command_palette
+# toggle_quick_terminal
+# toggle_visibility
+# check_for_updates
+# undo
+# redo
+# quit
+# crash
+
+# keybind=clear # clear all default keybindings.
+

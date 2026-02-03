@@ -1,0 +1,31 @@
+# Theme
+# -----
+theme = laserwave
+
+# Font settings
+# -------------
+font-family = MonoLisa Variable
+font-feature = +onum,+ss13,+ss15,+ss16
+font-size = 14.0
+font-variation = wght=500
+adjust-cell-height = 2
+minimum-contrast = 1.1
+
+# General Settings
+# ----------------
+mouse-hide-while-typing = true
+link-url = true
+link-previews = true
+window-padding-x = 0
+window-padding-y = 0
+window-padding-balance = false
+copy-on-select = true
+
+# MacOS Settings
+# --------------
+macos-option-as-alt = false # Allow macos native option key behavior
+macos-icon = holographic
+
+# Keybindings
+# -----------
+config-file = keybind
