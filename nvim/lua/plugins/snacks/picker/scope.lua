@@ -71,12 +71,18 @@ return {
   "folke/snacks.nvim",
   -- stylua: ignore
   keys = {
-    { "<leader>ff", LazyVim.pick("files",   { scope = "root" }),      desc = "Find Files (root dir)" },
-    { "<leader>f.", LazyVim.pick("files",   { scope = "package" }),   desc = "Find Files (package)" },
-    { "<leader>fF", LazyVim.pick("files",   { scope = "cwd" }),       desc = "Find Files (cwd)" },
-    { "<leader>fw", LazyVim.pick("files",   { scope = "workspace" }), desc = "Find Files (workspace)" },
-    { "<leader>fR", LazyVim.pick("recent"),                           desc = "Recent (global)" },
-    { "<leader>fr", LazyVim.pick("recent",  { scope = "root" }),      desc = "Recent (root)" },
+    { "<leader>f.", LazyVim.pick("files", { scope = "package" }),   desc = "Find Files (package)" },
+    { "<leader>fw", LazyVim.pick("files", { scope = "workspace" }), desc = "Find Files (workspace)" },
+    { "<leader>ff", LazyVim.pick("files", { scope = "cwd" }),       desc = "Find Files (cwd)" },
+    { "<leader>fF", LazyVim.pick("files", { scope = "root" }),      desc = "Find Files (root dir)" },
+
+    { "<leader>fr", LazyVim.pick("recent", { scope = "workspace" }), desc = "Recent (workspace)" },
+    { "<leader>fR", LazyVim.pick("recent", { scope = "root" }),      desc = "Recent (root)" },
+
+    { "<leader>sg", LazyVim.pick("grep", { scope = "workspace" }), desc = "Grep (workspace)" },
+    { "<leader>sG", LazyVim.pick("grep", { scope = "root" }),      desc = "Grep (root)" },
+    { "<leader>s.", LazyVim.pick("grep", { scope = "package" }),   desc = "Grep (package)" },
+    { "<leader>/",  LazyVim.pick("grep", { scope = "root" }),      desc = "Grep (root)" },
   },
   ---@type snacks.Config
   opts = {
