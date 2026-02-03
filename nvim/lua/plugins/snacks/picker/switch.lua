@@ -14,9 +14,9 @@ return {
   "folke/snacks.nvim",
   -- stylua: ignore
   keys = {
-    { "<leader><space>", LazyVim.pick("switch"), desc = "Switch" },
-    { "<leader>R",       LazyVim.pick("switch", { scope = "root" }),     desc = "Switch (root)" },
-    { "<leader>r",       LazyVim.pick("switch", { scope = "package" }),  desc = "Switch (package)" },
+    { "<leader><space>", LazyVim.pick("switch", { scope = "workspace" }), desc = "Switch (workspace)" },
+    { "<leader>R",       LazyVim.pick("switch", { scope = "root" }),      desc = "Switch (root)" },
+    { "<leader>r",       LazyVim.pick("switch", { scope = "cwd" }),       desc = "Switch (cwd)" },
   },
   ---@type snacks.Config
   opts = {
