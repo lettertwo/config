@@ -1,5 +1,6 @@
 local specifier = "laserwave"
 local is_plugin_dir = vim.loop.cwd():find("laserwave.nvim", 1, true) ~= nil
+  and vim.fs.find({ "init.lua" }, { type = "file", path = "./lua/laserwave" })[1] ~= nil
 
 if is_plugin_dir then
   vim.notify("Loading laserwave.nvim in dev mode from local development path: " .. vim.loop.cwd(), vim.log.levels.DEBUG)

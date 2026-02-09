@@ -1,5 +1,6 @@
 local specifier = "occurrence"
 local is_plugin_dir = vim.loop.cwd():find("occurrence.nvim", 1, true) ~= nil
+  and vim.fs.find({ "occurrence.lua" }, { type = "file", path = "./lua" })[1] ~= nil
 
 if is_plugin_dir then
   vim.notify(
