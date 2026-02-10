@@ -23,8 +23,10 @@ copy-on-select = true
 
 # MacOS Settings
 # --------------
-macos-option-as-alt = false # Allow macos native option key behavior
+# Allow macos native option key behavior
+macos-option-as-alt = false
 macos-icon = holographic
+macos-titlebar-style = tabs
 
 # Keybindings
 # -----------
