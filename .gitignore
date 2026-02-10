@@ -33,6 +33,7 @@ alacritty/laserwave.yml
 bat/themes/laserwave.tmTheme
 wezterm/colors/laserwave.toml
 yazi/flavors/laserwave.yazi
+ghostty/themes/laserwave
 
 # kitty-scrollback.nvim
 kitty/kitty_scroll_prompt.py

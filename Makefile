@@ -26,29 +26,45 @@ run = @$(1) || (n=$$?; >&2 echo "$(ERROR)Failed!$(END)"; exit $$n)
 
 ### laserwave
 
-~/.local/share/laserwave.nvim: | ~/.local/share
-	$(call err,"laserwave not found!")
-	$(call log,"Installing laserwave...")
-	$(call run,git clone git@github.com:lettertwo/laserwave.nvim.git $@)
-	$(call done)
+LASERWAVE_URL := https://raw.githubusercontent.com/lettertwo/laserwave.nvim/main/dist
+
+.PHONY: laserwave
+laserwave: ~/.config/kitty/laserwave.conf \
+	~/.config/bat/themes/laserwave.tmTheme \
+	~/.config/git/laserwave.gitconfig \
+	~/.config/yazi/flavors/laserwave.yazi/flavor.toml \
+	~/.config/ghostty/themes/laserwave
 
 .PHONY: update-laserwave
-update-laserwave: ~/.local/share/laserwave.nvim
+update-laserwave:
 	$(call log,"Updating laserwave...")
-	$(call run,cd ~/.local/share/laserwave.nvim && git pull)
+	@rm -f ~/.config/kitty/laserwave.conf ~/.config/bat/themes/laserwave.tmTheme ~/.config/git/laserwave.gitconfig ~/.config/ghostty/themes/laserwave
+	@rm -rf ~/.config/yazi/flavors/laserwave.yazi
+	$(call run,curl -fsSL $(LASERWAVE_URL)/kitty/laserwave.conf -o ~/.config/kitty/laserwave.conf)
+	$(call run,curl -fsSL $(LASERWAVE_URL)/laserwave.tmTheme -o ~/.config/bat/themes/laserwave.tmTheme)
+	$(call run,curl -fsSL $(LASERWAVE_URL)/delta/laserwave.gitconfig -o ~/.config/git/laserwave.gitconfig)
+	$(call run,mkdir -p ~/.config/yazi/flavors/laserwave.yazi)
+	$(call run,curl -fsSL $(LASERWAVE_URL)/yazi/laserwave.yazi/flavor.toml -o ~/.config/yazi/flavors/laserwave.yazi/flavor.toml)
+	$(call run,curl -fsSL $(LASERWAVE_URL)/yazi/laserwave.yazi/tmtheme.xml -o ~/.config/yazi/flavors/laserwave.yazi/tmtheme.xml)
+	$(call run,curl -fsSL $(LASERWAVE_URL)/ghostty/laserwave -o ~/.config/ghostty/themes/laserwave)
 	$(call done)
 
-~/.config/kitty/laserwave.conf: ~/.local/share/laserwave.nvim ~/.config/kitty
-	$(call run,ln -sf $</dist/kitty/laserwave.conf $@)
+~/.config/kitty/laserwave.conf: | ~/.config/kitty
+	$(call run,curl -fsSL $(LASERWAVE_URL)/kitty/laserwave.conf -o $@)
 
-~/.config/bat/themes/laserwave.tmTheme: ~/.local/share/laserwave.nvim ~/.config/bat/themes
-	$(call run,ln -sf $</dist/laserwave.tmTheme $@)
+~/.config/bat/themes/laserwave.tmTheme: | ~/.config/bat/themes
+	$(call run,curl -fsSL $(LASERWAVE_URL)/laserwave.tmTheme -o $@)
 
-~/.config/git/laserwave.gitconfig: ~/.local/share/laserwave.nvim
-	$(call run,ln -sf $</dist/delta/laserwave.gitconfig $@)
+~/.config/git/laserwave.gitconfig:
+	$(call run,curl -fsSL $(LASERWAVE_URL)/delta/laserwave.gitconfig -o $@)
 
-~/.config/yazi/flavors/laserwave.yazi: ~/.local/share/laserwave.nvim ~/.config/yazi/flavors
-	$(call run,ln -sf $</dist/yazi/laserwave.yazi $@)
+~/.config/yazi/flavors/laserwave.yazi/flavor.toml: | ~/.config/yazi/flavors
+	$(call run,mkdir -p ~/.config/yazi/flavors/laserwave.yazi)
+	$(call run,curl -fsSL $(LASERWAVE_URL)/yazi/laserwave.yazi/flavor.toml -o $@)
+	$(call run,curl -fsSL $(LASERWAVE_URL)/yazi/laserwave.yazi/tmtheme.xml -o ~/.config/yazi/flavors/laserwave.yazi/tmtheme.xml)
+
+~/.config/ghostty/themes/laserwave: | ~/.config/ghostty/themes
+	$(call run,curl -fsSL $(LASERWAVE_URL)/ghostty/laserwave -o $@)
 
 ### homebrew
 
@@ -365,7 +381,7 @@ update-config:
 mkdirs: ~/.local/bin ~/.local/share
 
 .PHONY: install
-install: mkdirs  ~/.local/share/laserwave.nvim brew set-fish-as-default
+install: mkdirs laserwave brew set-fish-as-default
 	@echo ""
 	$(call done)
 	@echo ""
