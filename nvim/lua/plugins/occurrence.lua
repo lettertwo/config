@@ -162,92 +162,94 @@ return {
       },
     },
     opts = {
-      ---@type snacks.picker.sources.Config
-      sources = {
-        occurrences = {
-          title = "Select Occurrences",
-          layout = {
-            preview = "main",
-            preset = "ivy",
-          },
-          finder = function(_, ctx)
-            local occ = require("occurrence").get(ctx.filter.current_buf)
-            if not occ then
-              return {}
-            end
-
-            local selection_range = nil
-            if ctx.picker.visual and ctx.picker.visual.pos and ctx.picker.visual.end_pos then
-              local start = require("occurrence.Location").from_markpos(ctx.picker.visual.pos)
-              local stop = require("occurrence.Location").from_markpos(ctx.picker.visual.end_pos)
-              if start and stop then
-                selection_range = require("occurrence.Range").new(start, stop)
+      picker = {
+        ---@type snacks.picker.sources.Config
+        sources = {
+          occurrences = {
+            title = "Select Occurrences",
+            layout = {
+              preview = "main",
+              preset = "ivy",
+            },
+            finder = function(_, ctx)
+              local occ = require("occurrence").get(ctx.filter.current_buf)
+              if not occ then
+                return {}
               end
-            end
 
-            local highlights =
-              require("snacks.picker.util.highlight").get_highlights({ buf = occ.buffer, extmarks = true })
-
-            ---@type snacks.picker.finder.Item[]
-            local items = {}
-            for match in occ:matches(selection_range) do
-              local start = match.start:to_pos()
-              local stop = match.stop:to_pos()
-              local text = table.concat(vim.api.nvim_buf_get_lines(occ.buffer, start[1] - 1, stop[1], false), " ")
-              table.insert(items, {
-                pos = start,
-                end_pos = stop,
-                buf = occ.buffer,
-                text = text,
-                highlights = highlights[start[1]],
-                match = match,
-                marked = occ.extmarks:has_mark(match),
-              })
-            end
-            return items
-          end,
-          sort = { fields = { "score:desc", "idx" } },
-          format = function(item)
-            local ret = {} ---@type snacks.picker.Highlight[]
-            local line_count = vim.api.nvim_buf_line_count(item.buf)
-            local idx = Snacks.picker.util.align(tostring(item.pos[1]), #tostring(line_count), { align = "right" })
-            ret[#ret + 1] = { idx, "LineNr", virtual = true }
-            ret[#ret + 1] = { "  ", virtual = true }
-            ret[#ret + 1] = { item.text }
-
-            local offset = #idx + 2
-
-            for _, extmark in ipairs(item.highlights or {}) do
-              extmark = vim.deepcopy(extmark)
-              if type(extmark[1]) ~= "string" then
-                ---@cast extmark snacks.picker.Extmark
-                extmark.col = extmark.col + offset
-                if extmark.end_col then
-                  extmark.end_col = extmark.end_col + offset
+              local selection_range = nil
+              if ctx.picker.visual and ctx.picker.visual.pos and ctx.picker.visual.end_pos then
+                local start = require("occurrence.Location").from_markpos(ctx.picker.visual.pos)
+                local stop = require("occurrence.Location").from_markpos(ctx.picker.visual.end_pos)
+                if start and stop then
+                  selection_range = require("occurrence.Range").new(start, stop)
                 end
               end
-              ret[#ret + 1] = extmark
-            end
-            return ret
-          end,
-          on_show = function(picker)
-            for _, item in ipairs(picker:items()) do
-              if item.marked then
-                picker.list:select(item)
+
+              local highlights =
+                require("snacks.picker.util.highlight").get_highlights({ buf = occ.buffer, extmarks = true })
+
+              ---@type snacks.picker.finder.Item[]
+              local items = {}
+              for match in occ:matches(selection_range) do
+                local start = match.start:to_pos()
+                local stop = match.stop:to_pos()
+                local text = table.concat(vim.api.nvim_buf_get_lines(occ.buffer, start[1] - 1, stop[1], false), " ")
+                table.insert(items, {
+                  pos = start,
+                  end_pos = stop,
+                  buf = occ.buffer,
+                  text = text,
+                  highlights = highlights[start[1]],
+                  match = match,
+                  marked = occ.extmarks:has_mark(match),
+                })
               end
-            end
-          end,
-          confirm = function(picker)
-            picker:close()
-            local ctx = picker.finder:ctx(picker)
-            local occ = assert(require("occurrence").get(ctx.filter.current_buf))
-            occ:unmark_all()
-            for _, item in ipairs(picker:items()) do
-              if picker.list:is_selected(item) and item.match then
-                occ:mark(item.match)
+              return items
+            end,
+            sort = { fields = { "score:desc", "idx" } },
+            format = function(item)
+              local ret = {} ---@type snacks.picker.Highlight[]
+              local line_count = vim.api.nvim_buf_line_count(item.buf)
+              local idx = Snacks.picker.util.align(tostring(item.pos[1]), #tostring(line_count), { align = "right" })
+              ret[#ret + 1] = { idx, "LineNr", virtual = true }
+              ret[#ret + 1] = { "  ", virtual = true }
+              ret[#ret + 1] = { item.text }
+
+              local offset = #idx + 2
+
+              for _, extmark in ipairs(item.highlights or {}) do
+                extmark = vim.deepcopy(extmark)
+                if type(extmark[1]) ~= "string" then
+                  ---@cast extmark snacks.picker.Extmark
+                  extmark.col = extmark.col + offset
+                  if extmark.end_col then
+                    extmark.end_col = extmark.end_col + offset
+                  end
+                end
+                ret[#ret + 1] = extmark
               end
-            end
-          end,
+              return ret
+            end,
+            on_show = function(picker)
+              for _, item in ipairs(picker:items()) do
+                if item.marked then
+                  picker.list:select(item)
+                end
+              end
+            end,
+            confirm = function(picker)
+              picker:close()
+              local ctx = picker.finder:ctx(picker)
+              local occ = assert(require("occurrence").get(ctx.filter.current_buf))
+              occ:unmark_all()
+              for _, item in ipairs(picker:items()) do
+                if picker.list:is_selected(item) and item.match then
+                  occ:mark(item.match)
+                end
+              end
+            end,
+          },
         },
       },
     },
