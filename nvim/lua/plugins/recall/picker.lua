@@ -29,6 +29,40 @@ function actions.recall_toggle(picker, item)
   picker:find()
 end
 
+function actions.recall_mark(picker, item)
+  local recall_util_ok, recall_util = pcall(require, "plugins.recall.util")
+  if not recall_util_ok or not recall_util then
+    Snacks.notify.warn("recall utility not found", { title = picker.title })
+    return
+  end
+
+  if item and not item.mark and item.file then
+    recall_util.mark(item.file)
+    -- set cursor to the newest mark's position
+    picker.list:set_target(#recall_util.get_all_marks())
+    picker:find()
+  end
+end
+
+function actions.recall_unmark(picker, item)
+  local recall_util_ok, recall_util = pcall(require, "plugins.recall.util")
+  if not recall_util_ok or not recall_util then
+    Snacks.notify.warn("recall utility not found", { title = picker.title })
+    return
+  end
+
+  if item and item.mark then
+    if type(item.mark) == "string" then
+      recall_util.unmark(item.mark)
+    elseif item.file then
+      recall_util.unmark(item.file)
+    end
+    -- set cursor to the previous mark's position
+    picker.list:set_target(math.max(1, picker.list.cursor - 1))
+    picker:find()
+  end
+end
+
 function actions.bufdelete_and_recall_unmark(picker)
   local recall_util_ok, recall_util = pcall(require, "plugins.recall.util")
 
@@ -493,7 +527,7 @@ local sources = {
     win = {
       input = {
         keys = {
-          ["<c-x>"] = { "bufdelete_and_recall_unmark", mode = { "n", "i" } },
+          ["<c-x>"] = { "recall_unmark", mode = { "n", "i" } },
           ["<c-m>"] = { "recall_toggle", mode = { "n", "i" } },
           ["<A-k>"] = { "recall_move_up", mode = { "n", "i" } },
           ["<˚>"] = { "recall_move_up", mode = { "n", "i" } }, -- <A-k> on macos emits "˚"
@@ -503,7 +537,7 @@ local sources = {
       },
       list = {
         keys = {
-          ["dd"] = "bufdelete_and_recall_unmark",
+          ["dd"] = "recall_unmark",
           ["m"] = "recall_toggle",
           ["<A-k>"] = "recall_move_up",
           ["<˚>"] = "recall_move_up", -- <A-k> on macos emits "˚"
