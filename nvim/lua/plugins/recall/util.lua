@@ -158,6 +158,33 @@ function M.has_marks(bufnr_or_filepath)
   return M.iter_marks(bufnr_or_filepath):next() ~= nil
 end
 
+---@param to_remark RecallMark[] List of marks to remark with new letters
+function M.remark(to_remark)
+  -- first pass, unmark all marks that need to be re-marked
+  for _, mark in ipairs(to_remark) do
+    local ok = pcall(vim.api.nvim_del_mark, mark.letter)
+    if not ok then
+      vim.notify("Failed to unmark " .. mark.letter .. " on " .. mark.file, vim.log.levels.ERROR)
+    end
+  end
+
+  -- manually compact to guarantee contiguous ordering
+  M.compact_marks()
+
+  -- second pass, re-mark in new order
+  for _, mark in ipairs(to_remark) do
+    -- Set next available mark letter in given file at given position
+    local letter = assert(M.get_next_available_mark(), "no available marks")
+    local bufnr = vim.fn.bufadd(M.normalize_filepath(mark.file))
+    local ok = pcall(vim.fn.setpos, "'" .. letter, { bufnr, mark.pos[1], mark.pos[2], 0 })
+    if not ok then
+      vim.notify("Failed to set mark " .. letter .. " on " .. mark.file, vim.log.levels.ERROR)
+    end
+  end
+
+  dispatch_update(true)
+end
+
 ---@return boolean True if any marks were compacted, false otherwise
 function M.compact_marks()
   local to_remark = M.iter_marks():enumerate():fold({}, function(acc, i, mark)
@@ -188,11 +215,6 @@ function M.compact_marks()
     pcall(vim.fn.setpos, "'" .. next_mark_letter, { vim.fn.bufadd(mark.file), mark.pos[1], mark.pos[2], 0 })
   end
   return true
-end
-
--- TODO: implement moving a mark up or down (forward/back)
-function M.move_mark()
-  error("UNIMPLEMENTED")
 end
 
 -- Get the next available mark letter (A-Z) that is not currently used

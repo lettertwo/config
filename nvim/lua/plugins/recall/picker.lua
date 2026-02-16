@@ -13,7 +13,11 @@ function actions.recall_toggle(picker, item)
   end
 
   if item and item.mark then
-    recall_util.unmark(item.mark)
+    if type(item.mark) == "string" then
+      recall_util.unmark(item.mark)
+    elseif item.file then
+      recall_util.unmark(item.file)
+    end
     -- set cursor to the previous mark's position
     picker.list:set_target(math.max(1, picker.list.cursor - 1))
   elseif item and item.file then
@@ -44,6 +48,48 @@ function actions.recall_move_up(picker, item)
     return
   end
 
+  -- If item.mark is a number, we need to move all letter marks
+  -- in the associated file above all marks in the previous file.
+  if type(item.mark) == "number" then
+    local current = nil
+    local files_to_remark = {}
+    local file_before = recall_util.iter_marked_files():rev():find(function(f)
+      if f == item.file then
+        current = f
+        return false
+      elseif current == nil then
+        table.insert(files_to_remark, 1, f)
+        return false
+      else
+        return true
+      end
+    end)
+
+    -- if there is no file before, we cannot move up, so do nothing.
+    if not file_before then
+      return
+    end
+
+    table.insert(files_to_remark, 1, file_before)
+    -- put the current file before the previous file
+    table.insert(files_to_remark, 1, item.file)
+
+    recall_util.remark(vim
+      .iter(files_to_remark)
+      :map(function(f)
+        return recall_util.iter_marks(f):totable()
+      end)
+      :flatten()
+      :totable())
+
+    -- set cursor to the previous mark's position
+    picker.list:set_target(math.max(1, picker.list.cursor - 1))
+    picker:find()
+
+    return
+  end
+
+  -- special case: we are moving a single mark, so we can just swap with the previous mark.
   local mark = item.mark and recall_util.get_mark(item.mark) or nil
   -- If mark is "A", cannot move up, so do nothing.
   if mark and mark.letter == "A" then
@@ -79,6 +125,47 @@ function actions.recall_move_down(picker, item)
   local recall_util_ok, recall_util = pcall(require, "plugins.recall.util")
   if not recall_util_ok or not recall_util then
     Snacks.notify.warn("recall utility not found", { title = picker.title })
+    return
+  end
+
+  -- If item.mark is a number, we need to move all letter marks
+  -- in the associated file above all marks in the previous file.
+  if type(item.mark) == "number" then
+    local current = nil
+    local files_to_remark = recall_util
+      .iter_marked_files()
+      :rev()
+      :map(function(f)
+        if f == item.file then
+          current = f
+        elseif current == nil then
+          return f
+        end
+        return nil
+      end)
+      :rev()
+      :totable()
+
+    -- if there are no files after, we cannot move down, so do nothing.
+    if #files_to_remark == 0 then
+      return
+    end
+
+    -- insert the current file after the next file
+    table.insert(files_to_remark, 2, item.file)
+
+    recall_util.remark(vim
+      .iter(files_to_remark)
+      :map(function(f)
+        return recall_util.iter_marks(f):totable()
+      end)
+      :flatten()
+      :totable())
+
+    -- set cursor to the next mark's position
+    picker.list:set_target(picker.list.cursor + 1)
+    picker:find()
+
     return
   end
 
@@ -408,12 +495,20 @@ local sources = {
         keys = {
           ["<c-x>"] = { "bufdelete_and_recall_unmark", mode = { "n", "i" } },
           ["<c-m>"] = { "recall_toggle", mode = { "n", "i" } },
+          ["<A-k>"] = { "recall_move_up", mode = { "n", "i" } },
+          ["<˚>"] = { "recall_move_up", mode = { "n", "i" } }, -- <A-k> on macos emits "˚"
+          ["<A-j>"] = { "recall_move_down", mode = { "n", "i" } },
+          ["<∆>"] = { "recall_move_down", mode = { "n", "i" } }, -- <A-j> on macos emits "∆"
         },
       },
       list = {
         keys = {
           ["dd"] = "bufdelete_and_recall_unmark",
           ["m"] = "recall_toggle",
+          ["<A-k>"] = "recall_move_up",
+          ["<˚>"] = "recall_move_up", -- <A-k> on macos emits "˚"
+          ["<A-j>"] = "recall_move_down",
+          ["<∆>"] = "recall_move_down", -- <A-j> on macos emits "∆"
         },
       },
     },

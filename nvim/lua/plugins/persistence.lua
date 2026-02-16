@@ -4,6 +4,8 @@ return {
     cmd = { "RestoreSession", "RestoreLastSession", "StopSession" },
     opts = { need = 1, branch = true },
     init = function()
+      vim.opt.exrc = true -- Enables project-local configuration. See `:h exrc` for more details.
+      vim.opt.secure = true -- Require trust to execute exrc files. See `:h secure` for more details.
       -- Set shada file per project/session
       -- from `:h shada`:
       -- > The ShaDa file is used to store:
