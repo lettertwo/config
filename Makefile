@@ -354,8 +354,26 @@ endif
 
 CLAUDE := $(shell command -v claude 2> /dev/null)
 
+~/.claude/settings.json:
+	$(call err,"claude settings not found!")
+	$(call log,"Linking claude settings...")
+	$(call run,ln -sf "$$HOME/.config/claude/settings.json" "$@")
+	$(call done)
+
+~/.claude/CLAUDE.md:
+	$(call err,"claude CLAUDE.md not found!")
+	$(call log,"Linking claude CLAUDE.md...")
+	$(call run,ln -sf "$$HOME/.config/claude/CLAUDE.md" "$@")
+	$(call done)
+
+~/.claude/statusline-command.sh:
+	$(call err,"claude statusline-command.sh not found!")
+	$(call log,"Linking claude statusline-command.sh...")
+	$(call run,ln -sf "$$HOME/.config/claude/statusline-command.sh" "$@")
+	$(call done)
+
 .PHONY: claude
-claude:
+claude: ~/.claude/settings.json ~/.claude/CLAUDE.md ~/.claude/statusline-command.sh
 ifndef CLAUDE
 	$(call err,"claude not found!")
 	$(call log,"Installing claude...")

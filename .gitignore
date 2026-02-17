@@ -25,6 +25,7 @@ barn
 graphite
 gh-copilot
 .copilot
+.claude
 
 # laserwave.nvim
 git/laserwave.gitconfig
