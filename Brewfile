@@ -2,9 +2,6 @@
 # https://github.com/Homebrew/homebrew-bundle
 
 # brew all teh things
-tap "homebrew/bundle" if OS.mac?
-tap "homebrew/cask-fonts" if OS.mac?
-tap "homebrew/services" if OS.mac?
 tap "withgraphite/tap" if OS.mac?
 tap "jesseduffield/lazygit"
 
@@ -13,7 +10,6 @@ brew "fish"
 brew "fisher"
 brew "starship"
 
-
 # CLI Tools
 brew "git" if OS.mac?
 brew "coreutils" if OS.mac?
@@ -21,9 +17,7 @@ brew "tree" if OS.mac?
 brew "readline" if OS.mac?
 brew "curl" if OS.mac?
 brew "wget" if OS.mac?
-brew "tldr" if OS.mac?
 brew "lnav" if OS.mac?
-
 brew "fzf"
 brew "sk" # skim-rs/skim, replacement for fzf?
 brew "ripgrep" # BurntSushi/ripgrep
