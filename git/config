@@ -29,14 +29,16 @@
 [difftool]
 	prompt = true
 [difftool "nvim_difftool"]
-	cmd = nvim -c 'lua vim.g.difftool=true' -c 'packadd nvim.difftool' -c \"DiffTool $LOCAL $REMOTE\"
+	cmd = nvim -c 'lua vim.g.difftool=true' -c 'packadd nvim.difftool' -c "DiffTool \"$LOCAL\" \"$REMOTE\""
 [difftool "kitty"]
 	cmd = kitten diff $LOCAL $REMOTE
 [difftool "ksdiff"]
   cmd = ksdiff --diff $LOCAL $REMOTE
+[difftool "codediff"]
+	cmd = nvim "$LOCAL" "$REMOTE" -c 'lua vim.g.difftool=true' -c "CodeDiff file \"$LOCAL\" \"$REMOTE\""
 [merge]
 	log = true
-	tool = nvimdiff
+	tool = codediff
 	conflictStyle = zdiff3
 [mergetool]
 	prompt = false
@@ -47,6 +49,8 @@
 [mergetool "ksdiff"]
   trustExitCode = true
   cmd = ksdiff --merge --base $BASE --output $MERGED $LOCAL $REMOTE
+[mergetool "codediff"]
+  cmd = nvim "$MERGED" -c 'lua vim.g.mergetool=true' -c "CodeDiff merge \"$MERGED\""
 [rebase]
 	autoStash = true
 	autoSquash = true
@@ -55,7 +59,7 @@
 	algorithm = histogram
 	compactionHeuristic = true
 	colorMoved = true
-	tool = nvim_difftool
+	tool = codediff
 [worktree]
 	guessRemote = true
 [maintenance]
