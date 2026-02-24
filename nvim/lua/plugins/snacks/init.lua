@@ -36,23 +36,11 @@ return {
         left = { "sign", "mark" }, -- priority of signs on the left (high to low)
         right = { "fold", "git" }, -- priority of signs on the right (high to low)
       },
-      lazygit = {
-        config = {
-          os = {
-            editPreset = nil,
-            edit = 'nvim --server "$NVIM" --remote-send "q" && nvim --server "$NVIM" --remote {{filename}}',
-            editAtLine = 'nvim --server "$NVIM" --remote-send "q" &&  nvim --server "$NVIM" --remote {{filename}} && nvim --server "$NVIM" --remote-send ":{{line}}<CR>"',
-            -- No remote-wait support yet. See https://github.com/neovim/neovim/pull/17856
-            editAtLineAndWait = "nvim +{{line}} {{filename}}",
-            openDirInEditor = 'nvim --server "$NVIM" --remote-send "q" && nvim --server "$NVIM" --remote {{dir}}',
-            open = 'nvim --server "$NVIM" --remote-send "q" && nvim --server "$NVIM" --remote {{filename}}',
-          },
-        },
-      },
     },
   },
   { import = "plugins.snacks.dashboard" },
   { import = "plugins.snacks.explorer" },
   { import = "plugins.snacks.scratch" },
   { import = "plugins.snacks.picker" },
+  { import = "plugins.snacks.lazygit" },
 }
