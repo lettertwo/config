@@ -17,7 +17,8 @@ keybinding:
     openFile: o
     submitEditorText: <enter>
   files:
-    commitChangesWithEditor: C
+    commitChanges: <disabled>
+    commitChangesWithEditor: <disabled>
     openMergeOptions: M
   commits:
     renameCommitWithEditor: R
@@ -25,3 +26,12 @@ keybinding:
     editSelectHunk: E
   commitMessage:
     commitMenu: <c-o>
+customCommands:
+  - key: "c"
+    context: "files"
+    description: "Commit with Neogit"
+    command: 'nvim --server "$NVIM" --remote-send "<C-\><C-n><cmd>LazyGitNeogitCommit<cr>"'
+  - key: "C"
+    context: "files"
+    description: "Commit with Neogit"
+    command: 'nvim --server "$NVIM" --remote-send "<C-\><C-n><cmd>LazyGitNeogitCommit<cr>"'
