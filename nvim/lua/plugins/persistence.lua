@@ -18,9 +18,15 @@ return {
       -- > - Last search/substitute pattern (for 'n' and '&').
       -- > - The buffer list.
       -- > - Global variables.
-      local project_file = vim.fs.basename(require("persistence").current())
-      local shada_file = vim.fn.fnamemodify(project_file, ":r") .. ".shada"
-      vim.opt.shadafile = vim.fs.joinpath(vim.fn.stdpath("state"), "shada", shada_file)
+
+      -- Implementation based on `persistence.current()`.
+      local name = vim.fn.getcwd():gsub("[\\/:]+", "%%")
+      local branch = vim.fn.systemlist("git branch --show-current")[1]
+      if vim.v.shell_error == 0 and branch and branch ~= "main" and branch ~= "master" then
+        name = name .. "%%" .. branch:gsub("[\\/:]+", "%%")
+      end
+
+      vim.opt.shadafile = vim.fs.joinpath(vim.fn.stdpath("state"), "shada", name .. ".shada")
     end,
     -- stylua: ignore
     keys = {
