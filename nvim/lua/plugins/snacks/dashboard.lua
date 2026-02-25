@@ -380,41 +380,14 @@ return {
 
           -- Add buffers from previous session up to the limit.
 
-          ---@type string | nil
-          local session = nil
-
-          local persistence_ok, persistence = pcall(require, "persistence")
-          if persistence_ok and persistence then
-            session = persistence.last() or persistence.current()
-            if vim.fn.filereadable(session) == 0 then
-              session = persistence.current({ branch = false })
-            end
-          end
-
-          if session ~= nil and vim.fn.filereadable(session) == 0 then
-            session = nil
-          end
-
-          vim.iter(io.lines(session)):each(function(line)
-            if #ret >= limit then
-              return
-            end
-            local lineno, file = line:match("^badd%s+%+([^%s]+)%s+(.+)")
-            if file then
-              if vim.fn.filereadable(vim.fn.fnamemodify(file, ":~:.")) == 1 then
-                file = vim.fn.fnamemodify(file, ":~:.")
+          local session = require("util.service").get_session_file()
+          if vim.fn.filereadable(session) ~= 0 then
+            vim.notify("Session file loaded: " .. session, vim.log.levels.DEBUG)
+            vim.iter(io.lines(session)):each(function(line)
+              if #ret >= limit then
+                return
               end
-              if vim.fn.filereadable(file) == 1 and not added[file] then
-                ret[#ret + 1] = {
-                  file = file,
-                  icon = "file",
-                  action = ":e +" .. lineno .. " " .. vim.fn.fnameescape(file),
-                  autokey = true,
-                }
-                added[file] = true
-              end
-            else
-              file = line:match("^edit%s+(.+)")
+              local lineno, file = line:match("^badd%s+%+([^%s]+)%s+(.+)")
               if file then
                 if vim.fn.filereadable(vim.fn.fnamemodify(file, ":~:.")) == 1 then
                   file = vim.fn.fnamemodify(file, ":~:.")
@@ -423,14 +396,30 @@ return {
                   ret[#ret + 1] = {
                     file = file,
                     icon = "file",
-                    action = ":e " .. vim.fn.fnameescape(file),
+                    action = ":e +" .. lineno .. " " .. vim.fn.fnameescape(file),
                     autokey = true,
                   }
                   added[file] = true
                 end
+              else
+                file = line:match("^edit%s+(.+)")
+                if file then
+                  if vim.fn.filereadable(vim.fn.fnamemodify(file, ":~:.")) == 1 then
+                    file = vim.fn.fnamemodify(file, ":~:.")
+                  end
+                  if vim.fn.filereadable(file) == 1 and not added[file] then
+                    ret[#ret + 1] = {
+                      file = file,
+                      icon = "file",
+                      action = ":e " .. vim.fn.fnameescape(file),
+                      autokey = true,
+                    }
+                    added[file] = true
+                  end
+                end
               end
-            end
-          end)
+            end)
+          end
 
           return vim.list_slice(ret, 1, limit)
         end

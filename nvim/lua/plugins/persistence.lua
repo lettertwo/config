@@ -3,31 +3,6 @@ return {
     "folke/persistence.nvim",
     cmd = { "RestoreSession", "RestoreLastSession", "StopSession" },
     opts = { need = 1, branch = true },
-    init = function()
-      vim.opt.exrc = true -- Enables project-local configuration. See `:h exrc` for more details.
-      vim.opt.secure = true -- Require trust to execute exrc files. See `:h secure` for more details.
-      -- Set shada file per project/session
-      -- from `:h shada`:
-      -- > The ShaDa file is used to store:
-      -- > - The command line history.
-      -- > - The search string history.
-      -- > - The input-line history.
-      -- > - Contents of non-empty registers.
-      -- > - Marks for several files.
-      -- > - File marks, pointing to locations in files.
-      -- > - Last search/substitute pattern (for 'n' and '&').
-      -- > - The buffer list.
-      -- > - Global variables.
-
-      -- Implementation based on `persistence.current()`.
-      local name = vim.fn.getcwd():gsub("[\\/:]+", "%%")
-      local branch = vim.fn.systemlist("git branch --show-current")[1]
-      if vim.v.shell_error == 0 and branch and branch ~= "main" and branch ~= "master" then
-        name = name .. "%%" .. branch:gsub("[\\/:]+", "%%")
-      end
-
-      vim.opt.shadafile = vim.fs.joinpath(vim.fn.stdpath("state"), "shada", name .. ".shada")
-    end,
     -- stylua: ignore
     keys = {
       { "<leader>qs", function() require("persistence").select() end, desc = "Select Session" },

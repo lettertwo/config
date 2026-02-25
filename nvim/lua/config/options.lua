@@ -15,9 +15,6 @@ vim.g.snacks_animate = false
 
 vim.g.pager = vim.env.KITTY_SCROLLBACK_NVIM == "true"
 
--- Use blink main branch instead of cmp
--- vim.g.lazyvim_blink_main = true
-
 local opt = vim.opt
 
 -- Magic files
@@ -28,6 +25,22 @@ opt.undofile = true -- enable persistent undo
 opt.autowrite = true -- enable auto write
 opt.confirm = true -- confirm to save changes before exiting modified buffer
 opt.hidden = true -- Enable modified buffers in background
+
+-- Set shada file per project/session
+-- from `:h shada`:
+-- > The ShaDa file is used to store:
+-- > - The command line history.
+-- > - The search string history.
+-- > - The input-line history.
+-- > - Contents of non-empty registers.
+-- > - Marks for several files.
+-- > - File marks, pointing to locations in files.
+-- > - Last search/substitute pattern (for 'n' and '&').
+-- > - The buffer list.
+-- > - Global variables.
+opt.exrc = true -- Enables project-local configuration. See `:h exrc` for more details.
+opt.secure = true -- Require trust to execute exrc files. See `:h secure` for more details.
+opt.shadafile = require("util.service").get_session_shadafile()
 
 opt.winblend = 0
 opt.pumblend = 0
