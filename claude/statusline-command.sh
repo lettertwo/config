@@ -127,8 +127,18 @@ function cache_is_stale() {
 # Only one process will succeed in creating the lock dir and refreshing the cache;
 # others will skip if they fail to acquire the lock.
 function maybe_refresh_cache() {
+  # Clean up stale lock (older than 2 minutes)
+  if [ -d "$LOCK_DIR" ]; then
+    local lock_age
+    lock_age=$(( $(date +%s) - $(stat -f %m "$LOCK_DIR" 2>/dev/null || echo 0) ))
+    if [ "$lock_age" -gt 120 ]; then
+      rmdir "$LOCK_DIR" 2>/dev/null
+    fi
+  fi
+
   if mkdir "$LOCK_DIR" 2>/dev/null; then
     (
+      trap 'rmdir "$LOCK_DIR" 2>/dev/null' EXIT
       token=$(security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null \
         | jq -r '.claudeAiOauth.accessToken' 2>/dev/null)
       if [ -n "$token" ] && [ "$token" != "null" ]; then
@@ -141,7 +151,6 @@ function maybe_refresh_cache() {
           echo "$response" > "$CACHE_FILE"
         fi
       fi
-      rmdir "$LOCK_DIR" 2>/dev/null
     ) &
     disown 2>/dev/null || true
   fi
