@@ -1,6 +1,10 @@
 return {
   {
     "debugloop/layers.nvim",
+    cmd = { "ToggleDebugMode" },
+    keys = {
+      { "<leader>dd", "<cmd>ToggleDebugMode<cr>", desc = "Debug Mode" },
+    },
     dependencies = {
       {
         "mfussenegger/nvim-dap",
@@ -124,6 +128,8 @@ return {
         end
       end
 
+      vim.api.nvim_create_user_command("ToggleDebugMode", toggle_debug_mode, { desc = "Toggle Debug Mode" })
+
       -- map our custom mode keymaps
       DEBUG_MODE:keymaps({
         -- stylua: ignore
@@ -157,8 +163,6 @@ return {
           -- { "<Leader>duh", dap.ui.widgets.hover, desc = "UI Hover" },
         },
       })
-
-      vim.keymap.set("n", "<leader>dd", toggle_debug_mode, { desc = "Debug Mode" })
     end,
   },
 }
