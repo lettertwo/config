@@ -218,10 +218,9 @@ fi
 function severity_color() {
   local pct="$1" diff="${2:-}"
   if [ -n "$diff" ]; then
-    local adiff=$(( diff < 0 ? -diff : diff ))
-    if   [ "$adiff" -gt 20 ]; then printf "%s" "$RED"
-    elif [ "$adiff" -gt  5 ]; then printf "%s" "$YELLOW"
-    else                           printf "%s" "$BLUE"
+    if   [ "$diff" -gt 20 ]; then printf "%s" "$RED"
+    elif [ "$diff" -gt  5 ]; then printf "%s" "$YELLOW"
+    else                          printf "%s" "$BLUE"
     fi
   else
     if   [ "$pct" -lt 75 ]; then printf "%s" "$BLUE"
