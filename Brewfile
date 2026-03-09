@@ -10,6 +10,9 @@ brew "fish"
 brew "fisher"
 brew "starship"
 
+# password manager
+brew "1password-cli"
+
 # CLI Tools
 brew "git" if OS.mac?
 brew "coreutils" if OS.mac?

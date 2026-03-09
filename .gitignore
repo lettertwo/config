@@ -26,6 +26,7 @@ graphite
 gh-copilot
 .copilot
 .claude
+op
 
 # laserwave.nvim
 git/laserwave.gitconfig
