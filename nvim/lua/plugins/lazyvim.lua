@@ -34,8 +34,6 @@ return {
           "dashboard",
           "dbout",
           "fugitive",
-          "gitcommit",
-          "gitrebase",
           "gitsigns-blame",
           "grug-far",
           "help",
