@@ -1,3 +1,6 @@
+from worklayout import apply
+
+
 def main():
     pass
 
@@ -19,6 +22,9 @@ def handle_result(args, __, ___, boss):  # pyright: ignore
         elif not new:
             tab.first_window()
             tab.goto_layout("stack")
+
+        if new and tab.current_layout.name == "splits":
+            apply(tab)
 
 
 handle_result.no_ui = True
