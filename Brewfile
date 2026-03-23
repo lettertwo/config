@@ -21,6 +21,7 @@ brew "readline" if OS.mac?
 brew "curl" if OS.mac?
 brew "wget" if OS.mac?
 brew "lnav" if OS.mac?
+brew "terminal-notifier" if OS.mac?
 brew "fzf"
 brew "sk" # skim-rs/skim, replacement for fzf?
 brew "ripgrep" # BurntSushi/ripgrep

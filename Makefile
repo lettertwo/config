@@ -372,8 +372,19 @@ CLAUDE := $(shell command -v claude 2> /dev/null)
 	$(call run,ln -sf "$$HOME/.config/claude/statusline-command.sh" "$@")
 	$(call done)
 
+~/.claude/notify.sh:
+	$(call err,"claude notify.sh not found!")
+	$(call log,"Linking claude notify.sh...")
+	$(call run,ln -sf "$$HOME/.config/claude/notify.sh" "$@")
+	$(call done)
+
+~/.claude/commands:
+	$(call log,"Linking claude commands...")
+	$(call run,ln -sf "$$HOME/.config/claude/commands" "$@")
+	$(call done)
+
 .PHONY: claude
-claude: ~/.claude/settings.json ~/.claude/CLAUDE.md ~/.claude/statusline-command.sh
+claude: ~/.claude/settings.json ~/.claude/CLAUDE.md ~/.claude/statusline-command.sh ~/.claude/notify.sh ~/.claude/commands
 ifndef CLAUDE
 	$(call err,"claude not found!")
 	$(call log,"Installing claude...")
