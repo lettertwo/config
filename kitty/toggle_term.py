@@ -1,4 +1,4 @@
-from worklayout import apply
+from worklayout import append, capture
 
 
 def main():
@@ -11,6 +11,7 @@ def handle_result(args, __, ___, boss):  # pyright: ignore
     tab = boss.active_tab
     if tab is not None:
         new = new or len(tab) == 1
+        state = capture(tab) if new else None
         if new:
             if cwd:
                 tab.new_window(cwd=tab.get_cwd_of_active_window())
@@ -24,7 +25,7 @@ def handle_result(args, __, ___, boss):  # pyright: ignore
             tab.goto_layout("stack")
 
         if new and tab.current_layout.name == "splits":
-            apply(tab)
+            append(tab, state)
 
 
 handle_result.no_ui = True
