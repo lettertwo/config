@@ -34,6 +34,38 @@
       }
     ]
   },
+  "permissions": {
+    "allow": [
+      "Read(~/.claude/*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(make test:*)",
+      "Bash(make doc:*)",
+      "Bash(git branch:*)",
+      "Bash(git config:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git status:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)",
+      "Bash(gh run watch:*)",
+      "Bash(cargo build:*)",
+      "Bash(cargo check:*)",
+      "Bash(cargo doc:*)",
+      "Bash(cargo test:*)",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm test:*)",
+      "Bash(busted:*)",
+      "Skill(update-config)",
+      "WebSearch"
+    ]
+  },
   "enabledPlugins": {
     "lua-lsp@claude-plugins-official": true,
     "rust-analyzer-lsp@claude-plugins-official": true,
