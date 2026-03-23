@@ -6,6 +6,31 @@ return {
       { "<leader>uI", "<cmd>Inspect!<CR>", desc = "Inspect Position" },
       -- { "<leader>uT", "<cmd>InspectTree<CR>", desc = "Inspect TS Tree" },
       { "<leader>uQ", "<cmd>EditQuery<CR>", desc = "Edit TS Query" },
+      --- incremental treesitter selection mappings (+ lsp fallback)
+      {
+        "<S-CR>",
+        mode = { "n", "o", "x" },
+        function()
+          if vim.treesitter.get_parser(nil, nil, { error = false }) and pcall(require, "vim.treesitter._select") then
+            require("vim.treesitter._select").select_parent(vim.v.count1)
+          else
+            vim.lsp.buf.selection_range(vim.v.count1)
+          end
+        end,
+        desc = "Increment Selection",
+      },
+      {
+        "<BS>",
+        mode = { "o", "x" },
+        function()
+          if vim.treesitter.get_parser(nil, nil, { error = false }) and pcall(require, "vim.treesitter._select") then
+            require("vim.treesitter._select").select_child(vim.v.count1)
+          else
+            vim.lsp.buf.selection_range(-vim.v.count1)
+          end
+        end,
+        desc = "Decrement Selection",
+      },
     },
     ---@diagnostic disable-next-line: missing-fields
     opts = {
@@ -28,20 +53,7 @@ return {
     "folke/flash.nvim",
     optional = true,
     keys = {
-      { "<c-space>", false },
-      {
-        "<S-CR>",
-        mode = { "n", "o", "x" },
-        function()
-          require("flash").treesitter({
-            actions = {
-              ["<S-CR>"] = "next",
-              ["<BS>"] = "prev",
-            },
-          })
-        end,
-        desc = "Treesitter Incremental Selection",
-      },
+      { "<c-space>", false }, -- Disable flash's incremental selection in favor of the treesitter + LSP above.
     },
   },
   {
