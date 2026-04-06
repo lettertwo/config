@@ -1,4 +1,4 @@
-abbr -a -g g git
+abbr -a g git
 
 set -l seen (set -l)
 set -l targets (set -l)
@@ -22,8 +22,8 @@ function add_abbr
         end
         return 1
     else
-        # echo "abbr -a -g g$name \"git $target\""
-        abbr -a -g g$name "git $target"
+        # echo "abbr -a g$name \"git $target\""
+        abbr -a g$name "git $target"
         set seen $seen $name
         set targets $targets $target
         return 0

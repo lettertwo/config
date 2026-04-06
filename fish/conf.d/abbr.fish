@@ -1,59 +1,59 @@
 # lsd versions of some ls aliases.
-abbr -a -g ls lsd --hyperlink=auto
+abbr -a ls lsd --hyperlink=auto
 # Lists in one column, hidden files, sorted by extension.
-abbr -a -g l 'lsd -1a --extensionsort'
+abbr -a l 'lsd -1a --extensionsort'
 # Lists human readable sizes.
-abbr -a -g ll 'lsd -lh --permission octal --git --icon always --extensionsort'
+abbr -a ll 'lsd -lh --permission octal -it --icon always --extensionsort'
 # Lists human readable sizes, recursively.
-abbr -a -g lr 'll -R'
+abbr -a lr 'll -R'
 # Lists human readable sizes, hidden files.
-abbr -a -g la 'll -a'
+abbr -a la 'll -a'
 # Lists sorted by size, largest last.
-abbr -a -g lk 'll -S'
+abbr -a lk 'll -S'
 # Lists sorted by date, most recent last.
-abbr -a -g lt 'll -t -r'
+abbr -a lt 'll -t -r'
 
 # IP addresses
-abbr -a -g ip "dig +short myip.opendns.com @resolver1.opendns.com"
-abbr -a -g localip "ipconfig getifaddr en1"
-abbr -a -g ips "ifconfig -a | grep -o 'inet6\? \(\([0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+\)\|[a-fA-F0-9:]\+\)' | sed -e 's/inet6* //'"
+abbr -a ip "dig +short myip.opendns.com @resolver1.opendns.com"
+abbr -a localip "ipconfig getifaddr en1"
+abbr -a ips "ifconfig -a | grep -o 'inet6\? \(\([0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+\)\|[a-fA-F0-9:]\+\)' | sed -e 's/inet6* //'"
 
 # Use bottom instead of top/htop
-abbr -a -g top btm
-abbr -a -g htop btm
+abbr -a top btm
+abbr -a htop btm
 
 # Use trash instead of rm (macOS only)
 if test (uname) = Darwin && type -q trash
-    abbr -a -g rm trash
+    abbr -a rm trash
 end
 
 # Use delta instead of diff
-abbr -a -g diff delta
+abbr -a diff delta
 
 # Use bat instead of cat
-abbr -a -g cat bat
+abbr -a cat bat
 
 # Use fd instead of find
-abbr -a -g find fd
+abbr -a find fd
 
 # Use dust instead of du
-abbr -a -g du dust
+abbr -a du dust
 
 # Use duf instead of df
-abbr -a -g df duf
+abbr -a df duf
 
 # Use fnm instead of nvm
-abbr -a -g nvm fnm
+abbr -a nvm fnm
 
 # lazygit
-abbr -a -g lg lazygit
+abbr -a lg lazygit
 
 # cd to git root directory.
-abbr -a -g cdr 'cd (git rev-parse --show-toplevel)'
+abbr -a cdr 'cd (git rev-parse --show-toplevel)'
 
 # vim aliases
 if type -q nvim
-    abbr -a -g vi nvim
-    abbr -a -g vim nvim
-    abbr -a -g vimdiff 'nvim -d'
+    abbr -a vi nvim
+    abbr -a vim nvim
+    abbr -a vimdiff 'nvim -d'
 end

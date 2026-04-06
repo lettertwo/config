@@ -5,26 +5,26 @@ set -g fish_cursor_replace underscore
 
 bind --mode insert . expand_dots
 
-bind -M insert \cj 'commandline -P; and down-or-search'
-bind -M insert \ck 'commandline -P; and up-or-search'
-bind -M insert \ch 'commandline -P; and commandline -f backward-char'
-bind -M insert \cl 'commandline -P; and commandline -f forward-char'
+bind -M insert ctrl-j 'commandline -P; and down-or-search'
+bind -M insert ctrl-k 'commandline -P; and up-or-search'
+bind -M insert ctrl-h 'commandline -P; and commandline -f backward-char'
+bind -M insert ctrl-l 'commandline -P; and commandline -f forward-char'
 
 if set -q KITTY_WINDOW_ID
-    bind -k btab 'kitty @ set-user-vars IS_FISH_PAGER=1; commandline -f complete-and-search'
-    bind -M insert -k btab 'kitty @ set-user-vars IS_FISH_PAGER=1; commandline -f complete-and-search'
-    bind -M visual -k btab 'kitty @ set-user-vars IS_FISH_PAGER=1; commandline -f complete-and-search'
+    bind shift-tab 'kitty @ set-user-vars IS_FISH_PAGER=1; commandline -f complete-and-search'
+    bind -M insert shift-tab 'kitty @ set-user-vars IS_FISH_PAGER=1; commandline -f complete-and-search'
+    bind -M visual shift-tab 'kitty @ set-user-vars IS_FISH_PAGER=1; commandline -f complete-and-search'
 
-    bind \t 'kitty @ set-user-vars IS_FISH_PAGER=1; commandline -f complete'
-    bind -M insert \t 'kitty @ set-user-vars IS_FISH_PAGER=1; commandline -f complete'
-    bind -M visual \t 'kitty @ set-user-vars IS_FISH_PAGER=1; commandline -f complete'
+    bind tab 'kitty @ set-user-vars IS_FISH_PAGER=1; commandline -f complete'
+    bind -M insert tab 'kitty @ set-user-vars IS_FISH_PAGER=1; commandline -f complete'
+    bind -M visual tab 'kitty @ set-user-vars IS_FISH_PAGER=1; commandline -f complete'
 
-    bind -M insert \e 'kitty @ set-user-vars IS_FISH_PAGER; if commandline -P; commandline -f cancel; else; set fish_bind_mode default; commandline -f backward-char repaint-mode; end'
+    bind -M insert escape 'kitty @ set-user-vars IS_FISH_PAGER; if commandline -P; commandline -f cancel; else; set fish_bind_mode default; commandline -f backward-char repaint-mode; end'
 
-    bind -M insert \cc 'kitty @ set-user-vars IS_FISH_PAGER; commandline -f cancel-commandline'
+    bind -M insert ctrl-c 'kitty @ set-user-vars IS_FISH_PAGER; commandline -f cancel-commandline'
 
-    bind \cd 'kitty @ set-user-vars IS_FISH_PAGER; commandline -f delete-or-exit'
-    bind -M insert \cd 'kitty @ set-user-vars IS_FISH_PAGER; commandline -f delete-or-exit'
+    bind ctrl-d 'kitty @ set-user-vars IS_FISH_PAGER; commandline -f delete-or-exit'
+    bind -M insert ctrl-d 'kitty @ set-user-vars IS_FISH_PAGER; commandline -f delete-or-exit'
 
     if test -x $XDG_CONFIG_HOME/kitty/kitty_scrollback_nvim.py
         function _kitty_scrollback_nvim_edit_command_buffer
