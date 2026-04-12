@@ -232,13 +232,90 @@ function M.get_next_available_mark()
 end
 
 function M.goto_next()
-  require("recall").goto_next()
-  M.set_last_jumped_mark()
+  local marks = M.iter_marked_files()
+    :map(function(file)
+      local marks = M.iter_marks(file):totable()
+      table.sort(marks, function(a, b)
+        return a.pos[1] + a.pos[2] < b.pos[1] + b.pos[2]
+      end)
+      return marks
+    end)
+    :flatten()
+
+  local current_bufnr = vim.api.nvim_get_current_buf()
+  local current_file = M.normalize_filepath(current_bufnr)
+  local current_pos = vim.api.nvim_win_get_cursor(0)
+
+  local next_mark = marks:next()
+
+  if not next_mark then
+    return
+  end
+
+  local seen_current_file = next_mark and next_mark.file == current_file or false
+
+  if not seen_current_file or current_pos[1] >= next_mark.pos[1] then
+    next_mark = marks:find(function(mark)
+      if mark.file == current_file then
+        seen_current_file = true
+        -- If mark is in current file, check if it's after the current position
+        return mark.pos[1] > current_pos[1]
+      elseif seen_current_file then
+        -- If mark is in a different file, and we've seen the current file,
+        -- it's considered "after" the current position.
+        return true
+      end
+    end) or next_mark
+  end
+
+  if next_mark then
+    vim.api.nvim_set_current_buf(vim.fn.bufadd(next_mark.file))
+    pcall(vim.api.nvim_win_set_cursor, 0, { next_mark.pos[1], next_mark.pos[2] })
+  end
 end
 
 function M.goto_prev()
-  require("recall").goto_prev()
-  M.set_last_jumped_mark()
+  local marks = M.iter_marked_files()
+    :rev()
+    :map(function(file)
+      local marks = M.iter_marks(file):rev():totable()
+      table.sort(marks, function(a, b)
+        return a.pos[1] + a.pos[2] > b.pos[1] + b.pos[2]
+      end)
+      return marks
+    end)
+    :flatten()
+
+  local current_bufnr = vim.api.nvim_get_current_buf()
+  local current_file = M.normalize_filepath(current_bufnr)
+  local current_pos = vim.api.nvim_win_get_cursor(0)
+
+  local prev_mark = marks:next()
+
+  if not prev_mark then
+    return
+  end
+
+  local seen_current_file = prev_mark and prev_mark.file == current_file or false
+
+  if not seen_current_file or current_pos[1] <= prev_mark.pos[1] then
+    prev_mark = marks:find(function(mark)
+      if mark.file == current_file then
+        seen_current_file = true
+        -- If mark is in current file, check if it's before the current position
+        return mark.pos[1] < current_pos[1]
+      elseif seen_current_file then
+        -- If mark is in a different file, and we've seen the current file,
+        -- it's considered "before" the current position.
+        return true
+      end
+    end) or prev_mark
+  end
+
+  if prev_mark then
+    vim.api.nvim_set_current_buf(vim.fn.bufadd(prev_mark.file))
+    pcall(vim.api.nvim_win_set_cursor, 0, { prev_mark.pos[1], prev_mark.pos[2] })
+  end
 end
 
 function M.clear()
@@ -299,21 +376,21 @@ function M.get_mark(mark_letter)
 end
 
 ---Get all marks with their file paths and positions
----@return table[] marks Array of mark info tables with letter, file, and pos fields
+---@return RecallMark[] marks Array of mark info tables with letter, file, and pos fields
 function M.get_all_marks()
   return M.iter_marks():totable()
 end
 
----Get mark letter for a file path
+---Get the info for first mark in a file path
 ---@param filepath string The file path to check
----@return string? letter The mark letter or nil if not marked
+---@return RecallMark? mark The mark info table or nil if not marked
 function M.get_file_mark(filepath)
   return M.iter_marks(filepath):next()
 end
 
 ---Get the mark at current cursor position (approximate - within 5 lines)
 ---@param bufnr? integer Buffer number (defaults to current buffer)
----@return string? letter The mark letter at cursor position
+---@return RecallMark? mark The mark info table at cursor position
 function M.get_mark_at_cursor(bufnr)
   bufnr = bufnr or vim.api.nvim_get_current_buf()
   local cursor = vim.api.nvim_win_get_cursor(0)
@@ -324,42 +401,24 @@ function M.get_mark_at_cursor(bufnr)
   end
 
   local normalized_bufname = vim.fs.normalize(bufname)
-  local marks = M.get_all_marks()
+  local marks = M.iter_marks(normalized_bufname):totable()
 
   -- Find mark closest to cursor position in this buffer
   local closest_mark = nil
   local closest_distance = math.huge
 
   for _, mark in ipairs(marks) do
-    if mark.file == normalized_bufname and mark.pos and mark.pos[1] then
+    if mark.pos and mark.pos[1] then
       local distance = math.abs(mark.pos[1] - cursor_line)
       -- Only consider marks within 5 lines
       if distance <= 5 and distance < closest_distance then
         closest_distance = distance
-        closest_mark = mark.letter
+        closest_mark = mark
       end
     end
   end
 
   return closest_mark
-end
-
----Set the last jumped-to mark (called after goto_next/goto_prev)
----@param bufnr? integer Buffer number
-function M.set_last_jumped_mark(bufnr)
-  bufnr = bufnr or vim.api.nvim_get_current_buf()
-  local mark_letter = M.get_mark_at_cursor(bufnr)
-  if mark_letter then
-    vim.b[bufnr].recall_last_jumped_mark = mark_letter
-  end
-end
-
----Get the last jumped-to mark for a buffer
----@param bufnr? integer Buffer number (defaults to current buffer)
----@return string? letter The last jumped-to mark letter
-function M.get_last_jumped_mark(bufnr)
-  bufnr = bufnr or vim.api.nvim_get_current_buf()
-  return vim.b[bufnr].recall_last_jumped_mark
 end
 
 return M

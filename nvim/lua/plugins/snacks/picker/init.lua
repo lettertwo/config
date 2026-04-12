@@ -10,8 +10,8 @@ return {
       -- git
       { "<leader>gb", LazyVim.pick("git_log_line"), desc = "Git Blame Line" },
       { "<leader>gB", LazyVim.pick("git_branches"), desc = "Git Branches" },
-      { "<leader>gd", LazyVim.pick("git_diff"),     desc = "Git Diff (hunks)" },
-      { "<leader>go", LazyVim.pick("git_diff", { base = "origin" }), desc = "Git Diff (origin)" },
+      -- { "<leader>gd", LazyVim.pick("git_diff"),     desc = "Git Diff (hunks)" },
+      -- { "<leader>go", LazyVim.pick("git_diff", { base = "origin" }), desc = "Git Diff (origin)" },
       { "<leader>gf", LazyVim.pick("git_files"),    desc = "Find Git Files" },
       { "<leader>gl", LazyVim.pick("git_log"),      desc = "Git Log" },
       { "<leader>gL", LazyVim.pick("git_log_file"), desc = "Git Log File" },

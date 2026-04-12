@@ -1,7 +1,6 @@
 ---@module "snacks"
 
 ---@alias FindScope 'cwd' | 'root' | 'workspace'  | 'package'
----@alias FindSource 'files' | 'packages' | 'node_modules' | 'plugins'
 
 ---@class PickerConfigWithScope: snacks.picker.Config
 ---@field scope FindScope?

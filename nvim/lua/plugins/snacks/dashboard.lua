@@ -382,7 +382,7 @@ return {
 
           local session = require("util.service").get_session_file()
           if vim.fn.filereadable(session) ~= 0 then
-            vim.notify("Session file loaded: " .. session, vim.log.levels.DEBUG)
+            vim.notify("Session file loaded: " .. session, vim.log.levels.TRACE)
             vim.iter(io.lines(session)):each(function(line)
               if #ret >= limit then
                 return

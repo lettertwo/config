@@ -24,11 +24,13 @@ return {
       "RecallDeleteAndUnmarkOthers",
     },
     keys = {
-      { "<leader>m", "<cmd>RecallToggleBuffer<cr>", desc = "Toggle mark" },
-      { "<leader>M", "<cmd>RecallClearBuffer<cr>", desc = "Clear buffer marks" },
-      { "<C-m>", "<cmd>RecallToggle<cr>", desc = "Toggle mark" },
-      { "L", "<cmd>RecallNextBuffer<cr>", desc = "Next marked buffer" },
-      { "H", "<cmd>RecallPreviousBuffer<cr>", desc = "Previous marked buffer" },
+      { "<leader>m", "<cmd>RecallToggle<cr>", desc = "Toggle mark" },
+      { "<leader>M", "<cmd>RecallToggleBuffer<cr>", desc = "Toggle buffer marks" },
+      -- { "<C-m>", "<cmd>RecallToggle<cr>", desc = "Toggle mark" },
+      { "L", "<cmd>RecallNext<cr>", desc = "Next marked buffer" },
+      { "H", "<cmd>RecallPrevious<cr>", desc = "Previous marked buffer" },
+      { "<leader>bj", "<cmd>RecallNext<cr>", desc = "Next mark" },
+      { "<leader>bk", "<cmd>RecallPrevious<cr>", desc = "Previous mark" },
       { "<leader>bc", "<cmd>RecallCloseUnmarkedBuffers<cr>", desc = "Close unmarked buffers" },
       { "<leader>bm", "<cmd>RecallClearBuffer<cr>", desc = "Clear buffer marks" },
       { "<leader>bM", "<cmd>RecallClear<cr>", desc = "Clear all marks" },
@@ -52,6 +54,35 @@ return {
       vim.api.nvim_create_user_command("RecallPrevious", function() recall_util.goto_prev() end, {})
       vim.api.nvim_create_user_command("RecallClear",    function() recall_util.clear() end, {})
       -- stylua: ignore end
+
+      -- vim.api.nvim_create_user_command("RecallNext", function()
+      --   local marks = recall_util
+      --     .iter_marked_files()
+      --     :map(function(file)
+      --       return recall_util.iter_marks(file):totable()
+      --     end)
+      --     :flatten()
+      --   local next_mark = marks:next()
+      --
+      --   local current_mark = recall_util.get_mark_at_cursor()
+      --   if current_mark then
+      --     local saw_current_mark = next_mark.letter == current_mark.letter
+      --     next_mark = marks:find(function(mark)
+      --       if saw_current_mark then
+      --         return true
+      --       elseif mark.letter == current_mark.letter then
+      --         saw_current_mark = true
+      --       end
+      --       return false
+      --     end) or next_mark
+      --   end
+      --
+      --   if next_mark then
+      --     vim.cmd("normal! `" .. next_mark.letter)
+      --   else
+      --     vim.notify("No marks found", vim.log.levels.WARN)
+      --   end
+      -- end, {})
 
       vim.api.nvim_create_user_command("RecallNextBuffer", function()
         local current_file = recall_util.normalize_filepath(0)
@@ -156,6 +187,24 @@ return {
         pattern = "RecallUpdate",
         callback = function()
           vim.schedule(vim.cmd.redraw)
+        end,
+      })
+
+      -- disable recall keymaps in UI buffers
+      vim.api.nvim_create_autocmd("Filetype", {
+        pattern = LazyVim.config.filetypes.ui or {},
+        callback = function(args)
+          vim.keymap.set("n", "<leader>m", "<nop>", { buffer = args.buf })
+          vim.keymap.set("n", "<leader>M", "<nop>", { buffer = args.buf })
+          vim.keymap.set("n", "L", "<nop>", { buffer = args.buf })
+          vim.keymap.set("n", "H", "<nop>", { buffer = args.buf })
+          vim.keymap.set("n", "<leader>bj", "<nop>", { buffer = args.buf })
+          vim.keymap.set("n", "<leader>bk", "<nop>", { buffer = args.buf })
+          vim.keymap.set("n", "<leader>bc", "<nop>", { buffer = args.buf })
+          vim.keymap.set("n", "<leader>bm", "<nop>", { buffer = args.buf })
+          vim.keymap.set("n", "<leader>bM", "<nop>", { buffer = args.buf })
+          vim.keymap.set("n", "<leader>bd", "<nop>", { buffer = args.buf })
+          vim.keymap.set("n", "<leader>bo", "<nop>", { buffer = args.buf })
         end,
       })
     end,
@@ -432,6 +481,11 @@ return {
 
           local RecallBuffers = require("lualine.component"):extend()
 
+          -- TODO: add some indication of multiple marks in the same file,
+          -- along with an indication of which is currently closest.
+          -- Currently, we show only that a buffer has a mark, but if you naively
+          -- move through marks with next/previous, you may not see the buffer status change
+          -- if you are moving between marksi n the same file.
           function RecallBuffers:init(options)
             RecallBuffers.super.init(self, options)
             self.options = vim.tbl_deep_extend("keep", self.options or {}, default_options)

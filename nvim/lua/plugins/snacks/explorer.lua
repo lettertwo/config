@@ -1,3 +1,4 @@
+-- TODO: Look into moving this to the recall module
 local _, recall_util = pcall(require, "plugins.recall.util")
 
 ---@module "snacks"

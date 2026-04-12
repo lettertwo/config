@@ -1,3 +1,36 @@
+---@class QueueItem
+---@field op fun(): nil
+---@field args { n: integer }
+
+-- A simple queue to serialize gitsigns operations,
+-- preventing errors when multiple operations are triggered in quick succession.
+---@type {[1]: fun(): nil}[]
+local queue = {}
+
+local function dequeue()
+  local item = table.remove(queue, 1)
+  if item then
+    local args = item.args or { n = 0 }
+    table.insert(args, args.n + 1, function(err)
+      if err then
+        vim.notify("Error: " .. err, vim.log.levels.ERROR)
+      end
+      dequeue()
+    end)
+    args.n = args.n + 1
+    item.op(unpack(item.args, 1, item.args.n))
+  end
+end
+
+---@param op fun(): nil
+---@param ... any Arguments to pass to the operation, excluding the callback
+local function enqueue(op, ...)
+  table.insert(queue, { op = op, args = { n = select("#", ...), ... } })
+  if #queue == 1 then
+    dequeue()
+  end
+end
+
 return {
   {
     "lewis6991/gitsigns.nvim",
@@ -23,17 +56,15 @@ return {
         col = 1,
       },
       on_attach = function(buffer)
+        ---@module "gitsigns"
+        ---@type gitsigns.main
         local gs = package.loaded.gitsigns
-
-        local function map(mode, l, r, desc)
-          vim.keymap.set(mode, l, r, { buffer = buffer, desc = desc })
-        end
 
         local function next_hunk()
           if vim.wo.diff then
             vim.cmd.normal({ "]c", bang = true })
           else
-            gs.nav_hunk("next")
+            enqueue(gs.nav_hunk, "next", nil)
           end
         end
 
@@ -41,8 +72,38 @@ return {
           if vim.wo.diff then
             vim.cmd.normal({ "[c", bang = true })
           else
-            gs.nav_hunk("prev")
+            enqueue(gs.nav_hunk, "prev", nil)
           end
+        end
+
+        local function toggle_hunk()
+          local mode = vim.api.nvim_get_mode().mode
+          if mode == "v" or mode == "V" then
+            enqueue(gs.stage_hunk, { vim.fn.line("."), vim.fn.line("v") }, nil)
+          else
+            enqueue(gs.stage_hunk, nil, nil)
+          end
+        end
+
+        local function toggle_buffer()
+          enqueue(gs.stage_buffer)
+        end
+
+        local function preview_hunk_inline()
+          enqueue(gs.preview_hunk_inline)
+        end
+
+        local function reset_hunk()
+          local mode = vim.api.nvim_get_mode().mode
+          if mode == "v" or mode == "V" then
+            enqueue(gs.reset_hunk, { vim.fn.line("."), vim.fn.line("v") }, nil)
+          else
+            enqueue(gs.reset_hunk, nil, nil)
+          end
+        end
+
+        local function map(mode, l, r, desc)
+          vim.keymap.set(mode, l, r, { buffer = buffer, desc = desc })
         end
 
         -- navigation
@@ -50,26 +111,17 @@ return {
         map("n", "]h", next_hunk, "Next Hunk")
         map("n", "<leader>gk", prev_hunk, "Prev Hunk")
         map("n", "[h", prev_hunk, "Prev Hunk")
-        map("n", "]H", function()
-          gs.nav_hunk("last")
-        end, "Last Hunk")
-        map("n", "[H", function()
-          gs.nav_hunk("first")
-        end, "First Hunk")
 
         -- status
-        map({ "x", "n" }, "<leader>ga", gs.stage_hunk, "Stage hunk")
-        map({ "x", "n" }, "<leader>gr", gs.reset_hunk, "Reset hunk")
-        map("n", "<leader>gA", gs.stage_buffer, "Stage buffer")
-        map("n", "<leader>gu", gs.undo_stage_hunk, "Unstage hunk")
+        map({ "x", "n" }, "<leader>ga", toggle_hunk, "Toggle hunk")
+        map({ "x", "n" }, "<leader>gr", reset_hunk, "Reset hunk")
+        map("n", "<leader>gA", toggle_buffer, "Toggle staged buffer")
         map("n", "<leader>gR", gs.reset_buffer, "Reset buffer")
 
         -- preview
-        map("n", "<leader>gp", gs.preview_hunk_inline, "Preview hunk")
+        map("n", "<leader>gp", preview_hunk_inline, "Preview hunk")
 
         -- toggles
-        map("n", "<leader>gD", gs.toggle_deleted, "Toggle deleted lines")
-        map("n", "<leader>uD", gs.toggle_deleted, "Toggle deleted lines")
         map("n", "<leader>uB", gs.toggle_current_line_blame, "Toggle line blame")
 
         -- selection
@@ -81,14 +133,14 @@ return {
         --   gs.blame_line()
         -- end, "Blame")
         map("n", "<leader>gb", function()
-          gs.blame()
+          enqueue(gs.blame, {})
         end, "Blame")
 
         -- diff
-        -- map("n", "<leader>gd", gs.diffthis, "Diff This")
-        -- map("n", "<leader>gD", function()
-        --   gs.diffthis("~")
-        -- end, "Diff This ~")
+        map("n", "<leader>gd", gs.diffthis, "Diff This")
+        map("n", "<leader>gD", function()
+          gs.diffthis("~")
+        end, "Diff This ~")
       end,
     },
   },
