@@ -1,0 +1,117 @@
+-- Diagnostics ================================================================
+
+-- Neovim has built-in support for showing diagnostic messages. This configures
+-- a more conservative display while still being useful.
+-- See `:h vim.diagnostic` and `:h vim.diagnostic.config()`.
+-- local diagnostic_opts = {
+-- 	-- Show signs on top of any other sign, but only for warnings and errors
+-- 	signs = { priority = 9999, severity = { min = "WARN", max = "ERROR" } },
+--
+-- 	-- Show all diagnostics as underline (for their messages type `<Leader>ld`)
+-- 	underline = { severity = { min = "HINT", max = "ERROR" } },
+--
+-- 	-- Show more details immediately for errors on the current line
+-- 	virtual_lines = false,
+-- 	virtual_text = {
+-- 		current_line = true,
+-- 		severity = { min = "ERROR", max = "ERROR" },
+-- 	},
+--
+-- 	-- Don't update diagnostics when typing
+-- 	update_in_insert = false,
+-- }
+--
+-- -- Use `later()` to avoid sourcing `vim.diagnostic` on startup
+-- Config.later(function()
+-- 	vim.diagnostic.config(diagnostic_opts)
+-- end)
+-- stylua: ignore end
+
+------------------------------
+
+-- vim.pack.add({ "https://github.com/folke/noice.nvim" })
+--
+-- local Docs = require("noice.lsp.docs")
+-- local Format = require("noice.lsp.format")
+--
+-- ---@diagnostic disable-next-line: duplicate-set-field
+-- vim.lsp.buf.hover = function()
+-- 	local message = Docs.get("hover")
+--
+-- 	if message:focus() then
+-- 		return
+-- 	end
+--
+-- 	-- Add diagnostics to hover
+-- 	if vim.diagnostic.is_enabled() then
+-- 		-- HACK: Open the diagnostic float, extract the contents, and close it.
+-- 		local bufnr, winid = vim.diagnostic.open_float({ scope = "cursor" })
+--
+-- 		if bufnr then
+-- 			local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+--
+-- 			for lineno, line in ipairs(lines) do
+-- 				-- NOTE: extmark locations are 0-indexed
+-- 				local row = lineno - 1
+-- 				local extmarks = vim.api.nvim_buf_get_extmarks(bufnr, -1, { row, 0 }, { row, -1 }, { details = true })
+--
+-- 				for _, extmark in ipairs(extmarks) do
+-- 					local _, _, start_col, details = unpack(extmark)
+-- 					local hl_group, end_row, end_col = details.hl_group, details.end_row, details.end_col
+--
+-- 					if end_row == row then
+-- 						message:append(line:sub(start_col + 1, end_col + 1), hl_group)
+-- 					else
+-- 						message:append(line:sub(start_col + 1), hl_group)
+-- 					end
+-- 				end
+--
+-- 				if lineno < #lines then
+-- 					message:append("\n")
+-- 				end
+-- 			end
+-- 		end
+--
+-- 		if winid then
+-- 			vim.api.nvim_win_close(winid, true)
+-- 		end
+-- 	end
+--
+-- 	-- Add lsp info to hover.
+-- 	vim.lsp.buf_request(0, "textDocument/hover", function(client)
+-- 		return vim.lsp.util.make_position_params(0, client.offset_encoding)
+-- 	end, function(_, result, ctx)
+-- 		-- If LSP is slow to respond, the current buffer may have changed.
+-- 		if vim.api.nvim_get_current_buf() ~= ctx.bufnr then
+-- 			return
+-- 		end
+-- 		-- Based on https://github.com/folke/noice.nvim/blob/main/lua/noice/lsp/hover.lua
+-- 		if result and result.contents then
+-- 			if not message:is_empty() then
+-- 				Format.format(message, "---")
+-- 			end
+-- 			Format.format(message, result.contents, { ft = vim.bo[ctx.bufnr].filetype })
+-- 		end
+--
+-- 		if message:is_empty() then
+-- 			vim.notify("No information available")
+-- 			return
+-- 		end
+-- 		Docs.show(message)
+-- 	end)
+-- end
+--
+-- local function scroll_forward()
+-- 	if not require("noice.lsp").scroll(4) then
+-- 		return "<c-d>"
+-- 	end
+-- end
+--
+-- local function scroll_backward()
+-- 	if not require("noice.lsp").scroll(-4) then
+-- 		return "<c-u>"
+-- 	end
+-- end
+--
+-- vim.keymap.set({ "n", "i", "s" }, "<c-d>", scroll_forward, { expr = true, desc = "Scroll forward" })
+-- vim.keymap.set({ "n", "i", "s" }, "<c-u>", scroll_backward, { expr = true, desc = "Scroll backward" })

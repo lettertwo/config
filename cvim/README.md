@@ -1,0 +1,28 @@
+List of directories to be searched for runtime files:
+
+- filetype.lua filetypes |new-filetype|
+  - how to detect a filetype, not what to load for a filetype
+- autoload/ automatically loaded scripts |autoload-functions|
+- colors/ color scheme files |:colorscheme|
+- compiler/ compiler files |:compiler|
+- doc/ documentation |write-local-help|
+- ftplugin/ filetype plugins |write-filetype-plugin|
+  - autoloads when a file of that specific type is opened
+  - (e.g., python.lua or rust.lua).
+- indent/ indent scripts |indent-expression|
+- keymap/ key mapping files |mbyte-keymap|
+  - remapping input characters, not for binding keys
+- lang/ menu translations |:menutrans|
+- lsp/ LSP client configurations |lsp-config|
+- lua/ |Lua| plugins
+  - Any file here can be loaded via `lua require('filename')`
+- pack/ packages |:packadd|
+- parser/ |treesitter| syntax parsers
+- plugin/ plugin scripts |write-plugin|
+  - Any file here is automatically sourced on startup
+- queries/ |treesitter| queries
+- rplugin/ |remote-plugin| scripts
+- spell/ spell checking files |spell|
+- syntax/ syntax files |mysyntaxfile|
+- tutor/ tutorial files |:Tutor|
+- after/: Files in after/plugin/ are loaded after all other plugins and core settings, making it ideal for overriding default plugin behaviors.
