@@ -28,6 +28,9 @@ gh-copilot
 .copilot
 .claude
 op
+cagent/user-uuid
+cagent/.cagent*
+cagent/*.debug.log
 
 # laserwave.nvim
 git/laserwave.gitconfig
