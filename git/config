@@ -118,3 +118,6 @@
   path = ./aliases
   path = ./user
   path = ./laserwave.gitconfig
+
+[includeIf "gitdir:~/Code/"]
+	path = ./work
