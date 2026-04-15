@@ -2,7 +2,6 @@
 # https://github.com/Homebrew/homebrew-bundle
 
 # brew all teh things
-tap "withgraphite/tap" if OS.mac?
 tap "jesseduffield/lazygit"
 
 # fish shell
@@ -11,7 +10,7 @@ brew "fisher"
 brew "starship"
 
 # password manager
-brew "1password-cli"
+cask "1password-cli"
 
 # CLI Tools
 brew "git" if OS.mac?
@@ -61,7 +60,7 @@ brew "tree-sitter-cli"
 brew "gh" if OS.mac?
 brew "git-absorb"
 brew "git-lfs"
-brew "graphite" if OS.mac?
+brew "withgraphite/tap/graphite" if OS.mac?
 brew "lazygit", args: ["HEAD"]
 
 # node
