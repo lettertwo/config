@@ -13,6 +13,8 @@ ERROR := $(RED)
 
 MACOS := $(shell uname -s | grep Darwin 2> /dev/null)
 
+HOMEBREW_PREFIX := $(shell brew --prefix 2> /dev/null)
+
 log = @echo "$(INFO)$(1)$(END)"
 err = @>&2 echo "$(ERROR)$(1)$(END)"
 done = $(call log,"Done!")
@@ -111,8 +113,8 @@ update-fish: fish
 .PHONY: set-fish-as-default
 set-fish-as-default: fish
 	$(call log,"Setting fish as default shell...")
-	$(call run,echo $$HOMEBREW_PREFIX/bin/fish | sudo tee -a /etc/shells)
-	$(call run,chsh -s $$HOMEBREW_PREFIX/bin/fish)
+	$(call run,echo $(HOMEBREW_PREFIX)/bin/fish | sudo tee -a /etc/shells)
+	$(call run,chsh -s $(HOMEBREW_PREFIX)/bin/fish)
 	$(call done)
 
 ### bat
