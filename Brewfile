@@ -62,6 +62,7 @@ brew "git-absorb"
 brew "git-lfs"
 brew "withgraphite/tap/graphite" if OS.mac?
 brew "lazygit", args: ["HEAD"]
+brew "lettertwo/tap/git-workon"
 
 # node
 brew "node"
