@@ -3,6 +3,10 @@ set -g fish_key_bindings fish_vi_key_bindings
 set -g fish_cursor_insert line
 set -g fish_cursor_replace underscore
 
+# Sync fish yank with system clipboard
+bind yy 'fish_clipboard_copy; commandline -f end-selection repaint-mode'
+bind -M visual y 'fish_clipboard_copy; commandline -f end-selection repaint-mode'
+
 bind --mode insert . expand_dots
 
 bind -M insert ctrl-j 'commandline -P; and down-or-search'
