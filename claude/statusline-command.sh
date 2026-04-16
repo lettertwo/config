@@ -45,8 +45,16 @@ if git rev-parse --is-inside-work-tree &>/dev/null; then
     dir_display="$basename"
   fi
 
-  # Format output with colors and icons
-  if [ -n "$branch" ]; then
+  # Format output with colors and icons — always cap line 1 to keep lines 2&3 visible.
+  term_cols=$(tput cols </dev/tty 2>/dev/null || stty size </dev/tty 2>/dev/null | awk '{print $2}')
+  max_line1=$(( ${term_cols:-70} * 3 / 4 ))
+  model_len=$([ -n "$model_name" ] && echo $(( ${#model_name} + 3 )) || echo 0)
+  if [ -n "$branch" ] && [ "$branch" != "$dir_display" ]; then
+    branch_budget=$(( max_line1 - model_len - ${#dir_display} - 8 ))
+    if [ "$branch_budget" -lt 8 ]; then branch_budget=8; fi
+    if [ "${#branch}" -gt "$branch_budget" ]; then
+      branch="${branch:0:$(( branch_budget - 1 ))}…"
+    fi
     left="${BLACK}${FOLDER_ICON} ${dir_display}${RESET} ${BRIGHT_BLACK}${GIT_BRANCH_ICON} ${branch}${RESET}"
   else
     left="${BLACK}${FOLDER_ICON} ${dir_display}${RESET}"
