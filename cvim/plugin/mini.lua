@@ -21,6 +21,7 @@ Config.once("BufReadPost", function()
 	})
 
 	require("config.mini.ai").setup()
+	require("config.mini.surround").setup()
 end)
 
 require("config.mini.sessions").setup()
