@@ -20,3 +20,5 @@ Config.once("BufReadPost", function()
 		},
 	})
 end)
+
+require("config.mini.sessions").setup()
