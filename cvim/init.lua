@@ -1,3 +1,5 @@
+local startime = vim.uv.hrtime()
+
 vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
 
@@ -21,3 +23,8 @@ end
 vim.g.pager = vim.env.KITTY_SCROLLBACK_NVIM == "true"
 
 require("config")
+
+Config.once("UIEnter", function()
+  Config._stats = Config._stats or {}
+  Config._stats.startuptime = (vim.uv.hrtime() - startime) / 1e6
+end)

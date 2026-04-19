@@ -1,0 +1,412 @@
+local map = vim.keymap.set
+
+-- font: https://famfonts.com/metallica/
+-- generator: https://www.twitchquotes.com/ascii-art-generator
+local HEADER = {
+	[[                                  ⡠                                                ⢄                                 ]],
+	[[                               ⣠⣴⠟⠁                                                 ⠹⣦⣄                              ]],
+	[[                            ⣀⣴⣾⠟⠁⢀⣠⡆ ⢰⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⡆    ⣀⣤⣴⣶⣶⣶⣤⣄⡀  ⢰⣶⣶⣶⣆  ⣶⣶⣶⡶ ⢰⣶⣶⣶⡆ ⢠⣤⡀⠈⠻⣷⣦⣀                           ]],
+	[[                         ⣀⣴⣾⣿⡿⠁ ⢰⣿⣿⡇ ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇  ⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦  ⣿⣿⣿⣿⡀⣸⣿⣿⣿⠇ ⢸⣿⣿⣿⡇ ⢸⣿⣿⣷⣦⣬⣿⣿⣷⣦⣄                        ]],
+	[[                      ⣀⣴⣾⣿⣿⣿⣿⣧  ⢸⣿⣿⡇ ⢸⣿⣿⣿⣏⣀⣀⣀⣀⣀⣀⡀ ⣸⣿⣿⣿⣿⠟⠉⠉⠛⢿⣿⣿⣿⣷ ⠸⣿⣿⣿⣷⣿⣿⣿⡿  ⢸⣿⣿⣿⡇ ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⣄                     ]],
+	[[                    ⠐⠛⠉⣹⣿⣿⠟⢹⣿⣿⣇ ⢸⣿⣿⡇ ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇ ⣿⣿⣿⣿⠃     ⢻⣿⣿⣿⡇ ⢻⣿⣿⣿⣿⣿⣿⠃  ⢸⣿⣿⣿⡇ ⢸⣿⣿⣿⣿⡙⢿⣿⠟⢿⣿⣿⣏⠉⠛⠂                   ]],
+	[[                     ⢀⣼⣿⣿⠏  ⢿⣿⣿⡆⢸⣿⣿⡇ ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇ ⣿⣿⣿⣿⡄     ⣼⣿⣿⣿⠇ ⠘⣿⣿⣿⣿⣿⡟   ⢸⣿⣿⣿⡇ ⢸⣿⣿⣿⣿⣇ ⠙ ⠈⢻⣿⣿⣧⡀                    ]],
+	[[                    ⣠⣿⣿⣿⠃   ⠘⣿⣿⣿⣸⣿⣿⡇ ⢸⣿⣿⣿⣇⣀⣀⣀⣀⣀⣀⡀ ⠹⣿⣿⣿⣿⣶⣤⣤⣤⣾⣿⣿⣿⡟   ⢻⣿⣿⣿⣿⠃   ⢸⣿⣿⣿⡇ ⢸⣿⣿⣿⣿⣿⡀    ⠹⣿⣿⣿⣄                   ]],
+	[[                  ⢀⣴⣿⣿⡿⠁     ⢹⣿⣿⣿⣿⣿⡇ ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇  ⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠏    ⠈⣿⣿⣿⡟    ⢸⣿⣿⣿⡇ ⢸⣿⣿⣿⣿⣿⣇     ⠙⣿⣿⣿⣧⡀                 ]],
+	[[                 ⣠⣿⣿⣿⡟⠁       ⢿⣿⣿⣿⣿⠇ ⠸⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠃    ⠉⠛⠿⠿⠿⠿⠛⠉       ⠹⠿⠿⠃    ⠸⠿⠿⠿⠇ ⠸⣿⣿⣿⣿⣿⣿⡄     ⠈⢿⣿⣿⣿⣄                ]],
+	[[               ⢀⣼⣿⣿⣿⠟         ⠘⣿⠟⠋⠁                                                ⠈⠙⢿⣿⣿⣿⣧      ⠈⢻⣿⣿⣿⣧⡀              ]],
+	[[              ⣠⣿⣿⣿⣿⠏                                                                  ⠈⠛⢿⣿⡄       ⠹⣿⣿⣿⣿⣆             ]],
+	[[            ⢀⣼⣿⣿⣿⣿⠃                                                                      ⠈⠃        ⠘⣿⣿⣿⣿⣧⡀           ]],
+	[[           ⣠⣿⣿⣿⣿⡿⠁ ⣀⣀⣤⡴⠒                                                                      ⠐⢦⣤⣀⣀ ⠈⢿⣿⣿⣿⣿⣄          ]],
+	[[         ⢀⣾⣿⣿⣿⣿⣿⣷⣿⣿⡿⠛⠁                                                                          ⠈⠛⢿⣿⣿⣶⣿⣿⣿⣿⣿⣷⡀        ]],
+	[[        ⣰⣿⣿⣿⣿⣿⣿⣿⠿⠋⠁                                                                                ⠈⠙⠿⣿⣿⣿⣿⣿⣿⣿⣆       ]],
+	[[      ⢀⣾⣿⣿⣿⣿⣿⠟⠋⠁                                                                                      ⠈⠙⠻⣿⣿⣿⣿⣿⣷⡀     ]],
+	[[     ⣰⣿⣿⣿⡿⠟⠋                                                                                              ⠉⠻⢿⣿⣿⣿⣆    ]],
+	[[   ⢀⣾⣿⡿⠛⠉                                                                                                    ⠉⠛⢿⣿⣷⡀  ]],
+	[[  ⣴⡿⠛⠁                                                                                                          ⠈⠛⢿⣆ ]],
+	[[⠠⠚⠁                                                                                                                ⠈⠓]],
+}
+
+		end
+	end,
+})
+
+-- Get the character length of string.
+---@see strchars
+---@type fun(str: string): integer
+local len = vim.fn.strchars
+
+local trim = vim.trim
+
+-- Get a substring of `str` starting with the character at `start`
+-- and ending after `count` characters.
+---@param str string
+---@param start integer
+---@param count? integer
+---@return string
+local function substr(str, start, count)
+	if count == nil then
+		count = len(str) - start + 1
+	end
+	return vim.fn.strcharpart(str, start - 1, count)
+end
+
+-- Merge `line` with `new_line`.
+-- Empty spaces in `new_line` will be filled with characters from `line`.
+-- For example: `merge_lines("ab def", " xy  ") -> "axydef"`
+---@param line string
+---@param new_line string
+---@return string
+local function merge_lines(line, new_line)
+	local line_len = len(line)
+	local result = ""
+	local new_line_len = len(new_line)
+	local stop = new_line_len + 1
+	local old_line = substr(line, 0, stop)
+
+	-- merge new_line into old_line
+	for i = 1, new_line_len do
+		local new_char = substr(new_line, i, 1)
+		if new_char == " " and i < stop then
+			new_char = substr(old_line, i, 1)
+		end
+		result = result .. new_char
+	end
+
+	if stop <= line_len then
+		result = result .. substr(line, stop)
+	end
+	return result
+end
+
+local function get_indent(dashboard, text)
+	local text_width = len(text)
+	local indent = dashboard.col or 1
+	if text_width > dashboard.opts.width then
+		indent = indent - (text_width - dashboard.opts.width) / 2
+	end
+	-- return text_width % 2 == 1 and math.floor(indent) or math.ceil(indent)
+	return math.floor(indent)
+end
+
+local function get_embed_space(text)
+	local max = len(text)
+	if max < 3 then
+		return 0
+	end
+
+	local i = math.floor(len(text) / 2)
+	local j = i + 1
+	local found_i = false
+	local found_j = false
+
+	while i > 1 or j < max do
+		if not found_i and substr(text, i, 1) == " " then
+			i = math.max(i - 1, 1)
+		else
+			found_i = true
+		end
+
+		if not found_j and substr(text, j, 1) == " " then
+			j = math.min(j + 1, max)
+		else
+			found_j = true
+		end
+
+		if found_i and found_j then
+			break
+		end
+	end
+
+	return j - i - 1
+end
+
+---@class Config.SnacksDashboard
+local SnacksDashboardConfig = {}
+
+function SnacksDashboardConfig.config(opts)
+  local Snacks = require("snacks")
+
+  -- The default zindex for the dashboard is 10, but some UI elements
+  -- (e.g., satellite scrollbars) have a higher default.
+  Snacks.config.style("dashboard", { zindex = 99 })
+
+  -- TODO: Compute steps from SnacksDashboardHeader* groups?
+  local steps = 20
+  local ratio = steps / #HEADER
+  local function get_header_hl_group(row)
+    return "SnacksDashboardHeader" .. math.min(steps, math.max(1, math.floor(row * ratio)))
+  end
+
+  local original_render_buf = Snacks.dashboard.Dashboard.render_buf
+  Snacks.dashboard.Dashboard.render_buf = function(self, original_extmarks)
+    local lines = {}
+    local extmarks = {}
+
+    -- Scan header lines from the bottom to find the first header line
+    -- that has enough space to start embedding dashboard lines.
+    local first_embeddable_header_index
+    for header_index, header_text in vim.iter(HEADER):rev():enumerate() do
+      if get_embed_space(header_text) >= self.opts.width + 2 then
+        first_embeddable_header_index = header_index + 1
+      else
+        break
+      end
+    end
+
+    for line_index, line in ipairs(self.lines) do
+      if len(trim(line)) > self.opts.width then
+        first_embeddable_header_index = #HEADER + 1 - line_index
+        break
+      end
+    end
+
+    first_embeddable_header_index = first_embeddable_header_index or #HEADER + 1
+
+    local line_index = self.row + 1
+    for header_index, header_text in ipairs(HEADER) do
+      local header_col = get_indent(self, header_text)
+      local header_line = header_text
+      if header_col > 0 then
+        header_line = (" "):rep(header_col) .. header_line
+      elseif header_col < 0 then
+        header_line = substr(header_line, -header_col)
+        header_col = 0
+      end
+
+      local header_hl_group = get_header_hl_group(header_index)
+
+      local header_row = header_index - 1
+      local header_extmark = {
+        row = header_row,
+        col = header_col,
+        opts = { hl_group = header_hl_group, end_col = #header_line },
+      }
+
+      table.insert(lines, header_line)
+      table.insert(extmarks, header_extmark)
+
+      if line_index < #self.lines and header_index >= first_embeddable_header_index then
+        local embed_line = self.lines[line_index]
+        local embed_row = line_index - self.row - 1
+        line_index = line_index + 1
+
+        if embed_line then
+          header_line = merge_lines(header_line, embed_line)
+          lines[header_index] = header_line
+
+          header_extmark.opts.end_col = #header_line
+
+          -- extract extmarks for the embedded line
+          original_extmarks = vim.tbl_filter(function(extmark)
+            if extmark.row == embed_row then
+              local col = vim.fn.byteidx(header_line, vim.fn.charidx(embed_line, extmark.col))
+              table.insert(extmarks, {
+                row = header_row,
+                col = col,
+                opts = {
+                  hl_group = extmark.opts.hl_group,
+                  end_col = col + extmark.opts.end_col - extmark.col,
+                },
+              })
+            end
+            return extmark.row > embed_row
+          end, original_extmarks)
+        end
+      end
+    end
+
+    for _, extmark in ipairs(original_extmarks) do
+      table.insert(extmarks, {
+        row = extmark.row + first_embeddable_header_index - 1,
+        col = extmark.col,
+        opts = extmark.opts,
+      })
+    end
+
+    -- offset item cursor rows to align with the first embedded line index.
+    for _, item in ipairs(self.items) do
+      ---@diagnostic disable-next-line: invisible
+      if item._ then
+        ---@diagnostic disable-next-line: invisible
+        item._.row = item._.row + first_embeddable_header_index - 1
+      end
+    end
+
+    self.lines = vim.list_extend(lines, vim.list_slice(self.lines, line_index))
+    -- insert empty lines corresponding to the `row` option.
+    self.lines = vim.list_extend(vim.split((" "):rep(self.row - 1), " "), self.lines)
+
+    original_render_buf(self, extmarks)
+  end
+
+
+  function Snacks.dashboard.sections.last_session_files(last_session_files_opts)
+    return function()
+      last_session_files_opts = last_session_files_opts or {}
+      local limit = last_session_files_opts.limit or 10
+
+      local ret = {} ---@type snacks.dashboard.Item[]
+      local added = {} ---@type table<string, true>
+
+      -- Add files with global marks (A-Z) from the previous session
+      local marks_ok, mark_info = pcall(vim.fn.getmarklist)
+      if marks_ok and mark_info then
+        table.sort(mark_info, function(a, b)
+          return a.mark < b.mark
+        end)
+        vim.iter(mark_info):each(function(mark)
+          if #ret >= limit then
+            return
+          end
+          if not mark.mark:match("^'([A-Z])$") then
+            return
+          end
+          local file = mark.file
+          if vim.fn.filereadable(vim.fn.fnamemodify(file, ":~:.")) == 1 then
+            file = vim.fn.fnamemodify(file, ":~:.")
+          end
+          if vim.fn.filereadable(file) == 1 and not added[file] then
+            ret[#ret + 1] = {
+              file = file,
+              ---@diagnostic disable-next-line: assign-type-mismatch
+              icon = { Config.icons.tag, hl = "@tag" },
+              action = ":e " .. vim.fn.fnameescape(file),
+              autokey = true,
+            }
+            added[file] = true
+          end
+        end)
+      end
+
+      if #ret >= limit then
+        return ret
+      end
+
+      -- Add buffers from previous session up to the limit.
+
+      local session = Config.get_session_file()
+      if vim.fn.filereadable(session) ~= 0 then
+        vim.notify("Session file loaded: " .. session, vim.log.levels.TRACE)
+        vim.iter(io.lines(session)):each(function(line)
+          if #ret >= limit then
+            return
+          end
+          local lineno, file = line:match("^badd%s+%+([^%s]+)%s+(.+)")
+          if file then
+            if vim.fn.filereadable(vim.fn.fnamemodify(file, ":~:.")) == 1 then
+              file = vim.fn.fnamemodify(file, ":~:.")
+            end
+            if vim.fn.filereadable(file) == 1 and not added[file] then
+              ret[#ret + 1] = {
+                file = file,
+                icon = "file",
+                action = ":e +" .. lineno .. " " .. vim.fn.fnameescape(file),
+                autokey = true,
+              }
+              added[file] = true
+            end
+          else
+            file = line:match("^edit%s+(.+)")
+            if file then
+              if vim.fn.filereadable(vim.fn.fnamemodify(file, ":~:.")) == 1 then
+                file = vim.fn.fnamemodify(file, ":~:.")
+              end
+              if vim.fn.filereadable(file) == 1 and not added[file] then
+                ret[#ret + 1] = {
+                  file = file,
+                  icon = "file",
+                  action = ":e " .. vim.fn.fnameescape(file),
+                  autokey = true,
+                }
+                added[file] = true
+              end
+            end
+          end
+        end)
+      end
+
+      return vim.list_slice(ret, 1, limit)
+    end
+  end
+
+  function Snacks.dashboard.sections.stats()
+    return {
+      align = "center",
+      {
+        text = {
+          { " Neovim ", hl = "footer" },
+          { Config.stats.nvim.version, hl = "special" },
+          { " " },
+          { Config.stats.nvim.commit, hl = "footer" },
+        },
+      },
+      {
+        text = {
+          { "loaded ", hl = "footer" },
+          { Config.stats.plugin.loaded .. "/" .. Config.stats.plugin.count, hl = "special" },
+          { " plugins in ", hl = "footer" },
+          { (math.floor(Config.stats.startuptime * 100 + 0.5) / 100) .. "ms", hl = "special" },
+        },
+      },
+    }
+  end
+
+  local dashboard_open
+
+  vim.api.nvim_create_user_command("Dashboard", function()
+    if not dashboard_open then
+      Snacks.dashboard.open()
+    end
+  end, { desc = "Show dashboard", nargs = 0 })
+
+  local function init()
+    vim.api.nvim_create_autocmd("User", {
+      pattern = "SnacksDashboardOpened",
+      group = vim.api.nvim_create_augroup("dashboard_open", { clear = true }),
+      callback = function(e)
+        local group = vim.api.nvim_create_augroup("dashboard_open", { clear = true })
+
+        vim.api.nvim_create_autocmd("User", {
+          pattern = "SnacksDashboardClosed",
+          group = group,
+          callback = function()
+            dashboard_open = false
+            init()
+          end,
+        })
+
+        vim.api.nvim_create_autocmd("VimResized", { group = group, callback = Snacks.dashboard.update })
+
+        if dashboard_open == false then
+          vim.keymap.set("n", "q", "<cmd>bd<cr>", { silent = true, buffer = e.buf })
+        end
+
+        dashboard_open = true
+      end,
+    })
+  end
+
+  init()
+
+  ---@module 'snacks'
+  ---@type snacks.Config
+  opts.dashboard = {
+    enabled = vim.fn.argc() < 1,
+    width = 60,
+    row = 3,
+    sections = {
+      { icon = " ", title = "Last Session", section = "last_session_files", padding = 1, indent = 2 },
+      { icon = " ", key = "s", desc = "Restore Session", action = function() MiniSessions.read(Config.get_session_filename()) end },
+      { icon = "󰓙 ", key = "C", desc = "Checkhealth", action = ":checkhealth" },
+      { icon = "󰈤 ", key = "n", desc = "New File", action = ":ene | startinsert" },
+      { icon = "󰐥 ", key = "q", desc = "Quit/close", action = ":qa", padding = 1 },
+      { section = "stats" },
+    },
+  }
+
+	map("n", "<leader>;", "<cmd>Dashboard<cr>", { desc = "Dashboard" })
+
+  return opts
+end
+
+return SnacksDashboardConfig
