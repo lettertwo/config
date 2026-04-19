@@ -4,6 +4,10 @@
       "rev": "0ae821ff89105f5b9728ef3f71de40e2e4e0b421",
       "src": "https://github.com/lettertwo/laserwave.nvim"
     },
+    "mini.nvim": {
+      "rev": "402ee6c6ec8ea44b22330446c8fb4e615fd3953e",
+      "src": "https://github.com/nvim-mini/mini.nvim"
+    },
     "noice.nvim": {
       "rev": "7bfd942445fb63089b59f97ca487d605e715f155",
       "src": "https://github.com/folke/noice.nvim"
