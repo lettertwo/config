@@ -19,6 +19,8 @@ Config.once("BufReadPost", function()
 			end,
 		},
 	})
+
+	require("config.mini.ai").setup()
 end)
 
 require("config.mini.sessions").setup()
