@@ -4,6 +4,14 @@
       "rev": "0ae821ff89105f5b9728ef3f71de40e2e4e0b421",
       "src": "https://github.com/lettertwo/laserwave.nvim"
     },
+    "noice.nvim": {
+      "rev": "7bfd942445fb63089b59f97ca487d605e715f155",
+      "src": "https://github.com/folke/noice.nvim"
+    },
+    "nui.nvim": {
+      "rev": "de740991c12411b663994b2860f1a4fd0937c130",
+      "src": "https://github.com/MunifTanjim/nui.nvim"
+    },
     "occurrence.nvim": {
       "rev": "5a5b1befd338f2a93d1a8d1b9601d7d16578b8ef",
       "src": "https://github.com/lettertwo/occurrence.nvim"
