@@ -22,3 +22,4 @@ Config.once("BufReadPost", function()
 end)
 
 require("config.mini.sessions").setup()
+require("config.mini.files").setup()
