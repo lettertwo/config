@@ -1,0 +1,12 @@
+{
+  "plugins": {
+    "laserwave.nvim": {
+      "rev": "0ae821ff89105f5b9728ef3f71de40e2e4e0b421",
+      "src": "https://github.com/lettertwo/laserwave.nvim"
+    },
+    "occurrence.nvim": {
+      "rev": "5a5b1befd338f2a93d1a8d1b9601d7d16578b8ef",
+      "src": "https://github.com/lettertwo/occurrence.nvim"
+    }
+  }
+}
