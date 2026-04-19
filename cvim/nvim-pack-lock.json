@@ -16,6 +16,10 @@
       "rev": "5a5b1befd338f2a93d1a8d1b9601d7d16578b8ef",
       "src": "https://github.com/lettertwo/occurrence.nvim"
     },
+    "smart-splits.nvim": {
+      "rev": "ba2850ff3d3b09785a7105c69d06a12117d4b97d",
+      "src": "https://github.com/mrjones2014/smart-splits.nvim"
+    },
     "which-key.nvim": {
       "rev": "3aab2147e74890957785941f0c1ad87d0a44c15a",
       "src": "https://github.com/folke/which-key.nvim"
