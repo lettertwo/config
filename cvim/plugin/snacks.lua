@@ -53,6 +53,7 @@ local opts = {
 }
 
 require("config.snacks.dashboard").config(opts)
+require("config.snacks.picker").config(opts)
 require("snacks").setup(opts)
 
 local map = vim.keymap.set
