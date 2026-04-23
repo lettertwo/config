@@ -20,6 +20,10 @@
       "rev": "5a5b1befd338f2a93d1a8d1b9601d7d16578b8ef",
       "src": "https://github.com/lettertwo/occurrence.nvim"
     },
+    "plenary.nvim": {
+      "rev": "74b06c6c75e4eeb3108ec01852001636d85a932b",
+      "src": "https://github.com/nvim-lua/plenary.nvim"
+    },
     "smart-splits.nvim": {
       "rev": "ba2850ff3d3b09785a7105c69d06a12117d4b97d",
       "src": "https://github.com/mrjones2014/smart-splits.nvim"
