@@ -29,6 +29,23 @@ local opts = {
 			},
 		},
 	},
+  ---@type snacks.lazygit.Config
+  lazygit = {
+    configure = false,
+    args = {
+      "--use-config-file",
+      vim.fs.normalize(vim.fn.stdpath("config") .. "/../lazygit/config.yml") .. "," .. vim.fs.normalize(
+        vim.fn.stdpath("config") .. "/../lazygit/config-nvim.yml"
+      ),
+    },
+    win = {
+      style = "lazygit",
+      zindex = 99,
+      backdrop = false,
+      width = 0,
+      height = 0,
+    },
+  },
 	statuscolumn = {
 		left = { "sign", "mark" }, -- priority of signs on the left (high to low)
 		right = { "fold", "git" }, -- priority of signs on the right (high to low)
