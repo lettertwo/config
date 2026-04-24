@@ -38,36 +38,53 @@ local function resize_list_to_fit_vertical(picker)
   debounced_resize()
 end
 
-return {
-  mini = {
-    layout = {
-      box = "vertical",
-      backdrop = false,
-      row = -1,
-      height = 0.4,
-      { win = "input", height = 1, border = true, title = " {source} {live} {flags}", title_pos = "left" },
-      {
-        box = "horizontal",
-        { win = "list", border = "hpad" },
-        { win = "preview", title = "{preview}", width = 0.6, border = "left" },
-      },
-    },
+local jump = {
+  preview = "main",
+  layout = {
+    backdrop = false,
+    relative = "win",
+    col = 0.6,
+    row = 0.2,
+    width = 0.3,
+    min_width = 50,
+    height = 0.4,
+    border = "none",
+    box = "vertical",
+    { win = "input", height = 1, border = true, title = "{title} {live} {flags}", title_pos = "center" },
+    { win = "list", border = "hpad" },
+    { win = "preview", title = "{preview}", border = true },
   },
-  jump = {
-    preview = "main",
-    layout = {
-      backdrop = false,
-      relative = "win",
-      col = 0.6,
-      row = 0.2,
-      width = 0.3,
-      min_width = 50,
-      height = 0.4,
-      border = "none",
-      box = "vertical",
-      { win = "input", height = 1, border = true, title = "{title} {live} {flags}", title_pos = "center" },
+}
+
+setmetatable(jump, {
+  ---@param spec snacks.picker.Config
+  __call = function(_, spec)
+  return vim.tbl_deep_extend("force", {
+      layout = "jump",
+      on_show = function(picker)
+        disable_main_preview_winbar(picker)
+        resize_list_to_fit_vertical(picker)
+      end,
+    }, spec or {})
+  end
+})
+
+local mini = {
+  layout = {
+    box = "vertical",
+    backdrop = false,
+    row = -1,
+    height = 0.4,
+    { win = "input", height = 1, border = true, title = " {source} {live} {flags}", title_pos = "left" },
+    {
+      box = "horizontal",
       { win = "list", border = "hpad" },
-      { win = "preview", title = "{preview}", border = true },
+      { win = "preview", title = "{preview}", width = 0.6, border = "left" },
     },
   },
+}
+
+return {
+  mini = mini,
+  jump = jump
 }

@@ -1,5 +1,7 @@
 ---@module "snacks"
 
+local jump = require("config.snacks.picker.layouts").jump
+
 local find_directories = require("config.snacks.picker.sources.find_directories")
 local find_packages = require("config.snacks.picker.sources.find_packages")
 local find_symbols = require("config.snacks.picker.sources.find_symbols")
@@ -79,13 +81,10 @@ return {
     transform = "unique_file",
     on_show = select_current_buffer,
   },
-  symbols = {
+  jumps = jump(),
+  lines = jump(),
+  symbols = jump({
     finder = find_symbols,
-    layout = "jump",
-    on_show = function(picker)
-      disable_main_preview_winbar(picker)
-      resize_list_to_fit_vertical(picker)
-    end,
     matcher = {
       sort_empty = true,
       keep_parents = true,
@@ -104,19 +103,5 @@ return {
     },
     sort = { fields = { "sort_key" } },
     format = "lsp_symbol",
-  },
-  jumps = {
-    layout = "jump",
-    on_show = function(picker)
-      disable_main_preview_winbar(picker)
-      resize_list_to_fit_vertical(picker)
-    end,
-  },
-  lines = {
-    layout = "jump",
-    on_show = function(picker)
-      disable_main_preview_winbar(picker)
-      resize_list_to_fit_vertical(picker)
-    end,
-  },
+  }),
 }
