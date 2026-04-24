@@ -75,6 +75,10 @@ brew "uv"
 brew "luajit"
 brew "luarocks"
 
+# language servers & formatters
+brew "lua-language-server"
+brew "stylua"
+
 # No more font patching!
 cask "font-symbols-only-nerd-font" if OS.mac?
 
