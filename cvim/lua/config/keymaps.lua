@@ -112,3 +112,20 @@ map("n", "<leader>uI", function()
 	vim.treesitter.inspect_tree()
 	vim.api.nvim_input("I")
 end, { desc = "Inspect Tree" })
+
+--- incremental treesitter selection mappings (+ lsp fallback)
+map({ "n", "o", "x" }, "<S-CR>", function()
+  if vim.treesitter.get_parser(nil, nil, { error = false }) and pcall(require, "vim.treesitter._select") then
+    require("vim.treesitter._select").select_parent(vim.v.count1)
+  else
+    vim.lsp.buf.selection_range(vim.v.count1)
+  end
+end, {desc = "Increment Selection" })
+
+map({ "o", "x" }, "<BS>", function()
+  if vim.treesitter.get_parser(nil, nil, { error = false }) and pcall(require, "vim.treesitter._select") then
+    require("vim.treesitter._select").select_child(vim.v.count1)
+  else
+    vim.lsp.buf.selection_range(-vim.v.count1)
+  end
+end, { desc = "Decrement Selection" })

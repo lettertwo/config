@@ -16,6 +16,10 @@
       "rev": "de740991c12411b663994b2860f1a4fd0937c130",
       "src": "https://github.com/MunifTanjim/nui.nvim"
     },
+    "nvim-treesitter": {
+      "rev": "4916d6592ede8c07973490d9322f187e07dfefac",
+      "src": "https://github.com/nvim-treesitter/nvim-treesitter"
+    },
     "occurrence.nvim": {
       "rev": "5a5b1befd338f2a93d1a8d1b9601d7d16578b8ef",
       "src": "https://github.com/lettertwo/occurrence.nvim"
