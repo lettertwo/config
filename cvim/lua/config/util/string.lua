@@ -45,7 +45,7 @@ function StringUtil.smart_shorten_path(path, opts)
 	return path
 end
 
----@class TitlePathOpts
+---@class Config.StringUtil.TitlePathOpts
 ---@field cwd string?
 ---@field target_width number?
 ---@field disambiguate boolean?
@@ -53,7 +53,7 @@ end
 ---@field ambiguous_segments string[]?
 ---@field nextjs_segment_patterns string[]?
 
----@type TitlePathOpts
+---@type Config.StringUtil.TitlePathOpts
 local DEFAULT_TITLE_PATH_OPTS = {
 	ambiguous_filetypes = {
 		"init.lua",
@@ -115,7 +115,7 @@ function StringUtil.matches_any_pattern(path, patterns)
 end
 
 --- @param path string?
---- @param opts? TitlePathOpts Options for title path to be merged with default options.
+--- @param opts? Config.StringUtil.TitlePathOpts Options for title path to be merged with default options.
 function StringUtil.title_path(path, opts)
 	opts = vim.tbl_deep_extend("keep", opts or {}, DEFAULT_TITLE_PATH_OPTS)
 	---@cast opts -nil

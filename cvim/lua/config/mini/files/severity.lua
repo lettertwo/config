@@ -40,7 +40,7 @@ local function parseDiagnostics(diagnostics)
 	local severityMap = {}
 	local cwd = vim.uv.cwd()
 	local escapedcwd = cwd and vim.pesc(cwd)
-	escapedcwd = vim.fs.normalize(escapedcwd)
+	escapedcwd = escapedcwd and vim.fs.normalize(escapedcwd)
 	-- Iterate through the diagnostics and build a map of file paths to their severity
 	for _, diag in ipairs(diagnostics) do
 		local filePath = vim.fs
@@ -86,7 +86,7 @@ local function updateMiniWithSeverity(buf_id, severityMap)
 		local nlines = vim.api.nvim_buf_line_count(buf_id)
 		local cwd = vim.uv.cwd()
 		local escapedcwd = cwd and vim.pesc(cwd)
-		escapedcwd = vim.fs.normalize(escapedcwd)
+		escapedcwd = escapedcwd and vim.fs.normalize(escapedcwd)
 
 		for i = 1, nlines do
 			local entry = MiniFiles.get_fs_entry(buf_id, i)

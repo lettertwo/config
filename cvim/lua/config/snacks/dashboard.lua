@@ -396,7 +396,7 @@ function SnacksDashboardConfig.config(opts)
     row = 3,
     sections = {
       { icon = " ", title = "Last Session", section = "last_session_files", padding = 1, indent = 2 },
-      { icon = " ", key = "s", desc = "Restore Session", action = function() MiniSessions.read(Config.get_session_filename()) end },
+      { icon = " ", key = "s", desc = "Restore Session", action = function() require("mini.sessions").read(Config.get_session_filename()) end },
       { icon = "󰓙 ", key = "C", desc = "Checkhealth", action = ":checkhealth" },
       { icon = "󰈤 ", key = "n", desc = "New File", action = ":ene | startinsert" },
       { icon = "󰐥 ", key = "q", desc = "Quit/close", action = ":qa", padding = 1 },

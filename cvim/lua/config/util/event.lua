@@ -3,7 +3,7 @@ local EventUtil = {}
 
 local CONFIG_GROUP = vim.api.nvim_create_augroup("Config", { clear = true })
 
----@alias Event vim.api.create_autocmd.callback.args
+---@alias Event vim.api.keyset.create_autocmd.callback_args
 ---@alias EventHandler fun(event: Event): boolean?
 
 -- Create an autocommand that triggers on the specified event(s) and pattern(s).
@@ -13,7 +13,7 @@ local CONFIG_GROUP = vim.api.nvim_create_augroup("Config", { clear = true })
 ---@param desc string? Optional description for the autocommand.
 ---@overload fun(event: string|string[], callback: EventHandler, desc: string?): integer
 function EventUtil.on(event, pattern, callback, desc)
-	---@type vim.api.keyset.create_autocmd.opts
+	---@type vim.api.keyset.create_autocmd
 	local opts = { group = CONFIG_GROUP }
 	if type(pattern) == "function" then
 		opts.callback = pattern
@@ -34,7 +34,7 @@ end
 ---@param desc string? Optional description for the autocommand.
 ---@overload fun(event: string|string[], callback: EventHandler, desc: string?): integer
 function EventUtil.once(event, pattern, callback, desc)
-	---@type vim.api.keyset.create_autocmd.opts
+	---@type vim.api.keyset.create_autocmd
 	local opts = { group = CONFIG_GROUP, once = true }
 	if type(pattern) == "function" then
 		opts.callback = pattern

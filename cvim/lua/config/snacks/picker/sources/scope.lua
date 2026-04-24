@@ -1,15 +1,12 @@
 ---@module "snacks"
 
----@alias FindScope 'cwd' | 'root' | 'workspace'  | 'package'
----@alias FindSource 'files' | 'packages' | 'node_modules' | 'plugins'
+---@alias Config.Snacks.Picker.FindScope 'cwd' | 'root' | 'workspace'  | 'package'
+---@alias Config.Snacks.Picker.FindSource 'files' | 'packages' | 'node_modules' | 'plugins'
 
----@class PickerConfigWithScope: snacks.picker.Config
----@field scope FindScope?
+---@class Config.Snacks.Picker.ConfigWithScope: snacks.picker.Config
+---@field scope Config.Snacks.Picker.FindScope?
 
-local WORKSPACE_PATTERNS = { "lua", "yarn.lock", "package-lock.json", "pnpm-lock.yaml", "bun.lockb" }
-local PACKAGE_PATTERNS = { "package.json", "Cargo.toml" }
-
----@param scope_or_opts FindScope | PickerConfigWithScope
+---@param scope_or_opts Config.Snacks.Picker.FindScope | Config.Snacks.Picker.ConfigWithScope
 ---@param opts snacks.picker.Config?
 ---@return string? cwd
 local function get_scope_dir(scope_or_opts, opts)
@@ -27,14 +24,14 @@ local function get_scope_dir(scope_or_opts, opts)
   elseif scope == "package" then
     resolved = Config.root("package")
   else
-    resolved = opts and opts.cwd or Config.root("cwd")
+    resolved = opts and opts.cwd or vim.uv.cwd()
   end
 
   return resolved or Config.root()
 end
 
 ---@param source string
----@param scope FindScope?
+---@param scope Config.Snacks.Picker.FindScope?
 ---@param cwd string?
 ---@return string
 local function get_title(source, scope, cwd)
@@ -50,7 +47,7 @@ end
 
 ---@param title string
 local function scope(title)
-  ---@param opts PickerConfigWithScope
+  ---@param opts Config.Snacks.Picker.ConfigWithScope
   return function(opts)
     opts = opts or {}
     local cwd = get_scope_dir(opts)

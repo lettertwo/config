@@ -1,5 +1,6 @@
-local require = require("noice.util.lazy")
+---@module "nui.popup"
 
+local require = require("noice.util.lazy")
 local NuiView = require("noice.view.nui")
 
 -- TODO: Figure out how to restore the previous scroll position as well
@@ -12,7 +13,7 @@ local function update_cursor(winid, cursor)
   vim.opt.eventignore = original_eventignore
 end
 
----@class Console: NuiView
+---@class NoiceConsole: NuiView
 ---@field super NuiView
 ---@field _routes? NoiceRouteOptions[]
 ---@field _line_count? integer

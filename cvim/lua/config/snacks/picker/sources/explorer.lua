@@ -9,7 +9,7 @@ local function format_marked_file(item, picker)
   if item.marked then
     table.insert(ret, {
       col = 0,
-      virt_text = { { LazyVim.config.icons.tag, "@tag" } },
+      virt_text = { { Config.icons.tag, "@tag" } },
       virt_text_pos = "right_align",
       hl_mode = "combine",
     })

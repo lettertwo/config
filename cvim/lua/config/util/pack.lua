@@ -1,4 +1,4 @@
----@clas Config.PackUtil
+---@class Config.PackUtil
 local PackUtil = {}
 
 -- Resolve plugin name to a full GitHub URL if it's in "user/repo" format.

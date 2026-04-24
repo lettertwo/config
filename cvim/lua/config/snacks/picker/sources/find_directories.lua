@@ -3,6 +3,7 @@
 ---@type snacks.picker.finder
 local function find_directories(opts, ctx)
   local cwd = ctx.picker.opts.cwd or opts.cwd or vim.fn.getcwd()
+---@diagnostic disable-next-line: undefined-field
   local max_depth = ctx.picker.opts.max_depth or 1
   if vim.fn.isdirectory(cwd) ~= 1 then
     return {}

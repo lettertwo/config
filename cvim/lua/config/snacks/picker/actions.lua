@@ -23,7 +23,7 @@ function actions.smart_scroll_up(picker)
   end
 end
 
-function toggle_cwd(p)
+function actions.toggle_cwd(p)
   local root = Config.root()
   local cwd = vim.fs.normalize((vim.uv or vim.loop).cwd() or ".")
   local current = p:cwd()

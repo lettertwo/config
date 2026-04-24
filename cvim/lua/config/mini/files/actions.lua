@@ -27,7 +27,7 @@ end
 M.split = map_split("belowright horizontal")
 M.vsplit = map_split("belowright vertical")
 
-function M.files_set_cwd(path)
+function M.files_set_cwd()
   -- Works only if cursor is on the valid file system entry
   local cur_entry_path = MiniFiles.get_fs_entry().path
   local cur_directory = vim.fs.dirname(cur_entry_path)

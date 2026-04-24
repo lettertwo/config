@@ -1,5 +1,3 @@
-local map = vim.keymap.set
-
 ---@class Config.MiniAi
 local MiniAiConfig = {}
 

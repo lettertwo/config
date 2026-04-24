@@ -188,6 +188,7 @@ Config = vim.tbl_extend("error", Config, require("config.util"))
 -- TODO: Figure out where this should go
 Config.add("nvim-lua/plenary.nvim")
 
+---@type Config
 _G.Config = Config
 
 require("config.ui")

@@ -56,12 +56,14 @@ return {
     end,
   },
   plugins = {
-    finder = function(opts, ctx)
-      local plugins = vim.pack.get()
-      for _, plugin in ipairs(plugins) do
-        plugin.file = plugin.path
-        plugin.name = plugin.spec.name
-        plugin.url = plugin.spec.src
+    finder = function()
+      local plugins = {}
+      for _, plugin in ipairs(vim.pack.get()) do
+        table.insert(plugins, {
+          file = plugin.path,
+          name = plugin.spec.name,
+          url = plugin.spec.src,
+        })
       end
       return plugins
     end,

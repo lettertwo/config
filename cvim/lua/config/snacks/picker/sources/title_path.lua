@@ -20,7 +20,7 @@ local function title_path(item, picker)
   if picker.opts.icons.files.enabled then
     local icon, hl
     if mark ~= nil then
-      icon, hl = LazyVim.config.icons.tag, "@tag"
+      icon, hl = Config.icons.tag, "@tag"
     else
       local name, cat = path, (item.dir and "directory" or "file")
       if item.buf and vim.api.nvim_buf_is_loaded(item.buf) and vim.bo[item.buf].buftype ~= "" then
