@@ -64,6 +64,7 @@ local Config = {
       "snacks_picker_preview",
 			"snacks_terminal",
 			"snacks_win",
+      "snacks_win_backdrop",
 			"spectre_panel",
 			"startify",
 			"startuptime",

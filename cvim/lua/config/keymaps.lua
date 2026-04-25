@@ -129,3 +129,5 @@ map({ "o", "x" }, "<BS>", function()
     vim.lsp.buf.selection_range(-vim.v.count1)
   end
 end, { desc = "Decrement Selection" })
+
+map("n", "<leader>P", function() vim.pack.update() end, { desc = "Manage Plugins" })

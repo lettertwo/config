@@ -26,9 +26,20 @@ local HEADER = {
 	[[⠠⠚⠁                                                                                                                ⠈⠓]],
 }
 
-		end
-	end,
-})
+local SPINNER = { "⠋ ", "⠙ ", "⠹ ", "⠸ ", "⠼ ", "⠴ ", "⠦ ", "⠧ ", "⠇ ", "⠏ " }
+
+---@type fun(string): string, boolean, integer?
+local function pack_check(desc)
+	local state = Config.get_update_state()
+	if state.count == nil and not state.pending then
+		Config.check_updates()
+		state = Config.get_update_state()
+	end
+	if state.count and state.count > 0 then
+		desc = desc .. " " .. state.count .. " " .. (state.count == 1 and "update available" or "updates available")
+	end
+	return desc, state.pending, state.count
+end
 
 -- Get the character length of string.
 ---@see strchars
@@ -239,7 +250,6 @@ function SnacksDashboardConfig.config(opts)
     original_render_buf(self, extmarks)
   end
 
-
   function Snacks.dashboard.sections.last_session_files(last_session_files_opts)
     return function()
       last_session_files_opts = last_session_files_opts or {}
@@ -351,6 +361,32 @@ function SnacksDashboardConfig.config(opts)
     }
   end
 
+  -- Frame counter for animating the spinner while waiting for updates.
+  local frame = 1
+  -- Whether any live sections are pending updates.
+  local live_pending = false
+
+  ---@class Config.SnacksDashboard.LiveSectionOpts
+  ---@field key string
+  ---@field action string
+  ---@field icon string
+  ---@field desc string
+  ---@field check fun(string): string, boolean, number?
+
+  ---@param live_options Config.SnacksDashboard.LiveSectionOpts
+  function Snacks.dashboard.sections.live(live_options)
+    local updated_desc, pending, status = live_options.check(live_options.desc)
+    live_pending = pending or live_pending
+    return {
+      key = live_options.key,
+      action = live_options.action,
+      icon = pending and { SPINNER[frame], hl = "footer" } or live_options.icon,
+      desc = updated_desc
+          and { updated_desc, hl = pending and "footer" or (status > 0 and "special" or nil) }
+        or live_options.desc,
+    }
+  end
+
   local dashboard_open
 
   vim.api.nvim_create_user_command("Dashboard", function()
@@ -375,7 +411,27 @@ function SnacksDashboardConfig.config(opts)
           end,
         })
 
+        vim.api.nvim_create_autocmd("User", {
+          pattern = "SnacksDashboardUpdatePre",
+          group = group,
+          callback = function()
+            frame = frame % #SPINNER + 1
+            live_pending = false
+          end,
+        })
+
+        vim.api.nvim_create_autocmd("User", {
+          pattern = "SnacksDashboardUpdatePost",
+          group = group,
+          callback = function()
+            if live_pending then
+              vim.defer_fn(Snacks.dashboard.update, 100)
+            end
+          end,
+        })
+
         vim.api.nvim_create_autocmd("VimResized", { group = group, callback = Snacks.dashboard.update })
+        vim.api.nvim_create_autocmd("User", { pattern = "PackUpdatesChanged", group = group, callback = Snacks.dashboard.update })
 
         if dashboard_open == false then
           vim.keymap.set("n", "q", "<cmd>bd<cr>", { silent = true, buffer = e.buf })
@@ -397,7 +453,8 @@ function SnacksDashboardConfig.config(opts)
     sections = {
       { icon = " ", title = "Last Session", section = "last_session_files", padding = 1, indent = 2 },
       { icon = " ", key = "s", desc = "Restore Session", action = function() require("mini.sessions").read(Config.get_session_filename()) end },
-      { icon = "󰓙 ", key = "C", desc = "Checkhealth", action = ":checkhealth" },
+      { icon = " ", key = "p", desc = "Plugins", action = function() vim.pack.update() end, section = "live", check = pack_check },
+      { icon = "󰓙 ", key = "c", desc = "Checkhealth", action = ":checkhealth" },
       { icon = "󰈤 ", key = "n", desc = "New File", action = ":ene | startinsert" },
       { icon = "󰐥 ", key = "q", desc = "Quit/close", action = ":qa", padding = 1 },
       { section = "stats" },

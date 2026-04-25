@@ -27,6 +27,7 @@ Config.on("LspAttach", function(ev)
 	map("grt", function() Snacks.picker.lsp_type_definitions() end, "Type Definitions", "textDocument/typeDefinition")
 	map("grI", function() Snacks.picker.lsp_incoming_calls() end,   "Incoming Calls",   "callHierarchy/incomingCalls")
 	map("grO", function() Snacks.picker.lsp_outgoing_calls() end,   "Outgoing Calls",   "callHierarchy/outgoingCalls")
+  vim.keymap.set("n", "<leader>.", "gra", { desc = "Code Actions", remap = true })
 	-- stylua: ignore end
 
 end, "LSP buffer keymaps")
