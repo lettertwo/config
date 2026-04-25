@@ -53,7 +53,7 @@ opt.undolevels = 10000
 opt.updatetime = 200 -- Save swap file and trigger CursorHold
 
 opt.mouse = "a" -- Enable mouse mode
-opt.mousescroll = "ver:25,hor:6" -- Customize mouse scroll
+opt.mousescroll = "ver:1,hor:1" -- Customize mouse scroll
 
 opt.textwidth = 120 -- the width that'll be used for wrapping (gq)
 opt.linebreak = true -- Wrap lines at convenient points
