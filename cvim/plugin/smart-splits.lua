@@ -23,11 +23,11 @@ Config.on("PackChanged", function(ev)
 end)
 
 vim.schedule(function()
-	Config.add("mrjones2014/smart-splits.nvim")
+  Config.add("mrjones2014/smart-splits.nvim")
 
-	require("smart-splits").setup({
-      at_edge = "stop", -- 'wrap' | 'split' | 'stop'
-	})
+  require("smart-splits").setup({
+    at_edge = "stop", -- 'wrap' | 'split' | 'stop'
+  })
 
   -- stylua: ignore start
   -- resizing splits

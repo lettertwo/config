@@ -17,7 +17,8 @@ function MiniSessionsConfig.setup()
   local SKIP_FT = { gitcommit = true, gitrebase = true, jj = true }
   local function need_save()
     for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-      if vim.bo[buf].buflisted
+      if
+        vim.bo[buf].buflisted
         and vim.bo[buf].buftype == ""
         and not SKIP_FT[vim.bo[buf].filetype]
         and vim.api.nvim_buf_get_name(buf) ~= ""
@@ -38,11 +39,12 @@ function MiniSessionsConfig.setup()
     MiniSessions.read(Config.get_session_filename())
   end, { desc = "Restore Session" })
 
+  -- stylua: ignore start
   map("n", "<leader>qs", function() MiniSessions.select("read") end, { desc = "Select Session" })
   map("n", "<leader>ql", function() MiniSessions.read(Config.get_session_filename()) end, { desc = "Restore Session" })
   map("n", "<leader>qd", function() MiniSessions.delete(Config.get_session_filename()) end, { desc = "Delete Session" })
   map("n", "<leader>qR", "<cmd>restart lua MiniSessions.read(Config.get_session_filename())<cr>", { desc = "Restart" })
+  -- stylua: ignore end
 end
-
 
 return MiniSessionsConfig

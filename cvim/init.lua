@@ -16,8 +16,8 @@ vim.g.loaded_zip = 1
 vim.g.loaded_zipPlugin = 1
 
 if vim.env.FNM_DIR then
-	vim.g.node_host_prog = vim.fs.joinpath(vim.fn.expand(vim.env.FNM_DIR), "aliases", "default", "bin", "node")
-	vim.g.copilot_node_command = vim.g.node_host_prog
+  vim.g.node_host_prog = vim.fs.joinpath(vim.fn.expand(vim.env.FNM_DIR), "aliases", "default", "bin", "node")
+  vim.g.copilot_node_command = vim.g.node_host_prog
 end
 
 vim.g.pager = vim.env.KITTY_SCROLLBACK_NVIM == "true"
@@ -25,6 +25,7 @@ vim.g.pager = vim.env.KITTY_SCROLLBACK_NVIM == "true"
 require("config")
 
 Config.once("UIEnter", function()
+  ---@diagnostic disable-next-line: inject-field
   Config._stats = Config._stats or {}
   Config._stats.startuptime = (vim.uv.hrtime() - startime) / 1e6
 end)

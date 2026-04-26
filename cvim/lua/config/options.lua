@@ -38,14 +38,14 @@ opt.shadafile = Config.get_session_shadafile()
 opt.shada = "'100,<50,s10,:1000,/100,@100,h"
 
 opt.sessionoptions = {
-	"buffers",
-	"curdir",
-	"tabpages",
-	"winsize",
-	"help",
-	"globals",
-	"skiprtp",
-	"folds",
+  "buffers",
+  "curdir",
+  "tabpages",
+  "winsize",
+  "help",
+  "globals",
+  "skiprtp",
+  "folds",
 }
 
 opt.timeoutlen = vim.g.vscode and 1000 or 300 -- Lower than default (1000) to quickly trigger which-key
@@ -96,21 +96,21 @@ opt.iskeyword:append("-") -- add dash to iskeyword for motion commands
 opt.spelloptions = "camel" -- Treat camelCase word parts as separate words
 
 opt.diffopt = {
-	"internal", -- default
-	"filler", -- default
-	"closeoff", -- default
-	"indent-heuristic", --default
-	"inline:char", -- default
-	"vertical", -- Start diff mode with vertical split
-	-- Use a context of {n} lines between a change
-	-- and a fold that contains unchanged lines.
-	"context:12",
-	-- Use the histogram algorithm for the first stage diff.
-	"algorithm:histogram",
-	-- When the total number of lines in a hunk exceeds {n},
-	-- the second stage diff will not be performed as
-	-- very large hunks can cause noticeable lag.
-	"linematch:200",
+  "internal", -- default
+  "filler", -- default
+  "closeoff", -- default
+  "indent-heuristic", --default
+  "inline:char", -- default
+  "vertical", -- Start diff mode with vertical split
+  -- Use a context of {n} lines between a change
+  -- and a fold that contains unchanged lines.
+  "context:12",
+  -- Use the histogram algorithm for the first stage diff.
+  "algorithm:histogram",
+  -- When the total number of lines in a hunk exceeds {n},
+  -- the second stage diff will not be performed as
+  -- very large hunks can cause noticeable lag.
+  "linematch:200",
 }
 
 -- A more intuitive visual block mode.

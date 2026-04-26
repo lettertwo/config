@@ -61,7 +61,7 @@ map("n", "<leader>br", "<cmd>e %<cr>", { desc = "Reopen buffer" })
 map("n", "<leader>bO", "<cmd>!open -R '%'<cr>", { desc = "Reveal file in finder" })
 map("n", "<leader>b%", "<cmd>source %<CR>", { desc = "Source current file" })
 map("n", "<leader>by", function()
-	vim.fn.setreg("+", vim.fn.expand("%:p"))
+  vim.fn.setreg("+", vim.fn.expand("%:p"))
 end, { desc = "Copy current file path" })
 
 -- save file
@@ -84,33 +84,33 @@ map("n", "<leader><tab>[", "<cmd>tabprevious<cr>", { desc = "Previous Tab" })
 
 -- Clear search, diff update and redraw on <esc>
 map({ "i", "n", "s" }, "<esc>", function()
-	vim.schedule(function()
-		vim.cmd("nohlsearch | diffupdate | normal! <C-L><CR>")
-	end)
-	return "<esc>"
+  vim.schedule(function()
+    vim.cmd("nohlsearch | diffupdate | normal! <C-L><CR>")
+  end)
+  return "<esc>"
 end, { expr = true, desc = "Escape and redraw" })
 
 -- location list
 map("n", "<leader>xl", function()
-	local success, err = pcall(vim.fn.getloclist(0, { winid = 0 }).winid ~= 0 and vim.cmd.lclose or vim.cmd.lopen)
-	if not success and err then
-		vim.notify(err, vim.log.levels.ERROR)
-	end
+  local success, err = pcall(vim.fn.getloclist(0, { winid = 0 }).winid ~= 0 and vim.cmd.lclose or vim.cmd.lopen)
+  if not success and err then
+    vim.notify(err, vim.log.levels.ERROR)
+  end
 end, { desc = "Location List" })
 
 -- quickfix list
 map("n", "<leader>xq", function()
-	local success, err = pcall(vim.fn.getqflist({ winid = 0 }).winid ~= 0 and vim.cmd.cclose or vim.cmd.copen)
-	if not success and err then
-		vim.notify(err, vim.log.levels.ERROR)
-	end
+  local success, err = pcall(vim.fn.getqflist({ winid = 0 }).winid ~= 0 and vim.cmd.cclose or vim.cmd.copen)
+  if not success and err then
+    vim.notify(err, vim.log.levels.ERROR)
+  end
 end, { desc = "Quickfix List" })
 
 -- highlights under cursor
 map("n", "<leader>ui", vim.show_pos, { desc = "Inspect Pos" })
 map("n", "<leader>uI", function()
-	vim.treesitter.inspect_tree()
-	vim.api.nvim_input("I")
+  vim.treesitter.inspect_tree()
+  vim.api.nvim_input("I")
 end, { desc = "Inspect Tree" })
 
 --- incremental treesitter selection mappings (+ lsp fallback)
@@ -120,7 +120,7 @@ map({ "n", "o", "x" }, "<S-CR>", function()
   else
     vim.lsp.buf.selection_range(vim.v.count1)
   end
-end, {desc = "Increment Selection" })
+end, { desc = "Increment Selection" })
 
 map({ "o", "x" }, "<BS>", function()
   if vim.treesitter.get_parser(nil, nil, { error = false }) and pcall(require, "vim.treesitter._select") then
@@ -130,4 +130,6 @@ map({ "o", "x" }, "<BS>", function()
   end
 end, { desc = "Decrement Selection" })
 
-map("n", "<leader>P", function() vim.pack.update() end, { desc = "Manage Plugins" })
+map("n", "<leader>P", function()
+  vim.pack.update()
+end, { desc = "Manage Plugins" })

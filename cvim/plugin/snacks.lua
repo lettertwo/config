@@ -1,34 +1,34 @@
 Config.add("folke/snacks.nvim")
 
 local opts = {
-	notifier = { level = vim.log.levels.INFO },
-	image = {},
-	indent = {
-		filter = function(buf)
-			return vim.g.snacks_indent ~= false
-				and vim.b[buf].snacks_indent ~= false
-				and vim.bo[buf].buftype == ""
-				and not vim.list_contains(Config.filetypes.ui, vim.bo[buf].filetype)
-		end,
-		animate = { enabled = false },
-		indent = { char = "│" },
-		scope = {
-			enabled = true,
-			only_current = true,
-			char = "│",
-		},
-		chunk = {
-			enabled = true,
-			only_current = true,
-			char = {
-				corner_top = "╭",
-				corner_bottom = "╰",
-				horizontal = "─",
-				vertical = "│",
-				arrow = "─",
-			},
-		},
-	},
+  notifier = { level = vim.log.levels.INFO },
+  image = {},
+  indent = {
+    filter = function(buf)
+      return vim.g.snacks_indent ~= false
+        and vim.b[buf].snacks_indent ~= false
+        and vim.bo[buf].buftype == ""
+        and not vim.list_contains(Config.filetypes.ui, vim.bo[buf].filetype)
+    end,
+    animate = { enabled = false },
+    indent = { char = "│" },
+    scope = {
+      enabled = true,
+      only_current = true,
+      char = "│",
+    },
+    chunk = {
+      enabled = true,
+      only_current = true,
+      char = {
+        corner_top = "╭",
+        corner_bottom = "╰",
+        horizontal = "─",
+        vertical = "│",
+        arrow = "─",
+      },
+    },
+  },
   ---@type snacks.lazygit.Config
   lazygit = {
     configure = false,
@@ -46,10 +46,10 @@ local opts = {
       height = 0,
     },
   },
-	statuscolumn = {
-		left = { "sign", "mark" }, -- priority of signs on the left (high to low)
-		right = { "fold", "git" }, -- priority of signs on the right (high to low)
-	},
+  statuscolumn = {
+    left = { "sign", "mark" }, -- priority of signs on the left (high to low)
+    right = { "fold", "git" }, -- priority of signs on the right (high to low)
+  },
 }
 
 require("config.snacks.dashboard").config(opts)

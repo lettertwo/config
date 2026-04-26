@@ -20,26 +20,26 @@ opt.smoothscroll = true
 opt.shortmess:append({ W = true, I = true, c = true, C = true })
 -- opt.shortmess = "CFOSWaco" -- Disable some built-in completion messages
 opt.messagesopt = {
-	"wait:0",
-	"history:10000",
-	"progress:",
+  "wait:0",
+  "history:10000",
+  "progress:",
 }
 
 opt.list = true -- Show some invisible characters (tabs...
 opt.listchars = {
-	extends = "…",
-	nbsp = "␣",
-	precedes = "…",
-	tab = "> ",
+  extends = "…",
+  nbsp = "␣",
+  precedes = "…",
+  tab = "> ",
 }
 
 opt.fillchars = {
-	foldopen = "",
-	foldclose = "",
-	fold = " ",
-	foldsep = " ",
-	diff = "╱",
-	eob = " ",
+  foldopen = "",
+  foldclose = "",
+  fold = " ",
+  foldsep = " ",
+  diff = "╱",
+  eob = " ",
 }
 
 opt.complete = ".,w,b,kspell" -- Use less sources

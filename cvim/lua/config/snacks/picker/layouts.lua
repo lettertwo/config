@@ -59,14 +59,14 @@ local jump = {
 setmetatable(jump, {
   ---@param spec snacks.picker.Config
   __call = function(_, spec)
-  return vim.tbl_deep_extend("force", {
+    return vim.tbl_deep_extend("force", {
       layout = "jump",
       on_show = function(picker)
         disable_main_preview_winbar(picker)
         resize_list_to_fit_vertical(picker)
       end,
     }, spec or {})
-  end
+  end,
 })
 
 local mini = {
@@ -86,5 +86,5 @@ local mini = {
 
 return {
   mini = mini,
-  jump = jump
+  jump = jump,
 }

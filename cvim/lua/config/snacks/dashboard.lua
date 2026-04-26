@@ -3,42 +3,42 @@ local map = vim.keymap.set
 -- font: https://famfonts.com/metallica/
 -- generator: https://www.twitchquotes.com/ascii-art-generator
 local HEADER = {
-	[[                                  ⡠                                                ⢄                                 ]],
-	[[                               ⣠⣴⠟⠁                                                 ⠹⣦⣄                              ]],
-	[[                            ⣀⣴⣾⠟⠁⢀⣠⡆ ⢰⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⡆    ⣀⣤⣴⣶⣶⣶⣤⣄⡀  ⢰⣶⣶⣶⣆  ⣶⣶⣶⡶ ⢰⣶⣶⣶⡆ ⢠⣤⡀⠈⠻⣷⣦⣀                           ]],
-	[[                         ⣀⣴⣾⣿⡿⠁ ⢰⣿⣿⡇ ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇  ⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦  ⣿⣿⣿⣿⡀⣸⣿⣿⣿⠇ ⢸⣿⣿⣿⡇ ⢸⣿⣿⣷⣦⣬⣿⣿⣷⣦⣄                        ]],
-	[[                      ⣀⣴⣾⣿⣿⣿⣿⣧  ⢸⣿⣿⡇ ⢸⣿⣿⣿⣏⣀⣀⣀⣀⣀⣀⡀ ⣸⣿⣿⣿⣿⠟⠉⠉⠛⢿⣿⣿⣿⣷ ⠸⣿⣿⣿⣷⣿⣿⣿⡿  ⢸⣿⣿⣿⡇ ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⣄                     ]],
-	[[                    ⠐⠛⠉⣹⣿⣿⠟⢹⣿⣿⣇ ⢸⣿⣿⡇ ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇ ⣿⣿⣿⣿⠃     ⢻⣿⣿⣿⡇ ⢻⣿⣿⣿⣿⣿⣿⠃  ⢸⣿⣿⣿⡇ ⢸⣿⣿⣿⣿⡙⢿⣿⠟⢿⣿⣿⣏⠉⠛⠂                   ]],
-	[[                     ⢀⣼⣿⣿⠏  ⢿⣿⣿⡆⢸⣿⣿⡇ ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇ ⣿⣿⣿⣿⡄     ⣼⣿⣿⣿⠇ ⠘⣿⣿⣿⣿⣿⡟   ⢸⣿⣿⣿⡇ ⢸⣿⣿⣿⣿⣇ ⠙ ⠈⢻⣿⣿⣧⡀                    ]],
-	[[                    ⣠⣿⣿⣿⠃   ⠘⣿⣿⣿⣸⣿⣿⡇ ⢸⣿⣿⣿⣇⣀⣀⣀⣀⣀⣀⡀ ⠹⣿⣿⣿⣿⣶⣤⣤⣤⣾⣿⣿⣿⡟   ⢻⣿⣿⣿⣿⠃   ⢸⣿⣿⣿⡇ ⢸⣿⣿⣿⣿⣿⡀    ⠹⣿⣿⣿⣄                   ]],
-	[[                  ⢀⣴⣿⣿⡿⠁     ⢹⣿⣿⣿⣿⣿⡇ ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇  ⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠏    ⠈⣿⣿⣿⡟    ⢸⣿⣿⣿⡇ ⢸⣿⣿⣿⣿⣿⣇     ⠙⣿⣿⣿⣧⡀                 ]],
-	[[                 ⣠⣿⣿⣿⡟⠁       ⢿⣿⣿⣿⣿⠇ ⠸⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠃    ⠉⠛⠿⠿⠿⠿⠛⠉       ⠹⠿⠿⠃    ⠸⠿⠿⠿⠇ ⠸⣿⣿⣿⣿⣿⣿⡄     ⠈⢿⣿⣿⣿⣄                ]],
-	[[               ⢀⣼⣿⣿⣿⠟         ⠘⣿⠟⠋⠁                                                ⠈⠙⢿⣿⣿⣿⣧      ⠈⢻⣿⣿⣿⣧⡀              ]],
-	[[              ⣠⣿⣿⣿⣿⠏                                                                  ⠈⠛⢿⣿⡄       ⠹⣿⣿⣿⣿⣆             ]],
-	[[            ⢀⣼⣿⣿⣿⣿⠃                                                                      ⠈⠃        ⠘⣿⣿⣿⣿⣧⡀           ]],
-	[[           ⣠⣿⣿⣿⣿⡿⠁ ⣀⣀⣤⡴⠒                                                                      ⠐⢦⣤⣀⣀ ⠈⢿⣿⣿⣿⣿⣄          ]],
-	[[         ⢀⣾⣿⣿⣿⣿⣿⣷⣿⣿⡿⠛⠁                                                                          ⠈⠛⢿⣿⣿⣶⣿⣿⣿⣿⣿⣷⡀        ]],
-	[[        ⣰⣿⣿⣿⣿⣿⣿⣿⠿⠋⠁                                                                                ⠈⠙⠿⣿⣿⣿⣿⣿⣿⣿⣆       ]],
-	[[      ⢀⣾⣿⣿⣿⣿⣿⠟⠋⠁                                                                                      ⠈⠙⠻⣿⣿⣿⣿⣿⣷⡀     ]],
-	[[     ⣰⣿⣿⣿⡿⠟⠋                                                                                              ⠉⠻⢿⣿⣿⣿⣆    ]],
-	[[   ⢀⣾⣿⡿⠛⠉                                                                                                    ⠉⠛⢿⣿⣷⡀  ]],
-	[[  ⣴⡿⠛⠁                                                                                                          ⠈⠛⢿⣆ ]],
-	[[⠠⠚⠁                                                                                                                ⠈⠓]],
+  [[                                  ⡠                                                ⢄                                 ]],
+  [[                               ⣠⣴⠟⠁                                                 ⠹⣦⣄                              ]],
+  [[                            ⣀⣴⣾⠟⠁⢀⣠⡆ ⢰⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⡆    ⣀⣤⣴⣶⣶⣶⣤⣄⡀  ⢰⣶⣶⣶⣆  ⣶⣶⣶⡶ ⢰⣶⣶⣶⡆ ⢠⣤⡀⠈⠻⣷⣦⣀                           ]],
+  [[                         ⣀⣴⣾⣿⡿⠁ ⢰⣿⣿⡇ ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇  ⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦  ⣿⣿⣿⣿⡀⣸⣿⣿⣿⠇ ⢸⣿⣿⣿⡇ ⢸⣿⣿⣷⣦⣬⣿⣿⣷⣦⣄                        ]],
+  [[                      ⣀⣴⣾⣿⣿⣿⣿⣧  ⢸⣿⣿⡇ ⢸⣿⣿⣿⣏⣀⣀⣀⣀⣀⣀⡀ ⣸⣿⣿⣿⣿⠟⠉⠉⠛⢿⣿⣿⣿⣷ ⠸⣿⣿⣿⣷⣿⣿⣿⡿  ⢸⣿⣿⣿⡇ ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⣄                     ]],
+  [[                    ⠐⠛⠉⣹⣿⣿⠟⢹⣿⣿⣇ ⢸⣿⣿⡇ ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇ ⣿⣿⣿⣿⠃     ⢻⣿⣿⣿⡇ ⢻⣿⣿⣿⣿⣿⣿⠃  ⢸⣿⣿⣿⡇ ⢸⣿⣿⣿⣿⡙⢿⣿⠟⢿⣿⣿⣏⠉⠛⠂                   ]],
+  [[                     ⢀⣼⣿⣿⠏  ⢿⣿⣿⡆⢸⣿⣿⡇ ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇ ⣿⣿⣿⣿⡄     ⣼⣿⣿⣿⠇ ⠘⣿⣿⣿⣿⣿⡟   ⢸⣿⣿⣿⡇ ⢸⣿⣿⣿⣿⣇ ⠙ ⠈⢻⣿⣿⣧⡀                    ]],
+  [[                    ⣠⣿⣿⣿⠃   ⠘⣿⣿⣿⣸⣿⣿⡇ ⢸⣿⣿⣿⣇⣀⣀⣀⣀⣀⣀⡀ ⠹⣿⣿⣿⣿⣶⣤⣤⣤⣾⣿⣿⣿⡟   ⢻⣿⣿⣿⣿⠃   ⢸⣿⣿⣿⡇ ⢸⣿⣿⣿⣿⣿⡀    ⠹⣿⣿⣿⣄                   ]],
+  [[                  ⢀⣴⣿⣿⡿⠁     ⢹⣿⣿⣿⣿⣿⡇ ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇  ⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠏    ⠈⣿⣿⣿⡟    ⢸⣿⣿⣿⡇ ⢸⣿⣿⣿⣿⣿⣇     ⠙⣿⣿⣿⣧⡀                 ]],
+  [[                 ⣠⣿⣿⣿⡟⠁       ⢿⣿⣿⣿⣿⠇ ⠸⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠃    ⠉⠛⠿⠿⠿⠿⠛⠉       ⠹⠿⠿⠃    ⠸⠿⠿⠿⠇ ⠸⣿⣿⣿⣿⣿⣿⡄     ⠈⢿⣿⣿⣿⣄                ]],
+  [[               ⢀⣼⣿⣿⣿⠟         ⠘⣿⠟⠋⠁                                                ⠈⠙⢿⣿⣿⣿⣧      ⠈⢻⣿⣿⣿⣧⡀              ]],
+  [[              ⣠⣿⣿⣿⣿⠏                                                                  ⠈⠛⢿⣿⡄       ⠹⣿⣿⣿⣿⣆             ]],
+  [[            ⢀⣼⣿⣿⣿⣿⠃                                                                      ⠈⠃        ⠘⣿⣿⣿⣿⣧⡀           ]],
+  [[           ⣠⣿⣿⣿⣿⡿⠁ ⣀⣀⣤⡴⠒                                                                      ⠐⢦⣤⣀⣀ ⠈⢿⣿⣿⣿⣿⣄          ]],
+  [[         ⢀⣾⣿⣿⣿⣿⣿⣷⣿⣿⡿⠛⠁                                                                          ⠈⠛⢿⣿⣿⣶⣿⣿⣿⣿⣿⣷⡀        ]],
+  [[        ⣰⣿⣿⣿⣿⣿⣿⣿⠿⠋⠁                                                                                ⠈⠙⠿⣿⣿⣿⣿⣿⣿⣿⣆       ]],
+  [[      ⢀⣾⣿⣿⣿⣿⣿⠟⠋⠁                                                                                      ⠈⠙⠻⣿⣿⣿⣿⣿⣷⡀     ]],
+  [[     ⣰⣿⣿⣿⡿⠟⠋                                                                                              ⠉⠻⢿⣿⣿⣿⣆    ]],
+  [[   ⢀⣾⣿⡿⠛⠉                                                                                                    ⠉⠛⢿⣿⣷⡀  ]],
+  [[  ⣴⡿⠛⠁                                                                                                          ⠈⠛⢿⣆ ]],
+  [[⠠⠚⠁                                                                                                                ⠈⠓]],
 }
 
 local SPINNER = { "⠋ ", "⠙ ", "⠹ ", "⠸ ", "⠼ ", "⠴ ", "⠦ ", "⠧ ", "⠇ ", "⠏ " }
 
 ---@type fun(string): string, boolean, integer?
 local function pack_check(desc)
-	local state = Config.get_update_state()
-	if state.count == nil and not state.pending then
-		Config.check_updates()
-		state = Config.get_update_state()
-	end
-	if state.count and state.count > 0 then
-		desc = desc .. " " .. state.count .. " " .. (state.count == 1 and "update available" or "updates available")
-	end
-	return desc, state.pending, state.count
+  local state = Config.get_update_state()
+  if state.count == nil and not state.pending then
+    Config.check_updates()
+    state = Config.get_update_state()
+  end
+  if state.count and state.count > 0 then
+    desc = desc .. " " .. state.count .. " " .. (state.count == 1 and "update available" or "updates available")
+  end
+  return desc, state.pending, state.count
 end
 
 -- Get the character length of string.
@@ -55,10 +55,10 @@ local trim = vim.trim
 ---@param count? integer
 ---@return string
 local function substr(str, start, count)
-	if count == nil then
-		count = len(str) - start + 1
-	end
-	return vim.fn.strcharpart(str, start - 1, count)
+  if count == nil then
+    count = len(str) - start + 1
+  end
+  return vim.fn.strcharpart(str, start - 1, count)
 end
 
 -- Merge `line` with `new_line`.
@@ -68,67 +68,67 @@ end
 ---@param new_line string
 ---@return string
 local function merge_lines(line, new_line)
-	local line_len = len(line)
-	local result = ""
-	local new_line_len = len(new_line)
-	local stop = new_line_len + 1
-	local old_line = substr(line, 0, stop)
+  local line_len = len(line)
+  local result = ""
+  local new_line_len = len(new_line)
+  local stop = new_line_len + 1
+  local old_line = substr(line, 0, stop)
 
-	-- merge new_line into old_line
-	for i = 1, new_line_len do
-		local new_char = substr(new_line, i, 1)
-		if new_char == " " and i < stop then
-			new_char = substr(old_line, i, 1)
-		end
-		result = result .. new_char
-	end
+  -- merge new_line into old_line
+  for i = 1, new_line_len do
+    local new_char = substr(new_line, i, 1)
+    if new_char == " " and i < stop then
+      new_char = substr(old_line, i, 1)
+    end
+    result = result .. new_char
+  end
 
-	if stop <= line_len then
-		result = result .. substr(line, stop)
-	end
-	return result
+  if stop <= line_len then
+    result = result .. substr(line, stop)
+  end
+  return result
 end
 
 local function get_indent(dashboard, text)
-	local text_width = len(text)
-	local indent = dashboard.col or 1
-	if text_width > dashboard.opts.width then
-		indent = indent - (text_width - dashboard.opts.width) / 2
-	end
-	-- return text_width % 2 == 1 and math.floor(indent) or math.ceil(indent)
-	return math.floor(indent)
+  local text_width = len(text)
+  local indent = dashboard.col or 1
+  if text_width > dashboard.opts.width then
+    indent = indent - (text_width - dashboard.opts.width) / 2
+  end
+  -- return text_width % 2 == 1 and math.floor(indent) or math.ceil(indent)
+  return math.floor(indent)
 end
 
 local function get_embed_space(text)
-	local max = len(text)
-	if max < 3 then
-		return 0
-	end
+  local max = len(text)
+  if max < 3 then
+    return 0
+  end
 
-	local i = math.floor(len(text) / 2)
-	local j = i + 1
-	local found_i = false
-	local found_j = false
+  local i = math.floor(len(text) / 2)
+  local j = i + 1
+  local found_i = false
+  local found_j = false
 
-	while i > 1 or j < max do
-		if not found_i and substr(text, i, 1) == " " then
-			i = math.max(i - 1, 1)
-		else
-			found_i = true
-		end
+  while i > 1 or j < max do
+    if not found_i and substr(text, i, 1) == " " then
+      i = math.max(i - 1, 1)
+    else
+      found_i = true
+    end
 
-		if not found_j and substr(text, j, 1) == " " then
-			j = math.min(j + 1, max)
-		else
-			found_j = true
-		end
+    if not found_j and substr(text, j, 1) == " " then
+      j = math.min(j + 1, max)
+    else
+      found_j = true
+    end
 
-		if found_i and found_j then
-			break
-		end
-	end
+    if found_i and found_j then
+      break
+    end
+  end
 
-	return j - i - 1
+  return j - i - 1
 end
 
 ---@class Config.SnacksDashboard
@@ -381,8 +381,7 @@ function SnacksDashboardConfig.config(opts)
       key = live_options.key,
       action = live_options.action,
       icon = pending and { SPINNER[frame], hl = "footer" } or live_options.icon,
-      desc = updated_desc
-          and { updated_desc, hl = pending and "footer" or (status > 0 and "special" or nil) }
+      desc = updated_desc and { updated_desc, hl = pending and "footer" or (status > 0 and "special" or nil) }
         or live_options.desc,
     }
   end
@@ -431,7 +430,10 @@ function SnacksDashboardConfig.config(opts)
         })
 
         vim.api.nvim_create_autocmd("VimResized", { group = group, callback = Snacks.dashboard.update })
-        vim.api.nvim_create_autocmd("User", { pattern = "PackUpdatesChanged", group = group, callback = Snacks.dashboard.update })
+        vim.api.nvim_create_autocmd(
+          "User",
+          { pattern = "PackUpdatesChanged", group = group, callback = Snacks.dashboard.update }
+        )
 
         if dashboard_open == false then
           vim.keymap.set("n", "q", "<cmd>bd<cr>", { silent = true, buffer = e.buf })
@@ -452,8 +454,24 @@ function SnacksDashboardConfig.config(opts)
     row = 3,
     sections = {
       { icon = " ", title = "Last Session", section = "last_session_files", padding = 1, indent = 2 },
-      { icon = " ", key = "s", desc = "Restore Session", action = function() require("mini.sessions").read(Config.get_session_filename()) end },
-      { icon = " ", key = "p", desc = "Plugins", action = function() vim.pack.update() end, section = "live", check = pack_check },
+      {
+        icon = " ",
+        key = "s",
+        desc = "Restore Session",
+        action = function()
+          require("mini.sessions").read(Config.get_session_filename())
+        end,
+      },
+      {
+        icon = " ",
+        key = "p",
+        desc = "Plugins",
+        action = function()
+          vim.pack.update()
+        end,
+        section = "live",
+        check = pack_check,
+      },
       { icon = "󰓙 ", key = "c", desc = "Checkhealth", action = ":checkhealth" },
       { icon = "󰈤 ", key = "n", desc = "New File", action = ":ene | startinsert" },
       { icon = "󰐥 ", key = "q", desc = "Quit/close", action = ":qa", padding = 1 },
@@ -461,7 +479,7 @@ function SnacksDashboardConfig.config(opts)
     },
   }
 
-	map("n", "<leader>;", "<cmd>Dashboard<cr>", { desc = "Dashboard" })
+  map("n", "<leader>;", "<cmd>Dashboard<cr>", { desc = "Dashboard" })
 
   return opts
 end

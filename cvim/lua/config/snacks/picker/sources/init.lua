@@ -25,7 +25,7 @@ return {
   recent = { config = scope("recent"), format = title_path },
   grep = { config = scope("grep"), format = title_path },
   packages = { finder = find_packages, confirm = "mini_files" },
-  directories  = {
+  directories = {
     finder = find_directories,
     preview = "directory",
     format = title_path,
