@@ -1,5 +1,9 @@
 {
   "plugins": {
+    "conform.nvim": {
+      "rev": "dca1a190aa85f9065979ef35802fb77131911106",
+      "src": "https://github.com/stevearc/conform.nvim"
+    },
     "laserwave.nvim": {
       "rev": "0ae821ff89105f5b9728ef3f71de40e2e4e0b421",
       "src": "https://github.com/lettertwo/laserwave.nvim"

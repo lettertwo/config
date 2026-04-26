@@ -24,6 +24,7 @@ local Config = {
 			"checkhealth",
       "cmd",
 			"cmp_menu",
+      "conform-info",
 			"dap-repl",
 			"dap-view",
 			"dap-view-repl",
