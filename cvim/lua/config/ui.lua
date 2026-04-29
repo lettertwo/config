@@ -42,10 +42,11 @@ opt.fillchars = {
   eob = " ",
 }
 
-opt.complete = ".,w,b,kspell" -- Use less sources
-opt.completeopt = "menuone,noselect,fuzzy,nosort" -- Use custom behavior
-opt.completetimeout = 100 -- Limit sources delay
-opt.wildmode = "longest:full,full" -- Command-line completion mode
+opt.complete = ".,o" -- Use less sources
+opt.completeopt = "menuone,noinsert,fuzzy,popup" -- Use custom behavior
+opt.completetimeout = 1000 -- Limit sources delay
+opt.wildmode = "longest:full,noselect:lastused,full"
+opt.wildoptions = "pum,fuzzy"
 
 opt.cursorline = true -- Enable highlighting of the current line
 opt.cursorlineopt = "screenline,number" -- Show cursor line per screen line

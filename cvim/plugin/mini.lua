@@ -30,6 +30,7 @@ Config.once("BufReadPost", function()
 
   require("config.mini.ai").setup()
   require("config.mini.surround").setup()
+  require("config.mini.completion").setup()
 end)
 
 local ext3_blocklist = { scm = true, txt = true, yml = true }

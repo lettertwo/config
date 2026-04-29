@@ -84,9 +84,13 @@ map("n", "<leader><tab>[", "<cmd>tabprevious<cr>", { desc = "Previous Tab" })
 
 -- Clear search, diff update and redraw on <esc>
 map({ "i", "n", "s" }, "<esc>", function()
-  vim.schedule(function()
-    vim.cmd("nohlsearch | diffupdate | normal! <C-L><CR>")
-  end)
+  if vim.fn.pumvisible() ~= 0 then
+    return "<C-e>" -- Close pum without choosing, but don't exit insert mode
+  else
+    vim.schedule(function()
+      vim.cmd("nohlsearch | diffupdate | normal! <C-L><CR>")
+    end)
+  end
   return "<esc>"
 end, { expr = true, desc = "Escape and redraw" })
 
