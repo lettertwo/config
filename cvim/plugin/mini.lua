@@ -5,6 +5,7 @@ Config.add("nvim-mini/mini.nvim")
 Config.once("BufReadPost", function()
   require("mini.trailspace").setup()
   require("mini.bracketed").setup()
+  require("mini.pairs").setup({ modes = { command = true } })
 
   require("mini.operators").setup({
     evaluate = { prefix = "g=" },
