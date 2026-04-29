@@ -24,5 +24,13 @@ Config.once("BufReadPost", function()
 	require("config.mini.surround").setup()
 end)
 
+local ext3_blocklist = { scm = true, txt = true, yml = true }
+local ext4_blocklist = { json = true, yaml = true }
+require("mini.icons").setup({
+  use_file_extension = function(ext, _)
+    return not (ext3_blocklist[ext:sub(-3)] or ext4_blocklist[ext:sub(-4)])
+  end,
+})
+
 require("config.mini.sessions").setup()
 require("config.mini.files").setup()
