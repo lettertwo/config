@@ -4,8 +4,15 @@ Config.add("nvim-mini/mini.nvim")
 
 Config.once("BufReadPost", function()
   require("mini.trailspace").setup()
-  require("mini.operators").setup()
   require("mini.bracketed").setup()
+
+  require("mini.operators").setup({
+    evaluate = { prefix = "g=" },
+    exchange = { prefix = "gX" },
+    multiply = { prefix = "gm" },
+    replace = { prefix = "gR" },
+    sort = { prefix = "gS" },
+  })
 
   require("mini.align").setup({
     -- Module mappings. Use `''` (empty string) to disable one.
