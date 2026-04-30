@@ -6,6 +6,7 @@ Config.once("BufReadPost", function()
   require("mini.trailspace").setup()
   require("mini.bracketed").setup()
   require("mini.pairs").setup({ modes = { command = true } })
+  require("mini.misc").setup_restore_cursor()
 
   require("mini.operators").setup({
     evaluate = { prefix = "g=" },
