@@ -5,7 +5,7 @@
       "src": "https://github.com/stevearc/conform.nvim"
     },
     "laserwave.nvim": {
-      "rev": "0ae821ff89105f5b9728ef3f71de40e2e4e0b421",
+      "rev": "2249385d2456dad04dd8d1b09a48875b653b5618",
       "src": "https://github.com/lettertwo/laserwave.nvim"
     },
     "lazydev.nvim": {
