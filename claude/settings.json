@@ -35,7 +35,7 @@
       "Skill(update-config)",
       "WebSearch"
     ],
-    "defaultMode": "auto"
+    "defaultMode": "plan"
   },
   "model": "opusplan",
   "hooks": {
