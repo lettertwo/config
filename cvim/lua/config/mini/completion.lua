@@ -72,7 +72,14 @@ function MiniCompletionConfig.setup()
     },
     "pmenu_next",
   })
+  map_multistep({ "i", "s" }, "<right>", { "vimsnippet_next", "pmenu_accept", "minipairs_cr" })
   map_multistep({ "i", "s" }, "<S-Tab>", { "vimsnippet_prev", "pmenu_prev" })
+
+  map_multistep("i", "<c-j>", { "pmenu_next" })
+  map_multistep("i", "<down>", { "pmenu_next" })
+  map_multistep("i", "<c-k>", { "pmenu_prev" })
+  map_multistep("i", "<up>", { "pmenu_prev" })
+
   map_multistep("i", "<CR>", { "pmenu_accept", "minipairs_cr" })
   map_multistep("i", "<BS>", { "minipairs_bs" })
 end
