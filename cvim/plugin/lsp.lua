@@ -23,16 +23,21 @@ Config.on("LspAttach", function(ev)
     end
     vim.keymap.set("n", lhs, rhs, { buffer = ev.buf, desc = desc, nowait = true })
   end
-	-- stylua: ignore start
-	map("grd", function() Snacks.picker.lsp_definitions() end,      "Definitions",      "textDocument/definition")
-	map("grD", function() Snacks.picker.lsp_declarations() end,     "Declarations",     "textDocument/declaration")
-	map("grr", function() Snacks.picker.lsp_references() end,       "References",       "textDocument/references")
-	map("gri", function() Snacks.picker.lsp_implementations() end,  "Implementations",  "textDocument/implementation")
-	map("grt", function() Snacks.picker.lsp_type_definitions() end, "Type Definitions", "textDocument/typeDefinition")
-	map("grI", function() Snacks.picker.lsp_incoming_calls() end,   "Incoming Calls",   "callHierarchy/incomingCalls")
-	map("grO", function() Snacks.picker.lsp_outgoing_calls() end,   "Outgoing Calls",   "callHierarchy/outgoingCalls")
+
   vim.keymap.set("n", "<leader>.", "gra", { desc = "Code Actions", remap = true })
-  -- stylua: ignore end
+
+  local _, Snacks = pcall(require, "snacks")
+  if Snacks ~= nil then
+    -- stylua: ignore start
+    map("grd", function() Snacks.picker.lsp_definitions() end,      "Definitions",      "textDocument/definition")
+    map("grD", function() Snacks.picker.lsp_declarations() end,     "Declarations",     "textDocument/declaration")
+    map("grr", function() Snacks.picker.lsp_references() end,       "References",       "textDocument/references")
+    map("gri", function() Snacks.picker.lsp_implementations() end,  "Implementations",  "textDocument/implementation")
+    map("grt", function() Snacks.picker.lsp_type_definitions() end, "Type Definitions", "textDocument/typeDefinition")
+    map("grI", function() Snacks.picker.lsp_incoming_calls() end,   "Incoming Calls",   "callHierarchy/incomingCalls")
+    map("grO", function() Snacks.picker.lsp_outgoing_calls() end,   "Outgoing Calls",   "callHierarchy/outgoingCalls")
+    -- stylua: ignore end
+  end
 end, "LSP buffer keymaps")
 
 vim.api.nvim_create_user_command("Lsp", function(args)
