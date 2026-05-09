@@ -14,10 +14,6 @@ function SnacksPickerConfig.config(opts)
       file = { filename_first = true },
       selected = { show_always = false, unselected = true },
     },
-    previewers = {
-      diff = { builtin = false },
-      git = { builtin = false },
-    },
     actions = require("config.snacks.picker.actions"),
     layouts = require("config.snacks.picker.layouts"),
     sources = require("config.snacks.picker.sources"),
@@ -138,10 +134,6 @@ function SnacksPickerConfig.config(opts)
   -- stylua: ignore end
 
   -- stylua: ignore start
-  map("n", "<leader>gl", function() Snacks.picker.git_log({ cwd = Config.root("git") }) end, { desc = "Git Log" })
-  map("n", "<leader>gL", function() Snacks.picker.git_log_file() end, { desc = "Git Log File" })
-  map("n", "<leader>gb", function() Snacks.picker.git_log_line() end, { desc = "Git Blame Line" })
-  map("n", "<leader>gf", function() Snacks.picker.git_log_file() end, { desc = "Git Current File History" })
   map({ "n", "x" }, "<leader>gO", function() Snacks.gitbrowse() end, { desc = "Git Browse (open)" })
   map({ "n", "x" }, "<leader>gY", function() Snacks.gitbrowse({ open = function(url) vim.fn.setreg("+", url) end, notify = false }) end, { desc = "Git Browse (copy)" })
   -- stylua: ignore end
