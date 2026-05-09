@@ -57,7 +57,7 @@ Config.on("Filetype", function()
 end)
 
 -- close some filetypes with <q>
-Config.on("FileType", function(event)
+Config.on("FileType", Config.filetypes.ui, function(event)
   vim.bo[event.buf].buflisted = false
   vim.schedule(function()
     if not vim.api.nvim_buf_is_valid(event.buf) then
