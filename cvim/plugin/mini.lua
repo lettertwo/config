@@ -17,6 +17,20 @@ Config.once("BufReadPost", function()
     sort = { prefix = "gS" },
   })
 
+  -- on MacOS, <A-j> emits "∆", <A-k> emits "˚", <A-h> emits "˙", <A-l> emits "¬"
+  require("mini.move").setup({
+    mappings = {
+      left = "˙",
+      right = "¬",
+      down = "∆",
+      up = "˚",
+      line_left = "˙",
+      line_right = "¬",
+      line_down = "∆",
+      line_up = "˚",
+    },
+  })
+
   require("mini.align").setup({
     -- Module mappings. Use `''` (empty string) to disable one.
     mappings = {
