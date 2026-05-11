@@ -158,7 +158,7 @@ function SnacksDashboardConfig.config(opts)
     local first_embeddable_header_index
     for header_index, header_text in vim.iter(HEADER):rev():enumerate() do
       if get_embed_space(header_text) >= self.opts.width + 2 then
-        first_embeddable_header_index = header_index + 1
+        first_embeddable_header_index = header_index + 3
       else
         break
       end
