@@ -110,6 +110,15 @@ map("n", "<leader>xq", function()
   end
 end, { desc = "Quickfix List" })
 
+-- diagnostics
+-- stylua: ignore start
+map("n", "<leader>xd", function() vim.diagnostic.setqflist({ open = true }) end, { desc = "Diagnostics" })
+map("n", "<leader>xx", "<leader>xd", { remap = true, desc = "Diagnostics" })
+map("n", "<leader>xb", function() vim.diagnostic.setloclist({ open = true }) end, { desc = "Diagnostics (buffer)" })
+map("n", "<leader>xj", function() vim.diagnostic.jump({ count = 1 }) end, { desc = "Next diagnostic" })
+map("n", "<leader>xk", function() vim.diagnostic.jump({ count = -1 }) end, { desc = "Previous diagnostic" })
+-- stylua: ignore end
+
 -- highlights under cursor
 map("n", "<leader>ui", vim.show_pos, { desc = "Inspect Pos" })
 map("n", "<leader>uI", function()
