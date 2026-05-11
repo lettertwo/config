@@ -8,6 +8,7 @@ function MiniAiConfig.setup()
   local gen_ai_spec = require("mini.extra").gen_ai_spec
   ai.setup({
     n_lines = 500,
+    search_method = "cover",
     custom_textobjects = {
       G = gen_ai_spec.buffer(),
       D = gen_ai_spec.diagnostic(),
