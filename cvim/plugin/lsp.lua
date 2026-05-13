@@ -1,4 +1,32 @@
 Config.add("neovim/nvim-lspconfig")
+Config.add("mrcjkb/rustaceanvim")
+
+vim.g.rustaceanvim = {
+  server = {
+    default_settings = {
+      ["rust-analyzer"] = {
+        cargo = {
+          targetDir = true,
+        },
+        cachePriming = {
+          enable = false,
+        },
+        check = {
+          enable = true,
+          command = "clippy",
+          features = "all",
+          extraArgs = { "--no-deps" },
+        },
+        files = {
+          excludeDirs = {
+            "target",
+            "node_modules",
+          },
+        },
+      },
+    },
+  },
+}
 
 vim.lsp.config("*", {
   root_markers = { ".git" },
