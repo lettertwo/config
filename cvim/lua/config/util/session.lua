@@ -59,4 +59,15 @@ function SessionUtil.get_session_shadafile()
   return vim.fs.joinpath(vim.fn.stdpath("state"), "shada", SessionUtil.get_session_filename())
 end
 
+function SessionUtil.load_last_session()
+  local ok, MiniSessions = pcall(require, "mini.sessions")
+  if not ok then
+    vim.notify("mini.sessions not found, cannot load last session", vim.log.levels.WARN)
+  end
+  ok = pcall(MiniSessions.read, SessionUtil.get_session_filename())
+  if not ok then
+    vim.notify("No previous session found", vim.log.levels.INFO)
+  end
+end
+
 return SessionUtil

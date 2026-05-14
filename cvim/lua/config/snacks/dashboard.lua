@@ -459,7 +459,7 @@ function SnacksDashboardConfig.config(opts)
         key = "s",
         desc = "Restore Session",
         action = function()
-          require("mini.sessions").read(Config.get_session_filename())
+          Config.load_last_session()
         end,
       },
       {

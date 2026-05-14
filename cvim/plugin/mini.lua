@@ -156,7 +156,7 @@ end, { desc = "Restore Session" })
 map("n", "<leader>qs", function() MiniSessions.select("read") end, { desc = "Select Session" })
 map("n", "<leader>ql", function() MiniSessions.read(Config.get_session_filename()) end, { desc = "Restore Session" })
 map("n", "<leader>qd", function() MiniSessions.delete(Config.get_session_filename()) end, { desc = "Delete Session" })
-map("n", "<leader>qR", "<cmd>restart lua MiniSessions.read(Config.get_session_filename())<cr>", { desc = "Restart" })
+map("n", "<leader>qR", "<cmd>restart lua Config.load_last_session()<cr>", { desc = "Restart" })
 -- stylua: ignore end
 
 require("config.mini.files").setup()
