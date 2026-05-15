@@ -62,6 +62,7 @@ return {
         table.insert(plugins, {
           file = plugin.path,
           name = plugin.spec.name,
+          text = plugin.spec.name,
           url = plugin.spec.src,
         })
       end
