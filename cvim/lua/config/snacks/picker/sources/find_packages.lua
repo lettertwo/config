@@ -1,5 +1,10 @@
 ---@module "snacks"
 
+local PACKAGE_SENTINELS = {
+  ["package.json"] = [["name":\s*]],
+  ["Cargo.toml"] = [[name\s*=\s*]],
+}
+
 ---@type snacks.picker.finder
 local function find_packages(opts, ctx)
   local cwd = ctx.picker.opts.cwd or opts.cwd or Config.root("git") or vim.fn.getcwd()
@@ -7,6 +12,14 @@ local function find_packages(opts, ctx)
   if vim.fn.isdirectory(cwd) ~= 1 then
     return {}
   end
+
+  local globs, prefixes = {}, {}
+  for filename, prefix in pairs(PACKAGE_SENTINELS) do
+    table.insert(globs, "-g")
+    table.insert(globs, filename)
+    table.insert(prefixes, prefix)
+  end
+  local pattern = "(?:" .. table.concat(prefixes, "|") .. [[)"([^"]+)",?]]
 
   local cmd = "rg"
   -- TODO: add args for opts like hidden, exclude, etc.
@@ -20,13 +33,9 @@ local function find_packages(opts, ctx)
     "--trim",
     "--follow",
     "--max-count=1",
-    "-g",
-    "package.json",
-    "-r",
-    "'$1'",
-    "--",
-    '"name": "(.+?)",?',
   }
+  vim.list_extend(args, globs)
+  vim.list_extend(args, { "-r", "'$1'", "--", pattern })
 
   return require("snacks.picker.source.proc").proc(
     vim.tbl_deep_extend("force", opts, {
