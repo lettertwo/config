@@ -62,8 +62,8 @@ gui:
   animateExplosion: true
 git:
   pagers:
+    - pager: delta --dark --paging=never --hyperlinks-file-link-format="lazygit-edit://{path}:{line}"
     - colorArg: always
-      pager: delta --dark --paging=never
   commit:
     signOff: false
   merging:
