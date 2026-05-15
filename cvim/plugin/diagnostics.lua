@@ -13,7 +13,9 @@ vim.diagnostic.config({
     severity = { min = vim.diagnostic.severity.WARN, max = vim.diagnostic.severity.ERROR },
   },
   severity_sort = true,
-  float = { border = "rounded", source = true, header = "", prefix = "" },
+  float = {
+    severity = { min = vim.diagnostic.severity.HINT, max = vim.diagnostic.severity.ERROR },
+  },
   signs = {
     -- Show signs on top of any other sign, but only for warnings and errors
     priority = 9999,
