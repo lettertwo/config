@@ -13,7 +13,7 @@
       "src": "https://github.com/lewis6991/gitsigns.nvim"
     },
     "laserwave.nvim": {
-      "rev": "2249385d2456dad04dd8d1b09a48875b653b5618",
+      "rev": "c29fc55d33e0606d88939637fe8165041a4c8600",
       "src": "https://github.com/lettertwo/laserwave.nvim"
     },
     "lazydev.nvim": {
