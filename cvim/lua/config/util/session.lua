@@ -70,4 +70,12 @@ function SessionUtil.load_last_session()
   end
 end
 
+function SessionUtil.get_active_session()
+  local this_session = vim.v.this_session
+  if this_session == "" then
+    return nil
+  end
+  return this_session
+end
+
 return SessionUtil

@@ -16,9 +16,13 @@ local function emit_updates_changed()
   })
 end
 
---- Returns the cached update state. Does not trigger a check.
+--- Returns the cached update state. Does not trigger a check by default.
+---@param force_check? boolean If true, forces a check_updates() if the state is not already pending.
 ---@return Config.PackUtil.UpdateState
-function PackUtil.get_update_state()
+function PackUtil.get_update_state(force_check)
+  if force_check and not update_state.pending then
+    vim.schedule(PackUtil.check_updates)
+  end
   return update_state
 end
 

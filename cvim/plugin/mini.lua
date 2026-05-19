@@ -160,3 +160,4 @@ map("n", "<leader>qR", "<cmd>restart lua Config.load_last_session()<cr>", { desc
 -- stylua: ignore end
 
 require("config.mini.files").setup()
+require("config.mini.statusline").setup()
