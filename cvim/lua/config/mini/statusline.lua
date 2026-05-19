@@ -91,6 +91,18 @@ local function section_filepath()
   return filepath
 end
 
+local function section_titlepath()
+  local ok, MiniIcons = pcall(require, "mini.icons")
+  local icon_str = ""
+  if ok then
+    local ft = vim.bo.filetype
+    icon_str = MiniIcons.get("filetype", ft) .. " "
+  end
+  local name = vim.fn.expand("%:~:.")
+  local path = name ~= "" and Config.title_path(name, { disambiguate = true }) or "[No Name]"
+  return " " .. icon_str .. " " .. path
+end
+
 local function section_location()
   return "%l:%v"
 end
@@ -183,6 +195,25 @@ local function section_diagnostics()
   end
 
   return table.concat(parts, " ")
+end
+
+local function winbar_is_eligible(win)
+  local config = vim.api.nvim_win_get_config(win)
+  if config.relative ~= "" then
+    return false
+  end
+  local buf = vim.api.nvim_win_get_buf(win)
+  local ft = vim.bo[buf].filetype
+  return not vim.tbl_contains(Config.filetypes.ui, ft)
+end
+
+local WINBAR_CONTENT = "%{%(nvim_get_current_win()==#g:actual_curwin)"
+  .. " ? v:lua.MiniStatusline.active_winbar()"
+  .. " : v:lua.MiniStatusline.inactive_winbar()%}"
+
+local function winbar_update()
+  local win = vim.api.nvim_get_current_win()
+  vim.wo[win].winbar = winbar_is_eligible(win) and WINBAR_CONTENT or ""
 end
 
 ---@class Config.MiniStatusline
@@ -289,6 +320,30 @@ function MiniStatuslineConfig.setup()
       end,
     },
   })
+
+  -- Winbar render functions exposed on MiniStatusline so v:lua can reach them
+  -- from the per-window winbar format string (same mechanism as the statusline).
+  function MiniStatusline.active_winbar()
+    local win = vim.api.nvim_get_current_win()
+    local buf = vim.api.nvim_win_get_buf(win)
+    local modified = vim.bo[buf].modified and " ●" or ""
+    local _, mode_hl = section_mode()
+    local mode_hl_inverted = mode_hl .. "Inverted"
+    return MiniStatusline.combine_groups({
+      { hl = mode_hl, strings = { section_titlepath(), modified } },
+      { hl = mode_hl_inverted },
+      "",
+      { hl = "WinBar" },
+    })
+  end
+
+  function MiniStatusline.inactive_winbar()
+    return MiniStatusline.combine_groups({
+      { hl = "WinBarNC", strings = { section_titlepath() } },
+    })
+  end
+
+  Config.on({ "WinEnter", "BufEnter", "FileType" }, winbar_update)
 end
 
 return MiniStatuslineConfig
