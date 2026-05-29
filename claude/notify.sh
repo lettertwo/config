@@ -1,34 +1,37 @@
 #!/bin/bash
-#
-# Claude Code notification hook script.
-# Usage:
-#   notify.sh "message"   -- use provided message (e.g. Stop hook)
-#   notify.sh             -- read message from JSON stdin (e.g. Notification hook)
+# Claude Code notification hook.
+# Modes: notify (Notification hook), stop (Stop hook), cleanup (SessionEnd hook)
 
-# If a message was passed as an argument, use it; otherwise parse stdin JSON
-if [ $# -ge 1 ]; then
-  msg="$1"
+command -v terminal-notifier &>/dev/null || exit 0
+command -v jq               &>/dev/null || exit 0
+
+mode="${1:-notify}"
+payload=$(cat)
+session_id=$(jq -r '.session_id // empty' <<<"$payload")
+[ -z "$session_id" ] && exit 0
+
+if [ "$mode" = "cleanup" ]; then
+  terminal-notifier -remove "$session_id"
+  exit 0
+fi
+
+if [ "$mode" = "stop" ]; then
+  msg="Ready for your input"
 else
-  msg=$(cat | jq -r '.message // empty' 2>/dev/null)
-  msg="${msg:-Needs attention}"
+  msg=$(jq -r '.message // "Needs attention"' <<<"$payload")
 fi
 
-# Prefer terminal-notifier: branded as Kitty, respects Kitty's Focus allowlist
-if command -v terminal-notifier &>/dev/null; then
-  args=(-title "Claude Code" -message "$msg" -sender "net.kovidgoyal.kitty" -activate "net.kovidgoyal.kitty")
+args=(
+  -title    "Claude Code"
+  -message  "$msg"
+  -group    "$session_id"
+  -sender   "net.kovidgoyal.kitty"
+  -activate "net.kovidgoyal.kitty"
+)
 
-  # If Kitty remote control is available, clicking the notification focuses the window
-  if [ -n "$KITTY_LISTEN_ON" ] && command -v kitten &>/dev/null; then
-    args+=(-execute "kitten @ --to $KITTY_LISTEN_ON focus-window")
-  fi
-
-  terminal-notifier "${args[@]}"
-
-  # Fall back to osascript (generic, no Kitty branding)
-elif command -v osascript &>/dev/null; then
-  osascript -e "display notification \"$msg\" with title \"Claude Code\""
-
-  # Fall back to notify-send (Linux/freedesktop)
-elif command -v notify-send &>/dev/null; then
-  notify-send "Claude Code" "$msg"
+if [ -n "$KITTY_LISTEN_ON" ] && command -v kitten &>/dev/null; then
+  args+=(-execute "kitten @ --to $KITTY_LISTEN_ON focus-window")
 fi
+
+terminal-notifier "${args[@]}" &
+disown
