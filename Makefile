@@ -316,31 +316,32 @@ update-qmk: qmk
 RUSTC := $(shell command -v rustc 2> /dev/null)
 
 ~/.cargo/bin/rustup:
-	$(call err,"rustup not found!")
 	$(call log,"Installing rustup...")
 	$(call run,curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh)
 	$(call done)
 
-~/.cargo/bin/cargo-binstall:
-	$(call err,"cargo-binstall not found!")
+~/.cargo/bin/cargo-binstall: ~/.cargo/bin/rustup
 	$(call log,"Installing cargo-binstall...")
 	$(call run,curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | sh)
 	$(call done)
 
-~/.cargo/bin/cargo-nextest:
-	$(call err,"cargo-nextest not found!")
+~/.cargo/bin/cargo-dist: ~/.cargo/bin/cargo-binstall
+	$(call log,"Installing cargo-dist...")
+	$(call run,cargo binstall cargo-dist --secure --no-confirm)
+	$(call done)
+
+~/.cargo/bin/cargo-nextest: ~/.cargo/bin/cargo-binstall
 	$(call log,"Installing cargo-nextest...")
 	$(call run,cargo binstall cargo-nextest --secure --no-confirm)
 	$(call done)
 
-~/.cargo/bin/cargo-watch:
-	$(call err,"cargo-watch not found!")
+~/.cargo/bin/cargo-watch: ~/.cargo/bin/cargo-binstall
 	$(call log,"Installing cargo-watch...")
 	$(call run,cargo binstall cargo-watch --secure --no-confirm)
 	$(call done)
 
 .PHONY: rust
-rust: ~/.cargo/bin/rustup ~/.cargo/bin/cargo-binstall ~/.cargo/bin/cargo-nextest ~/.cargo/bin/cargo-watch
+rust: ~/.cargo/bin/rustup ~/.cargo/bin/cargo-binstall ~/.cargo/bin/cargo-dist ~/.cargo/bin/cargo-nextest ~/.cargo/bin/cargo-watch
 ifndef RUSTC
 	$(call err,"rustc not found!")
 	$(call log,"Installing rust stable...")
@@ -357,27 +358,28 @@ endif
 CLAUDE := $(shell command -v claude 2> /dev/null)
 
 ~/.claude/settings.json: ~/.claude
-	$(call err,"claude settings not found!")
 	$(call log,"Linking claude settings...")
 	$(call run,ln -sf "$$HOME/.config/claude/settings.json" "$@")
 	$(call done)
 
 ~/.claude/CLAUDE.md: ~/.claude
-	$(call err,"claude CLAUDE.md not found!")
 	$(call log,"Linking claude CLAUDE.md...")
 	$(call run,ln -sf "$$HOME/.config/claude/CLAUDE.md" "$@")
 	$(call done)
 
 ~/.claude/statusline-command.sh: ~/.claude
-	$(call err,"claude statusline-command.sh not found!")
 	$(call log,"Linking claude statusline-command.sh...")
 	$(call run,ln -sf "$$HOME/.config/claude/statusline-command.sh" "$@")
 	$(call done)
 
 ~/.claude/notify.sh: ~/.claude
-	$(call err,"claude notify.sh not found!")
 	$(call log,"Linking claude notify.sh...")
 	$(call run,ln -sf "$$HOME/.config/claude/notify.sh" "$@")
+	$(call done)
+
+~/.claude/notify-reap.sh: ~/.claude
+	$(call log,"Linking claude notify-reap.sh...")
+	$(call run,ln -sf "$$HOME/.config/claude/notify-reap.sh" "$@")
 	$(call done)
 
 ~/.claude/commands: ~/.claude
@@ -386,7 +388,7 @@ CLAUDE := $(shell command -v claude 2> /dev/null)
 	$(call done)
 
 .PHONY: claude
-claude: ~/.claude ~/.claude/settings.json ~/.claude/CLAUDE.md ~/.claude/statusline-command.sh ~/.claude/notify.sh ~/.claude/commands
+claude: ~/.claude ~/.claude/settings.json ~/.claude/CLAUDE.md ~/.claude/statusline-command.sh ~/.claude/notify.sh ~/.claude/notify-reap.sh ~/.claude/commands
 ifndef CLAUDE
 	$(call err,"claude not found!")
 	$(call log,"Installing claude...")
