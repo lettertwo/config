@@ -1,8 +1,9 @@
 # Homebrew Bundle
 # https://github.com/Homebrew/homebrew-bundle
 
-# brew all teh things
 tap "jesseduffield/lazygit"
+tap "lettertwo/tap"
+tap "withgraphite/tap"
 
 # fish shell
 brew "fish"
@@ -13,71 +14,67 @@ brew "starship"
 cask "1password-cli"
 
 # CLI Tools
-brew "git" if OS.mac?
-brew "coreutils" if OS.mac?
-brew "tree" if OS.mac?
-brew "readline" if OS.mac?
-brew "curl" if OS.mac?
-brew "wget" if OS.mac?
-brew "lnav" if OS.mac?
-brew "terminal-notifier" if OS.mac?
+brew "readline"
+brew "coreutils"
+brew "readline"
+brew "curl"
+brew "wget"
+brew "terminal-notifier"
 brew "fzf"
-brew "sk" # skim-rs/skim, replacement for fzf?
 brew "ripgrep" # BurntSushi/ripgrep
 brew "fd" # sharkdp/fd, replacement for find
 brew "bat" # sharkdp/bat, replacement for cat
 brew "lsd" # lsd-rs/lsd, replacement for ls
-brew "git-delta" # dandavison/delta, replacement for diff
 brew "dust" # bootandy/dust, replacement for du
 brew "duf" # muesli/duf, replacement for df
 brew "bottom" # ClementTsang/bottom, replacement for top
 brew "zoxide" # ajeetdsouza/zoxide, smarter cd
-brew "yazi" # sxyazi/yazi, terminal file manager
-brew "ffmpegthumbnailer" # for video thumbnails
-brew "unar" # for archive preview
-brew "poppler" # for pdf preview
 brew "toilet" # very important
 
-
 # misc. dev tooling
-brew "watchman"
+brew "awscli"
+brew "direnv"
 brew "graphviz"
 brew "hyperfine"
 brew "jq"
-brew "direnv"
+brew "lnav"
+brew "watchman"
+
+# git
+brew "git"
+brew "gh" if OS.mac?
+brew "git-absorb" if OS.mac?
+brew "git-delta" if OS.mac?
+brew "git-lfs" if OS.mac?
+brew "withgraphite/tap/graphite" if OS.mac?
+brew "lazygit", args: ["HEAD"] if OS.mac?
+brew "lettertwo/tap/git-workon" if OS.mac?
 
 # neovim dependencies
 # See https://github.com/neovim/neovim/wiki/Building-Neovim#macos--homebrew
 brew "ninja"
 brew "cmake"
-brew "libtool" if OS.mac?
-brew "automake" if OS.mac?
-brew "pkg-config" if OS.mac?
-brew "gettext" if OS.mac?
+brew "libtool"
+brew "automake"
+brew "pkg-config"
+brew "gettext"
 brew "tree-sitter-cli"
-
-# git
-brew "gh" if OS.mac?
-brew "git-absorb"
-brew "git-lfs"
-brew "withgraphite/tap/graphite" if OS.mac?
-brew "lazygit", args: ["HEAD"]
-brew "lettertwo/tap/git-workon"
-
-# node
-brew "node"
-brew "fnm" # fast node version manager
-
-# python
-brew "uv"
 
 # lua
 brew "luajit"
 brew "luarocks"
-
-# language servers & formatters
 brew "lua-language-server"
 brew "stylua"
+
+# node
+brew "node"
+brew "fnm" # fast node version manager
+npm "corepack"
+npm "@github/copilot-language-server"
+npm "@mermaid-js/mermaid-cli"
+
+# python
+brew "uv"
 
 # No more font patching!
 cask "font-symbols-only-nerd-font" if OS.mac?
@@ -86,6 +83,9 @@ cask "font-symbols-only-nerd-font" if OS.mac?
 cask "syntax-highlight" if OS.mac? # https://github.com/sbarex/SourceCodeSyntaxHighlight
 
 # QMK
+# tap "osx-cross/arm"
+# tap "osx-cross/avr"
+# tap "qmk/qmk"
 # cask "qmk-toolbox" if OS.mac? # https://github.com/qmk/qmk_toolbox
 # brew "avr-gcc" if OS.mac? # needed for QMK
 # brew "arm-gcc-bin" if OS.mac? # needed for QMK
