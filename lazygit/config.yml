@@ -62,6 +62,7 @@ gui:
   animateExplosion: true
 git:
   pagers:
+    - pager: deltoids
     - pager: delta --dark --paging=never --hyperlinks-file-link-format="lazygit-edit://{path}:{line}"
     - colorArg: always
   commit:
@@ -98,7 +99,7 @@ quitOnTopLevelReturn: false
 keybinding:
   universal:
     quit: q
-    quit-alt1: <c-c>
+    quit-alt1: <c+c>
     return: <esc>
     quitWithoutChangingDirectory: Q
     togglePanel: <tab>
@@ -132,7 +133,7 @@ keybinding:
     select: <space>
     goInto: <enter>
     confirm: <enter>
-    confirmInEditor: <a-enter>
+    confirmInEditor: <a+enter>
     remove: d
     new: "n"
     edit: e
@@ -141,31 +142,31 @@ keybinding:
     scrollDownMain: <pgdown>
     scrollUpMain-alt1: K
     scrollDownMain-alt1: J
-    scrollUpMain-alt2: <c-u>
-    scrollDownMain-alt2: <c-d>
+    scrollUpMain-alt2: <c+u>
+    scrollDownMain-alt2: <c+d>
     toggleRangeSelect: V
-    rangeSelectDown: <s-down>
-    rangeSelectUp: <s-up>
+    rangeSelectDown: <s+down>
+    rangeSelectUp: <s+up>
     executeShellCommand: ":"
     createRebaseOptionsMenu: m
     pushFiles: P
     pullFiles: <disabled>
     refresh: R
-    createPatchOptionsMenu: <c-p>
+    createPatchOptionsMenu: <c+p>
     nextTab: "<right>"
     prevTab: "<left>"
     nextScreenMode: +
     prevScreenMode: _
     undo: u
-    redo: <c-r>
-    filteringMenu: <c-s>
+    redo: <c+r>
+    filteringMenu: <c+s>
     diffingMenu: W
-    diffingMenu-alt: <c-e>
+    diffingMenu-alt: <c+e>
     copyToClipboard: y
     openRecentRepos: <disabled>
     submitEditorText: <enter>
     extrasMenu: "@"
-    toggleWhitespaceInDiffView: <c-w>
+    toggleWhitespaceInDiffView: <c+w>
     increaseContextInDiffView: "}"
     decreaseContextInDiffView: "{"
   status:
@@ -187,11 +188,11 @@ keybinding:
     fetch: f
     toggleTreeView: "`"
     openMergeOptions: M
-    openStatusFilter: <c-b>
+    openStatusFilter: <c+b>
   branches:
     createPullRequest: o
     viewPullRequestOptions: O
-    copyPullRequestURL: <c-y>
+    copyPullRequestURL: <c+y>
     checkoutBranchByName: c
     forceCheckoutBranch: F
     rebaseBranch: r
@@ -224,7 +225,7 @@ keybinding:
     markCommitAsBaseForRebase: B
     tagCommit: T
     checkoutCommit: <space>
-    resetCherryPick: <c-R>
+    resetCherryPick: <c+r>
     copyCommitAttributeToClipboard: "y"
     openLogMenu: l
     openInBrowser: o
@@ -243,7 +244,7 @@ keybinding:
     update: u
     bulkMenu: b
   commitMessage:
-    commitMenu: <c-o>
+    commitMenu: <c+o>
 disableStartupPopups: false
 notARepository: prompt
 promptToReturnFromSubprocess: true

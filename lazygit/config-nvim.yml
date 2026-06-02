@@ -12,7 +12,7 @@ os:
 # TODO: Ideally, these would all open the current nvim (rather than nesting nvim in term)
 keybinding:
   universal:
-    confirmInEditor: <a-enter>
+    confirmInEditor: <a+enter>
     edit: e
     openFile: o
     submitEditorText: <enter>
@@ -25,7 +25,7 @@ keybinding:
   main:
     editSelectHunk: E
   commitMessage:
-    commitMenu: <c-o>
+    commitMenu: <c+o>
 customCommands:
   - key: "c"
     context: "files"
