@@ -17,6 +17,14 @@ Config.once("BufReadPost", function()
     sort = { prefix = "gS" },
   })
 
+  require("mini.splitjoin").setup({
+    mappings = {
+      toggle = "J",
+      split = "",
+      join = "",
+    },
+  })
+
   -- on MacOS, <A-j> emits "∆", <A-k> emits "˚", <A-h> emits "˙", <A-l> emits "¬"
   require("mini.move").setup({
     mappings = {
