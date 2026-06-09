@@ -57,12 +57,22 @@ Config.once("BufReadPost", function()
   ai.setup({
     n_lines = 500,
     search_method = "cover",
+    mappings = {
+      around = "a",
+      inside = "i",
+      around_next = "",
+      inside_next = "",
+      around_last = "",
+      inside_last = "",
+      goto_left = "[a",
+      goto_right = "]a",
+    },
     custom_textobjects = {
       G = gen_ai_spec.buffer(),
-      D = gen_ai_spec.diagnostic(),
-      I = gen_ai_spec.indent(),
+      x = gen_ai_spec.diagnostic(),
+      i = gen_ai_spec.indent(),
       V = gen_ai_spec.line(),
-      N = gen_ai_spec.number(),
+      d = gen_ai_spec.number(),
       b = ai.gen_spec.treesitter({ -- code block
         a = { "@block.outer", "@conditional.outer", "@loop.outer" },
         i = { "@block.inner", "@conditional.inner", "@loop.inner" },
@@ -81,6 +91,65 @@ Config.once("BufReadPost", function()
       c = ai.gen_spec.treesitter({ a = "@comment.outer", i = "@comment.inner" }), -- comment
     },
   })
+
+  vim.schedule(function()
+    local wk_ok, wk = pcall(require, "which-key")
+    if wk ~= nil and wk_ok then
+      local objects = {
+        { " ", desc = "whitespace" },
+        { '"', desc = '" string' },
+        { "'", desc = "' string" },
+        { "(", desc = "() block" },
+        { ")", desc = "( ) block" },
+        { "<", desc = "<> block" },
+        { ">", desc = "< > block" },
+        { "?", desc = "prompt" },
+        { "[", desc = "[] block" },
+        { "]", desc = "[ ] block" },
+        { "_", desc = "underscore" },
+        { "`", desc = "` string" },
+        { "a", desc = "argument" },
+        { "q", desc = "quote `\"'" },
+        { "{", desc = "{} block" },
+        { "}", desc = "{ } block" },
+
+        { "G", desc = "entire file" },
+        { "x", desc = "diagnostic" },
+        { "i", desc = "indent" },
+        { "V", desc = "line" },
+        { "d", desc = "digit(s)" },
+        { "b", desc = "block, conditional, loop" },
+        { "f", desc = "function" },
+        { "t", desc = "tag" },
+        { "e", desc = "CamelCase / snake_case" },
+        { "u", desc = "method.call(usage)" },
+        { "U", desc = "call(usage)" },
+        { "C", desc = "class" },
+        { "c", desc = "comment" },
+      }
+
+      local ox = {
+        mode = { "o", "x" },
+        { "a", group = "around" },
+        { "i", group = "inner" },
+      }
+
+      local nox = {
+        mode = { "n", "o", "x" },
+        { "[a", group = "around" },
+        { "]a", group = "around" },
+      }
+
+      for _, obj in ipairs(objects) do
+        ox[#ox + 1] = { "a" .. obj[1], desc = obj.desc }
+        ox[#ox + 1] = { "i" .. obj[1], desc = obj.desc }
+        nox[#nox + 1] = { "]a" .. obj[1], desc = obj.desc }
+        nox[#nox + 1] = { "[a" .. obj[1], desc = obj.desc }
+      end
+
+      wk.add({ ox, nox }, { notify = false })
+    end
+  end)
 
   require("mini.surround").setup({
     custom_surroundings = {

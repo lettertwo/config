@@ -18,9 +18,6 @@ vim.schedule(function()
         { "<leader>s", group = "search" },
         { "<leader>u", group = "ui" },
         { "<leader>x", group = "diagnostics/quickfix" },
-        { "[", group = "prev" },
-        { "]", group = "next" },
-        { "g", group = "goto" },
         { "gs", group = "surround" },
         { "gr", group = "lsp" },
         { "gra", desc = "Code Actions" },
@@ -32,6 +29,12 @@ vim.schedule(function()
         { "z", group = "fold" },
         { "<leader>b", group = "buffer" },
         { "<leader>w", group = "windows", proxy = "<c-w>" },
+      },
+      {
+        mode = { "n", "x", "o" },
+        { "[", group = "prev" },
+        { "]", group = "next" },
+        { "g", group = "goto" },
       },
     },
   })

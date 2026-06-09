@@ -8,6 +8,7 @@ Config.on("PackChanged", function(ev)
 end)
 
 Config.add("nvim-treesitter/nvim-treesitter")
+Config.add("nvim-treesitter/nvim-treesitter-textobjects")
 
 local pending = {} ---@type table<string, integer[]>
 
