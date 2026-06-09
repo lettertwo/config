@@ -20,6 +20,14 @@
       "rev": "ff2cbcba459b637ec3fd165a2be59b7bbaeedf0d",
       "src": "https://github.com/folke/lazydev.nvim"
     },
+    "live-server.nvim": {
+      "rev": "85915d0e7dd926a54b0082aaeafc10a82bfe8288",
+      "src": "https://github.com/selimacerbas/live-server.nvim"
+    },
+    "markdown-preview.nvim": {
+      "rev": "545cf3bc6c6425b33a9b25acef54f66e4035ca0f",
+      "src": "https://github.com/selimacerbas/markdown-preview.nvim"
+    },
     "mini.nvim": {
       "rev": "48555f1615f08c6318150aacb52bf7d61a5af798",
       "src": "https://github.com/nvim-mini/mini.nvim"
@@ -59,6 +67,10 @@
     "quicker.nvim": {
       "rev": "063cc44da1eef8681bbd653b29d3bc961780886a",
       "src": "https://github.com/stevearc/quicker.nvim"
+    },
+    "render-markdown.nvim": {
+      "rev": "5adf0895310c1904e5abfaad40a2baad7fe44a07",
+      "src": "https://github.com/MeanderingProgrammer/render-markdown.nvim"
     },
     "rustaceanvim": {
       "rev": "783f1d9211b136c01d0caf17db9552150b0e13af",
