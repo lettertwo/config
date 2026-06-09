@@ -128,7 +128,7 @@ keybinding:
     nextMatch: "n"
     prevMatch: "N"
     startSearch: /
-    optionMenu: ""
+    optionMenu: "?"
     optionMenu-alt1: "?"
     select: <space>
     goInto: <enter>
