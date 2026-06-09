@@ -3,7 +3,7 @@
 # Read JSON input from stdin
 input=$(cat)
 
-# Extract current directory and context window percentage
+# Extract current directory, context window percentage, and model name
 read -r dir ctx_pct model_name <<< "$(echo "$input" | jq -r '[.workspace.current_dir, (.context_window.used_percentage // -1), (.model.display_name // "")] | @tsv')"
 
 basename=$(basename "$dir")
@@ -28,7 +28,7 @@ BAR_FILLED="━"
 BAR_THIN="─"
 COL_WIDTH=10
 
-# ── Left side: dir + git branch ──────────────────────────────────────────────
+# ── Status line: model + dir + git branch ──────────────────────────────────────────────
 
 # Check if we're in a git repository
 if git rev-parse --is-inside-work-tree &>/dev/null; then
@@ -55,18 +55,18 @@ if git rev-parse --is-inside-work-tree &>/dev/null; then
     if [ "${#branch}" -gt "$branch_budget" ]; then
       branch="${branch:0:$(( branch_budget - 1 ))}…"
     fi
-    left="${BLACK}${FOLDER_ICON} ${dir_display}${RESET} ${BRIGHT_BLACK}${GIT_BRANCH_ICON} ${branch}${RESET}"
+    status="${BLACK}${FOLDER_ICON} ${dir_display}${RESET} ${BRIGHT_BLACK}${GIT_BRANCH_ICON} ${branch}${RESET}"
   else
-    left="${BLACK}${FOLDER_ICON} ${dir_display}${RESET}"
+    status="${BLACK}${FOLDER_ICON} ${dir_display}${RESET}"
   fi
 else
   # Not a git repo - just show directory
-  left="${BLACK}${FOLDER_ICON} ${basename}${RESET}"
+  status="${BLACK}${FOLDER_ICON} ${basename}${RESET}"
 fi
 
 # Prepend model name if available
 if [ -n "$model_name" ]; then
-  left="${CYAN}${MODEL_ICON} ${model_name}${RESET} ${left}"
+  status="${CYAN}${MODEL_ICON} ${model_name}${RESET} ${status}"
 fi
 
 # ── Progress bar helper ───────────────────────────────────────────────────────
@@ -231,8 +231,8 @@ function severity_color() {
     else                          printf "%s" "$BLUE"
     fi
   else
-    if   [ "$pct" -lt 75 ]; then printf "%s" "$BLUE"
-    elif [ "$pct" -lt 90 ]; then printf "%s" "$YELLOW"
+    if   [ "$pct" -lt 60 ]; then printf "%s" "$BLUE"
+    elif [ "$pct" -lt 75 ]; then printf "%s" "$YELLOW"
     else                         printf "%s" "$RED"
     fi
   fi
@@ -300,6 +300,6 @@ fi
 # ── Output ────────────────────────────────────────────────────────────────────
 
 printf "%b\n%b  %b  %b\n%b  %b  %b" \
-  "$left" \
+  "$status" \
   "$ctx_label" "$ses_label" "$wk_label" \
   "$ctx_bar" "$ses_bar" "$wk_bar"
