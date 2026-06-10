@@ -38,7 +38,7 @@ end
 --- Fires the `PackUpdatesChanged` User autocmd when the state changes.
 ---
 --- Note: only handles spec.version == nil (default branch) and string
---- (branch/tag). vim.VersionRange specs are skipped (not used in cvim
+--- (branch/tag). vim.VersionRange specs are skipped (not used in this config
 --- currently). Revisit when adding a statusline component that needs
 --- periodic checking in long-lived sessions.
 function PackUtil.check_updates()

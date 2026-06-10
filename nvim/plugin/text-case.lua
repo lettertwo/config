@@ -251,7 +251,7 @@ local function select_text_case(done)
   end
 end
 
--- TODO: finish converting this to cvim
+-- TODO: finish converting this to this config
 
 vim.api.nvim_create_autocmd("User", {
   group = vim.api.nvim_create_augroup("TextCaseSetup", { clear = true }),
