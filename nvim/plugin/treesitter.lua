@@ -17,7 +17,7 @@ local function activate(bufnr, lang)
     return
   end
   vim.bo[bufnr].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
-  pcall(vim.treesitter.start, bufnr)
+  pcall(vim.treesitter.start, bufnr, lang)
 end
 
 -- Parser + locals.scm are both needed for full functionality (e.g. symbols picker).
