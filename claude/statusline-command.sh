@@ -3,8 +3,25 @@
 # Read JSON input from stdin
 input=$(cat)
 
-# Extract current directory, context window percentage, and model name
-read -r dir ctx_pct model_name <<< "$(echo "$input" | jq -r '[.workspace.current_dir, (.context_window.used_percentage // -1), (.model.display_name // "")] | @tsv')"
+# Soft spend budgets for API-billed accounts (bars fill toward these)
+: "${DAY_BUDGET_USD:=50}"
+: "${WK_BUDGET_USD:=250}"
+
+# Extract dir, context pct, model, session id/cost, and subscription
+# rate limits (rate_limits.* is only present for subscription accounts —
+# its absence means API billing). resets_at is epoch seconds; tonumber?
+# guards against schema drift breaking the whole line.
+IFS=$'\t' read -r dir ctx_pct model_name session_id cost_usd ses_pct ses_resets wk_pct wk_resets <<< "$(echo "$input" | jq -r '[
+  .workspace.current_dir,
+  (.context_window.used_percentage // -1),
+  (.model.display_name // ""),
+  (.session_id // ""),
+  (.cost.total_cost_usd // -1),
+  ((.rate_limits.five_hour.used_percentage // -1) | floor),
+  ((.rate_limits.five_hour.resets_at // -1) | tonumber? // -1 | floor),
+  ((.rate_limits.seven_day.used_percentage // -1) | floor),
+  ((.rate_limits.seven_day.resets_at // -1) | tonumber? // -1 | floor)
+] | @tsv')"
 
 basename=$(basename "$dir")
 
@@ -115,74 +132,7 @@ function render_bar() {
   fi
 }
 
-# ── Cache API usage (session + weekly) ───────────────────────────────────────
-
-CACHE_FILE="/tmp/claude-statusline-usage.json"
-LOCK_DIR="/tmp/claude-statusline-usage.lock"
-CACHE_TTL=60
-
-# Check if cache is stale or missing
-function cache_is_stale() {
-  if [ ! -f "$CACHE_FILE" ]; then return 0; fi
-  local mtime now age
-  mtime=$(stat -f %m "$CACHE_FILE" 2>/dev/null) || return 0
-  now=$(date +%s)
-  age=$(( now - mtime ))
-  [ "$age" -ge "$CACHE_TTL" ]
-}
-
-# Refresh cache in background (mkdir-based locking, no flock on macOS)
-# Only one process will succeed in creating the lock dir and refreshing the cache;
-# others will skip if they fail to acquire the lock.
-function maybe_refresh_cache() {
-  # Clean up stale lock (older than 2 minutes)
-  if [ -d "$LOCK_DIR" ]; then
-    local lock_age
-    lock_age=$(( $(date +%s) - $(stat -f %m "$LOCK_DIR" 2>/dev/null || echo 0) ))
-    if [ "$lock_age" -gt 120 ]; then
-      rmdir "$LOCK_DIR" 2>/dev/null
-    fi
-  fi
-
-  if mkdir "$LOCK_DIR" 2>/dev/null; then
-    (
-      trap 'rmdir "$LOCK_DIR" 2>/dev/null' EXIT
-      token=$(security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null \
-        | jq -r '.claudeAiOauth.accessToken' 2>/dev/null)
-      if [ -n "$token" ] && [ "$token" != "null" ]; then
-        response=$(curl -sf --max-time 10 \
-            -H "Authorization: Bearer $token" \
-            -H "anthropic-beta: oauth-2025-04-20" \
-            -H "User-Agent: claude-code/2.0.32" \
-          "https://api.anthropic.com/api/oauth/usage" 2>/dev/null)
-        if [ -n "$response" ]; then
-          echo "$response" > "$CACHE_FILE"
-        fi
-      fi
-    ) &
-    disown 2>/dev/null || true
-  fi
-}
-
-if cache_is_stale; then
-  maybe_refresh_cache
-fi
-
-# ── Read cached session/weekly pcts ──────────────────────────────────────────
-
-ses_pct=-1
-wk_pct=-1
-ses_resets_at=""
-wk_resets_at=""
-
-if [ -f "$CACHE_FILE" ]; then
-  read -r ses_pct wk_pct ses_resets_at wk_resets_at <<< "$(jq -r '[
-    ((.five_hour.utilization // -1) | floor),
-    ((.seven_day.utilization // -1) | floor),
-    (.five_hour.resets_at // ""),
-    (.seven_day.resets_at // "")
-  ] | @tsv' "$CACHE_FILE" 2>/dev/null)"
-fi
+# ── Rate-limit pace (subscription accounts; fields absent under API billing) ──
 
 # Compute signed diffs: positive = burning faster than time elapsed
 ses_diff=""
@@ -192,32 +142,97 @@ wk_time_pct=""
 now_ts=$(date +%s)
 
 ses_countdown=""
-if [ "$ses_pct" -ge 0 ] && [ -n "$ses_resets_at" ] && [ "$ses_resets_at" != "null" ]; then
-  reset_ts=$(TZ=UTC date -j -f "%Y-%m-%dT%H:%M:%S" "${ses_resets_at%%.*}" "+%s" 2>/dev/null)
-  if [ -n "$reset_ts" ]; then
-    elapsed=$(( now_ts - (reset_ts - 18000) ))
-    if [ $elapsed -lt 0 ]; then elapsed=0; fi
-    if [ $elapsed -gt 18000 ]; then elapsed=18000; fi
-    ses_time_pct=$(( elapsed * 100 / 18000 ))
-    ses_diff=$(( ses_pct - ses_time_pct ))
-    remaining=$(( reset_ts - now_ts ))
-    if [ "$remaining" -gt 0 ]; then
-      hrs=$(( remaining / 3600 ))
-      mins=$(( (remaining % 3600) / 60 ))
-      ses_countdown="${hrs}h${mins}m"
-    fi
+if [ "$ses_pct" -ge 0 ] && [ "$ses_resets" -gt 0 ]; then
+  elapsed=$(( now_ts - (ses_resets - 18000) ))
+  if [ $elapsed -lt 0 ]; then elapsed=0; fi
+  if [ $elapsed -gt 18000 ]; then elapsed=18000; fi
+  ses_time_pct=$(( elapsed * 100 / 18000 ))
+  ses_diff=$(( ses_pct - ses_time_pct ))
+  remaining=$(( ses_resets - now_ts ))
+  if [ "$remaining" -gt 0 ]; then
+    hrs=$(( remaining / 3600 ))
+    mins=$(( (remaining % 3600) / 60 ))
+    ses_countdown="${hrs}h${mins}m"
   fi
 fi
 
-if [ "$wk_pct" -ge 0 ] && [ -n "$wk_resets_at" ] && [ "$wk_resets_at" != "null" ]; then
-  reset_ts=$(TZ=UTC date -j -f "%Y-%m-%dT%H:%M:%S" "${wk_resets_at%%.*}" "+%s" 2>/dev/null)
-  if [ -n "$reset_ts" ]; then
-    elapsed=$(( now_ts - (reset_ts - 604800) ))
-    if [ $elapsed -lt 0 ]; then elapsed=0; fi
-    if [ $elapsed -gt 604800 ]; then elapsed=604800; fi
-    wk_time_pct=$(( elapsed * 100 / 604800 ))
-    wk_diff=$(( wk_pct - wk_time_pct ))
+if [ "$wk_pct" -ge 0 ] && [ "$wk_resets" -gt 0 ]; then
+  elapsed=$(( now_ts - (wk_resets - 604800) ))
+  if [ $elapsed -lt 0 ]; then elapsed=0; fi
+  if [ $elapsed -gt 604800 ]; then elapsed=604800; fi
+  wk_time_pct=$(( elapsed * 100 / 604800 ))
+  wk_diff=$(( wk_pct - wk_time_pct ))
+fi
+
+# ── Spend ledger (API billing) ────────────────────────────────────────────────
+# Each render records this session's cost *increase* into a per-day bucket,
+# using cost.total_cost_usd from stdin (Claude Code's own pricing math) — no
+# pricing table needed. Day/week totals and rolling averages derive from it.
+# Only counts sessions that render a statusline (headless `claude -p` won't).
+
+SPEND_FILE="${XDG_CACHE_HOME:-$HOME/.cache}/claude-statusline-spend.json"
+SPEND_LOCK="${SPEND_FILE}.lock"
+today=$(date +%F)
+
+function update_spend_ledger() {
+  # Clean up stale lock (older than 60s)
+  if [ -d "$SPEND_LOCK" ]; then
+    local lock_age
+    lock_age=$(( $(date +%s) - $(stat -f %m "$SPEND_LOCK" 2>/dev/null || echo 0) ))
+    if [ "$lock_age" -gt 60 ]; then
+      rmdir "$SPEND_LOCK" 2>/dev/null
+    fi
   fi
+
+  # Skip on contention: delta is computed against last *recorded* cost,
+  # so a missed update is picked up whole on the next render.
+  mkdir "$SPEND_LOCK" 2>/dev/null || return 0
+  local state cutoff tmp
+  state=$(jq -c . "$SPEND_FILE" 2>/dev/null || echo '{}')
+  cutoff=$(date -v-35d +%F)
+  tmp="${SPEND_FILE}.tmp.$$"
+  if jq -n --argjson s "$state" --arg sid "$session_id" --arg today "$today" \
+        --arg cutoff "$cutoff" --argjson cost "$cost_usd" '
+      $s
+      | .sessions //= {} | .days //= {}
+      | (.sessions[$sid].c // 0) as $last
+      # cost below last recorded means the session restarted its counter
+      | (if $cost >= $last then $cost - $last else $cost end) as $delta
+      | .days[$today] = ((.days[$today] // 0) + $delta)
+      | .sessions[$sid] = {c: $cost, d: $today}
+      | .days |= with_entries(select(.key >= $cutoff))
+      | .sessions |= with_entries(select(.value.d >= $cutoff))
+    ' > "$tmp" 2>/dev/null; then
+    mv "$tmp" "$SPEND_FILE"
+  else
+    rm -f "$tmp"
+  fi
+  rmdir "$SPEND_LOCK" 2>/dev/null
+}
+
+day_spend=0
+wk_spend=0
+avg_day=0
+prev_wk=0
+
+if [ -n "$session_id" ] && [ "${cost_usd%.*}" != "-1" ]; then
+  mkdir -p "$(dirname "$SPEND_FILE")" 2>/dev/null
+  update_spend_ledger
+fi
+
+if [ -f "$SPEND_FILE" ]; then
+  IFS=$'\t' read -r day_spend wk_spend avg_day prev_wk <<< "$(jq -r --arg today "$today" '
+    (.days // {}) as $d
+    | ($today | strptime("%Y-%m-%d") | mktime) as $t
+    | [$d | to_entries[] | . + {age: ((($t - (.key | strptime("%Y-%m-%d") | mktime)) / 86400) | round)}] as $e
+    | [
+        ($d[$today] // 0),
+        ([$e[] | select(.age >= 0 and .age <= 6) | .value] | add // 0),
+        ([$e[] | select(.age >= 1 and .age <= 14 and .value > 0) | .value] | if length > 0 then add / length else 0 end),
+        ([$e[] | select(.age >= 7 and .age <= 13) | .value] | add // 0)
+      ] | @tsv
+  ' "$SPEND_FILE" 2>/dev/null)"
+  : "${day_spend:=0}" "${wk_spend:=0}" "${avg_day:=0}" "${prev_wk:=0}"
 fi
 
 # ── Render bars ───────────────────────────────────────────────────────────────
@@ -238,29 +253,30 @@ function severity_color() {
   fi
 }
 
-# make_label <name> [pct] [diff] [suffix] [col_width] — label padded to col_width visible chars
-# name is BLACK; pct uses escalating color; suffix (e.g. countdown) rendered in BLACK
+# make_label <name> [value] [color] [suffix] [col_width] — label padded to col_width visible chars
+# name is BLACK; value (pre-formatted, e.g. "42%" or "$4.52") uses the given color;
+# suffix (e.g. countdown) rendered in BLACK
 function make_label() {
   local name="$1"
-  local pct="${2:-}"
-  local diff="${3:-}"
+  local value="${2:-}"
+  local color="${3:-}"
   local suffix="${4:-}"
   local cw="${5:-$COL_WIDTH}"
-  local color pad pad_len
+  local pad pad_len
 
-  if [ -n "$pct" ]; then
-    color=$(severity_color "$pct" "$diff")
-    local text="${name} ${pct}%"
+  if [ -n "$value" ]; then
+    local text="${name} ${value}"
     if [ -n "$suffix" ]; then
       local suffix_with_space=" ${suffix}"
       pad_len=$(( cw - ${#text} - ${#suffix_with_space} ))
       if [ "$pad_len" -lt 0 ]; then pad_len=0; fi
       pad=$(printf "%*s" "$pad_len" "")
-      printf "${BLACK}%s${color}%s%%%s${BLACK}%s${RESET}" "$name " "$pct" "$pad" "$suffix_with_space"
+      printf "${BLACK}%s${color}%s%s${BLACK}%s${RESET}" "$name " "$value" "$pad" "$suffix_with_space"
     else
       pad_len=$(( cw - ${#text} ))
+      if [ "$pad_len" -lt 0 ]; then pad_len=0; fi
       pad=$(printf "%*s" "$pad_len" "")
-      printf "${BLACK}%s${color}%s%%%s${RESET}" "$name " "$pct" "$pad"
+      printf "${BLACK}%s${color}%s%s${RESET}" "$name " "$value" "$pad"
     fi
   else
     pad_len=$(( cw - ${#name} ))
@@ -272,34 +288,61 @@ function make_label() {
 # Context window bar
 if [ "${ctx_pct%.*}" != "-1" ] && [ -n "$ctx_pct" ]; then
   ctx_int="${ctx_pct%.*}"
-  ctx_label=$(make_label "ctx" "$ctx_int")
+  ctx_label=$(make_label "ctx" "${ctx_int}%" "$(severity_color "$ctx_int")")
   ctx_bar=$(render_bar "$ctx_int")
 else
   ctx_label=$(make_label "ctx")
   ctx_bar="${BLACK}$(printf "%${COL_WIDTH}s" "" | tr ' ' '·')${RESET}"
 fi
 
-# Session bar
+# Columns 2 & 3: subscription rate limits when present, else API session cost + burn rate
 if [ "$ses_pct" -ge 0 ]; then
-  ses_label=$(make_label "ses" "$ses_pct" "$ses_diff" "$ses_countdown" 13)
-  ses_bar=$(render_bar "$ses_pct" "$ses_time_pct" "$ses_diff" 13)
-else
-  ses_label=$(make_label "ses" "" "" "" 14)
-  ses_bar="${BLACK}$(printf "%14s" "" | tr ' ' '·')${RESET}"
-fi
+  # Subscription: pace-aware session/weekly bars
+  col2_label=$(make_label "ses" "${ses_pct}%" "$(severity_color "$ses_pct" "$ses_diff")" "$ses_countdown" 13)
+  col2_bar=$(render_bar "$ses_pct" "$ses_time_pct" "$ses_diff" 13)
+  if [ "$wk_pct" -ge 0 ]; then
+    col3_label=$(make_label "wk" "${wk_pct}%" "$(severity_color "$wk_pct" "$wk_diff")")
+    col3_bar=$(render_bar "$wk_pct" "$wk_time_pct" "$wk_diff")
+  else
+    col3_label=$(make_label "wk")
+    col3_bar="${BLACK}$(printf "%${COL_WIDTH}s" "" | tr ' ' '·')${RESET}"
+  fi
+elif [ -f "$SPEND_FILE" ]; then
+  # API billing: day/week spend against soft budgets, paced against the
+  # rolling average (avg daily over trailing 14 days / previous 7-day window)
+  # via the same ideal-marker bars the subscription mode uses for time-pace.
+  # spend_stats <value> <baseline> <budget> → "fmt<TAB>pct<TAB>ideal_pct<TAB>diff"
+  # pct/ideal capped at 100 for bar geometry; diff (color) kept uncapped.
+  function spend_stats() {
+    awk -v v="$1" -v a="$2" -v b="$3" 'BEGIN {
+      fmt = (v >= 100) ? sprintf("$%.0f", v) : sprintf("$%.2f", v)
+      p = int(v * 100 / b); ip = int(a * 100 / b)
+      diff = p - ip
+      if (p > 100) p = 100
+      if (ip > 100) ip = 100
+      if (a > 0) printf "%s\t%d\t%d\t%d", fmt, p, ip, diff
+      else       printf "%s\t%d\t\t",     fmt, p
+    }'
+  }
 
-# Weekly bar
-if [ "$wk_pct" -ge 0 ]; then
-  wk_label=$(make_label "wk" "$wk_pct" "$wk_diff")
-  wk_bar=$(render_bar "$wk_pct" "$wk_time_pct" "$wk_diff")
+  IFS=$'\t' read -r day_fmt day_pct day_ideal day_diff <<< "$(spend_stats "$day_spend" "$avg_day" "$DAY_BUDGET_USD")"
+  col2_label=$(make_label "day" "$day_fmt" "$(severity_color "$day_pct" "$day_diff")" "" 13)
+  col2_bar=$(render_bar "$day_pct" "$day_ideal" "$day_diff" 13)
+
+  IFS=$'\t' read -r wk_fmt wk_pct2 wk_ideal wk_diff2 <<< "$(spend_stats "$wk_spend" "$prev_wk" "$WK_BUDGET_USD")"
+  col3_label=$(make_label "wk" "$wk_fmt" "$(severity_color "$wk_pct2" "$wk_diff2")")
+  col3_bar=$(render_bar "$wk_pct2" "$wk_ideal" "$wk_diff2")
 else
-  wk_label=$(make_label "wk")
-  wk_bar="${BLACK}$(printf "%${COL_WIDTH}s" "" | tr ' ' '·')${RESET}"
+  # No rate limits and no cost data: empty states
+  col2_label=$(make_label "ses" "" "" "" 14)
+  col2_bar="${BLACK}$(printf "%14s" "" | tr ' ' '·')${RESET}"
+  col3_label=$(make_label "wk")
+  col3_bar="${BLACK}$(printf "%${COL_WIDTH}s" "" | tr ' ' '·')${RESET}"
 fi
 
 # ── Output ────────────────────────────────────────────────────────────────────
 
 printf "%b\n%b  %b  %b\n%b  %b  %b" \
   "$status" \
-  "$ctx_label" "$ses_label" "$wk_label" \
-  "$ctx_bar" "$ses_bar" "$wk_bar"
+  "$ctx_label" "$col2_label" "$col3_label" \
+  "$ctx_bar" "$col2_bar" "$col3_bar"
