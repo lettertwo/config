@@ -15,11 +15,6 @@ vim.g.loaded_tarPlugin = 1
 vim.g.loaded_zip = 1
 vim.g.loaded_zipPlugin = 1
 
-if vim.env.FNM_DIR then
-  vim.g.node_host_prog = vim.fs.joinpath(vim.fn.expand(vim.env.FNM_DIR), "aliases", "default", "bin", "node")
-  vim.g.copilot_node_command = vim.g.node_host_prog
-end
-
 vim.g.pager = vim.env.KITTY_SCROLLBACK_NVIM == "true"
 
 require("config")

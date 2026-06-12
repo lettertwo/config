@@ -38,6 +38,7 @@ brew "graphviz"
 brew "hyperfine"
 brew "jq"
 brew "lnav"
+brew "mise"
 brew "watchman"
 
 # git
@@ -68,13 +69,9 @@ brew "stylua"
 
 # node
 brew "node"
-brew "fnm" # fast node version manager
 npm "corepack"
 npm "@github/copilot-language-server"
 npm "@mermaid-js/mermaid-cli"
-
-# python
-brew "uv"
 
 # No more font patching!
 cask "font-symbols-only-nerd-font" if OS.mac?

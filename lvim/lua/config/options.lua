@@ -2,10 +2,6 @@
 -- Default options that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/options.lua
 -- Add any additional options here
 
-if vim.env.FNM_DIR then
-  vim.g.copilot_node_command = vim.fn.expand(vim.env.FNM_DIR) .. "/aliases/default/bin/node"
-end
-
 vim.g.lazyvim_picker = "snacks"
 
 -- disable copilot cmp/blink source

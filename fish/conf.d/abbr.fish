@@ -42,9 +42,6 @@ abbr -a du dust
 # Use duf instead of df
 abbr -a df duf
 
-# Use fnm instead of nvm
-abbr -a nvm fnm
-
 # lazygit
 abbr -a lg lazygit
 

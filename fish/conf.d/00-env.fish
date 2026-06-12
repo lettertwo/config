@@ -73,10 +73,11 @@ end
 # Add bin directories to path.
 fish_add_path --global --prepend \
     node_modules/.bin \
-    $HOME/node_modules/.bin \
     $HOME/.local/{bin,sbin} \
     $HOME/.cargo/bin \
+    $HOME/node_modules/.bin \
     $HOME/.yarn/bin \
+    $XDG_CACHE_HOME/.bun/bin \
     $HOME/.orbit/bin \
     /usr/local/share/npm/bin
 # Disable new user greeting.
