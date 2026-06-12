@@ -25,6 +25,7 @@ end)
 vim.schedule(function()
   Config.add("mrjones2014/smart-splits.nvim")
 
+  ---@diagnostic disable-next-line: missing-fields
   require("smart-splits").setup({
     at_edge = "stop", -- 'wrap' | 'split' | 'stop'
   })
@@ -45,7 +46,6 @@ vim.schedule(function()
   map("n", "<C-w>xj", function() require("smart-splits").swap_buf_down() end, { desc = "swap down" })
   map("n", "<C-w>xk", function() require("smart-splits").swap_buf_up() end, { desc = "swap up" })
   map("n", "<C-w>xl", function() require("smart-splits").swap_buf_right() end, { desc = "swap right" })
-  map("n", "<C-w>R", function() require("smart-splits").start_resize_mode() end, { desc = "Enter window resize mode" })
 
   map("n", "<C-w>H", "<C-S-h>", { remap = true, desc = "Resize window left" })
   map("n", "<C-w>L", "<C-S-l>", { remap = true, desc = "Resize window right" })
