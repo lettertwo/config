@@ -8,7 +8,6 @@ Config.on("PackChanged", function(ev)
 end)
 
 Config.add("nvim-treesitter/nvim-treesitter")
-Config.add("nvim-treesitter/nvim-treesitter-textobjects")
 
 local pending = {} ---@type table<string, integer[]>
 
@@ -16,7 +15,6 @@ local function activate(bufnr, lang)
   if not vim.api.nvim_buf_is_valid(bufnr) then
     return
   end
-  vim.bo[bufnr].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
   pcall(vim.treesitter.start, bufnr, lang)
 end
 

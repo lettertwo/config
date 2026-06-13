@@ -219,8 +219,28 @@ end
 ---@class Config.MiniStatusline
 local MiniStatuslineConfig = {}
 
--- Set custom highlight groups based on active lualine theme
-function MiniStatuslineConfig.setup_lualine_highlights()
+-- Build a powerline-style winbar pill: colored label + right-pointing cap + WinBar bg.
+-- hl_mode must be a MiniStatuslineMode* highlight group. Falls back to plain label
+-- if the highlight isn't defined yet (e.g. standalone app before setup_highlights runs).
+function MiniStatuslineConfig.make_winbar(label, hl_mode)
+  local hl = vim.api.nvim_get_hl(0, { name = hl_mode })
+  if next(hl) then
+    return table.concat({
+      "%#" .. hl_mode .. "#",
+      label,
+      " %#" .. hl_mode .. "Inverted#",
+      "\u{E0B0}",
+      "%#WinBar#",
+    })
+  else
+    return label
+  end
+end
+
+-- Set MiniStatusline* highlight groups from the active lualine theme.
+-- Safe to call from standalone apps; idempotent (skips already-defined groups).
+-- Registers a ColorScheme autocmd so highlights survive theme changes.
+function MiniStatuslineConfig.setup_highlights()
   local colors_name = vim.g.colors_name
   if not colors_name then
     return
@@ -290,8 +310,8 @@ function MiniStatuslineConfig.setup()
 
   -- Apply before mini.setup so our autocmd fires before mini's ColorScheme autocmd,
   -- and so mini's default = true highlights don't win over our lualine values at startup.
-  MiniStatuslineConfig.setup_lualine_highlights()
-  Config.on("ColorScheme", MiniStatuslineConfig.setup_lualine_highlights)
+  MiniStatuslineConfig.setup_highlights()
+  Config.on("ColorScheme", MiniStatuslineConfig.setup_highlights)
 
   MiniStatusline.setup({
     content = {

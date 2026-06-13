@@ -126,4 +126,10 @@ Config.once("BufReadPost", function()
   vim.keymap.set({ "n", "i", "s" }, "<c-u>", scroll_backward, { expr = true, desc = "Scroll backward" })
   vim.keymap.set("n", "<leader>xj", jump_forward, { desc = "Next diagnostic" })
   vim.keymap.set("n", "<leader>xk", jump_backward, { desc = "Previous diagnostic" })
+
+  -- stylua: ignore start
+  vim.keymap.set("n", "<leader>xd", function() vim.diagnostic.setqflist({ open = true }) end, { desc = "Diagnostics" })
+  vim.keymap.set("n", "<leader>xx", "<leader>xd", { remap = true, desc = "Diagnostics" })
+  vim.keymap.set("n", "<leader>xb", function() vim.diagnostic.setloclist({ open = true }) end, { desc = "Diagnostics (buffer)" })
+  -- stylua: ignore end
 end)

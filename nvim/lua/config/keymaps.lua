@@ -23,22 +23,6 @@ map({ "n", "x" }, "<Up>", "v:count == 0 ? 'gk' : 'k'", { desc = "Up", expr = tru
 map("x", "<", "<gv", { desc = "Indent selection left" })
 map("x", ">", ">gv", { desc = "Indent selection right" })
 
--- commenting
-map("n", "gco", "o<esc>Vcx<esc><cmd>normal gcc<cr>fxa<bs>", { desc = "Add Comment Below" })
-map("n", "gcO", "O<esc>Vcx<esc><cmd>normal gcc<cr>fxa<bs>", { desc = "Add Comment Above" })
-
---keywordprg
-map("n", "<leader>K", "<cmd>norm! K<cr>", { desc = "Keywordprg" })
-
--- Ctrl+Enter to change the word under the cursor
-map("n", "<C-CR>", "ciw", { desc = "Change word under cursor" })
-map("i", "<C-CR>", "<C-o>diw", { desc = "Change next word under cursor" })
-
--- Add undo break-points
-map("i", ",", ",<c-g>u")
-map("i", ".", ".<c-g>u")
-map("i", ";", ";<c-g>u")
-
 -- buffers
 map("n", "<S-h>", "<cmd>bprevious<cr>", { desc = "Prev Buffer" })
 map("n", "<S-l>", "<cmd>bnext<cr>", { desc = "Next Buffer" })
@@ -82,55 +66,6 @@ map({ "i", "n", "s" }, "<esc>", function()
   end
   return "<esc>"
 end, { expr = true, desc = "Escape and redraw" })
-
--- location list
-map("n", "<leader>xl", function()
-  local success, err = pcall(vim.fn.getloclist(0, { winid = 0 }).winid ~= 0 and vim.cmd.lclose or vim.cmd.lopen)
-  if not success and err then
-    vim.notify(err, vim.log.levels.ERROR)
-  end
-end, { desc = "Location List" })
-
--- quickfix list
-map("n", "<leader>xq", function()
-  local success, err = pcall(vim.fn.getqflist({ winid = 0 }).winid ~= 0 and vim.cmd.cclose or vim.cmd.copen)
-  if not success and err then
-    vim.notify(err, vim.log.levels.ERROR)
-  end
-end, { desc = "Quickfix List" })
-
--- diagnostics
--- stylua: ignore start
-map("n", "<leader>xd", function() vim.diagnostic.setqflist({ open = true }) end, { desc = "Diagnostics" })
-map("n", "<leader>xx", "<leader>xd", { remap = true, desc = "Diagnostics" })
-map("n", "<leader>xb", function() vim.diagnostic.setloclist({ open = true }) end, { desc = "Diagnostics (buffer)" })
-map("n", "<leader>xj", function() vim.diagnostic.jump({ count = 1 }) end, { desc = "Next diagnostic" })
-map("n", "<leader>xk", function() vim.diagnostic.jump({ count = -1 }) end, { desc = "Previous diagnostic" })
--- stylua: ignore end
-
--- highlights under cursor
-map("n", "<leader>ui", vim.show_pos, { desc = "Inspect Pos" })
-map("n", "<leader>uI", function()
-  vim.treesitter.inspect_tree()
-  vim.api.nvim_input("I")
-end, { desc = "Inspect Tree" })
-
---- incremental treesitter selection mappings (+ lsp fallback)
-map({ "n", "o", "x" }, "<S-CR>", function()
-  if vim.treesitter.get_parser(nil, nil, { error = false }) and pcall(require, "vim.treesitter._select") then
-    require("vim.treesitter._select").select_parent(vim.v.count1)
-  else
-    vim.lsp.buf.selection_range(vim.v.count1)
-  end
-end, { desc = "Increment Selection" })
-
-map({ "o", "x" }, "<BS>", function()
-  if vim.treesitter.get_parser(nil, nil, { error = false }) and pcall(require, "vim.treesitter._select") then
-    require("vim.treesitter._select").select_child(vim.v.count1)
-  else
-    vim.lsp.buf.selection_range(-vim.v.count1)
-  end
-end, { desc = "Decrement Selection" })
 
 map("n", "<leader>P", function()
   vim.pack.update()
