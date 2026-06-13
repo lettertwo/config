@@ -387,8 +387,13 @@ CLAUDE := $(shell command -v claude 2> /dev/null)
 	$(call run,ln -sf "$$HOME/.config/claude/commands" "$@")
 	$(call done)
 
+~/.claude/skills: ~/.claude
+	$(call log,"Linking claude skills...")
+	$(call run,ln -sf "$$HOME/.config/claude/skills" "$@")
+	$(call done)
+
 .PHONY: claude
-claude: ~/.claude ~/.claude/settings.json ~/.claude/CLAUDE.md ~/.claude/statusline-command.sh ~/.claude/notify.sh ~/.claude/notify-reap.sh ~/.claude/commands
+claude: ~/.claude ~/.claude/settings.json ~/.claude/CLAUDE.md ~/.claude/statusline-command.sh ~/.claude/notify.sh ~/.claude/notify-reap.sh ~/.claude/commands ~/.claude/skills
 ifndef CLAUDE
 	$(call err,"claude not found!")
 	$(call log,"Installing claude...")
