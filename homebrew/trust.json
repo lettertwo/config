@@ -1,0 +1,7 @@
+{
+  "trustedformulae": [
+    "jesseduffield/lazygit/lazygit",
+    "lettertwo/tap/git-workon",
+    "withgraphite/tap/graphite"
+  ]
+}

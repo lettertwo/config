@@ -29,6 +29,7 @@ op
 cagent/user-uuid
 cagent/.cagent*
 cagent/*.debug.log
+homebrew/trust.json.lock
 
 # laserwave.nvim
 git/laserwave.gitconfig
