@@ -62,7 +62,6 @@ gui:
   animateExplosion: true
 git:
   pagers:
-    - pager: deltoids
     - pager: delta --dark --paging=never --hyperlinks-file-link-format="lazygit-edit://{path}:{line}"
     - colorArg: always
   commit:
@@ -129,7 +128,6 @@ keybinding:
     prevMatch: "N"
     startSearch: /
     optionMenu: "?"
-    optionMenu-alt1: "?"
     select: <space>
     goInto: <enter>
     confirm: <enter>
