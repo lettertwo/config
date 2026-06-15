@@ -2,6 +2,22 @@ Config.add("stevearc/conform.nvim")
 
 local formatters_by_ft = {
   lua = { "stylua" },
+  css = { "prettier" },
+  graphql = { "prettier" },
+  handlebars = { "prettier" },
+  html = { "prettier" },
+  javascript = { "prettier" },
+  javascriptreact = { "prettier" },
+  json = { "prettier" },
+  jsonc = { "prettier" },
+  less = { "prettier" },
+  markdown = { "prettier" },
+  ["markdown.mdx"] = { "prettier" },
+  scss = { "prettier" },
+  typescript = { "prettier" },
+  typescriptreact = { "prettier" },
+  vue = { "prettier" },
+  yaml = { "prettier" },
 }
 
 require("conform").setup({
