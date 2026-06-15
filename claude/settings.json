@@ -14,6 +14,7 @@
       "Bash(git branch:*)",
       "Bash(git config:*)",
       "Bash(git diff:*)",
+      "Bash(git grep *)",
       "Bash(git log:*)",
       "Bash(git status:*)",
       "Bash(gh issue list:*)",
@@ -24,6 +25,7 @@
       "Bash(gh run list:*)",
       "Bash(gh run view:*)",
       "Bash(gh run watch:*)",
+      "Bash(gt log *)",
       "Bash(cargo build:*)",
       "Bash(cargo check:*)",
       "Bash(cargo doc:*)",
@@ -37,7 +39,7 @@
     ],
     "defaultMode": "plan"
   },
-  "model": "opusplan",
+  "model": "opusplan[1m]",
   "hooks": {
     "Notification": [
       {
@@ -88,7 +90,8 @@
     "claude-code-setup@claude-plugins-official": true
   },
   "effortLevel": "medium",
-  "skipAutoPermissionPrompt": true,
+  "skipWorkflowUsageWarning": true,
   "inputNeededNotifEnabled": true,
-  "agentPushNotifEnabled": true
+  "agentPushNotifEnabled": true,
+  "skipAutoPermissionPrompt": true
 }
