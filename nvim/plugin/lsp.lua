@@ -1,5 +1,6 @@
 Config.add("neovim/nvim-lspconfig")
 Config.add("mrcjkb/rustaceanvim")
+Config.add("b0o/schemastore.nvim")
 
 vim.g.rustaceanvim = {
   server = {
@@ -32,11 +33,46 @@ vim.lsp.config("*", {
   root_markers = { ".git" },
 })
 
-local servers = { "copilot", "lua_ls" }
+vim.lsp.config("jsonls", {
+  before_init = function(_, new_config)
+    new_config.settings.json.schemas = new_config.settings.json.schemas or {}
+    vim.list_extend(new_config.settings.json.schemas, require("schemastore").json.schemas())
+  end,
+  settings = {
+    json = {
+      format = { enable = true },
+      validate = { enable = true },
+    },
+  },
+})
+
+vim.lsp.config("yaml", {
+  before_init = function(_, new_config)
+    new_config.settings.yaml.schemas = new_config.settings.yaml.schemas or {}
+    vim.list_extend(new_config.settings.yaml.schemas, require("schemastore").yaml.schemas())
+  end,
+  settings = {
+    redhat = { telemetry = { enabled = false } },
+    yaml = {
+      keyOrdering = false,
+      format = { enable = true },
+      validate = true,
+      schemaStore = {
+        -- Must disable built-in schemaStore support to use
+        -- schemas from SchemaStore.nvim plugin
+        enable = false,
+        -- Avoid TypeError: Cannot read properties of undefined (reading 'length')
+        url = "",
+      },
+    },
+  },
+})
+
+local servers = { "copilot", "lua_ls", "jsonls", "cssls", "html", "yamlls", "tombi" }
 local enabled = vim.tbl_filter(function(name)
   local cfg = vim.lsp.config[name] or {}
-  local cmd = cfg.cmd and cfg.cmd[1]
-  return cmd and vim.fn.executable(cmd) == 1
+  local cmd = type(cfg.cmd) == "table" and cfg.cmd[1] or cfg.cmd
+  return type(cmd) == "function" or vim.fn.executable(cmd) == 1
 end, servers)
 vim.lsp.enable(enabled)
 

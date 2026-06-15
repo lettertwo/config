@@ -84,6 +84,10 @@
       "rev": "7e13178fd700669a4c1d8fa2d273d25d24fe6fb4",
       "src": "https://github.com/mrcjkb/rustaceanvim"
     },
+    "schemastore.nvim": {
+      "rev": "e1a36239e4e36759546852dae5f4737375b388f6",
+      "src": "https://github.com/b0o/schemastore.nvim"
+    },
     "smart-splits.nvim": {
       "rev": "501ea73e433246cbd53f0b14bbd205fa44831e4d",
       "src": "https://github.com/mrjones2014/smart-splits.nvim"

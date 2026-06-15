@@ -70,8 +70,13 @@ brew "stylua"
 # node
 brew "node"
 npm "corepack"
-npm "@github/copilot-language-server"
 npm "@mermaid-js/mermaid-cli"
+
+# misc. language servers
+brew "tombi"
+npm "@github/copilot-language-server"
+npm "vscode-langservers-extracted"
+npm "yaml-language-server"
 
 # No more font patching!
 cask "font-symbols-only-nerd-font" if OS.mac?
