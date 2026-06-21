@@ -449,7 +449,7 @@ function SnacksDashboardConfig.config(opts)
   ---@module 'snacks'
   ---@type snacks.Config
   opts.dashboard = {
-    enabled = vim.fn.argc() < 1,
+    enabled = vim.fn.argc() < 1 and App.is_default(),
     width = 60,
     row = 3,
     sections = {

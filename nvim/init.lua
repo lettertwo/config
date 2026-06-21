@@ -15,8 +15,6 @@ vim.g.loaded_tarPlugin = 1
 vim.g.loaded_zip = 1
 vim.g.loaded_zipPlugin = 1
 
-vim.g.pager = vim.env.KITTY_SCROLLBACK_NVIM == "true"
-
 require("config")
 
 -- App framework: must be required after Config so app modules can use Config
