@@ -38,14 +38,15 @@
 	cmd = nvim "$LOCAL" "$REMOTE" -c 'lua vim.g.difftool=true' -c "CodeDiff file \"$LOCAL\" \"$REMOTE\""
 [merge]
 	log = true
-	tool = codediff
+	tool = nvimdiff
 	conflictStyle = zdiff3
 [mergetool]
 	prompt = false
 	keepBackup = false
 	hideResolved = true
 [mergetool "nvimdiff"]
-	cmd = nvim -d --cmd 'lua vim.g.mergetool=true' +'wincmd l' $LOCAL $MERGED $REMOTE
+	cmd = VIM_APP=mergetool nvim -d -i NONE $LOCAL $MERGED $REMOTE
+	trustExitCode = true
 [mergetool "ksdiff"]
   trustExitCode = true
   cmd = ksdiff --merge --base $BASE --output $MERGED $LOCAL $REMOTE
