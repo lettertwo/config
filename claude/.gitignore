@@ -1,0 +1,16 @@
+# CLAUDE_CONFIG_DIR points Claude Code here (see fish/conf.d/claude.fish), so it writes
+# ALL of its runtime state into this directory. Deny by default; re-include only the
+# portable config that should be tracked.
+#
+# WARNING: `git clean -fdx` / `-fdX` (the -x/-X flag) deletes ignored files and would wipe
+# this runtime state. Plain `git clean -fd` is safe — it leaves ignored files alone.
+# Use `make backup-claude` for a recovery copy of the irreplaceable bits.
+/*
+!/.gitignore
+!/CLAUDE.md
+!/settings.json
+!/notify.sh
+!/statusline-command.sh
+!/terminal-progress.sh
+!/commands/
+!/skills/

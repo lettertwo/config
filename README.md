@@ -79,9 +79,28 @@ git config --file ~/.config/git/user user.email "your@email.here"
 git config --file ~/.config/git/user credential.helper osxkeychain
 ```
 
+## Claude config
+
+[Claude Code] is not XDG-aware — it defaults to `~/.claude`. We point it at
+`~/.config/claude` instead via `CLAUDE_CONFIG_DIR` (set in `fish/conf.d/claude.fish`), so
+its config is tracked here directly with no symlinks. Claude writes **all** of its runtime
+state into that directory too; an allowlist `claude/.gitignore` keeps everything except the
+portable config out of git.
+
+On a new machine — or when switching a machine that still has a real `~/.claude` — run
+`make claude` (after quitting all Claude sessions). The `~/.claude` target relocates any
+existing runtime state into `~/.config/claude` and replaces `~/.claude` with a fallback
+symlink so GUI/IDE launches that don't inherit `CLAUDE_CONFIG_DIR` still resolve here. It's
+idempotent and refuses to relocate while Claude is open.
+
+> **Never run `git clean -fdx` / `-fdX` in this repo** — the `-x`/`-X` flag deletes the
+> gitignored Claude runtime state (history, projects, sessions). Plain `git clean -fd` is
+> safe.
+
 [XDG Base Directory Specification]: https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
 [Homebrew]: https://brew.sh
 [Sheldon]: https://sheldon.cli.rs
 [Fisher]: https://github.com/jorgebucaran/fisher
 [Neovim]: https://neovim.io/
 [Kitty]: https://sw.kovidgoyal.net/kitty/
+[Claude Code]: https://docs.claude.com/en/docs/claude-code

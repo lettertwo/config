@@ -357,43 +357,29 @@ endif
 
 CLAUDE := $(shell command -v claude 2> /dev/null)
 
-~/.claude/settings.json: ~/.claude
-	$(call log,"Linking claude settings...")
-	$(call run,ln -sf "$$HOME/.config/claude/settings.json" "$@")
+.PHONY: ~/.claude
+~/.claude:
+	@if [ -L "$@" ]; then \
+		echo "  ~/.claude is already a symlink — nothing to do."; \
+	elif [ -d "$@" ]; then \
+		if [ -n "$$CLAUDECODE" ] || ps -Ao comm= | grep -qE '(^|/)claude$$'; then \
+			>&2 echo "$(ERROR)Quit all Claude sessions first (a claude process is running).$(END)"; \
+			exit 1; \
+		fi; \
+		echo "  relocating runtime state from ~/.claude..."; \
+		find "$@" -maxdepth 1 -type l -delete && \
+		rsync -a "$@/" "$$HOME/.config/claude/" && \
+		{ [ ! -f "$$HOME/.claude.json" ] || mv "$$HOME/.claude.json" "$$HOME/.config/claude/.claude.json"; } && \
+		rm -rf "$@" && \
+		ln -sfn "$$HOME/.config/claude" "$@"; \
+	else \
+		ln -sfn "$$HOME/.config/claude" "$@"; \
+	fi
 	$(call done)
 
-~/.claude/CLAUDE.md: ~/.claude
-	$(call log,"Linking claude CLAUDE.md...")
-	$(call run,ln -sf "$$HOME/.config/claude/CLAUDE.md" "$@")
-	$(call done)
-
-~/.claude/statusline-command.sh: ~/.claude
-	$(call log,"Linking claude statusline-command.sh...")
-	$(call run,ln -sf "$$HOME/.config/claude/statusline-command.sh" "$@")
-	$(call done)
-
-~/.claude/notify.sh: ~/.claude
-	$(call log,"Linking claude notify.sh...")
-	$(call run,ln -sf "$$HOME/.config/claude/notify.sh" "$@")
-	$(call done)
-
-~/.claude/commands: ~/.claude
-	$(call log,"Linking claude commands...")
-	$(call run,ln -sf "$$HOME/.config/claude/commands" "$@")
-	$(call done)
-
-~/.claude/skills: ~/.claude
-	$(call log,"Linking claude skills...")
-	$(call run,ln -sf "$$HOME/.config/claude/skills" "$@")
-	$(call done)
-
-~/.claude/terminal-progress.sh: ~/.claude
-	$(call log,"Linking claude terminal-progress.sh...")
-	$(call run,ln -sf "$$HOME/.config/claude/terminal-progress.sh" "$@")
-	$(call done)
 
 .PHONY: claude
-claude: ~/.claude ~/.claude/settings.json ~/.claude/CLAUDE.md ~/.claude/statusline-command.sh ~/.claude/notify.sh ~/.claude/terminal-progress.sh ~/.claude/commands ~/.claude/skills
+claude: ~/.claude
 ifndef CLAUDE
 	$(call err,"claude not found!")
 	$(call log,"Installing claude...")
