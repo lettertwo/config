@@ -105,6 +105,30 @@ Config.on("LspAttach", function(ev)
   end
 end, "LSP buffer keymaps")
 
+Config.on("LspProgress", function(ev)
+  local value = ev.data.params.value
+  if not value then
+    return
+  end
+
+  local client = vim.lsp.get_client_by_id(ev.data.client_id)
+  local client_name = client and client.name or "LSP"
+
+  local msg = string.format("[%s] %s", client_name, value.message or value.title or "Processing")
+
+  -- Emit progress natively to the UI
+  vim.api.nvim_echo({ { msg } }, false, {
+    id = "lsp." .. ev.data.client_id,
+    kind = "progress",
+    title = value.title,
+    source = "vim.lsp",
+    percent = value.percentage,
+    status = value.kind ~= "end" and "running" or "success",
+  })
+end)
+
+vim.keymap.set("n", "<leader>K", "<cmd>norm! K<cr>", { desc = "Keywordprg" })
+
 vim.api.nvim_create_user_command("Lsp", function(args)
   local bufnr = vim.api.nvim_get_current_buf()
 
