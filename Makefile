@@ -377,11 +377,6 @@ CLAUDE := $(shell command -v claude 2> /dev/null)
 	$(call run,ln -sf "$$HOME/.config/claude/notify.sh" "$@")
 	$(call done)
 
-~/.claude/notify-reap.sh: ~/.claude
-	$(call log,"Linking claude notify-reap.sh...")
-	$(call run,ln -sf "$$HOME/.config/claude/notify-reap.sh" "$@")
-	$(call done)
-
 ~/.claude/commands: ~/.claude
 	$(call log,"Linking claude commands...")
 	$(call run,ln -sf "$$HOME/.config/claude/commands" "$@")
@@ -392,8 +387,13 @@ CLAUDE := $(shell command -v claude 2> /dev/null)
 	$(call run,ln -sf "$$HOME/.config/claude/skills" "$@")
 	$(call done)
 
+~/.claude/terminal-progress.sh: ~/.claude
+	$(call log,"Linking claude terminal-progress.sh...")
+	$(call run,ln -sf "$$HOME/.config/claude/terminal-progress.sh" "$@")
+	$(call done)
+
 .PHONY: claude
-claude: ~/.claude ~/.claude/settings.json ~/.claude/CLAUDE.md ~/.claude/statusline-command.sh ~/.claude/notify.sh ~/.claude/notify-reap.sh ~/.claude/commands ~/.claude/skills
+claude: ~/.claude ~/.claude/settings.json ~/.claude/CLAUDE.md ~/.claude/statusline-command.sh ~/.claude/notify.sh ~/.claude/terminal-progress.sh ~/.claude/commands ~/.claude/skills
 ifndef CLAUDE
 	$(call err,"claude not found!")
 	$(call log,"Installing claude...")
