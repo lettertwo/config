@@ -99,3 +99,11 @@
 
 # keybind=clear # clear all default keybindings.
 
+keybind = performable:ctrl+h=goto_split:left
+keybind = performable:ctrl+j=goto_split:bottom
+keybind = performable:ctrl+k=goto_split:top
+keybind = performable:ctrl+l=goto_split:right
+
+keybind = cmd+t=new_split
+keybind = cmd+n=new_tab
+keybind = shift+cmd+n=new_window
