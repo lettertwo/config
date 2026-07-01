@@ -106,6 +106,12 @@ function M.launch(name, opts)
     return
   end
 
+  -- Load the app's plugins/ dir. init.lua only does this for the root app, so
+  -- without it an embedded launch would silently depend on the host app having
+  -- added the same plugins. Idempotent: module requires are cached and
+  -- Config.add re-adds are no-ops.
+  M.load(name)
+
   if context == "standalone" then
     M._launch_standalone(app, args)
   else
