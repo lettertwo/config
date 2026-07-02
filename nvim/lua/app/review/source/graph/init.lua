@@ -21,11 +21,14 @@ local M = {}
 ---@param cwd string
 ---@return Review.StackGraph
 function M.create(cwd)
-  local db_path = cwd .. "/.git/.graphite_metadata.db"
-  if vim.fn.filereadable(db_path) == 1 and vim.fn.executable("sqlite3") == 1 then
+  -- Graphite state lives in the common git dir — shared across worktrees
+  -- (bare-repo + worktree layouts have no cwd/.git directory at all).
+  local common = require("app.review.diff.git").common_dir_sync(cwd)
+  local db_path = common and (common .. "/.graphite_metadata.db")
+  if db_path and vim.fn.filereadable(db_path) == 1 and vim.fn.executable("sqlite3") == 1 then
     local ok, graphite = pcall(require, "app.review.source.graph.graphite")
     if ok then
-      return graphite.new(cwd)
+      return graphite.new(cwd, common)
     end
   end
   return require("app.review.source.graph.git").new(cwd)
