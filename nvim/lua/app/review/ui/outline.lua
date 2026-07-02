@@ -367,6 +367,12 @@ function OutlineView:open()
           docket:refresh()
         end,
       },
+      review_layout = {
+        desc = "Toggle side-by-side",
+        action = function()
+          docket:toggle_layout()
+        end,
+      },
       review_close = {
         desc = "Close review",
         action = function()
@@ -405,6 +411,7 @@ function OutlineView:open()
       list = {
         keys = {
           ["i"] = "review_cycle_mode",
+          ["l"] = "review_layout",
           ["]f"] = "review_next_file",
           ["[f"] = "review_prev_file",
           ["R"] = "review_refresh",
