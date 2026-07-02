@@ -290,24 +290,25 @@ elseif scenario == "stack" then
     return vim.wo[win].winbar or ""
   end
 
-  -- Changeset order: uncommitted first, then commits base→head.
+  -- Order is base→head with uncommitted adjacent to the current position
+  -- (the tip here), and the session opens focused on it.
   check(
-    "uncommitted changeset first (dirty base.lua rendered)",
+    "opens on the uncommitted changeset (dirty base.lua rendered)",
     (vim.api.nvim_buf_get_lines(0, 0, 1, false)[1]) == "local base = 2 -- dirty",
     vim.api.nvim_buf_get_lines(0, 0, 1, false)[1]
   )
-  check("winbar shows changeset 1/3", winbar():find("[1/3", 1, true) ~= nil, winbar())
+  check("uncommitted sits at the head (3/3)", winbar():find("[3/3 Uncommitted Changes]", 1, true) ~= nil, winbar())
 
-  feed("]c")
-  check("]c jumps to first commit changeset (a1.lua)", wait_line1("a1"))
-  check("winbar shows changeset 2/3 with subject", winbar():find("[2/3 add a1]", 1, true) ~= nil, winbar())
+  feed("[c")
+  check("[c walks down to the newest commit (b1.lua)", wait_line1("b1"))
+  check("winbar shows changeset 2/3 with subject", winbar():find("[2/3 add b1]", 1, true) ~= nil, winbar())
+
+  feed("[c")
+  check("[c walks down to the oldest commit (a1.lua)", wait_line1("a1"))
+  check("winbar shows changeset 1/3", winbar():find("[1/3 add a1]", 1, true) ~= nil, winbar())
 
   feed("]f")
   check("]f crosses changeset boundary (b1.lua)", wait_line1("b1"))
-  check("winbar shows changeset 3/3", winbar():find("[3/3 add b1]", 1, true) ~= nil, winbar())
-
-  feed("[c")
-  check("[c jumps back to previous changeset", wait_line1("a1"))
 
   finish()
 elseif scenario == "trunk-ahead" then
@@ -324,18 +325,18 @@ elseif scenario == "trunk-ahead" then
   end
 
   check(
-    "uncommitted changeset first (dirty base.lua)",
+    "opens on the uncommitted changeset (dirty base.lua)",
     (vim.api.nvim_buf_get_lines(0, 0, 1, false)[1]) == "local base = 2 -- dirty"
   )
-  check("three changesets (uncommitted + 2 unpushed commits)", winbar():find("[1/3", 1, true) ~= nil, winbar())
+  check("three changesets, uncommitted at the head", winbar():find("[3/3 Uncommitted Changes]", 1, true) ~= nil, winbar())
 
-  feed("]c")
-  check("]c jumps to oldest unpushed commit", wait_line1("a1"))
-  check("commit subject in winbar", winbar():find("unpushed one", 1, true) ~= nil, winbar())
+  feed("[c")
+  check("[c walks down to newest unpushed commit", wait_line1("b1"))
+  check("newest subject in winbar", winbar():find("[2/3 unpushed two]", 1, true) ~= nil, winbar())
 
-  feed("]c")
-  check("]c jumps to newest unpushed commit", wait_line1("b1"))
-  check("newest subject in winbar", winbar():find("[3/3 unpushed two]", 1, true) ~= nil, winbar())
+  feed("[c")
+  check("[c walks down to oldest unpushed commit", wait_line1("a1"))
+  check("oldest subject in winbar", winbar():find("[1/3 unpushed one]", 1, true) ~= nil, winbar())
 
   finish()
 else

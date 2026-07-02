@@ -73,8 +73,20 @@ function M.new(opts)
   ---@param nodes Review.StackNode[]
   ---@param callback fun(changesets: Review.Changeset[]?, err: string?)
   local function load_with_uncommitted(nodes, callback)
-    local stack_result, uncommitted_cs
-    local pending = 2
+    -- The current branch's position in the stack: uncommitted changes sit on
+    -- top of ITS commits (not at the head of the whole stack), and the
+    -- session opens focused here. Graphite node ids are branch names; the
+    -- git fallback has no descendants, so its position is the tip.
+    local current = git.current_branch_sync(cwd)
+    local cur_idx = nil
+    for i, n in ipairs(nodes) do
+      if n.id == current then
+        cur_idx = i
+      end
+    end
+
+    local stack_result, uncommitted_cs, stale
+    local pending = 3
 
     local function maybe_done()
       pending = pending - 1
@@ -82,10 +94,18 @@ function M.new(opts)
         return
       end
       local all = {}
-      if uncommitted_cs and #uncommitted_cs.files > 0 then
-        table.insert(all, uncommitted_cs)
+      for _, cs in ipairs(stack_result or {}) do
+        if stale and stale[cs.id] then
+          cs.title = cs.title .. " (needs restack)"
+        end
+        table.insert(all, cs)
       end
-      vim.list_extend(all, stack_result or {})
+      if uncommitted_cs and #uncommitted_cs.files > 0 then
+        uncommitted_cs.current = true
+        table.insert(all, (cur_idx or #all) + 1, uncommitted_cs)
+      elseif #all > 0 then
+        all[cur_idx or #all].current = true
+      end
       callback(all, nil)
     end
 
@@ -100,6 +120,38 @@ function M.new(opts)
       uncommitted_cs = changesets and changesets[1] or nil
       maybe_done()
     end)
+
+    -- Descendants whose recorded parent_rev no longer matches the parent
+    -- branch's actual head are pending a restack — their diffs describe
+    -- pre-restack content, worth flagging rather than hiding.
+    local descendants = {}
+    if cur_idx then
+      for i = cur_idx + 1, #nodes do
+        table.insert(descendants, nodes[i])
+      end
+    end
+    if #descendants == 0 then
+      maybe_done()
+    else
+      local args = { "git", "rev-parse" }
+      for _, n in ipairs(descendants) do
+        table.insert(args, "refs/heads/" .. n.parent_branch)
+      end
+      vim.system(args, { cwd = cwd, text = true }, function(r)
+        vim.schedule(function()
+          stale = {}
+          if r.code == 0 then
+            local revs = vim.split(vim.trim(r.stdout or ""), "\n", { plain = true })
+            for i, n in ipairs(descendants) do
+              if revs[i] and n.parent_rev ~= "" and revs[i] ~= n.parent_rev then
+                stale[n.id] = true
+              end
+            end
+          end
+          maybe_done()
+        end)
+      end)
+    end
   end
 
   function self:load(callback)
