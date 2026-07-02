@@ -10,7 +10,9 @@
 -- Args resolution order:
 --   args.kind  (embedded / :App review)
 --   args[1]    (:App review uncommitted — positional from the command)
---   vim.g.review_kind  (standalone fish wrapper)
+--   vim.g.review_kind
+--   $REVIEW_KIND  (standalone fish wrapper; env var for the same quoting
+--                  reasons as VIM_APP)
 --   default "uncommitted"
 --
 -- M1 session state (files list, current index, save watcher) lives directly in
@@ -32,7 +34,9 @@ local ReviewApp = {
 ---@field win integer
 ---@field dv Review.DiffView
 ---@field source Review.Source
----@field files Review.FileChange[]
+---@field changesets Review.Changeset[]
+---@field files Review.FileChange[]  flattened across changesets, in changeset order
+---@field cs_idx_by_id table<string, integer>
 ---@field idx integer
 ---@field aug integer?     save-watcher augroup
 ---@field timer userdata?  save-watcher debounce timer
@@ -61,6 +65,20 @@ local function close_session()
   session = nil
 end
 
+-- Flatten changesets into the nav list. Grouped changeset UI is the M3
+-- outline; until then the flat list (in changeset order) is the nav model.
+local function set_changesets(sess, changesets)
+  sess.changesets = changesets or {}
+  sess.files = {}
+  sess.cs_idx_by_id = {}
+  for i, cs in ipairs(sess.changesets) do
+    sess.cs_idx_by_id[cs.id] = i
+    for _, f in ipairs(cs.files) do
+      table.insert(sess.files, f)
+    end
+  end
+end
+
 local function set_winbar(sess)
   if not vim.api.nvim_win_is_valid(sess.win) then
     return
@@ -68,6 +86,13 @@ local function set_winbar(sess)
   local text = "  REVIEW  " .. sess.title
   local file = sess.files[sess.idx]
   if file then
+    if #sess.changesets > 1 then
+      local ci = sess.cs_idx_by_id[file.changeset_id]
+      local cs = ci and sess.changesets[ci]
+      if cs then
+        text = text .. ("  [%d/%d %s]"):format(ci, #sess.changesets, cs.title)
+      end
+    end
     text = text .. ("  %s (%d/%d)"):format(file.path, sess.idx, #sess.files)
   end
   vim.wo[sess.win].winbar = Statusline.make_winbar(text, "MiniStatuslineModeNormal")
@@ -125,6 +150,34 @@ local function next_hunk(sess)
   end
 end
 
+-- Jump to the first file of the next/prev changeset; clamps at the ends.
+local function next_changeset(sess)
+  local file = sess.files[sess.idx]
+  local ci = file and sess.cs_idx_by_id[file.changeset_id] or 0
+  for i = sess.idx + 1, #sess.files do
+    if sess.cs_idx_by_id[sess.files[i].changeset_id] > ci then
+      sess.idx = i
+      show_file(sess)
+      return
+    end
+  end
+end
+
+local function prev_changeset(sess)
+  local file = sess.files[sess.idx]
+  local ci = file and sess.cs_idx_by_id[file.changeset_id] or 0
+  if ci <= 1 then
+    return
+  end
+  for i = 1, #sess.files do
+    if sess.cs_idx_by_id[sess.files[i].changeset_id] == ci - 1 then
+      sess.idx = i
+      show_file(sess)
+      return
+    end
+  end
+end
+
 local function prev_hunk(sess)
   local row = vim.fn.line(".") - 1
   local target = nil
@@ -140,7 +193,9 @@ local function prev_hunk(sess)
 end
 
 local function refresh(sess)
-  local current_path = sess.files[sess.idx] and sess.files[sess.idx].path
+  local current = sess.files[sess.idx]
+  local current_path = current and current.path
+  local current_cs = current and current.changeset_id
   sess.source:refresh(function(changesets, err)
     if session ~= sess then
       return
@@ -149,18 +204,19 @@ local function refresh(sess)
       vim.notify("Review refresh error: " .. err, vim.log.levels.ERROR, { title = "Review" })
       return
     end
-    sess.files = changesets and changesets[1] and changesets[1].files or {}
+    set_changesets(sess, changesets)
     if #sess.files == 0 then
       sess.idx = 1
-      sess.dv:_render_placeholder("[No uncommitted changes]")
+      sess.dv:_render_placeholder("[No changes]")
       set_winbar(sess)
       return
     end
-    -- Keep the current file when it still exists; clamp the index otherwise.
+    -- Keep the current file when it still exists (same path can appear in
+    -- several changesets, so match both); clamp the index otherwise.
     local same_file = false
     if current_path then
       for i, f in ipairs(sess.files) do
-        if f.path == current_path then
+        if f.path == current_path and f.changeset_id == current_cs then
           sess.idx = i
           same_file = true
           break
@@ -233,6 +289,8 @@ local function set_keymaps(sess)
   map("[f", prev_file, "Review: previous file")
   map("]h", next_hunk, "Review: next hunk")
   map("[h", prev_hunk, "Review: previous hunk")
+  map("]c", next_changeset, "Review: next changeset")
+  map("[c", prev_changeset, "Review: previous changeset")
 
   -- q: quit in standalone (we own the process), close tab in embedded.
   vim.keymap.set("n", "q", function()
@@ -270,7 +328,8 @@ function ReviewApp.open(kind, opts)
     vim.bo[init_buf].bufhidden = "wipe"
   end
 
-  if kind ~= "uncommitted" then
+  local KINDS = { uncommitted = true, stack = true }
+  if not KINDS[kind] then
     vim.notify("Review: kind " .. kind .. " arrives in a later milestone", vim.log.levels.WARN, { title = "Review" })
     return
   end
@@ -284,8 +343,10 @@ function ReviewApp.open(kind, opts)
     title = title,
     win = win,
     dv = dv,
-    source = require("app.review.source.uncommitted").new({ cwd = cwd }),
+    source = require("app.review.source." .. kind).new({ cwd = cwd }),
+    changesets = {},
     files = {},
+    cs_idx_by_id = {},
     idx = 1,
   }
   session = sess
@@ -301,9 +362,9 @@ function ReviewApp.open(kind, opts)
       dv:_render_placeholder("[Review error: " .. err .. "]")
       return
     end
-    sess.files = changesets and changesets[1] and changesets[1].files or {}
+    set_changesets(sess, changesets)
     if #sess.files == 0 then
-      dv:_render_placeholder("[No uncommitted changes]")
+      dv:_render_placeholder("[No changes]")
       return
     end
     show_file(sess)
@@ -313,7 +374,7 @@ end
 
 function ReviewApp:run(args)
   args = args or {}
-  local kind = args.kind or args[1] or vim.g.review_kind or "uncommitted"
+  local kind = args.kind or args[1] or vim.g.review_kind or vim.env.REVIEW_KIND or "uncommitted"
   local cwd = args.cwd or vim.g.review_cwd or Config.root("git") or vim.fn.getcwd()
   local title = args.title or vim.g.review_title
   ReviewApp.open(kind, { cwd = cwd, title = title })
