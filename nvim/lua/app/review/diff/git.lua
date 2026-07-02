@@ -91,6 +91,70 @@ function M.diff_uncommitted(cwd, callback)
   end)
 end
 
+-- Ranged diff between two refs. head omitted when nil or "WORKTREE"
+-- (worktree vs base). git diff exits nonzero with output for some warnings,
+-- so only report an error when there is also no stdout.
+---@param cwd string
+---@param base string
+---@param head string?
+---@param callback fun(diff: string?, err: string?)
+function M.diff(cwd, base, head, callback)
+  local args = { "git", "diff", "--no-color", "--unified=3", base }
+  if head and head ~= "WORKTREE" then
+    table.insert(args, head)
+  end
+  run(cwd, args, function(r)
+    if r.code ~= 0 and r.stdout == "" then
+      callback(nil, r.stderr)
+    else
+      callback(r.stdout, nil)
+    end
+  end)
+end
+
+---@param cwd string
+---@return string
+function M.current_branch_sync(cwd)
+  local r = vim.system({ "git", "-C", cwd, "rev-parse", "--abbrev-ref", "HEAD" }, { text = true }):wait()
+  return vim.trim(r.stdout or "HEAD")
+end
+
+---@param cwd string
+---@param callback fun(branch: string?, err: string?)
+function M.trunk_branch(cwd, callback)
+  run(cwd, { "git", "rev-parse", "--abbrev-ref", "origin/HEAD" }, function(r)
+    if r.code == 0 then
+      local branch = vim.trim(r.stdout):gsub("^origin/", "")
+      callback(branch, nil)
+    else
+      run(cwd, { "git", "show-ref", "--verify", "--quiet", "refs/heads/main" }, function(r2)
+        callback(r2.code == 0 and "main" or "master", nil)
+      end)
+    end
+  end)
+end
+
+---@param cwd string
+---@param base string
+---@param head string
+---@param callback fun(commits: {sha: string, subject: string}[]?, err: string?)
+function M.log_first_parent(cwd, base, head, callback)
+  run(cwd, { "git", "log", "--first-parent", "--format=%H %s", base .. ".." .. head }, function(r)
+    if r.code ~= 0 then
+      callback(nil, r.stderr)
+      return
+    end
+    local commits = {}
+    for line in r.stdout:gmatch("[^\n]+") do
+      local sha, subject = line:match("^(%x+) (.*)$")
+      if sha then
+        table.insert(commits, { sha = sha, subject = subject })
+      end
+    end
+    callback(commits, nil)
+  end)
+end
+
 ---@param cwd string
 ---@param callback fun(sha: string?, err: string?)
 function M.head_sha(cwd, callback)
