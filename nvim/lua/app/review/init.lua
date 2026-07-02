@@ -44,35 +44,47 @@ local function close_review()
 end
 
 local function set_keymaps(dk)
-  -- Both panes get the maps; docket actions act in the primary window (the
-  -- left pane follows via scrollbind), so focus moves there first.
-  for _, bufnr in ipairs({ dk.dv.bufnr, dk.dv.bufnr_left }) do
-    local function map(lhs, method, desc)
-      vim.keymap.set("n", lhs, function()
-        if dk._closed then
-          return
-        end
-        if vim.api.nvim_get_current_win() ~= dk.win and vim.api.nvim_win_is_valid(dk.win) then
-          vim.api.nvim_set_current_win(dk.win)
-        end
-        dk[method](dk)
-      end, { buffer = bufnr, silent = true, desc = desc })
-    end
-    map("]f", "next_file", "Review: next file")
-    map("[f", "prev_file", "Review: previous file")
-    map("]h", "next_hunk", "Review: next hunk")
-    map("[h", "prev_hunk", "Review: previous hunk")
-    map("]c", "next_changeset", "Review: next changeset")
-    map("[c", "prev_changeset", "Review: previous changeset")
-    map("<leader>rl", "toggle_layout", "Review: toggle side-by-side")
-
-    vim.keymap.set("n", "<leader>o", function()
-      if not dk._closed and dk.outline then
-        dk.outline:open()
+  -- Every pane buffer of both rows gets the maps. Cursor-based nav refocuses
+  -- the pressed row's primary window (its left pane follows via scrollbind);
+  -- staging ops stay put — the pane under the cursor IS their target.
+  for _, dv in ipairs({ dk.dv, dk.dv2 }) do
+    for _, bufnr in ipairs({ dv.bufnr, dv.bufnr_left }) do
+      local function map(lhs, method, desc, refocus)
+        vim.keymap.set("n", lhs, function()
+          if dk._closed then
+            return
+          end
+          if refocus and dv.win and vim.api.nvim_win_is_valid(dv.win) and vim.api.nvim_get_current_win() ~= dv.win then
+            vim.api.nvim_set_current_win(dv.win)
+          end
+          dk[method](dk)
+        end, { buffer = bufnr, silent = true, desc = desc })
       end
-    end, { buffer = bufnr, silent = true, desc = "Review: focus outline" })
+      map("]f", "next_file", "Review: next file", true)
+      map("[f", "prev_file", "Review: previous file", true)
+      map("]h", "next_hunk", "Review: next hunk", true)
+      map("[h", "prev_hunk", "Review: previous hunk", true)
+      map("]c", "next_changeset", "Review: next changeset", true)
+      map("[c", "prev_changeset", "Review: previous changeset", true)
+      map("<leader>rl", "toggle_layout", "Review: toggle side-by-side")
+      map("<leader>rz", "cycle_zoom", "Review: cycle zoom")
+      map("<leader>r-", "stage_current", "Review: stage hunk")
+      map("<leader>r=", "stage_current_file", "Review: stage file")
+      map("<leader>r_", "unstage_current", "Review: unstage hunk")
+      map("<leader>r+", "unstage_current_file", "Review: unstage file")
+      map("<leader>rd", "discard_current", "Review: discard hunk")
+      map("<leader>rD", "discard_current_file", "Review: discard file")
+      map("<leader>ra", "stage_all", "Review: stage all")
+      map("<leader>rA", "unstage_all", "Review: unstage all")
 
-    vim.keymap.set("n", "q", close_review, { buffer = bufnr, silent = true, desc = "Close review" })
+      vim.keymap.set("n", "<leader>o", function()
+        if not dk._closed and dk.outline then
+          dk.outline:open()
+        end
+      end, { buffer = bufnr, silent = true, desc = "Review: focus outline" })
+
+      vim.keymap.set("n", "q", close_review, { buffer = bufnr, silent = true, desc = "Close review" })
+    end
   end
 end
 
@@ -131,9 +143,13 @@ function ReviewApp.open(kind, opts)
   end
 
   local dv = require("app.review.ui.diff").new({ win = win })
+  -- The staged-row DiffView; its window arrives with the split zoom.
+  local dv2 = require("app.review.ui.diff").new({ win = -1 })
   -- Name the buffers so the framework's D7 unnamed-buffer sweep skips them.
   vim.api.nvim_buf_set_name(dv.bufnr, "review://" .. kind)
   vim.api.nvim_buf_set_name(dv.bufnr_left, "review://" .. kind .. "//old")
+  vim.api.nvim_buf_set_name(dv2.bufnr, "review://" .. kind .. "//staged")
+  vim.api.nvim_buf_set_name(dv2.bufnr_left, "review://" .. kind .. "//staged//old")
 
   docket = require("app.review.docket").new({
     kind = kind,
@@ -141,6 +157,7 @@ function ReviewApp.open(kind, opts)
     title = title,
     win = win,
     dv = dv,
+    dv2 = dv2,
     source = require("app.review.source." .. kind).new({ cwd = cwd }),
   })
   set_keymaps(docket)
