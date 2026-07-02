@@ -367,7 +367,7 @@ CLAUDE := $(shell command -v claude 2> /dev/null)
 			exit 1; \
 		fi; \
 		echo "  relocating runtime state from ~/.claude..."; \
-		find "$@" -maxdepth 1 -type l -delete && \
+		find "$@" -type l -delete && \
 		rsync -a "$@/" "$$HOME/.config/claude/" && \
 		{ [ ! -f "$$HOME/.claude.json" ] || mv "$$HOME/.claude.json" "$$HOME/.config/claude/.claude.json"; } && \
 		rm -rf "$@" && \
