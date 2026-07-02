@@ -12,6 +12,8 @@
 ---@field head_ref string
 ---@field files Review.FileChange[]
 ---@field head_sha string
+---@field pr_number? integer
+---@field current? boolean  the session's starting position (marked by the source)
 
 ---@class Review.Source
 ---@field kind string
