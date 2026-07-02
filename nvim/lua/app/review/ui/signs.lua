@@ -10,6 +10,7 @@ function M.setup()
     ReviewDiffDelete     = { link = "DiffDelete" },
     ReviewDiffAddWord    = { link = "DiffTextAdd" },
     ReviewDiffDeleteWord = { link = "DiffText" },
+    ReviewDiffFiller     = { link = "DiffDelete" },
     ReviewSignAdd        = { link = "DiffAdd" },
     ReviewSignDelete     = { link = "DiffDelete" },
     ReviewSignChange     = { link = "DiffText" },

@@ -1,10 +1,17 @@
--- Inline diff renderer. Renders the full new file (real buffer content, so
--- treesitter highlighting works), marks added lines with extmarks, and injects
--- deleted lines as virt_lines above their anchor rows. Context outside hunks
--- is collapsed with manual folds (zR/zM open/close as usual).
+-- Diff renderer with two layouts.
 --
--- Side-by-side rendering arrives in M4; row maps stay side-aware ({lnum, side})
--- so the second pane is additive.
+-- Inline: renders the full new file (real buffer content, so treesitter
+-- highlighting works), marks added lines with extmarks, and injects deleted
+-- lines as virt_lines above their anchor rows.
+--
+-- Side-by-side: old file in a left scratch buffer, new file in the right one
+-- (both real full-file content, so buffer row == lnum - 1 on each side),
+-- per-side change highlights, and filler virt_lines keeping visual line-count
+-- parity so native scrollbind stays aligned. No :diffthis.
+--
+-- Context outside hunks is collapsed with manual folds (zR/zM as usual); in
+-- side-by-side the fold ranges pair 1:1 by index between panes and open/close
+-- state is mirrored.
 
 local M = {}
 local signs = require("app.review.ui.signs")
@@ -18,6 +25,19 @@ local fold_ns = vim.api.nvim_create_namespace("review_fold_gutter")
 -- window edge — padding their background fill to a fixed generous width makes
 -- the fill window-size independent (no resize watcher needed).
 local VIRT_FILL_WIDTH = 500
+
+-- Filler lines (side-by-side): a diagonal ╱ pattern marking rows that exist
+-- only in the other pane. One precomputed chunk list; virt_lines truncate at
+-- the window edge, so a fixed generous width works like the del fill above.
+local FILLER_LINE = { { string.rep("╱", VIRT_FILL_WIDTH), "ReviewDiffFiller" } }
+
+local function filler_vlines(n)
+  local out = {}
+  for _ = 1, n do
+    out[#out + 1] = FILLER_LINE
+  end
+  return out
+end
 
 -- Apply a list of extmark specs {row, col, opts} to a buffer.
 local function apply_exts(bufnr, ns, exts)
@@ -228,58 +248,162 @@ end
 ---@field last_diff integer
 
 ---@class Review.DiffView
----@field bufnr integer
----@field win integer
+---@field bufnr integer       right pane: the new file (the only pane inline)
+---@field bufnr_left integer  left pane: the old file (side-by-side only)
+---@field win integer         primary window; nav/cursor ops live here
+---@field win_left integer?   bound while layout == "sbs"
+---@field layout "inline"|"sbs"
 ---@field file Review.FileChange?
----@field hunk_rows Review.HunkRows[]  ordered top-to-bottom; nav anchors
+---@field hunk_rows Review.HunkRows[]       ordered top-to-bottom; nav anchors
+---@field hunk_rows_left Review.HunkRows[]  left-pane counterpart (sbs)
 ---@field _cwd string
 ---@field _render_seq integer
 ---@field _row_map table<integer, Review.RowInfo>
+---@field _fold_ranges {s:integer,e:integer}[]
+---@field _fold_ranges_left {s:integer,e:integer}[]
+---@field _fold_aug integer?
+---@field _fold_sync fun(win: integer)?  set while sbs fold sync is active
 local DiffView = {}
 DiffView.__index = DiffView
+
+local function new_scratch_buf()
+  local bufnr = vim.api.nvim_create_buf(false, true)
+  vim.bo[bufnr].buftype = "nofile"
+  vim.bo[bufnr].bufhidden = "hide"
+  vim.bo[bufnr].swapfile = false
+  vim.bo[bufnr].modifiable = false
+  vim.bo[bufnr].filetype = "review-diff"
+  return bufnr
+end
+
+local function apply_win_opts(win)
+  if win and vim.api.nvim_win_is_valid(win) then
+    vim.wo[win].number = true
+    vim.wo[win].relativenumber = false
+    vim.wo[win].signcolumn = "yes"
+    vim.wo[win].foldcolumn = "1"
+    vim.wo[win].conceallevel = 0
+    vim.wo[win].wrap = false
+  end
+end
 
 ---@param opts {win: integer}
 ---@return Review.DiffView
 function M.new(opts)
   local self = setmetatable({}, DiffView)
   self.win = opts.win
+  self.win_left = nil
+  self.layout = "inline"
   self.file = nil
   self.hunk_rows = {}
+  self.hunk_rows_left = {}
   self._cwd = ""
   self._render_seq = 0
   self._row_map = {}
+  self._fold_ranges = {}
+  self._fold_ranges_left = {}
 
-  self.bufnr = vim.api.nvim_create_buf(false, true)
-  vim.bo[self.bufnr].buftype = "nofile"
-  vim.bo[self.bufnr].bufhidden = "hide"
-  vim.bo[self.bufnr].swapfile = false
-  vim.bo[self.bufnr].modifiable = false
-  vim.bo[self.bufnr].filetype = "review-diff"
-
-  if vim.api.nvim_win_is_valid(self.win) then
-    vim.wo[self.win].number = true
-    vim.wo[self.win].relativenumber = false
-    vim.wo[self.win].signcolumn = "yes"
-    vim.wo[self.win].foldcolumn = "1"
-    vim.wo[self.win].conceallevel = 0
-    vim.wo[self.win].wrap = false
-  end
+  self.bufnr = new_scratch_buf()
+  self.bufnr_left = new_scratch_buf()
+  apply_win_opts(self.win)
+  self:_setup_fold_keymaps()
 
   return self
 end
 
--- Write lines to the buffer (clears the signs namespace).
-function DiffView:_write(lines)
-  vim.bo[self.bufnr].modifiable = true
-  vim.api.nvim_buf_set_lines(self.bufnr, 0, -1, false, lines)
-  vim.bo[self.bufnr].modifiable = false
-  signs.clear(self.bufnr)
+-- Fold commands that change open/close state without moving the cursor or
+-- scrolling (zc, zR, ...) fire no autocmd, so the mask-diff sync in
+-- _setup_fold_sync never sees them. Remap them buffer-locally to run the
+-- native command and then sync immediately. The maps are installed once per
+-- pane buffer; when sync is inactive (inline layout) _fold_sync is nil and
+-- the remap is just the native command.
+local FOLD_KEYS = { "za", "zA", "zo", "zO", "zc", "zC", "zv", "zx", "zX", "zr", "zm", "zR", "zM" }
+
+function DiffView:_setup_fold_keymaps()
+  for _, bufnr in ipairs({ self.bufnr, self.bufnr_left }) do
+    for _, key in ipairs(FOLD_KEYS) do
+      vim.keymap.set("n", key, function()
+        -- Counts select fold levels; these are all depth-1 folds, so no
+        -- count forwarding. E490 (no fold found) on foldless lines; native
+        -- keys just echo it — and a failed command can't have changed state.
+        if pcall(vim.cmd, "normal! " .. key) then
+          self:sync_folds(vim.api.nvim_get_current_win())
+        end
+      end, { buffer = bufnr, silent = true, desc = "Fold (synced across panes)" })
+    end
+  end
 end
 
-function DiffView:_set_ft(path)
+-- Re-run pane fold sync after an API-context fold change (e.g. `normal! zv`
+-- following nvim_win_set_cursor — no autocmd fires). No-op unless sbs sync
+-- is active.
+---@param win integer?
+function DiffView:sync_folds(win)
+  if self._fold_sync then
+    self._fold_sync(win or self.win)
+  end
+end
+
+-- Move the cursor to a line, open its enclosing folds, and re-sync pane fold
+-- state. API-context navigation must reveal through this method — a bare
+-- `normal! zv` fires no autocmd, so the panes would desync.
+---@param win integer
+---@param lnum integer  1-based target line
+function DiffView:reveal(win, lnum)
+  vim.api.nvim_win_set_cursor(win, { lnum, 0 })
+  vim.api.nvim_win_call(win, function()
+    vim.cmd("normal! zv")
+  end)
+  self:sync_folds(win)
+end
+
+function DiffView:_clear_fold_sync()
+  if self._fold_aug then
+    vim.api.nvim_del_augroup_by_id(self._fold_aug)
+    self._fold_aug = nil
+  end
+  self._fold_sync = nil
+end
+
+-- Switch layouts. Entering sbs binds win_left (a window created by the
+-- caller) and shows the old-side buffer there; leaving clears the binding
+-- and sync state (the caller closes the window).
+---@param layout "inline"|"sbs"
+---@param win_left integer?
+function DiffView:set_layout(layout, win_left)
+  self:_clear_fold_sync()
+  self.layout = layout
+  if layout == "sbs" then
+    self.win_left = win_left
+    apply_win_opts(win_left)
+    if win_left and vim.api.nvim_win_is_valid(win_left) then
+      -- Blank the old-side buffer so the pane never shows a previously
+      -- rendered file's stale content while the async render is in flight.
+      self:_write(self.bufnr_left, {})
+      vim.api.nvim_win_set_buf(win_left, self.bufnr_left)
+    end
+  else
+    for _, win in ipairs({ self.win, self.win_left }) do
+      if win and vim.api.nvim_win_is_valid(win) then
+        vim.wo[win].scrollbind = false
+      end
+    end
+    self.win_left = nil
+  end
+end
+
+-- Write lines to a buffer (clears its signs namespace).
+function DiffView:_write(bufnr, lines)
+  vim.bo[bufnr].modifiable = true
+  vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+  vim.bo[bufnr].modifiable = false
+  signs.clear(bufnr)
+end
+
+function DiffView:_set_ft(bufnr, path)
   local ft = vim.filetype.match({ filename = path }) or ""
-  if ft ~= "" and ft ~= vim.bo[self.bufnr].filetype then
-    vim.bo[self.bufnr].filetype = ft
+  if ft ~= "" and ft ~= vim.bo[bufnr].filetype then
+    vim.bo[bufnr].filetype = ft
   end
   return ft
 end
@@ -288,12 +412,22 @@ function DiffView:_show()
   if vim.api.nvim_win_is_valid(self.win) then
     vim.api.nvim_win_set_buf(self.win, self.bufnr)
   end
+  if self.layout == "sbs" and self.win_left and vim.api.nvim_win_is_valid(self.win_left) then
+    vim.api.nvim_win_set_buf(self.win_left, self.bufnr_left)
+  end
 end
 
 function DiffView:_render_placeholder(msg)
-  self:_write({ msg })
+  -- The rewrite drops the buffers' manual folds; a live sync closure would
+  -- keep scanning fold ranges that no longer exist.
+  self:_clear_fold_sync()
+  self:_write(self.bufnr, { msg })
   self.hunk_rows = {}
   self._row_map = {}
+  if self.layout == "sbs" then
+    self:_write(self.bufnr_left, {})
+    self.hunk_rows_left = {}
+  end
   self:_show()
 end
 
@@ -304,38 +438,162 @@ function DiffView:row_to_source(row)
   return self._row_map[row]
 end
 
--- Fold everything outside hunk row ranges. Window-local manual folds; the
--- global foldmethod=expr from the default app's folding plugin is per-window
+-- Fold ranges: the complement of the hunk row ranges.
+local function compute_folds(hunk_rows, total)
+  if #hunk_rows == 0 then
+    return {}
+  end
+  local vis = {}
+  for _, hr in ipairs(hunk_rows) do
+    table.insert(vis, { s = hr.s, e = hr.e })
+  end
+  return complement_ranges(merge_ranges(vis), total)
+end
+
+-- Apply fold ranges to one window. Window-local manual folds; the global
+-- foldmethod=expr from the default app's folding plugin is per-window
 -- overridden here.
-function DiffView:_apply_folds()
-  if not vim.api.nvim_win_is_valid(self.win) then
+local function do_fold(win, bufnr, folds)
+  if not (win and vim.api.nvim_win_is_valid(win)) then
     return
   end
-  local total = vim.api.nvim_buf_line_count(self.bufnr)
-  local folds = {}
-  if #self.hunk_rows > 0 then
-    local vis = {}
-    for _, hr in ipairs(self.hunk_rows) do
-      table.insert(vis, { s = hr.s, e = hr.e })
-    end
-    folds = complement_ranges(merge_ranges(vis), total)
-  end
-  vim.api.nvim_buf_clear_namespace(self.bufnr, fold_ns, 0, -1)
-  vim.api.nvim_win_call(self.win, function()
-    vim.wo[self.win][0].foldmethod = "manual"
-    vim.wo[self.win][0].foldenable = true
-    vim.wo[self.win][0].foldlevel = 0
-    vim.wo[self.win][0].foldtext = "v:lua.require'app.review.ui.diff'._foldtext()"
+  vim.api.nvim_buf_clear_namespace(bufnr, fold_ns, 0, -1)
+  vim.api.nvim_win_call(win, function()
+    vim.wo[win][0].foldmethod = "manual"
+    vim.wo[win][0].foldenable = true
+    vim.wo[win][0].foldlevel = 0
+    vim.wo[win][0].foldtext = "v:lua.require'app.review.ui.diff'._foldtext()"
     vim.cmd("normal! zE")
     for _, r in ipairs(folds) do
       if r.s <= r.e then
-        vim.api.nvim_buf_set_extmark(self.bufnr, fold_ns, r.s, 0, {
+        vim.api.nvim_buf_set_extmark(bufnr, fold_ns, r.s, 0, {
           number_hl_group = "Folded",
         })
         vim.cmd(string.format("%d,%dfold", r.s + 1, r.e + 1))
       end
     end
   end)
+end
+
+-- Fold everything outside hunk row ranges (both panes in side-by-side).
+function DiffView:_apply_folds()
+  self._fold_ranges = compute_folds(self.hunk_rows, vim.api.nvim_buf_line_count(self.bufnr))
+  do_fold(self.win, self.bufnr, self._fold_ranges)
+  if self.layout == "sbs" then
+    self._fold_ranges_left = compute_folds(self.hunk_rows_left, vim.api.nvim_buf_line_count(self.bufnr_left))
+    do_fold(self.win_left, self.bufnr_left, self._fold_ranges_left)
+    self:_setup_fold_sync()
+  end
+end
+
+-- Mirror fold open/close state between the side-by-side panes. Fold ranges
+-- pair 1:1 by index (inter-hunk context has equal line counts on both
+-- sides), so no row translation is needed. Triggers: the buffer-local fold
+-- key remaps (deterministic, covers in-place zc/zR), sync_folds (API-context
+-- changes), plus WinScrolled/CursorMoved as a safety net for anything else
+-- that shifts fold state.
+function DiffView:_setup_fold_sync()
+  self:_clear_fold_sync()
+  local win_r, win_l = self.win, self.win_left
+  local fr, fl = self._fold_ranges, self._fold_ranges_left
+  if not (win_l and vim.api.nvim_win_is_valid(win_l) and vim.api.nvim_win_is_valid(win_r)) then
+    return
+  end
+  -- Degenerate hunk geometry (0-count hunks at file edges) can merge a gap
+  -- on one side only; without 1:1 pairing the mirror would misfold.
+  if #fr == 0 or #fr ~= #fl then
+    return
+  end
+
+  local syncing = false
+
+  -- mask[i] = true when folds[i] is currently open in win. One win_call for
+  -- the whole scan — this runs from CursorMoved, so per-fold round-trips add up.
+  local function open_mask(win, folds)
+    return vim.api.nvim_win_call(win, function()
+      local mask = {}
+      for i, f in ipairs(folds) do
+        mask[i] = vim.fn.foldclosed(f.s + 1) == -1
+      end
+      return mask
+    end)
+  end
+
+  local function apply_mask(win, folds, mask)
+    vim.api.nvim_win_call(win, function()
+      for i, f in ipairs(folds) do
+        local closed = vim.fn.foldclosed(f.s + 1) ~= -1
+        if mask[i] and closed then
+          vim.cmd(string.format("%d,%dfoldopen", f.s + 1, f.e + 1))
+        elseif not mask[i] and not closed then
+          vim.cmd(string.format("%d,%dfoldclose", f.s + 1, f.e + 1))
+        end
+      end
+    end)
+  end
+
+  local function masks_equal(m1, m2)
+    for i = 1, #m1 do
+      if m1[i] ~= m2[i] then
+        return false
+      end
+    end
+    return true
+  end
+
+  -- do_fold just applied everything closed; no need to scan for the snapshot.
+  local last_mask_r, last_mask_l = {}, {}
+  for i = 1, #fr do
+    last_mask_r[i], last_mask_l[i] = false, false
+  end
+
+  -- Mirror `mask` (freshly read from one side) onto the other side. After a
+  -- successful mirror both sides equal the applied mask by construction.
+  local function sync(mask, to_win, to_folds)
+    syncing = true
+    -- E490: folds deleted out-of-band (zE/zd fire no autocmd) — nothing to
+    -- mirror, and `syncing` must reset or every later sync no-ops.
+    pcall(apply_mask, to_win, to_folds, mask)
+    syncing = false
+    last_mask_r, last_mask_l = mask, mask
+  end
+
+  local function on_event(win)
+    if syncing or not (vim.api.nvim_win_is_valid(win_r) and vim.api.nvim_win_is_valid(win_l)) then
+      return
+    end
+    -- zi (nofoldenable) makes foldclosed() read -1 everywhere; syncing that
+    -- all-open mask would genuinely open the other pane's folds.
+    if not (vim.wo[win_r].foldenable and vim.wo[win_l].foldenable) then
+      return
+    end
+    if win == win_r then
+      local mask = open_mask(win_r, fr)
+      if not masks_equal(mask, last_mask_r) then
+        sync(mask, win_l, fl)
+      end
+    elseif win == win_l then
+      local mask = open_mask(win_l, fl)
+      if not masks_equal(mask, last_mask_l) then
+        sync(mask, win_r, fr)
+      end
+    end
+  end
+
+  self._fold_sync = on_event
+  self._fold_aug = vim.api.nvim_create_augroup("ReviewFoldSync_" .. win_r, { clear = true })
+  vim.api.nvim_create_autocmd("WinScrolled", {
+    group = self._fold_aug,
+    callback = function(ev)
+      on_event(tonumber(ev.match))
+    end,
+  })
+  vim.api.nvim_create_autocmd("CursorMoved", {
+    group = self._fold_aug,
+    callback = function()
+      on_event(vim.api.nvim_get_current_win())
+    end,
+  })
 end
 
 -- Load old- and new-side content for a file. git.show may call back
@@ -393,7 +651,13 @@ function DiffView:render(file, cwd, on_done)
     if self._render_seq ~= seq or not vim.api.nvim_buf_is_valid(self.bufnr) then
       return
     end
-    self:_render_inline(file, old_lines, new_lines)
+    -- Fall back to inline when the left window vanished out-of-band (:q in
+    -- the pane); the next toggle re-syncs the docket's layout state.
+    if self.layout == "sbs" and self.win_left and vim.api.nvim_win_is_valid(self.win_left) then
+      self:_render_sbs(file, old_lines, new_lines)
+    else
+      self:_render_inline(file, old_lines, new_lines)
+    end
     if on_done then on_done() end
   end)
 end
@@ -407,8 +671,8 @@ function DiffView:_render_inline(file, old_lines, new_lines)
 
   if file.status == "D" then
     -- Deleted file: show the old content, every line marked deleted.
-    self:_write(old_lines)
-    self:_set_ft(file.old_path or file.path)
+    self:_write(self.bufnr, old_lines)
+    self:_set_ft(self.bufnr, file.old_path or file.path)
     for i = 1, #old_lines do
       local row = i - 1
       row_map[row] = { lnum = i, side = "LEFT", text = old_lines[i] }
@@ -423,7 +687,11 @@ function DiffView:_render_inline(file, old_lines, new_lines)
     return
   end
 
-  local sorted = vim.deepcopy(file.hunks)
+  -- Shallow copy for the sort — table.sort only reorders the outer list.
+  local sorted = {}
+  for i, h in ipairs(file.hunks) do
+    sorted[i] = h
+  end
   table.sort(sorted, function(a, b)
     return a.new_start < b.new_start
   end)
@@ -486,8 +754,8 @@ function DiffView:_render_inline(file, old_lines, new_lines)
   end
 
   -- Write the new file and annotate it.
-  self:_write(new_lines)
-  self:_set_ft(file.path)
+  self:_write(self.bufnr, new_lines)
+  self:_set_ft(self.bufnr, file.path)
 
   for lnum = 1, #new_lines do
     local row = lnum - 1
@@ -559,10 +827,174 @@ function DiffView:_render_inline(file, old_lines, new_lines)
   self:_apply_folds()
 end
 
+-- Annotation walk for the side-by-side layout. Buffer contents are exactly
+-- old_lines (left) and new_lines (right), so buffer row == lnum - 1 on each
+-- side and only the decoration data is computed here. Exposed for unit tests.
+--
+-- Fillers keep visual line-count parity per change segment: the side with
+-- fewer real lines gets |n_del - n_add| filler virt_lines anchored below its
+-- last segment row. A negative anchor (segment at the top of the file) lands
+-- above row 0 when the side has content, keeping line 1 top-aligned; an
+-- empty side anchors below its single blank row instead.
+---@param hunks Review.Hunk[]  sorted by old_start
+---@param old_lines string[]
+---@param new_lines string[]
+---@return {exts_l: table[], exts_r: table[], fillers_l: {row:integer,count:integer,above:boolean}[], fillers_r: {row:integer,count:integer,above:boolean}[], hunk_rows_l: Review.HunkRows[], hunk_rows_r: Review.HunkRows[]}
+function M._sbs_annotations(hunks, old_lines, new_lines)
+  local exts_l, exts_r = {}, {}
+  local fillers_l, fillers_r = {}, {}
+  local hunk_rows_l, hunk_rows_r = {}, {}
+
+  local function filler(list, row, count, side_has_lines)
+    local above = false
+    if row < 0 then
+      row = 0
+      above = side_has_lines
+    end
+    table.insert(list, { row = row, count = count, above = above })
+  end
+
+  -- Hunk row range for one side; a 0-count side collapses to an anchor row.
+  local function rows_entry(start, count, total, fd, ld)
+    if count > 0 then
+      local s, e = start - 1, start + count - 2
+      return { s = s, e = e, first_diff = fd or s, last_diff = ld or e }
+    end
+    local anchor = math.max(0, math.min(start - 1, total - 1))
+    return { s = anchor, e = anchor, first_diff = anchor, last_diff = anchor }
+  end
+
+  for _, hunk in ipairs(hunks) do
+    -- o/n: next unprocessed lnum per side. A 0-count side has start = the
+    -- line *before* the change (unified-diff convention), so bump it.
+    local o = hunk.old_count == 0 and hunk.old_start + 1 or hunk.old_start
+    local n = hunk.new_count == 0 and hunk.new_start + 1 or hunk.new_start
+    local fd_l, ld_l, fd_r, ld_r
+
+    for _, seg in ipairs(pair.segments(hunk.lines)) do
+      if seg.type == "ctx" then
+        o = o + #seg.lines
+        n = n + #seg.lines
+      else
+        local n_del, n_add = #seg.dels, #seg.adds
+        local n_pair = math.min(n_del, n_add)
+        local wdiffs = {}
+        for j = 1, n_pair do
+          wdiffs[j] = word.compute(seg.adds[j].text, seg.dels[j].text)
+        end
+
+        for j, dl in ipairs(seg.dels) do
+          local row = dl.old_lnum - 1
+          local wd = wdiffs[j]
+          local sign = j <= n_pair and "ReviewSignChange" or "ReviewSignDelete"
+          emit_line_exts(exts_l, row, dl.text, "ReviewDiffDelete", sign, wd and wd.removed)
+          fd_l = fd_l or row
+          ld_l = row
+        end
+        for j, al in ipairs(seg.adds) do
+          local row = al.new_lnum - 1
+          local wd = wdiffs[j]
+          local sign = j <= n_pair and "ReviewSignChange" or "ReviewSignAdd"
+          emit_line_exts(exts_r, row, al.text, "ReviewDiffAdd", sign, wd and wd.added)
+          fd_r = fd_r or row
+          ld_r = row
+        end
+
+        if n_add > n_del then
+          filler(fillers_l, o + n_del - 2, n_add - n_del, #old_lines > 0)
+        elseif n_del > n_add then
+          filler(fillers_r, n + n_add - 2, n_del - n_add, #new_lines > 0)
+        end
+        o = o + n_del
+        n = n + n_add
+      end
+    end
+
+    table.insert(hunk_rows_l, rows_entry(hunk.old_start, hunk.old_count, #old_lines, fd_l, ld_l))
+    table.insert(hunk_rows_r, rows_entry(hunk.new_start, hunk.new_count, #new_lines, fd_r, ld_r))
+  end
+
+  return {
+    exts_l = exts_l,
+    exts_r = exts_r,
+    fillers_l = fillers_l,
+    fillers_r = fillers_r,
+    hunk_rows_l = hunk_rows_l,
+    hunk_rows_r = hunk_rows_r,
+  }
+end
+
+---@param file Review.FileChange
+---@param old_lines string[]
+---@param new_lines string[]
+function DiffView:_render_sbs(file, old_lines, new_lines)
+  self:_write(self.bufnr, new_lines)
+  self:_write(self.bufnr_left, old_lines)
+  self:_set_ft(self.bufnr, file.path)
+  self:_set_ft(self.bufnr_left, file.old_path or file.path)
+
+  -- Shallow copy for the sort — table.sort only reorders the outer list.
+  local sorted = {}
+  for i, h in ipairs(file.hunks) do
+    sorted[i] = h
+  end
+  table.sort(sorted, function(a, b)
+    return a.old_start < b.old_start
+  end)
+  local ann = M._sbs_annotations(sorted, old_lines, new_lines)
+
+  local function add_filler_exts(exts, fillers)
+    for _, f in ipairs(fillers) do
+      table.insert(exts, { row = f.row, col = 0, opts = {
+        virt_lines = filler_vlines(f.count),
+        virt_lines_above = f.above,
+      } })
+    end
+  end
+  add_filler_exts(ann.exts_l, ann.fillers_l)
+  add_filler_exts(ann.exts_r, ann.fillers_r)
+  apply_exts(self.bufnr_left, signs.ns, ann.exts_l)
+  apply_exts(self.bufnr, signs.ns, ann.exts_r)
+
+  local row_map = {}
+  for i = 1, #new_lines do
+    row_map[i - 1] = { lnum = i, side = "RIGHT", text = new_lines[i] }
+  end
+  self._row_map = row_map
+  self.hunk_rows = ann.hunk_rows_r
+  self.hunk_rows_left = ann.hunk_rows_l
+
+  self:_show()
+  self:_apply_folds()
+  -- Bind, align both panes at the top, and capture the scrollbind offset (0).
+  for _, win in ipairs({ self.win, self.win_left }) do
+    if win and vim.api.nvim_win_is_valid(win) then
+      vim.wo[win].scrollbind = true
+      vim.api.nvim_win_set_cursor(win, { 1, 0 })
+    end
+  end
+  -- syncbind is relative to the current window, which may be the outline or
+  -- another tab entirely (async render off the save watcher) — anchor it.
+  if vim.api.nvim_win_is_valid(self.win) then
+    vim.api.nvim_win_call(self.win, function()
+      vim.cmd("syncbind")
+    end)
+  end
+end
+
 function DiffView:destroy()
   word.clear_cache()
-  if vim.api.nvim_buf_is_valid(self.bufnr) then
-    pcall(vim.api.nvim_buf_delete, self.bufnr, { force = true })
+  self:_clear_fold_sync()
+  -- Close the sbs split so a re-opened review doesn't inherit a dead pane.
+  -- pcall: closing can throw when it is the last window in the tab.
+  if self.win_left and vim.api.nvim_win_is_valid(self.win_left) then
+    pcall(vim.api.nvim_win_close, self.win_left, true)
+  end
+  self.win_left = nil
+  for _, bufnr in ipairs({ self.bufnr, self.bufnr_left }) do
+    if vim.api.nvim_buf_is_valid(bufnr) then
+      pcall(vim.api.nvim_buf_delete, bufnr, { force = true })
+    end
   end
 end
 

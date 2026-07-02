@@ -44,27 +44,36 @@ local function close_review()
 end
 
 local function set_keymaps(dk)
-  local function map(lhs, method, desc)
-    vim.keymap.set("n", lhs, function()
-      if not dk._closed then
+  -- Both panes get the maps; docket actions act in the primary window (the
+  -- left pane follows via scrollbind), so focus moves there first.
+  for _, bufnr in ipairs({ dk.dv.bufnr, dk.dv.bufnr_left }) do
+    local function map(lhs, method, desc)
+      vim.keymap.set("n", lhs, function()
+        if dk._closed then
+          return
+        end
+        if vim.api.nvim_get_current_win() ~= dk.win and vim.api.nvim_win_is_valid(dk.win) then
+          vim.api.nvim_set_current_win(dk.win)
+        end
         dk[method](dk)
-      end
-    end, { buffer = dk.dv.bufnr, silent = true, desc = desc })
-  end
-  map("]f", "next_file", "Review: next file")
-  map("[f", "prev_file", "Review: previous file")
-  map("]h", "next_hunk", "Review: next hunk")
-  map("[h", "prev_hunk", "Review: previous hunk")
-  map("]c", "next_changeset", "Review: next changeset")
-  map("[c", "prev_changeset", "Review: previous changeset")
-
-  vim.keymap.set("n", "<leader>o", function()
-    if not dk._closed and dk.outline then
-      dk.outline:open()
+      end, { buffer = bufnr, silent = true, desc = desc })
     end
-  end, { buffer = dk.dv.bufnr, silent = true, desc = "Review: focus outline" })
+    map("]f", "next_file", "Review: next file")
+    map("[f", "prev_file", "Review: previous file")
+    map("]h", "next_hunk", "Review: next hunk")
+    map("[h", "prev_hunk", "Review: previous hunk")
+    map("]c", "next_changeset", "Review: next changeset")
+    map("[c", "prev_changeset", "Review: previous changeset")
+    map("<leader>rl", "toggle_layout", "Review: toggle side-by-side")
 
-  vim.keymap.set("n", "q", close_review, { buffer = dk.dv.bufnr, silent = true, desc = "Close review" })
+    vim.keymap.set("n", "<leader>o", function()
+      if not dk._closed and dk.outline then
+        dk.outline:open()
+      end
+    end, { buffer = bufnr, silent = true, desc = "Review: focus outline" })
+
+    vim.keymap.set("n", "q", close_review, { buffer = bufnr, silent = true, desc = "Close review" })
+  end
 end
 
 -- Create the outline sidebar for a docket. Snacks comes from the app's own
@@ -122,8 +131,9 @@ function ReviewApp.open(kind, opts)
   end
 
   local dv = require("app.review.ui.diff").new({ win = win })
-  -- Name the buffer so the framework's D7 unnamed-buffer sweep skips it.
+  -- Name the buffers so the framework's D7 unnamed-buffer sweep skips them.
   vim.api.nvim_buf_set_name(dv.bufnr, "review://" .. kind)
+  vim.api.nvim_buf_set_name(dv.bufnr_left, "review://" .. kind .. "//old")
 
   docket = require("app.review.docket").new({
     kind = kind,
