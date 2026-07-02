@@ -132,9 +132,13 @@ function M._launch_standalone(app, args)
   if not M.is_default() then
     vim.schedule(function()
       for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+        -- The boot buffer is always a NORMAL buffer (buftype == ""); unnamed
+        -- scratch/prompt buffers (e.g. an app's picker windows) are nofile or
+        -- prompt and must survive the sweep.
         if
           vim.api.nvim_buf_is_valid(buf)
           and vim.api.nvim_buf_get_name(buf) == ""
+          and vim.bo[buf].buftype == ""
           and not vim.bo[buf].modified
           and vim.fn.bufwinid(buf) ~= -1
         then
