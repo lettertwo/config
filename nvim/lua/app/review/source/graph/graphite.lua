@@ -48,11 +48,12 @@ end
 ---@param current string
 ---@return Review.StackNode[]
 function M._walk(by_branch, current)
-  -- On trunk itself (row with no parent), every stack in the repo is a
+  -- On trunk itself (row with no parent — or no row at all, which is also
+  -- how a gt-untracked branch looks), every stack in the repo is a
   -- "descendant" — that's not a reviewable stack. Return nothing and let the
   -- factory fall back to the git graph (upstream-commits semantics).
   local row0 = by_branch[current]
-  if row0 and (not row0.parent or row0.parent == "") then
+  if not row0 or not row0.parent or row0.parent == "" then
     return {}
   end
 
