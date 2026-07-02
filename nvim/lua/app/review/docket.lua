@@ -16,7 +16,7 @@ local Statusline = require("config.mini.statusline")
 ---@field files Review.FileChange[]  flattened across changesets, in changeset order
 ---@field cs_idx_by_id table<string, integer>
 ---@field idx integer
----@field state {outline_mode: string}
+---@field state {outline_mode: string, layout: "inline"|"sbs"}
 ---@field outline table?  OutlineView (set by init.lua after construction)
 ---@field _aug integer?     save-watcher augroup
 ---@field _timer userdata?  save-watcher debounce timer
@@ -40,7 +40,10 @@ function M.new(opts)
   self.files = {}
   self.cs_idx_by_id = {}
   self.idx = 1
-  self.state = { outline_mode = opts.source.default_outline_mode or "flat" }
+  self.state = {
+    outline_mode = opts.source.default_outline_mode or "flat",
+    layout = "inline",
+  }
   self.outline = nil
   self._closed = false
   return self
@@ -65,7 +68,8 @@ function Docket:set_winbar()
   if not vim.api.nvim_win_is_valid(self.win) then
     return
   end
-  local text = "  REVIEW  " .. self.title
+  local prefix = "  REVIEW  " .. self.title
+  local text = prefix
   local file = self.files[self.idx]
   if file then
     if #self.changesets > 1 then
@@ -78,6 +82,73 @@ function Docket:set_winbar()
     text = text .. ("  %s (%d/%d)"):format(file.path, self.idx, #self.files)
   end
   vim.wo[self.win].winbar = Statusline.make_winbar(text, "MiniStatuslineModeNormal")
+
+  -- Left (old-side) pane in side-by-side: label with the base ref.
+  local win_left = self.dv.win_left
+  if win_left and vim.api.nvim_win_is_valid(win_left) then
+    local ltext = prefix
+    if file then
+      local base = file.base_ref
+      if not base or base == "" then
+        base = "HEAD"
+      end
+      ltext = ltext .. ("  %s @ %s"):format(file.old_path or file.path, base)
+    end
+    vim.wo[win_left].winbar = Statusline.make_winbar(ltext, "MiniStatuslineModeNormal")
+  end
+end
+
+-- Toggle inline ↔ side-by-side. The docket owns the window topology (it
+-- creates/closes the left split); the DiffView renders into it. Layout
+-- persists across file nav for the docket's lifetime.
+function Docket:toggle_layout()
+  if not vim.api.nvim_win_is_valid(self.win) then
+    return
+  end
+  local view = vim.api.nvim_win_call(self.win, vim.fn.winsaveview)
+  if self.state.layout == "inline" then
+    local prev = vim.api.nvim_get_current_win()
+    vim.api.nvim_set_current_win(self.win)
+    -- Split before mutating layout state — vsplit can throw (E36, no room),
+    -- and a half-toggled state would take two presses to recover from.
+    vim.cmd("leftabove vsplit")
+    local left = vim.api.nvim_get_current_win()
+    self.state.layout = "sbs"
+    self.dv:set_layout("sbs", left)
+    if vim.api.nvim_win_is_valid(prev) then
+      vim.api.nvim_set_current_win(prev)
+    end
+    -- The pane can be closed out-of-band (:q); re-sync layout state and
+    -- restore the inline render instead of leaving half-sbs leftovers.
+    vim.api.nvim_create_autocmd("WinClosed", {
+      pattern = tostring(left),
+      once = true,
+      callback = function()
+        if self._closed or self.state.layout ~= "sbs" then
+          return
+        end
+        self.state.layout = "inline"
+        self.dv:set_layout("inline")
+        vim.schedule(function()
+          if not self._closed then
+            self:show_file(vim.api.nvim_win_is_valid(self.win) and vim.api.nvim_win_call(self.win, vim.fn.winsaveview) or nil)
+          end
+        end)
+      end,
+    })
+  else
+    self.state.layout = "inline"
+    local left = self.dv.win_left
+    local cur = vim.api.nvim_get_current_win()
+    self.dv:set_layout("inline")
+    if left and vim.api.nvim_win_is_valid(left) then
+      vim.api.nvim_win_close(left, false)
+      if cur == left then
+        vim.api.nvim_set_current_win(self.win)
+      end
+    end
+  end
+  self:show_file(view)
 end
 
 -- Render the file at self.idx. view: optional winsaveview() to restore
@@ -101,6 +172,11 @@ function Docket:show_file(view)
           vim.api.nvim_win_set_cursor(self.win, { hr.first_diff + 1, 0 })
           vim.cmd("normal! zv")
         end
+      end
+      -- API cursor/view changes don't run scrollbind; re-anchor the left
+      -- pane so both panes show the same region after a restore.
+      if self.dv.win_left and vim.api.nvim_win_is_valid(self.dv.win_left) then
+        vim.cmd("syncbind")
       end
     end)
   end)
@@ -141,8 +217,10 @@ function Docket:prev_file()
 end
 
 -- Jump to the first diff line of the next/prev hunk; clamps at the ends.
+-- Cursor reads are anchored to self.win so the methods behave identically
+-- from any window (e.g. the sbs left pane).
 function Docket:next_hunk()
-  local row = vim.fn.line(".") - 1
+  local row = vim.api.nvim_win_get_cursor(self.win)[1] - 1
   for _, hr in ipairs(self.dv.hunk_rows) do
     if hr.s > row then
       vim.api.nvim_win_set_cursor(self.win, { hr.first_diff + 1, 0 })
@@ -153,7 +231,7 @@ function Docket:next_hunk()
 end
 
 function Docket:prev_hunk()
-  local row = vim.fn.line(".") - 1
+  local row = vim.api.nvim_win_get_cursor(self.win)[1] - 1
   local target = nil
   for _, hr in ipairs(self.dv.hunk_rows) do
     if hr.e < row then
