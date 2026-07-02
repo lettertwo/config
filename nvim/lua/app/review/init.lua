@@ -1,10 +1,10 @@
--- Review app: code-review session for uncommitted changes, stacks, PRs, and refs.
+-- Review app: code review for uncommitted changes, stacks, PRs, and refs.
 --
 -- Standalone:  fish function `review` → VIM_APP=review nvim ...
 -- Embedded:    :Review [kind] from any nvim session, or :App review [kind]
 --
 -- run(args) is called by the framework at UIEnter (standalone) or after tabnew
--- (embedded). Both paths call open(kind, opts) which builds the session in the
+-- (embedded). Both paths call open(kind, opts) which builds the docket in the
 -- current tab — tab lifecycle is handled by the framework, not here.
 --
 -- Args resolution order:
@@ -14,10 +14,6 @@
 --   $REVIEW_KIND  (standalone fish wrapper; env var for the same quoting
 --                  reasons as VIM_APP)
 --   default "uncommitted"
---
--- M1 session state (files list, current index, save watcher) lives directly in
--- this module; a session.lua extraction point re-appears once M2/M3 add real
--- state.
 
 local Statusline = require("config.mini.statusline")
 
@@ -27,270 +23,30 @@ local ReviewApp = {
   name = "review",
 }
 
----@class ReviewSession
----@field kind string
----@field cwd string
----@field title string
----@field win integer
----@field dv Review.DiffView
----@field source Review.Source
----@field changesets Review.Changeset[]
----@field files Review.FileChange[]  flattened across changesets, in changeset order
----@field cs_idx_by_id table<string, integer>
----@field idx integer
----@field aug integer?     save-watcher augroup
----@field timer userdata?  save-watcher debounce timer
+---@type Review.Docket?
+local docket = nil
 
----@type ReviewSession?
-local session = nil
-
-local function stop_watcher(sess)
-  if sess.timer then
-    sess.timer:stop()
-    sess.timer:close()
-    sess.timer = nil
-  end
-  if sess.aug then
-    pcall(vim.api.nvim_del_augroup_by_id, sess.aug)
-    sess.aug = nil
+local function close_docket()
+  if docket then
+    docket:destroy()
+    docket = nil
   end
 end
 
-local function close_session()
-  if not session then
-    return
-  end
-  stop_watcher(session)
-  session.dv:destroy()
-  session = nil
-end
-
--- Flatten changesets into the nav list. Grouped changeset UI is the M3
--- outline; until then the flat list (in changeset order) is the nav model.
-local function set_changesets(sess, changesets)
-  sess.changesets = changesets or {}
-  sess.files = {}
-  sess.cs_idx_by_id = {}
-  for i, cs in ipairs(sess.changesets) do
-    sess.cs_idx_by_id[cs.id] = i
-    for _, f in ipairs(cs.files) do
-      table.insert(sess.files, f)
-    end
-  end
-end
-
-local function set_winbar(sess)
-  if not vim.api.nvim_win_is_valid(sess.win) then
-    return
-  end
-  local text = "  REVIEW  " .. sess.title
-  local file = sess.files[sess.idx]
-  if file then
-    if #sess.changesets > 1 then
-      local ci = sess.cs_idx_by_id[file.changeset_id]
-      local cs = ci and sess.changesets[ci]
-      if cs then
-        text = text .. ("  [%d/%d %s]"):format(ci, #sess.changesets, cs.title)
-      end
-    end
-    text = text .. ("  %s (%d/%d)"):format(file.path, sess.idx, #sess.files)
-  end
-  vim.wo[sess.win].winbar = Statusline.make_winbar(text, "MiniStatuslineModeNormal")
-end
-
--- Render the file at sess.idx. view: optional winsaveview() to restore
--- (refresh path); otherwise the cursor jumps to the first hunk.
-local function show_file(sess, view)
-  local file = sess.files[sess.idx]
-  if not file then
-    return
-  end
-  sess.dv:render(file, sess.cwd, function()
-    if not (session == sess and vim.api.nvim_win_is_valid(sess.win)) then
-      return
-    end
-    set_winbar(sess)
-    vim.api.nvim_win_call(sess.win, function()
-      if view then
-        vim.fn.winrestview(view)
-      else
-        local hr = sess.dv.hunk_rows[1]
-        if hr then
-          vim.api.nvim_win_set_cursor(sess.win, { hr.first_diff + 1, 0 })
-          vim.cmd("normal! zv")
-        end
-      end
-    end)
-  end)
-end
-
-local function next_file(sess)
-  if sess.idx < #sess.files then
-    sess.idx = sess.idx + 1
-    show_file(sess)
-  end
-end
-
-local function prev_file(sess)
-  if sess.idx > 1 then
-    sess.idx = sess.idx - 1
-    show_file(sess)
-  end
-end
-
--- Jump to the first diff line of the next/prev hunk; clamps at the ends.
-local function next_hunk(sess)
-  local row = vim.fn.line(".") - 1
-  for _, hr in ipairs(sess.dv.hunk_rows) do
-    if hr.s > row then
-      vim.api.nvim_win_set_cursor(sess.win, { hr.first_diff + 1, 0 })
-      vim.cmd("normal! zv")
-      return
-    end
-  end
-end
-
--- Jump to the first file of the next/prev changeset; clamps at the ends.
-local function next_changeset(sess)
-  local file = sess.files[sess.idx]
-  local ci = file and sess.cs_idx_by_id[file.changeset_id] or 0
-  for i = sess.idx + 1, #sess.files do
-    if sess.cs_idx_by_id[sess.files[i].changeset_id] > ci then
-      sess.idx = i
-      show_file(sess)
-      return
-    end
-  end
-end
-
-local function prev_changeset(sess)
-  local file = sess.files[sess.idx]
-  local ci = file and sess.cs_idx_by_id[file.changeset_id] or 0
-  if ci <= 1 then
-    return
-  end
-  for i = 1, #sess.files do
-    if sess.cs_idx_by_id[sess.files[i].changeset_id] == ci - 1 then
-      sess.idx = i
-      show_file(sess)
-      return
-    end
-  end
-end
-
-local function prev_hunk(sess)
-  local row = vim.fn.line(".") - 1
-  local target = nil
-  for _, hr in ipairs(sess.dv.hunk_rows) do
-    if hr.e < row then
-      target = hr
-    end
-  end
-  if target then
-    vim.api.nvim_win_set_cursor(sess.win, { target.first_diff + 1, 0 })
-    vim.cmd("normal! zv")
-  end
-end
-
-local function refresh(sess)
-  local current = sess.files[sess.idx]
-  local current_path = current and current.path
-  local current_cs = current and current.changeset_id
-  sess.source:refresh(function(changesets, err)
-    if session ~= sess then
-      return
-    end
-    if err then
-      vim.notify("Review refresh error: " .. err, vim.log.levels.ERROR, { title = "Review" })
-      return
-    end
-    set_changesets(sess, changesets)
-    if #sess.files == 0 then
-      sess.idx = 1
-      sess.dv:_render_placeholder("[No changes]")
-      set_winbar(sess)
-      return
-    end
-    -- Keep the current file when it still exists (same path can appear in
-    -- several changesets, so match both); clamp the index otherwise.
-    local same_file = false
-    if current_path then
-      for i, f in ipairs(sess.files) do
-        if f.path == current_path and f.changeset_id == current_cs then
-          sess.idx = i
-          same_file = true
-          break
-        end
-      end
-    end
-    if not same_file then
-      sess.idx = math.min(sess.idx, #sess.files)
-    end
-    local view = same_file
-        and vim.api.nvim_win_is_valid(sess.win)
-        and vim.api.nvim_win_call(sess.win, vim.fn.winsaveview)
-      or nil
-    show_file(sess, view)
-  end)
-end
-
--- Debounced refresh on file saves under the repo root and on focus regain
--- (external edits). The augroup is global, not buffer-local: writes happen in
--- other buffers (embedded mode), never in the review buffer itself.
-local function start_watcher(sess)
-  local cwd = vim.fs.normalize(sess.cwd)
-  sess.aug = vim.api.nvim_create_augroup("ReviewSaveWatch_" .. sess.dv.bufnr, { clear = true })
-
-  local function schedule_refresh()
-    if sess.timer then
-      sess.timer:stop()
-      sess.timer:close()
-    end
-    sess.timer = vim.uv.new_timer()
-    sess.timer:start(250, 0, function()
-      if sess.timer then
-        sess.timer:close()
-        sess.timer = nil
-      end
-      vim.schedule(function()
-        if session == sess then
-          refresh(sess)
-        end
-      end)
-    end)
-  end
-
-  vim.api.nvim_create_autocmd("BufWritePost", {
-    group = sess.aug,
-    callback = function(ev)
-      local path = vim.api.nvim_buf_get_name(ev.buf)
-      if path == "" or vim.fs.normalize(path):sub(1, #cwd) ~= cwd then
-        return
-      end
-      schedule_refresh()
-    end,
-  })
-
-  vim.api.nvim_create_autocmd("FocusGained", {
-    group = sess.aug,
-    callback = schedule_refresh,
-  })
-end
-
-local function set_keymaps(sess)
-  local function map(lhs, fn, desc)
+local function set_keymaps(dk)
+  local function map(lhs, method, desc)
     vim.keymap.set("n", lhs, function()
-      if session == sess then
-        fn(sess)
+      if not dk._closed then
+        dk[method](dk)
       end
-    end, { buffer = sess.dv.bufnr, silent = true, desc = desc })
+    end, { buffer = dk.dv.bufnr, silent = true, desc = desc })
   end
-  map("]f", next_file, "Review: next file")
-  map("[f", prev_file, "Review: previous file")
-  map("]h", next_hunk, "Review: next hunk")
-  map("[h", prev_hunk, "Review: previous hunk")
-  map("]c", next_changeset, "Review: next changeset")
-  map("[c", prev_changeset, "Review: previous changeset")
+  map("]f", "next_file", "Review: next file")
+  map("[f", "prev_file", "Review: previous file")
+  map("]h", "next_hunk", "Review: next hunk")
+  map("[h", "prev_hunk", "Review: previous hunk")
+  map("]c", "next_changeset", "Review: next changeset")
+  map("[c", "prev_changeset", "Review: previous changeset")
 
   -- q: quit in standalone (we own the process), close tab in embedded.
   vim.keymap.set("n", "q", function()
@@ -299,13 +55,13 @@ local function set_keymaps(sess)
     else
       pcall(vim.cmd, "tabclose")
     end
-  end, { buffer = sess.dv.bufnr, silent = true, desc = "Close review" })
+  end, { buffer = dk.dv.bufnr, silent = true, desc = "Close review" })
 end
 
--- Open a review session in the current tab.
+-- Open a review docket in the current tab.
 --
 -- Does not create a tab — the caller is responsible. In standalone mode the
--- process IS the session; in embedded mode _launch_embedded already ran tabnew.
+-- process IS the review; in embedded mode _launch_embedded already ran tabnew.
 ---@param kind "uncommitted"|"stack"|"pr"|"ref"
 ---@param opts? { cwd?: string, title?: string }
 function ReviewApp.open(kind, opts)
@@ -313,7 +69,7 @@ function ReviewApp.open(kind, opts)
   local cwd = opts.cwd or Config.root("git") or vim.fn.getcwd()
   local title = opts.title or kind
 
-  close_session()
+  close_docket()
   require("app.review.ui.signs").setup()
   Statusline.setup_highlights()
 
@@ -337,49 +93,19 @@ function ReviewApp.open(kind, opts)
   local dv = require("app.review.ui.diff").new({ win = win })
   -- Name the buffer so the framework's D7 unnamed-buffer sweep skips it.
   vim.api.nvim_buf_set_name(dv.bufnr, "review://" .. kind)
-  local sess = {
+
+  docket = require("app.review.docket").new({
     kind = kind,
     cwd = cwd,
     title = title,
     win = win,
     dv = dv,
     source = require("app.review.source." .. kind).new({ cwd = cwd }),
-    changesets = {},
-    files = {},
-    cs_idx_by_id = {},
-    idx = 1,
-  }
-  session = sess
-  set_keymaps(sess)
+  })
+  set_keymaps(docket)
   dv:_render_placeholder("Loading " .. title .. "  —  " .. cwd .. " …")
-  set_winbar(sess)
-
-  sess.source:load(function(changesets, err)
-    if session ~= sess then
-      return
-    end
-    if err then
-      dv:_render_placeholder("[Review error: " .. err .. "]")
-      return
-    end
-    set_changesets(sess, changesets)
-    if #sess.files == 0 then
-      dv:_render_placeholder("[No changes]")
-      return
-    end
-    -- Open at the current-position changeset (the source marks it, e.g. the
-    -- worktree's own branch / uncommitted changes mid-stack), not at the
-    -- stack's base.
-    for i, f in ipairs(sess.files) do
-      local ci = sess.cs_idx_by_id[f.changeset_id]
-      if ci and sess.changesets[ci].current then
-        sess.idx = i
-        break
-      end
-    end
-    show_file(sess)
-    start_watcher(sess)
-  end)
+  docket:set_winbar()
+  docket:load()
 end
 
 function ReviewApp:run(args)
@@ -391,7 +117,7 @@ function ReviewApp:run(args)
 end
 
 function ReviewApp:teardown()
-  close_session()
+  close_docket()
 end
 
 return ReviewApp
