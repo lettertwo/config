@@ -70,6 +70,34 @@ local function build_fixture()
   return cwd
 end
 
+-- Stack fixture: main with a base commit, feature branch with two commits,
+-- plus an uncommitted edit. Exercises the git-fallback graph (no graphite db).
+local function build_stack_fixture()
+  local cwd = vim.fn.tempname()
+  vim.fn.mkdir(cwd, "p")
+  local function git(...)
+    local r = vim.system({ "git", ... }, { cwd = cwd, text = true }):wait()
+    assert(r.code == 0, r.stderr)
+  end
+  git("init", "-q")
+  git("branch", "-M", "main")
+  git("config", "user.email", "t@t")
+  git("config", "user.name", "t")
+
+  vim.fn.writefile({ "local base = 1", "return base" }, cwd .. "/base.lua")
+  git("add", ".")
+  git("commit", "-qm", "init")
+  git("checkout", "-qb", "feature")
+  vim.fn.writefile({ "local a1 = 1", "return a1" }, cwd .. "/a1.lua")
+  git("add", ".")
+  git("commit", "-qm", "add a1")
+  vim.fn.writefile({ "local b1 = 1", "return b1" }, cwd .. "/b1.lua")
+  git("add", ".")
+  git("commit", "-qm", "add b1")
+  vim.fn.writefile({ "local base = 2 -- dirty", "return base" }, cwd .. "/base.lua")
+  return cwd
+end
+
 local function feed(keys)
   vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(keys, true, false, true), "x", false)
 end
@@ -81,7 +109,7 @@ local function wait_line1(pat)
   end, 50)
 end
 
-local fixture = build_fixture()
+local fixture = scenario == "stack" and build_stack_fixture() or build_fixture()
 vim.cmd.cd(fixture)
 
 -- ── Scenarios ───────────────────────────────────────────────────────────────
@@ -211,6 +239,39 @@ elseif scenario == "embedded" then
     return #vim.api.nvim_list_tabpages() == tabs_before
   end, 50)
   check("q closes back to host tab", #vim.api.nvim_list_tabpages() == tabs_before)
+
+  finish()
+elseif scenario == "stack" then
+  -- $REVIEW_KIND=stack is set by the runner; exercises run()'s env resolution.
+  _G.App.launch("review", { context = "standalone" })
+  check("render completed", wait_line1())
+  if failed then
+    finish()
+    return
+  end
+  local win = vim.api.nvim_get_current_win()
+  local function winbar()
+    return vim.wo[win].winbar or ""
+  end
+
+  -- Changeset order: uncommitted first, then commits base→head.
+  check(
+    "uncommitted changeset first (dirty base.lua rendered)",
+    (vim.api.nvim_buf_get_lines(0, 0, 1, false)[1]) == "local base = 2 -- dirty",
+    vim.api.nvim_buf_get_lines(0, 0, 1, false)[1]
+  )
+  check("winbar shows changeset 1/3", winbar():find("[1/3", 1, true) ~= nil, winbar())
+
+  feed("]c")
+  check("]c jumps to first commit changeset (a1.lua)", wait_line1("a1"))
+  check("winbar shows changeset 2/3 with subject", winbar():find("[2/3 add a1]", 1, true) ~= nil, winbar())
+
+  feed("]f")
+  check("]f crosses changeset boundary (b1.lua)", wait_line1("b1"))
+  check("winbar shows changeset 3/3", winbar():find("[3/3 add b1]", 1, true) ~= nil, winbar())
+
+  feed("[c")
+  check("[c jumps back to previous changeset", wait_line1("a1"))
 
   finish()
 else

@@ -13,11 +13,14 @@ if string match -rq 'Failed : \D*[1-9]|Errors : \D*[1-9]' (string join ' ' $spec
     set failed 1
 end
 
-for scenario in standalone degraded embedded
+for scenario in standalone degraded embedded stack
     echo "── e2e: $scenario ──────────────────────────────────────"
     set -l app_env
     if test $scenario != embedded
         set app_env VIM_APP=review
+    end
+    if test $scenario = stack
+        set -a app_env REVIEW_KIND=stack
     end
     env $app_env REVIEW_E2E=$scenario timeout 90 \
         nvim --headless -c "lua dofile('$e2e')" 2>&1 | grep -aE "PASS|FAIL|E2E-RESULT"
