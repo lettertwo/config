@@ -128,6 +128,7 @@ function M.new(opts)
   local self = {
     kind = "uncommitted",
     cwd = cwd,
+    default_outline_mode = "flat",
   }
 
   ---@param callback fun(changesets: Review.Changeset[]?, err: string?)

@@ -17,6 +17,7 @@ local Statusline = require("config.mini.statusline")
 ---@field cs_idx_by_id table<string, integer>
 ---@field idx integer
 ---@field state {outline_mode: string}
+---@field outline table?  OutlineView (set by init.lua after construction)
 ---@field _aug integer?     save-watcher augroup
 ---@field _timer userdata?  save-watcher debounce timer
 ---@field _closed boolean
@@ -40,6 +41,7 @@ function M.new(opts)
   self.cs_idx_by_id = {}
   self.idx = 1
   self.state = { outline_mode = opts.source.default_outline_mode or "flat" }
+  self.outline = nil
   self._closed = false
   return self
 end
@@ -216,6 +218,9 @@ function Docket:load()
       end
     end
     self:show_file()
+    if self.outline then
+      self.outline:render()
+    end
     self:_start_watcher()
   end)
 end
@@ -233,6 +238,9 @@ function Docket:refresh()
       return
     end
     self:set_changesets(changesets)
+    if self.outline then
+      self.outline:render()
+    end
     if #self.files == 0 then
       self.idx = 1
       self.dv:_render_placeholder("[No changes]")
@@ -323,6 +331,10 @@ function Docket:destroy()
   end
   self._closed = true
   self:_stop_watcher()
+  if self.outline then
+    self.outline:destroy()
+    self.outline = nil
+  end
   self.dv:destroy()
 end
 
