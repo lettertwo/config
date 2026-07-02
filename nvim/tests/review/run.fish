@@ -7,11 +7,14 @@ set -l e2e $config_dir/nvim/tests/review/e2e.lua
 set -l failed 0
 
 echo "── unit specs ──────────────────────────────────────────"
+# PlenaryBustedDirectory exits nonzero on any failure. (Don't regex the
+# colored counters: the ANSI reset \e[0m contains a digit, which silently
+# broke the previous 'Failed : \D*[1-9]' detection.)
 set -l spec_out (nvim --headless -c "PlenaryBustedDirectory $config_dir/nvim/lua/app/review/" 2>&1)
-printf '%s\n' $spec_out | grep -aE "Testing:|Success: |Failed :|Errors :|^\s*Fail"
-if string match -rq 'Failed : \D*[1-9]|Errors : \D*[1-9]' (string join ' ' $spec_out)
+if test $status -ne 0
     set failed 1
 end
+printf '%s\n' $spec_out | grep -aE "Testing:|Success: |Failed :|Errors :|^\s*Fail"
 
 for scenario in standalone degraded embedded stack trunk-ahead
     echo "── e2e: $scenario ──────────────────────────────────────"
