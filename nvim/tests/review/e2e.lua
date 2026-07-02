@@ -136,11 +136,49 @@ local function feed(keys)
   vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(keys, true, false, true), "x", false)
 end
 
+-- The outline picker takes focus when the review opens, so scenarios locate
+-- and drive the diff window explicitly rather than assuming it is current.
+local function diff_win()
+  for _, w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+    local b = vim.api.nvim_win_get_buf(w)
+    if vim.api.nvim_buf_get_name(b):match("review://") then
+      return w, b
+    end
+  end
+end
+
+local function focus_diff()
+  local w, b = diff_win()
+  if w then
+    vim.api.nvim_set_current_win(w)
+  end
+  return w, b
+end
+
+local function diff_line1()
+  local _, b = diff_win()
+  if not b then
+    return ""
+  end
+  return vim.api.nvim_buf_get_lines(b, 0, 1, false)[1] or ""
+end
+
 local function wait_line1(pat)
   return vim.wait(8000, function()
-    local l = vim.api.nvim_buf_get_lines(0, 0, 1, false)[1] or ""
+    local l = diff_line1()
     return l ~= "" and not l:match("^Loading") and (not pat or l:match(pat) ~= nil)
   end, 50)
+end
+
+-- The review outline picker, once its finder has produced items.
+local function wait_outline(min_items)
+  local picker
+  vim.wait(8000, function()
+    local pickers = _G.Snacks and Snacks.picker and Snacks.picker.get() or {}
+    picker = pickers[1]
+    return picker ~= nil and picker:count() >= (min_items or 1)
+  end, 50)
+  return picker
 end
 
 local fixture = scenario == "stack" and build_stack_fixture()
@@ -158,9 +196,15 @@ if scenario == "standalone" then
     return
   end
 
+  -- Outline: flat mode, one item per file (proves the standalone snacks
+  -- bootstrap — this scenario runs without the default app's snacks).
+  local picker = wait_outline(3)
+  check("outline picker open", picker ~= nil)
+  check("outline lists 3 files (flat)", picker and picker:count() == 3, picker and picker:count())
+
   local signs = require("app.review.ui.signs")
-  local buf = vim.api.nvim_get_current_buf()
-  local win = vim.api.nvim_get_current_win()
+  local win, buf = focus_diff()
+  check("diff window present", win ~= nil)
 
   check(
     "first file is deleted gone.lua",
@@ -238,12 +282,13 @@ elseif scenario == "degraded" then
 
   _G.App.launch("review", { context = "standalone" })
   check("render completed", wait_line1())
+  local _, dbuf = focus_diff()
   feed("]f")
   check("main.lua rendered", wait_line1("fn_1"))
 
   local signs = require("app.review.ui.signs")
   local counts = { bg = 0, word = 0, virt = 0 }
-  for _, m in ipairs(vim.api.nvim_buf_get_extmarks(0, signs.ns, 0, -1, { details = true })) do
+  for _, m in ipairs(vim.api.nvim_buf_get_extmarks(dbuf, signs.ns, 0, -1, { details = true })) do
     if m[4].priority == 100 and m[4].hl_group then counts.bg = counts.bg + 1 end
     if m[4].priority == 1000 then counts.word = counts.word + 1 end
     if m[4].virt_lines then counts.virt = counts.virt + 1 end
@@ -266,10 +311,9 @@ elseif scenario == "embedded" then
     "review plugins/ loaded via launch",
     package.loaded["app.review.plugins.diff"] ~= nil
   )
-  check(
-    "renders first file",
-    (vim.api.nvim_buf_get_lines(0, 0, 1, false)[1]) == "local gone = true"
-  )
+  check("renders first file", diff_line1() == "local gone = true")
+  check("outline opens embedded", wait_outline(3) ~= nil)
+  focus_diff()
   feed("q")
   vim.wait(2000, function()
     return #vim.api.nvim_list_tabpages() == tabs_before
@@ -285,20 +329,73 @@ elseif scenario == "stack" then
     finish()
     return
   end
-  local win = vim.api.nvim_get_current_win()
+  local win = (diff_win())
   local function winbar()
     return vim.wo[win].winbar or ""
   end
 
-  -- Order is base→head with uncommitted adjacent to the current position
-  -- (the tip here), and the session opens focused on it.
+  -- Outline: stack source defaults to stack mode → 3 changeset headers +
+  -- 3 files, with the current-position marker on the uncommitted header.
+  local picker = wait_outline(6)
+  check("outline picker open (stack mode)", picker ~= nil)
+  check("outline has 6 items (3 headers + 3 files)", picker and picker:count() == 6, picker and picker:count())
+  if picker then
+    local current_headers = 0
+    for _, it in ipairs(picker:items()) do
+      if it.type == "changeset" and it.changeset.current then
+        current_headers = current_headers + 1
+      end
+    end
+    check("exactly one changeset marked current", current_headers == 1, current_headers)
+
+    -- Focus-follow: moving the list cursor onto a file item renders it.
+    picker:focus("list")
+    feed("gg")
+    feed("j") -- item 2 = a1.lua (first file of the first changeset)
+    check("outline focus-follow renders a1.lua", wait_line1("a1"))
+  end
+
+  -- Diff-window nav still works with the outline open. (Nav checks run
+  -- before the mode-cycle checks: picker:refresh() defers a focus-restore
+  -- that would otherwise steal focus mid-chain.)
+  focus_diff()
+  check("diff shows a1.lua after focus-follow", wait_line1("a1"))
+  feed("]c")
+  check("]c to next changeset (b1.lua)", wait_line1("b1"))
+  feed("]c")
   check(
     "opens on the uncommitted changeset (dirty base.lua rendered)",
-    (vim.api.nvim_buf_get_lines(0, 0, 1, false)[1]) == "local base = 2 -- dirty",
-    vim.api.nvim_buf_get_lines(0, 0, 1, false)[1]
+    wait_line1("dirty"),
+    diff_line1()
   )
   check("uncommitted sits at the head (3/3)", winbar():find("[3/3 Uncommitted Changes]", 1, true) ~= nil, winbar())
 
+  -- Mode cycle: stack → stack-tree → flat (3 items) → tree → stack (6).
+  if picker then
+    picker:focus("list")
+    feed("i")
+    feed("i")
+    vim.wait(4000, function()
+      return picker:count() == 3
+    end, 50)
+    check("mode cycle reaches flat (3 items)", picker:count() == 3, picker:count())
+    feed("i")
+    feed("i") -- back to stack
+    vim.wait(4000, function()
+      return picker:count() == 6
+    end, 50)
+    check("mode cycle returns to stack (6 items)", picker:count() == 6, picker:count())
+  end
+
+  -- Let the picker's deferred focus-restore land, then reset the position to
+  -- the uncommitted changeset directly (focus-independent) for the walk-down.
+  vim.wait(500, function()
+    return false
+  end, 100)
+  local dk = require("app.review")._active_docket()
+  dk:focus_file(dk.files[#dk.files])
+  wait_line1("dirty")
+  focus_diff()
   feed("[c")
   check("[c walks down to the newest commit (b1.lua)", wait_line1("b1"))
   check("winbar shows changeset 2/3 with subject", winbar():find("[2/3 add b1]", 1, true) ~= nil, winbar())
@@ -319,15 +416,13 @@ elseif scenario == "trunk-ahead" then
     finish()
     return
   end
-  local win = vim.api.nvim_get_current_win()
+  local win = (diff_win())
   local function winbar()
     return vim.wo[win].winbar or ""
   end
+  focus_diff()
 
-  check(
-    "opens on the uncommitted changeset (dirty base.lua)",
-    (vim.api.nvim_buf_get_lines(0, 0, 1, false)[1]) == "local base = 2 -- dirty"
-  )
+  check("opens on the uncommitted changeset (dirty base.lua)", diff_line1() == "local base = 2 -- dirty")
   check("three changesets, uncommitted at the head", winbar():find("[3/3 Uncommitted Changes]", 1, true) ~= nil, winbar())
 
   feed("[c")
