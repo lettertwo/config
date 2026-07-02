@@ -367,6 +367,16 @@ function ReviewApp.open(kind, opts)
       dv:_render_placeholder("[No changes]")
       return
     end
+    -- Open at the current-position changeset (the source marks it, e.g. the
+    -- worktree's own branch / uncommitted changes mid-stack), not at the
+    -- stack's base.
+    for i, f in ipairs(sess.files) do
+      local ci = sess.cs_idx_by_id[f.changeset_id]
+      if ci and sess.changesets[ci].current then
+        sess.idx = i
+        break
+      end
+    end
     show_file(sess)
     start_watcher(sess)
   end)
