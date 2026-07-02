@@ -156,6 +156,21 @@ function M.trunk_branch(cwd, callback)
   end)
 end
 
+-- The current branch's upstream tracking ref (e.g. "origin/main"), or nil
+-- when none is configured.
+---@param cwd string
+---@param callback fun(upstream: string?)
+function M.upstream_ref(cwd, callback)
+  run(cwd, { "git", "rev-parse", "--abbrev-ref", "@{upstream}" }, function(r)
+    if r.code ~= 0 then
+      callback(nil)
+      return
+    end
+    local ref = vim.trim(r.stdout)
+    callback(ref ~= "" and ref or nil)
+  end)
+end
+
 ---@param cwd string
 ---@param base string
 ---@param head string
