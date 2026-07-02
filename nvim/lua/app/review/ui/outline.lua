@@ -337,7 +337,13 @@ function OutlineView:open()
         view.on_select(item)
       end
     end,
-    on_change = function(_, item)
+    on_change = function(picker, item)
+      -- Focus-follow only while the user is IN the outline: on_change also
+      -- fires from programmatic refreshes (staging ops, save watcher), and
+      -- following then would yank the docket to the outline's cursor row.
+      if not picker:is_focused() then
+        return
+      end
       if item and item.change and item.change ~= docket:current_file() then
         docket:focus_file(item.change)
       end
@@ -371,6 +377,42 @@ function OutlineView:open()
         desc = "Toggle side-by-side",
         action = function()
           docket:toggle_layout()
+        end,
+      },
+      review_zoom = {
+        desc = "Cycle staging zoom",
+        action = function()
+          docket:cycle_zoom()
+        end,
+      },
+      review_toggle_stage_file = {
+        desc = "Stage/unstage file",
+        action = function(picker)
+          local item = picker:current()
+          if item and item.change then
+            docket:toggle_stage_file(item.change)
+          end
+        end,
+      },
+      review_discard_file = {
+        desc = "Discard file",
+        action = function(picker)
+          local item = picker:current()
+          if item and item.change then
+            docket:discard_file(item.change)
+          end
+        end,
+      },
+      review_stage_all = {
+        desc = "Stage all",
+        action = function()
+          docket:stage_all()
+        end,
+      },
+      review_unstage_all = {
+        desc = "Unstage all",
+        action = function()
+          docket:unstage_all()
         end,
       },
       review_close = {
@@ -412,6 +454,12 @@ function OutlineView:open()
         keys = {
           ["i"] = "review_cycle_mode",
           ["l"] = "review_layout",
+          ["z"] = "review_zoom",
+          ["<Space>"] = "review_toggle_stage_file",
+          ["="] = "review_toggle_stage_file",
+          ["a"] = "review_stage_all",
+          ["A"] = "review_unstage_all",
+          ["d"] = "review_discard_file",
           ["]f"] = "review_next_file",
           ["[f"] = "review_prev_file",
           ["R"] = "review_refresh",

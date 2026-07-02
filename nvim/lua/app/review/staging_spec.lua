@@ -1,0 +1,116 @@
+local assert = require("luassert")
+local staging = require("app.review.staging")
+
+describe("staging queue", function()
+  it("runs ops strictly one at a time (FIFO)", function()
+    local log = {}
+    local release1
+    staging._enqueue(function(cb)
+      table.insert(log, "op1")
+      release1 = cb
+    end)
+    staging._enqueue(function(cb)
+      table.insert(log, "op2")
+      cb()
+    end)
+    -- op2 must not start while op1 is in flight.
+    assert.same({ "op1" }, log)
+    assert.equals(2, staging._queue_len())
+    release1()
+    assert.same({ "op1", "op2" }, log)
+    vim.wait(200, function()
+      return staging._queue_len() == 0
+    end, 10)
+    assert.equals(0, staging._queue_len())
+  end)
+
+  it("schedules on_done after completion", function()
+    local done = false
+    staging._enqueue(function(cb)
+      cb()
+    end, function()
+      done = true
+    end)
+    -- on_done goes through vim.schedule; it must not have run synchronously.
+    assert.is_false(done)
+    vim.wait(200, function()
+      return done
+    end, 10)
+    assert.is_true(done)
+  end)
+
+  it("retries once on index.lock contention", function()
+    local notified
+    local orig = vim.notify
+    vim.notify = function(msg, level)
+      if level == vim.log.levels.ERROR then
+        notified = msg
+      end
+    end
+    local attempts = 0
+    local done = false
+    staging._enqueue(function(cb)
+      attempts = attempts + 1
+      if attempts == 1 then
+        cb("fatal: Unable to create '/x/.git/index.lock': File exists.")
+      else
+        cb()
+      end
+    end, function()
+      done = true
+    end)
+    vim.wait(500, function()
+      return done
+    end, 10)
+    vim.notify = orig
+    assert.equals(2, attempts)
+    assert.is_true(done)
+    assert.is_nil(notified)
+    assert.equals(0, staging._queue_len())
+  end)
+
+  it("surfaces the error when the index.lock retry fails too", function()
+    local notified
+    local orig = vim.notify
+    vim.notify = function(msg, level)
+      if level == vim.log.levels.ERROR then
+        notified = msg
+      end
+    end
+    local attempts = 0
+    staging._enqueue(function(cb)
+      attempts = attempts + 1
+      cb("fatal: Unable to create '/x/.git/index.lock': File exists.")
+    end)
+    vim.wait(500, function()
+      return staging._queue_len() == 0
+    end, 10)
+    vim.notify = orig
+    assert.equals(2, attempts)
+    assert.is_truthy(notified and notified:match("index%.lock"))
+  end)
+
+  it("notifies errors and keeps the queue moving", function()
+    local notified
+    local orig = vim.notify
+    vim.notify = function(msg, level)
+      if level == vim.log.levels.ERROR then
+        notified = msg
+      end
+    end
+    local ran2 = false
+    staging._enqueue(function(cb)
+      cb("boom")
+    end)
+    staging._enqueue(function(cb)
+      ran2 = true
+      cb()
+    end)
+    vim.wait(200, function()
+      return staging._queue_len() == 0
+    end, 10)
+    vim.notify = orig
+    assert.is_truthy(notified and notified:match("boom"))
+    assert.is_true(ran2)
+  end)
+end)

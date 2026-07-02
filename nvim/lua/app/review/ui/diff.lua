@@ -21,6 +21,79 @@ local git = require("app.review.diff.git")
 
 local fold_ns = vim.api.nvim_create_namespace("review_fold_gutter")
 
+-- Highlight group tables per render mode: plain = unstaged colors, staged =
+-- the dimmer "settled" variants (ui/signs.lua). Attributed rendering picks
+-- per line.
+local GROUPS_PLAIN = {
+  add = "ReviewDiffAdd",
+  del = "ReviewDiffDelete",
+  add_word = "ReviewDiffAddWord",
+  del_word = "ReviewDiffDeleteWord",
+  sign_add = "ReviewSignAdd",
+  sign_del = "ReviewSignDelete",
+  sign_change = "ReviewSignChange",
+}
+local GROUPS_STAGED = {
+  add = "ReviewDiffStagedAdd",
+  del = "ReviewDiffStagedDelete",
+  add_word = "ReviewDiffStagedAddWord",
+  del_word = "ReviewDiffStagedDeleteWord",
+  sign_add = "ReviewSignStagedAdd",
+  sign_del = "ReviewSignStagedDelete",
+  sign_change = "ReviewSignStagedChange",
+}
+
+-- Per-line group pickers for a render mode. Attribution rests on coordinate
+-- spaces: in the combined (HEAD→WORKTREE) diff, unstaged adds share worktree
+-- new_lnum with the combined new side, and staged dels share HEAD old_lnum
+-- with the combined old side — membership lookups classify every line, no
+-- content matching needed.
+---@param mode "plain"|"staged"|"attributed"
+---@param file Review.FileChange
+---@return fun(new_lnum: integer): table pick_add
+---@return fun(old_lnum: integer): table pick_del
+local function group_pickers(mode, file)
+  if mode == "staged" then
+    local staged = function()
+      return GROUPS_STAGED
+    end
+    return staged, staged
+  end
+  if mode ~= "attributed" then
+    local plain = function()
+      return GROUPS_PLAIN
+    end
+    return plain, plain
+  end
+  local unstaged_add, staged_del = {}, {}
+  if file.unstaged then
+    for _, hunk in ipairs(file.unstaged.hunks) do
+      for _, line in ipairs(hunk.lines) do
+        if line.kind == "add" and line.new_lnum then
+          unstaged_add[line.new_lnum] = true
+        end
+      end
+    end
+  end
+  if file.staged_change then
+    for _, hunk in ipairs(file.staged_change.hunks) do
+      for _, line in ipairs(hunk.lines) do
+        if line.kind == "del" and line.old_lnum then
+          staged_del[line.old_lnum] = true
+        end
+      end
+    end
+  end
+  return function(new_lnum)
+    return unstaged_add[new_lnum] and GROUPS_PLAIN or GROUPS_STAGED
+  end, function(old_lnum)
+    return staged_del[old_lnum] and GROUPS_STAGED or GROUPS_PLAIN
+  end
+end
+
+-- Exposed for unit tests.
+M._group_pickers = group_pickers
+
 -- Deleted lines are virt_lines, which are truncated (not wrapped) at the
 -- window edge — padding their background fill to a fixed generous width makes
 -- the fill window-size independent (no resize watcher needed).
@@ -40,9 +113,13 @@ local function filler_vlines(n)
 end
 
 -- Apply a list of extmark specs {row, col, opts} to a buffer.
+-- Coordinates can be out of range when the worktree changed between the diff
+-- parse and this render's disk read (hunk-derived cols vs fresh content) —
+-- the refresh already underway redraws consistently, so drop the mark rather
+-- than abort the render.
 local function apply_exts(bufnr, ns, exts)
   for _, e in ipairs(exts) do
-    vim.api.nvim_buf_set_extmark(bufnr, ns, e.row, e.col, e.opts)
+    pcall(vim.api.nvim_buf_set_extmark, bufnr, ns, e.row, e.col, e.opts)
   end
 end
 
@@ -103,7 +180,9 @@ end
 -- be baked into the chunk list:
 -- ts_hl: [{col, end_col, hl_group}] treesitter highlights (background layer)
 -- wd_hl: [{col, end_col, hl_group}] word-diff highlights (override layer)
-local function build_virt_chunks(text, ts_hl, wd_hl)
+-- grp: highlight group table (GROUPS_PLAIN/GROUPS_STAGED)
+local function build_virt_chunks(text, ts_hl, wd_hl, grp)
+  grp = grp or GROUPS_PLAIN
   local len = #text
   local pts = { [0] = true, [len] = true }
   for _, h in ipairs(ts_hl or {}) do
@@ -138,7 +217,7 @@ local function build_virt_chunks(text, ts_hl, wd_hl)
         end
       end
       if covered_by_word then
-        table.insert(chunks, { seg, "ReviewDiffDeleteWord" })
+        table.insert(chunks, { seg, grp.del_word })
       else
         local ts_group
         for _, h in ipairs(ts_hl or {}) do
@@ -148,15 +227,15 @@ local function build_virt_chunks(text, ts_hl, wd_hl)
           end
         end
         -- Combine bg (background) with ts_group (foreground) via multi-group chunk.
-        table.insert(chunks, { seg, ts_group and { "ReviewDiffDelete", ts_group } or "ReviewDiffDelete" })
+        table.insert(chunks, { seg, ts_group and { grp.del, ts_group } or grp.del })
       end
     end
   end
   if #chunks == 0 then
-    chunks = { { text, "ReviewDiffDelete" } }
+    chunks = { { text, grp.del } }
   end
   local fill = math.max(1, VIRT_FILL_WIDTH - vim.fn.strdisplaywidth(text))
-  table.insert(chunks, { string.rep(" ", fill), "ReviewDiffDelete" })
+  table.insert(chunks, { string.rep(" ", fill), grp.del })
   return chunks
 end
 
@@ -165,7 +244,9 @@ end
 -- it; never use end_row/line_hl_group for these — they defeat the override),
 -- plus a separate EOL mark with hl_eol=true covering text-end → next row so
 -- the background fills the window width without any width computation.
-local function emit_line_exts(exts, row, text, bg, sign_hl, word_ranges)
+-- word_hl (optional) overrides the hl_group baked into word_ranges — the
+-- staged variants reuse word.compute's plain-named ranges.
+local function emit_line_exts(exts, row, text, bg, sign_hl, word_ranges, word_hl)
   if #text > 0 then
     table.insert(exts, { row = row, col = 0, opts = {
       end_col = #text,
@@ -188,7 +269,7 @@ local function emit_line_exts(exts, row, text, bg, sign_hl, word_ranges)
   for _, h in ipairs(word_ranges or {}) do
     table.insert(exts, { row = row, col = h.col, opts = {
       end_col = h.end_col,
-      hl_group = h.hl_group,
+      hl_group = word_hl or h.hl_group,
       priority = 1000,
     } })
   end
@@ -258,6 +339,9 @@ end
 ---@field hunk_rows_left Review.HunkRows[]  left-pane counterpart (sbs)
 ---@field _cwd string
 ---@field _render_seq integer
+---@field _render_mode "plain"|"staged"|"attributed"
+---@field _sorted_hunks Review.Hunk[]?  hunks in render order (hunk_at targets)
+---@field _rendered_file Review.FileChange?  set when an async render completes; staging ops require it to match the plan
 ---@field _row_map table<integer, Review.RowInfo>
 ---@field _fold_ranges {s:integer,e:integer}[]
 ---@field _fold_ranges_left {s:integer,e:integer}[]
@@ -299,6 +383,7 @@ function M.new(opts)
   self.hunk_rows_left = {}
   self._cwd = ""
   self._render_seq = 0
+  self._render_mode = "plain"
   self._row_map = {}
   self._fold_ranges = {}
   self._fold_ranges_left = {}
@@ -355,6 +440,17 @@ function DiffView:reveal(win, lnum)
     vim.cmd("normal! zv")
   end)
   self:sync_folds(win)
+end
+
+-- Bind (or rebind) the primary window — used when the docket creates the
+-- staged row for this instance after construction.
+---@param win integer
+function DiffView:bind_primary(win)
+  self.win = win
+  apply_win_opts(win)
+  if win and vim.api.nvim_win_is_valid(win) then
+    vim.api.nvim_win_set_buf(win, self.bufnr)
+  end
 end
 
 function DiffView:_clear_fold_sync()
@@ -635,9 +731,11 @@ end
 ---@param file Review.FileChange
 ---@param cwd string
 ---@param on_done? fun()  called after the buffer is rendered and folds applied
-function DiffView:render(file, cwd, on_done)
+---@param mode? "plain"|"staged"|"attributed"  highlight attribution (default "plain")
+function DiffView:render(file, cwd, on_done, mode)
   self.file = file
   self._cwd = cwd
+  self._render_mode = mode or "plain"
   self._render_seq = self._render_seq + 1
   local seq = self._render_seq
 
@@ -668,6 +766,7 @@ end
 function DiffView:_render_inline(file, old_lines, new_lines)
   local exts = {}
   local row_map = {}
+  local pick_add, pick_del = group_pickers(self._render_mode, file)
 
   if file.status == "D" then
     -- Deleted file: show the old content, every line marked deleted.
@@ -675,15 +774,18 @@ function DiffView:_render_inline(file, old_lines, new_lines)
     self:_set_ft(self.bufnr, file.old_path or file.path)
     for i = 1, #old_lines do
       local row = i - 1
+      local grp = pick_del(i)
       row_map[row] = { lnum = i, side = "LEFT", text = old_lines[i] }
-      emit_line_exts(exts, row, old_lines[i], "ReviewDiffDelete", "ReviewSignDelete", nil)
+      emit_line_exts(exts, row, old_lines[i], grp.del, grp.sign_del, nil)
     end
     apply_exts(self.bufnr, signs.ns, exts)
     self._row_map = row_map
     local last = math.max(0, #old_lines - 1)
     self.hunk_rows = { { s = 0, e = last, first_diff = 0, last_diff = last } }
+    self._sorted_hunks = file.hunks
     self:_show()
     self:_apply_folds()
+    self._rendered_file = file
     return
   end
 
@@ -701,10 +803,11 @@ function DiffView:_render_inline(file, old_lines, new_lines)
   local ts_hl_map = ts_highlights_for_lines(old_lines, ft)
 
   -- Per-lnum annotation maps built from hunk segments.
-  local add_set = {}    -- new_lnum → true
-  local change_set = {} -- new_lnum → true (paired change, not pure add)
-  local add_word = {}   -- new_lnum → [{col,end_col,hl_group}]
-  local del_virts = {}  -- anchor new_lnum → list of virt_line chunk lists
+  local add_set = {}      -- new_lnum → true
+  local change_set = {}   -- new_lnum → true (paired change, not pure add)
+  local add_word = {}     -- new_lnum → [{col,end_col,hl_group}]
+  local del_virts = {}    -- anchor new_lnum → list of virt_line chunk lists
+  local del_sign_hl = {}  -- anchor new_lnum → sign group for the pure-del marker
 
   for _, hunk in ipairs(sorted) do
     local segs = pair.segments(hunk.lines)
@@ -733,9 +836,13 @@ function DiffView:_render_inline(file, old_lines, new_lines)
         del_virts[anchor_lnum] = del_virts[anchor_lnum] or {}
         for j, dl in ipairs(seg.dels) do
           local wd = wdiffs[j]
+          local grp = pick_del(dl.old_lnum)
+          if not del_sign_hl[anchor_lnum] then
+            del_sign_hl[anchor_lnum] = grp.sign_del
+          end
           table.insert(
             del_virts[anchor_lnum],
-            build_virt_chunks(dl.text, ts_hl_map[dl.old_lnum - 1], wd and wd.removed)
+            build_virt_chunks(dl.text, ts_hl_map[dl.old_lnum - 1], wd and wd.removed, grp)
           )
         end
 
@@ -769,17 +876,19 @@ function DiffView:_render_inline(file, old_lines, new_lines)
       -- Pure-del anchor (context line): mark the line above the virt dels,
       -- which is the visual top (virt_lines_above renders above the anchor).
       if not add_set[lnum] and row > 0 then
+        local sign = del_sign_hl[lnum] or "ReviewSignDelete"
         table.insert(exts, { row = row - 1, col = 0, opts = {
           sign_text = "▾",
-          sign_hl_group = "ReviewSignDelete",
-          number_hl_group = "ReviewSignDelete",
+          sign_hl_group = sign,
+          number_hl_group = sign,
         } })
       end
     end
 
     if add_set[lnum] then
-      local sign_hl = change_set[lnum] and "ReviewSignChange" or "ReviewSignAdd"
-      emit_line_exts(exts, row, new_lines[lnum], "ReviewDiffAdd", sign_hl, add_word[lnum])
+      local grp = pick_add(lnum)
+      local sign_hl = change_set[lnum] and grp.sign_change or grp.sign_add
+      emit_line_exts(exts, row, new_lines[lnum], grp.add, sign_hl, add_word[lnum], grp.add_word)
     end
   end
 
@@ -822,9 +931,26 @@ function DiffView:_render_inline(file, old_lines, new_lines)
     end
   end
   self.hunk_rows = hunk_rows
+  self._sorted_hunks = sorted
 
   self:_show()
   self:_apply_folds()
+  self._rendered_file = file
+end
+
+-- The hunk under a 0-indexed buffer row in the given window, in the same
+-- order the renderer used — staging ops resolve their target through this
+-- (returning the hunk object avoids the index-must-match-sort invariant).
+---@param win integer
+---@param row integer
+---@return Review.Hunk?
+function DiffView:hunk_at(win, row)
+  local rows = (win == self.win_left) and self.hunk_rows_left or self.hunk_rows
+  for i, hr in ipairs(rows) do
+    if row >= hr.s and row <= hr.e then
+      return self._sorted_hunks and self._sorted_hunks[i] or nil
+    end
+  end
 end
 
 -- Annotation walk for the side-by-side layout. Buffer contents are exactly
@@ -839,8 +965,14 @@ end
 ---@param hunks Review.Hunk[]  sorted by old_start
 ---@param old_lines string[]
 ---@param new_lines string[]
+---@param pickers? {pick_add: fun(new_lnum: integer): table, pick_del: fun(old_lnum: integer): table}
 ---@return {exts_l: table[], exts_r: table[], fillers_l: {row:integer,count:integer,above:boolean}[], fillers_r: {row:integer,count:integer,above:boolean}[], hunk_rows_l: Review.HunkRows[], hunk_rows_r: Review.HunkRows[]}
-function M._sbs_annotations(hunks, old_lines, new_lines)
+function M._sbs_annotations(hunks, old_lines, new_lines, pickers)
+  local plain = function(_)
+    return GROUPS_PLAIN
+  end
+  local pick_add = pickers and pickers.pick_add or plain
+  local pick_del = pickers and pickers.pick_del or plain
   local exts_l, exts_r = {}, {}
   local fillers_l, fillers_r = {}, {}
   local hunk_rows_l, hunk_rows_r = {}, {}
@@ -886,16 +1018,18 @@ function M._sbs_annotations(hunks, old_lines, new_lines)
         for j, dl in ipairs(seg.dels) do
           local row = dl.old_lnum - 1
           local wd = wdiffs[j]
-          local sign = j <= n_pair and "ReviewSignChange" or "ReviewSignDelete"
-          emit_line_exts(exts_l, row, dl.text, "ReviewDiffDelete", sign, wd and wd.removed)
+          local grp = pick_del(dl.old_lnum)
+          local sign = j <= n_pair and grp.sign_change or grp.sign_del
+          emit_line_exts(exts_l, row, dl.text, grp.del, sign, wd and wd.removed, grp.del_word)
           fd_l = fd_l or row
           ld_l = row
         end
         for j, al in ipairs(seg.adds) do
           local row = al.new_lnum - 1
           local wd = wdiffs[j]
-          local sign = j <= n_pair and "ReviewSignChange" or "ReviewSignAdd"
-          emit_line_exts(exts_r, row, al.text, "ReviewDiffAdd", sign, wd and wd.added)
+          local grp = pick_add(al.new_lnum)
+          local sign = j <= n_pair and grp.sign_change or grp.sign_add
+          emit_line_exts(exts_r, row, al.text, grp.add, sign, wd and wd.added, grp.add_word)
           fd_r = fd_r or row
           ld_r = row
         end
@@ -941,7 +1075,9 @@ function DiffView:_render_sbs(file, old_lines, new_lines)
   table.sort(sorted, function(a, b)
     return a.old_start < b.old_start
   end)
-  local ann = M._sbs_annotations(sorted, old_lines, new_lines)
+  self._sorted_hunks = sorted
+  local pick_add, pick_del = group_pickers(self._render_mode, file)
+  local ann = M._sbs_annotations(sorted, old_lines, new_lines, { pick_add = pick_add, pick_del = pick_del })
 
   local function add_filler_exts(exts, fillers)
     for _, f in ipairs(fillers) do
@@ -980,6 +1116,7 @@ function DiffView:_render_sbs(file, old_lines, new_lines)
       vim.cmd("syncbind")
     end)
   end
+  self._rendered_file = file
 end
 
 function DiffView:destroy()
