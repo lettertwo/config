@@ -18,7 +18,19 @@ describe("graph.git._build_nodes", function()
     assert.equals("third", nodes[3].title)
   end)
 
-  it("returns a degenerate HEAD node when on trunk", function()
+  it("builds per-commit nodes on trunk when ahead of upstream", function()
+    -- current == base name mismatch is fine: base is the upstream ref
+    local nodes = graph_git._build_nodes("origin/main", "main", {
+      { sha = "bbb", subject = "newer" },
+      { sha = "aaa", subject = "older" },
+    })
+    assert.same({ "aaa", "bbb" }, vim.tbl_map(function(n)
+      return n.id
+    end, nodes))
+    assert.equals("origin/main", nodes[1].parent_rev)
+  end)
+
+  it("returns a courtesy HEAD node on trunk with nothing in flight", function()
     local nodes = graph_git._build_nodes("main", "main", nil)
     assert.equals(1, #nodes)
     assert.equals("HEAD", nodes[1].id)

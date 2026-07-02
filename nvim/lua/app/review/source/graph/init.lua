@@ -28,7 +28,13 @@ function M.create(cwd)
   if db_path and vim.fn.filereadable(db_path) == 1 and vim.fn.executable("sqlite3") == 1 then
     local ok, graphite = pcall(require, "app.review.source.graph.graphite")
     if ok then
-      return graphite.new(cwd, common)
+      local g = graphite.new(cwd, common)
+      -- A db can exist while the current branch is untracked by gt (or the
+      -- db is vestigial with an empty branch_metadata table) — an empty walk
+      -- means graphite has nothing to say here, not that the stack is empty.
+      if #g:nodes() > 0 then
+        return g
+      end
     end
   end
   return require("app.review.source.graph.git").new(cwd)

@@ -13,13 +13,13 @@ if string match -rq 'Failed : \D*[1-9]|Errors : \D*[1-9]' (string join ' ' $spec
     set failed 1
 end
 
-for scenario in standalone degraded embedded stack
+for scenario in standalone degraded embedded stack trunk-ahead
     echo "── e2e: $scenario ──────────────────────────────────────"
     set -l app_env
     if test $scenario != embedded
         set app_env VIM_APP=review
     end
-    if test $scenario = stack
+    if contains $scenario stack trunk-ahead
         set -a app_env REVIEW_KIND=stack
     end
     env $app_env REVIEW_E2E=$scenario timeout 90 \
