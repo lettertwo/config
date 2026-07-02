@@ -44,10 +44,31 @@ describe("graphite._walk", function()
     assert.equals("ccc333", nodes[3].head_rev)
   end)
 
-  it("stops at branches without metadata (trunk)", function()
+  it("includes descendants when mid-stack (whole stack)", function()
     local nodes = graphite._walk(by, "feat-a")
-    assert.equals(1, #nodes)
-    assert.equals("main", nodes[1].parent_branch)
+    assert.same({ "feat-a", "feat-b", "feat-c" }, vim.tbl_map(function(n)
+      return n.id
+    end, nodes))
+  end)
+
+  it("flattens forks depth-first with sorted siblings", function()
+    local forked = graphite._parse_metadata(table.concat({
+      "feat-a|main|aaa111|000aaa",
+      "feat-b|feat-a|bbb222|aaa111",
+      "feat-c|feat-b|ccc333|bbb222",
+      "feat-b2|feat-a|eee555|aaa111",
+    }, "\n"))
+    local nodes = graphite._walk(forked, "feat-a")
+    assert.same({ "feat-a", "feat-b", "feat-c", "feat-b2" }, vim.tbl_map(function(n)
+      return n.id
+    end, nodes))
+  end)
+
+  it("does not treat unrelated stacks as descendants", function()
+    local nodes = graphite._walk(by, "feat-b")
+    for _, n in ipairs(nodes) do
+      assert.not_equals("unrelated", n.id)
+    end
   end)
 
   it("excludes trunk's own metadata row (empty parent)", function()
