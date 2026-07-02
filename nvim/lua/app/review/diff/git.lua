@@ -112,6 +112,28 @@ function M.diff(cwd, base, head, callback)
   end)
 end
 
+-- Resolve the common git dir (shared across worktrees). In a linked worktree
+-- cwd/.git is a file pointing at <common>/worktrees/<name>, so anything that
+-- lives repo-wide (e.g. graphite metadata) must be looked up here, never via
+-- a literal cwd .. "/.git" path. Relative output (plain repos return ".git")
+-- is normalized against cwd.
+---@param cwd string
+---@return string?
+function M.common_dir_sync(cwd)
+  local r = vim.system({ "git", "-C", cwd, "rev-parse", "--git-common-dir" }, { text = true }):wait()
+  if r.code ~= 0 then
+    return nil
+  end
+  local dir = vim.trim(r.stdout or "")
+  if dir == "" then
+    return nil
+  end
+  if not dir:match("^/") then
+    dir = cwd .. "/" .. dir
+  end
+  return dir
+end
+
 ---@param cwd string
 ---@return string
 function M.current_branch_sync(cwd)

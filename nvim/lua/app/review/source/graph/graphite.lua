@@ -57,11 +57,14 @@ function M._walk(by_branch, current)
 end
 
 ---@param cwd string
+---@param common_dir? string  common git dir (resolved by the factory; falls
+---                           back to resolving it here)
 ---@return Review.StackGraph
-function M.new(cwd)
+function M.new(cwd, common_dir)
   local self = {}
-  local db_path = cwd .. "/.git/.graphite_metadata.db"
-  local pr_info_path = cwd .. "/.git/.graphite_pr_info"
+  common_dir = common_dir or git.common_dir_sync(cwd) or (cwd .. "/.git")
+  local db_path = common_dir .. "/.graphite_metadata.db"
+  local pr_info_path = common_dir .. "/.graphite_pr_info"
 
   -- Cached PR info (JSON), optional.
   local pr_map = {}
