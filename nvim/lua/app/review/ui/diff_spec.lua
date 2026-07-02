@@ -151,6 +151,72 @@ describe("diff._sbs_annotations", function()
     assert.same({ { s = 0, e = 4, first_diff = 3, last_diff = 4 } }, ann.hunk_rows_l)
   end)
 
+  it("attributed pickers classify lines by sub-diff coordinate membership", function()
+    -- Combined file with one unstaged add (worktree lnum 5) and one staged
+    -- del (HEAD lnum 3).
+    local file = {
+      path = "f.lua",
+      unstaged = { hunks = { { lines = { { kind = "add", text = "u", new_lnum = 5 } } } } },
+      staged_change = { hunks = { { lines = { { kind = "del", text = "s", old_lnum = 3 } } } } },
+    }
+    local pick_add, pick_del = diff._group_pickers("attributed", file)
+    -- Unstaged add keeps plain colors; any other combined add is staged.
+    assert.equals("ReviewDiffAdd", pick_add(5).add)
+    assert.equals("ReviewDiffStagedAdd", pick_add(6).add)
+    -- Staged del gets staged colors; any other combined del is unstaged.
+    assert.equals("ReviewDiffStagedDelete", pick_del(3).del)
+    assert.equals("ReviewDiffDelete", pick_del(4).del)
+
+    -- staged mode: everything staged; plain mode: everything plain.
+    local sa, sd = diff._group_pickers("staged", file)
+    assert.equals("ReviewDiffStagedAdd", sa(5).add)
+    assert.equals("ReviewDiffStagedDelete", sd(4).del)
+    local pa, pd = diff._group_pickers("plain", file)
+    assert.equals("ReviewDiffAdd", pa(99).add)
+    assert.equals("ReviewDiffDelete", pd(99).del)
+  end)
+
+  it("threads picked groups through the sbs walk", function()
+    local old_lines = { "a", "old", "b" }
+    local new_lines = { "a", "new", "b" }
+    local hunks = {
+      {
+        old_start = 1,
+        old_count = 3,
+        new_start = 1,
+        new_count = 3,
+        lines = {
+          { kind = "ctx", text = "a", old_lnum = 1, new_lnum = 1 },
+          { kind = "del", text = "old", old_lnum = 2 },
+          { kind = "add", text = "new", new_lnum = 2 },
+          { kind = "ctx", text = "b", old_lnum = 3, new_lnum = 3 },
+        },
+      },
+    }
+    local staged_grp = { add = "SA", del = "SD", add_word = "SAW", del_word = "SDW", sign_add = "sa", sign_del = "sd", sign_change = "sc" }
+    local ann = diff._sbs_annotations(hunks, old_lines, new_lines, {
+      pick_add = function()
+        return staged_grp
+      end,
+      pick_del = function()
+        return staged_grp
+      end,
+    })
+    local found_add, found_del = false, false
+    for _, e in ipairs(ann.exts_r) do
+      if e.opts.hl_group == "SA" then
+        found_add = true
+      end
+    end
+    for _, e in ipairs(ann.exts_l) do
+      if e.opts.hl_group == "SD" then
+        found_del = true
+      end
+    end
+    assert.is_true(found_add)
+    assert.is_true(found_del)
+  end)
+
   it("multi-hunk: inter-hunk gaps are equal per side, so folds pair by index", function()
     -- old: 20 ctx lines with a change at 5 (1<->1) and one at 15 (2 dels).
     local old_lines, new_lines = {}, {}
