@@ -1,14 +1,14 @@
--- Async git plumbing for the review app (uncommitted-review subset).
--- Staging, ranged-diff, and history helpers arrive with their owning milestones
--- (M2 stack, M5 staging).
+-- Async git plumbing for the review app: diffs, refs, and the staging write
+-- primitives (M5).
 
 local M = {}
 
 ---@param cwd string
 ---@param args string[]
 ---@param on_exit fun(result: {code: integer, stdout: string, stderr: string})
-local function run(cwd, args, on_exit)
-  vim.system(args, { cwd = cwd, text = true }, function(result)
+---@param stdin string?
+local function run(cwd, args, on_exit, stdin)
+  vim.system(args, { cwd = cwd, text = true, stdin = stdin }, function(result)
     vim.schedule(function()
       on_exit({
         code = result.code,
@@ -17,6 +17,89 @@ local function run(cwd, args, on_exit)
       })
     end)
   end)
+end
+
+-- ── Staging primitives ──────────────────────────────────────────────────────
+-- All callbacks receive `err: string?` (nil on success). Serialization is the
+-- staging queue's job (app.review.staging), not these primitives'.
+
+-- `cond and nil or x` never yields nil (the and/or trap), so error mapping
+-- is an explicit if.
+local function err_of(r, fallback_err)
+  if r.code == 0 then
+    return nil
+  end
+  return r.stderr ~= "" and r.stderr or fallback_err
+end
+
+local function simple_op(args_fn, fallback_err)
+  return function(cwd, path, callback)
+    run(cwd, args_fn(path), function(r)
+      callback(err_of(r, fallback_err))
+    end)
+  end
+end
+
+M.stage_path = simple_op(function(path)
+  return { "git", "add", "--", path }
+end, "git add failed")
+
+M.unstage_path = simple_op(function(path)
+  return { "git", "restore", "--staged", "--", path }
+end, "git restore --staged failed")
+
+M.discard_path = simple_op(function(path)
+  return { "git", "restore", "--", path }
+end, "git restore failed")
+
+M.delete_untracked = simple_op(function(path)
+  return { "git", "clean", "-f", "--", path }
+end, "git clean failed")
+
+-- Whether the index differs from HEAD for a path (any staged change,
+-- including adds and deletions). code 1 = differences; 0 = none.
+---@param cwd string
+---@param path string
+---@param callback fun(staged: boolean)
+function M.has_staged(cwd, path, callback)
+  run(cwd, { "git", "diff", "--cached", "--quiet", "--", path }, function(r)
+    callback(r.code == 1)
+  end)
+end
+
+---@param cwd string
+---@param callback fun(err: string?)
+function M.stage_all(cwd, callback)
+  run(cwd, { "git", "add", "-A" }, function(r)
+    callback(err_of(r, "git add -A failed"))
+  end)
+end
+
+---@param cwd string
+---@param callback fun(err: string?)
+function M.unstage_all(cwd, callback)
+  run(cwd, { "git", "reset", "-q" }, function(r)
+    callback(err_of(r, "git reset failed"))
+  end)
+end
+
+-- Pipe a reconstructed patch to `git apply` on stdin.
+---@param cwd string
+---@param patch string
+---@param opts {cached?: boolean, reverse?: boolean}
+---@param callback fun(err: string?)
+function M.apply_patch(cwd, patch, opts, callback)
+  local args = { "git", "apply" }
+  if opts.cached then
+    table.insert(args, "--cached")
+  end
+  if opts.reverse then
+    table.insert(args, "--reverse")
+  end
+  table.insert(args, "-")
+  run(cwd, args, function(r)
+    callback(err_of(r, "git apply failed"))
+  end, patch)
 end
 
 -- Collect the three uncommitted diffs plus untracked files.
@@ -134,6 +217,27 @@ function M.common_dir_sync(cwd)
   return dir
 end
 
+-- Resolve this checkout's own git dir (per-worktree — the index lives here,
+-- unlike the graphite metadata which lives in the common dir).
+---@param cwd string
+---@param callback fun(dir: string?)
+function M.git_dir(cwd, callback)
+  run(cwd, { "git", "rev-parse", "--git-dir" }, function(r)
+    if r.code ~= 0 then
+      callback(nil)
+      return
+    end
+    local dir = vim.trim(r.stdout)
+    if dir == "" then
+      callback(nil)
+    elseif dir:match("^/") then
+      callback(dir)
+    else
+      callback(cwd .. "/" .. dir)
+    end
+  end)
+end
+
 ---@param cwd string
 ---@return string
 function M.current_branch_sync(cwd)
@@ -204,10 +308,11 @@ function M.head_sha(cwd, callback)
   end)
 end
 
--- Fetch file content at a ref. "WORKTREE" reads from disk; anything else goes
--- through `git show ref:path`.
+-- Fetch file content at a ref. "WORKTREE" reads from disk; "INDEX" reads the
+-- staged blob (`git show :path` — the index entry is keyed by the NEW path);
+-- anything else goes through `git show ref:path`.
 ---@param cwd string
----@param ref string  git ref or "WORKTREE"
+---@param ref string  git ref, "WORKTREE", or "INDEX"
 ---@param path string
 ---@param callback fun(content: string?, err: string?)
 function M.show(cwd, ref, path, callback)
@@ -219,6 +324,9 @@ function M.show(cwd, ref, path, callback)
       callback(nil, "unreadable: " .. full)
     end
     return
+  end
+  if ref == "INDEX" then
+    ref = ""
   end
   run(cwd, { "git", "show", ref .. ":" .. path }, function(r)
     if r.code ~= 0 then

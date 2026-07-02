@@ -16,7 +16,7 @@ if test $status -ne 0
 end
 printf '%s\n' $spec_out | grep -aE "Testing:|Success: |Failed :|Errors :|^\s*Fail"
 
-for scenario in standalone degraded embedded stack trunk-ahead
+for scenario in standalone degraded embedded stack trunk-ahead staging
     echo "── e2e: $scenario ──────────────────────────────────────"
     set -l app_env
     if test $scenario != embedded
