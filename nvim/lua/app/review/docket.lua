@@ -369,6 +369,25 @@ function Docket:cycle_zoom()
   self:_notify("Review zoom: " .. self.state.zoom)
 end
 
+-- Role plan builders keyed by the gate's already-collapsed zoom_eff: what
+-- each active DiffView renders. The "combined" case (no entry here) is the
+-- only one that depends on stageable, so it stays a fallback below rather
+-- than forcing every branch through that check.
+local ZOOM_PLANS = {
+  split = function(self, file)
+    return {
+      { dv = self.dv, file = file.unstaged, role = "unstaged", mode = "plain" },
+      { dv = self.dv2, file = file.staged_change, role = "staged", mode = "staged" },
+    }
+  end,
+  unstaged = function(self, file)
+    return { { dv = self.dv, file = file.unstaged, role = "unstaged", mode = "plain" } }
+  end,
+  staged = function(self, file)
+    return { { dv = self.dv, file = file.staged_change, role = "staged", mode = "staged" } }
+  end,
+}
+
 -- Render the file at self.idx into the arrangement the gate dictates.
 -- view: optional winsaveview() to restore (refresh path); otherwise the
 -- cursor jumps to the first hunk. Returns false when the window arrangement
@@ -384,19 +403,11 @@ function Docket:show_file(view)
     return false
   end
 
-  -- Role plan: what each active DiffView renders. (When stageable, the gate
-  -- guarantees at least one sub-diff exists, so combined is attributed.)
-  local plan = {}
-  if zoom_eff == "split" then
-    plan[1] = { dv = self.dv, file = file.unstaged, role = "unstaged", mode = "plain" }
-    plan[2] = { dv = self.dv2, file = file.staged_change, role = "staged", mode = "staged" }
-  elseif zoom_eff == "unstaged" then
-    plan[1] = { dv = self.dv, file = file.unstaged, role = "unstaged", mode = "plain" }
-  elseif zoom_eff == "staged" then
-    plan[1] = { dv = self.dv, file = file.staged_change, role = "staged", mode = "staged" }
-  else
-    plan[1] = { dv = self.dv, file = file, role = stageable and "combined" or "plain", mode = stageable and "attributed" or "plain" }
-  end
+  -- (When stageable, the gate guarantees at least one sub-diff exists, so
+  -- combined is attributed.)
+  local build_plan = ZOOM_PLANS[zoom_eff]
+  local plan = build_plan and build_plan(self, file)
+    or { { dv = self.dv, file = file, role = stageable and "combined" or "plain", mode = stageable and "attributed" or "plain" } }
   self._rendered = plan
 
   for _, r in ipairs(plan) do
@@ -424,7 +435,20 @@ function Docket:show_file(view)
         end)
       end, r.mode)
     else
-      r.dv:render(r.file, self.cwd, nil, r.mode)
+      -- Non-primary render: no winbar/cursor here (the primary owns those),
+      -- but re-anchor its left pane once settled so completion is a
+      -- callback signal rather than something callers poll _rendered_file
+      -- (or buffer contents) for.
+      r.dv:render(r.file, self.cwd, function()
+        if self._closed or not r.dv.right:win_valid() then
+          return
+        end
+        if r.dv.left:win_valid() then
+          vim.api.nvim_win_call(r.dv.right.win, function()
+            vim.cmd("syncbind")
+          end)
+        end
+      end, r.mode)
     end
   end
   if self.outline then
