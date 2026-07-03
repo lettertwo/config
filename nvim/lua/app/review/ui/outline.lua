@@ -9,6 +9,8 @@
 
 ---@module "snacks"
 
+local nav_keymaps = require("app.review.keymaps")
+
 local M = {}
 
 -- XY git-short format: X = staged/index column, Y = worktree/unstaged column
@@ -133,6 +135,7 @@ end
 ---@field on_select fun(item: table)
 ---@field on_close fun()
 ---@field _picker snacks.Picker?
+---@field _suppress_sync boolean  true while on_change's own docket:focus_file() call is in flight
 local OutlineView = {}
 OutlineView.__index = OutlineView
 
@@ -145,6 +148,7 @@ function M.new(opts)
   self.on_close = opts.on_close
   self.mode = opts.docket.state.outline_mode or "flat"
   self._picker = nil
+  self._suppress_sync = false
 
   self:open()
   return self
@@ -279,6 +283,23 @@ function OutlineView:open()
   local docket = self.docket
   local can_stage = docket.source:can_stage()
 
+  -- Nav actions/keys shared with the diff panes (app.review.keymaps): file
+  -- and changeset nav have outline state (docket.idx) to keep in sync via
+  -- sync_to_current; hunk nav has no outline row of its own, so it's just a
+  -- forwarded keypress. All of them leave focus in the outline list.
+  local nav_actions = {}
+  local nav_keys = {}
+  for _, nav in ipairs(nav_keymaps) do
+    local action_name = "review_" .. nav.method
+    nav_actions[action_name] = {
+      desc = nav.desc,
+      action = function()
+        docket[nav.method](docket)
+      end,
+    }
+    nav_keys[nav.lhs] = action_name
+  end
+
   ---@param item table
   ---@param picker snacks.Picker
   ---@return snacks.picker.Highlight[]
@@ -374,10 +395,15 @@ function OutlineView:open()
         return
       end
       if item and item.change and item.change ~= docket:current_file() then
-        docket:focus_file(item.change)
+        view._suppress_sync = true
+        local ok, err = pcall(docket.focus_file, docket, item.change)
+        view._suppress_sync = false
+        if not ok then
+          error(err, 0)
+        end
       end
     end,
-    actions = {
+    actions = vim.tbl_extend("force", nav_actions, {
       review_cycle_mode = {
         desc = "Cycle outline mode",
         action = function()
@@ -388,18 +414,6 @@ function OutlineView:open()
         desc = "Toggle stack order",
         action = function()
           view:toggle_stack_order()
-        end,
-      },
-      review_next_file = {
-        desc = "Next file",
-        action = function()
-          docket:next_file()
-        end,
-      },
-      review_prev_file = {
-        desc = "Prev file",
-        action = function()
-          docket:prev_file()
         end,
       },
       review_refresh = {
@@ -476,7 +490,7 @@ function OutlineView:open()
           picker:focus("list")
         end,
       },
-    },
+    }),
     win = {
       input = {
         keys = {
@@ -486,7 +500,7 @@ function OutlineView:open()
         },
       },
       list = {
-        keys = {
+        keys = vim.tbl_extend("force", nav_keys, {
           ["i"] = "review_cycle_mode",
           ["r"] = "review_toggle_stack_order",
           ["l"] = "review_layout",
@@ -496,8 +510,6 @@ function OutlineView:open()
           ["a"] = "review_stage_all",
           ["A"] = "review_unstage_all",
           ["d"] = "review_discard_file",
-          ["]f"] = "review_next_file",
-          ["[f"] = "review_prev_file",
           ["R"] = "review_refresh",
           ["q"] = "review_close",
           ["<Esc>"] = "review_close",
@@ -526,7 +538,7 @@ function OutlineView:open()
           ["<a-d>"] = false, -- inspect
           ["<C-b>"] = false, -- preview_scroll_up
           ["<C-f>"] = false, -- preview_scroll_down
-        },
+        }),
       },
     },
   })
@@ -543,14 +555,17 @@ function OutlineView:render()
 end
 
 -- Reposition the picker cursor to the row matching the docket's current
--- file, without stealing focus or rebuilding the item list. No-op while the
--- outline is focused (the user's own navigation there drives the docket via
--- on_change, so it's authoritative) or when the current file isn't among the
--- displayed items — e.g. filtered out by an active search; the filter is
--- never cleared to force a match.
+-- file, without stealing focus or rebuilding the item list. No-op while
+-- on_change's own docket:focus_file() call is in flight (see _suppress_sync
+-- below — that direction is already authoritative, so re-viewing the row
+-- here would just be a redundant echo) or when the current file isn't among
+-- the displayed items — e.g. filtered out by an active search; the filter
+-- is never cleared to force a match. Explicit nav keymaps invoked while the
+-- outline is focused (e.g. ]f from the outline) are NOT on_change-driven, so
+-- they fall through and do reposition the cursor.
 ---@param file Review.FileChange?
 function OutlineView:sync_to_current(file)
-  if not self:is_open() or self._picker:is_focused() then
+  if not self:is_open() or self._suppress_sync then
     return
   end
   local row = M._find_row(self._picker:items(), file, self.mode)
