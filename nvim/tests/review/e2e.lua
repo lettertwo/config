@@ -483,6 +483,41 @@ elseif scenario == "stack" then
     feed("gg")
     feed("j") -- item 2 = a1.lua (first file of the first changeset)
     check("outline focus-follow renders a1.lua", wait_line1("a1"))
+
+    -- Explicit nav keymaps ([f/]f, [c/]c) bypass on_change entirely (they
+    -- call docket methods directly), so the outline's own list cursor must
+    -- still follow via sync_to_current even while the outline is focused —
+    -- this is the bug this change fixes. picker:current() must match the
+    -- docket's new current file after each keypress. Seed a known starting
+    -- file directly (dk:focus_file) rather than relying on the flaky
+    -- feedkeys-driven focus-follow above, since only the nav keymaps are
+    -- under test here.
+    local dk_nav = require("app.review")._active_docket()
+    dk_nav:focus_file(dk_nav.files[1]) -- a1.lua
+    wait_line1("a1")
+    picker:focus("list")
+    feed("]f")
+    check(
+      "]f from a focused outline advances the docket",
+      wait_line1("b1"),
+      dk_nav:current_file() and dk_nav:current_file().path
+    )
+    check(
+      "]f from a focused outline repositions the outline cursor",
+      picker:current() and picker:current().change == dk_nav:current_file()
+    )
+    feed("]c")
+    check(
+      "]c from a focused outline advances to the uncommitted changeset",
+      wait_line1("dirty"),
+      dk_nav:current_file() and dk_nav:current_file().path
+    )
+    check(
+      "]c from a focused outline repositions the outline cursor",
+      picker:current() and picker:current().change == dk_nav:current_file()
+    )
+    feed("[c")
+    feed("[c")
   end
 
   -- Diff-window nav still works with the outline open. (Nav checks run
