@@ -16,6 +16,7 @@
 --   default "uncommitted"
 
 local Statusline = require("config.mini.statusline")
+local nav_keymaps = require("app.review.keymaps")
 
 ---@class ReviewApp: App
 ---@field open fun(kind: "uncommitted"|"stack"|"pr"|"ref", opts?: {cwd?: string, title?: string})
@@ -60,12 +61,9 @@ local function set_keymaps(dk)
           dk[method](dk)
         end, { buffer = bufnr, silent = true, desc = desc })
       end
-      map("]f", "next_file", "Review: next file", true)
-      map("[f", "prev_file", "Review: previous file", true)
-      map("]h", "next_hunk", "Review: next hunk", true)
-      map("[h", "prev_hunk", "Review: previous hunk", true)
-      map("]c", "next_changeset", "Review: next changeset", true)
-      map("[c", "prev_changeset", "Review: previous changeset", true)
+      for _, nav in ipairs(nav_keymaps) do
+        map(nav.lhs, nav.method, nav.desc, true)
+      end
       map("<leader>rl", "toggle_layout", "Review: toggle side-by-side")
       map("<leader>rz", "cycle_zoom", "Review: cycle zoom")
       map("<leader>r-", "stage_current", "Review: stage hunk")
