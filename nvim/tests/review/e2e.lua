@@ -610,7 +610,7 @@ elseif scenario == "staging" then
   check("roles are unstaged,staged", rendered_roles() == "unstaged,staged")
   check("second row window exists", dk._win2 and vim.api.nvim_win_is_valid(dk._win2))
   check("staged pane renders the index side", vim.wait(8000, function()
-    local l = vim.api.nvim_buf_get_lines(dk.dv2.bufnr, 0, -1, false)
+    local l = vim.api.nvim_buf_get_lines(dk.dv2.right.bufnr, 0, -1, false)
     return #l > 1
   end, 50))
 
@@ -623,7 +623,7 @@ elseif scenario == "staging" then
   focus_path("main.lua")
   wait_view(2, "unstaged")
   vim.api.nvim_set_current_win(dk.win)
-  local hr = dk.dv.hunk_rows[1]
+  local hr = dk.dv.right.hunk_rows[1]
   check("unstaged pane has a hunk", hr ~= nil)
   if hr then
     vim.api.nvim_win_set_cursor(dk.win, { hr.first_diff + 1, 0 })
@@ -639,7 +639,7 @@ elseif scenario == "staging" then
   -- explicit sibling).
   vim.api.nvim_set_current_win(dk.win)
   local target
-  for i, l in ipairs(vim.api.nvim_buf_get_lines(dk.dv.bufnr, 0, -1, false)) do
+  for i, l in ipairs(vim.api.nvim_buf_get_lines(dk.dv.right.bufnr, 0, -1, false)) do
     if l:match("compute_nine") then
       target = i
       break
@@ -648,7 +648,7 @@ elseif scenario == "staging" then
   check(
     "staged pane shows the staged line",
     target ~= nil,
-    target == nil and table.concat(vim.api.nvim_buf_get_lines(dk.dv.bufnr, 0, 5, false), " | ") or nil
+    target == nil and table.concat(vim.api.nvim_buf_get_lines(dk.dv.right.bufnr, 0, 5, false), " | ") or nil
   )
   if target then
     vim.api.nvim_win_set_cursor(dk.win, { target, 0 })
@@ -674,7 +674,7 @@ elseif scenario == "staging" then
     if #dk._rendered ~= 2 or dk.dv._rendered_file ~= dk._rendered[1].file then
       return false
     end
-    for _, l in ipairs(vim.api.nvim_buf_get_lines(dk.dv.bufnr, 0, -1, false)) do
+    for _, l in ipairs(vim.api.nvim_buf_get_lines(dk.dv.right.bufnr, 0, -1, false)) do
       if l:match("return 5 %+ 5") then
         return false
       end
@@ -683,7 +683,7 @@ elseif scenario == "staging" then
   end, 100))
   vim.api.nvim_set_current_win(dk.win)
   local pure_del
-  for _, h in ipairs(dk.dv.hunk_rows) do
+  for _, h in ipairs(dk.dv.right.hunk_rows) do
     local hunk = dk.dv:hunk_at(dk.win, h.first_diff)
     if hunk then
       local has_add = false
@@ -718,10 +718,10 @@ elseif scenario == "staging" then
     return #dk._rendered == 2
       and dk._rendered[1].role == "unstaged"
       and dk.dv._rendered_file == dk._rendered[1].file
-      and #dk.dv.hunk_rows == 1
-  end, 100), rendered_roles() .. " hunks=" .. #dk.dv.hunk_rows)
+      and #dk.dv.right.hunk_rows == 1
+  end, 100), rendered_roles() .. " hunks=" .. #dk.dv.right.hunk_rows)
   vim.api.nvim_set_current_win(dk.win)
-  local dhr = dk.dv.hunk_rows[1]
+  local dhr = dk.dv.right.hunk_rows[1]
   check("discard target hunk present", dhr ~= nil)
   if dhr then
     vim.api.nvim_win_set_cursor(dk.win, { dhr.first_diff + 1, 0 })
@@ -774,7 +774,7 @@ elseif scenario == "staging" then
       return #dk._rendered >= 1 and dk.dv._rendered_file == dk._rendered[1].file
     end, 100)
     vim.api.nvim_set_current_win(dk.win)
-    local uhr = dk.dv.hunk_rows[1]
+    local uhr = dk.dv.right.hunk_rows[1]
     if uhr then
       vim.api.nvim_win_set_cursor(dk.win, { uhr.first_diff + 1, 0 })
       dk:stage_current()
@@ -803,7 +803,7 @@ elseif scenario == "staging" then
       rendered_roles() .. " rendered_file=" .. tostring(dk.dv._rendered_file and dk.dv._rendered_file.path)
     )
     vim.api.nvim_set_current_win(dk.win)
-    local ghr = dk.dv.hunk_rows[1]
+    local ghr = dk.dv.right.hunk_rows[1]
     if ghr then
       vim.api.nvim_win_set_cursor(dk.win, { ghr.first_diff + 1, 0 })
       dk:stage_current() -- staged pane: unstages; deletion → file-level
@@ -863,14 +863,14 @@ elseif scenario == "staging" then
     return #dk._rendered == 1
       and dk._rendered[1].role == "unstaged"
       and dk.dv._rendered_file == dk._rendered[1].file
-      and #dk.dv.hunk_rows >= 2
-  end, 100), rendered_roles() .. " hunks=" .. #dk.dv.hunk_rows)
+      and #dk.dv.right.hunk_rows >= 2
+  end, 100), rendered_roles() .. " hunks=" .. #dk.dv.right.hunk_rows)
   dk:toggle_layout()
   check("sbs on the single row", vim.wait(8000, function()
     return review_win_count() == 2
   end, 100), review_win_count())
   vim.api.nvim_set_current_win(dk.win)
-  local xhr = dk.dv.hunk_rows[1]
+  local xhr = dk.dv.right.hunk_rows[1]
   if xhr then
     vim.api.nvim_win_set_cursor(dk.win, { xhr.first_diff + 1, 0 })
     dk:stage_current()
@@ -888,8 +888,8 @@ elseif scenario == "staging" then
     )
     check(
       "row-2 left pane aligns with row-1 left column",
-      dk.dv2.win_left and dk.dv.win_left and col(dk.dv2.win_left) == col(dk.dv.win_left),
-      dk.dv2.win_left and dk.dv.win_left and (col(dk.dv2.win_left) .. " vs " .. col(dk.dv.win_left)) or "missing left pane"
+      dk.dv2.left.win and dk.dv.left.win and col(dk.dv2.left.win) == col(dk.dv.left.win),
+      dk.dv2.left.win and dk.dv.left.win and (col(dk.dv2.left.win) .. " vs " .. col(dk.dv.left.win)) or "missing left pane"
     )
   end
 
