@@ -66,14 +66,10 @@ local function set_keymaps(dk)
       end
       map("<leader>rl", "toggle_layout", "Review: toggle side-by-side")
       map("<leader>rz", "cycle_zoom", "Review: cycle zoom")
-      map("<leader>r-", "stage_current", "Review: stage hunk")
-      map("<leader>r=", "stage_current_file", "Review: stage file")
-      map("<leader>r_", "unstage_current", "Review: unstage hunk")
-      map("<leader>r+", "unstage_current_file", "Review: unstage file")
+      map("<leader>rs", "stage_current", "Review: toggle-stage hunk")
+      map("<leader>rS", "stage_current_file", "Review: toggle-stage file")
       map("<leader>rd", "discard_current", "Review: discard hunk")
       map("<leader>rD", "discard_current_file", "Review: discard file")
-      map("<leader>ra", "stage_all", "Review: stage all")
-      map("<leader>rA", "unstage_all", "Review: unstage all")
 
       vim.keymap.set("n", "<leader>o", function()
         if not dk._closed and dk.outline then
