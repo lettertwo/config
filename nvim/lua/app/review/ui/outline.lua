@@ -243,6 +243,31 @@ function OutlineView:_build_items()
   return M._items_for(self.docket, self.mode, self.docket.state.stack_order)
 end
 
+-- Locate the outline row for a docket's current file. Stack/stack-tree items
+-- keep one entry per changeset occurrence, so identity match is exact; flat
+-- and tree modes dedupe a path to its newest changeset's object (see
+-- _items_for), so match by path instead. Pure; exposed for unit tests.
+---@param items table[]
+---@param file Review.FileChange?
+---@param mode "flat"|"tree"|"stack"|"stack-tree"
+---@return integer?
+function M._find_row(items, file, mode)
+  if not file then
+    return nil
+  end
+  local by_identity = mode == "stack" or mode == "stack-tree"
+  for i, item in ipairs(items) do
+    if item.change then
+      if by_identity and item.change == file then
+        return i
+      elseif not by_identity and item.change.path == file.path then
+        return i
+      end
+    end
+  end
+  return nil
+end
+
 -- (Re)open the picker sidebar. No-op when already open.
 function OutlineView:open()
   if self:is_open() then
@@ -517,6 +542,23 @@ function OutlineView:render()
   end
 end
 
+-- Reposition the picker cursor to the row matching the docket's current
+-- file, without stealing focus or rebuilding the item list. No-op while the
+-- outline is focused (the user's own navigation there drives the docket via
+-- on_change, so it's authoritative) or when the current file isn't among the
+-- displayed items — e.g. filtered out by an active search; the filter is
+-- never cleared to force a match.
+---@param file Review.FileChange?
+function OutlineView:sync_to_current(file)
+  if not self:is_open() or self._picker:is_focused() then
+    return
+  end
+  local row = M._find_row(self._picker:items(), file, self.mode)
+  if row then
+    self._picker.list:view(row)
+  end
+end
+
 function OutlineView:cycle_mode()
   local modes = { "flat", "tree", "stack", "stack-tree" }
   for i, m in ipairs(modes) do
@@ -527,6 +569,7 @@ function OutlineView:cycle_mode()
     end
   end
   self:render()
+  self:sync_to_current(self.docket:current_file())
   vim.notify("Outline: " .. self.mode, vim.log.levels.INFO, { title = "Review" })
 end
 
@@ -534,6 +577,7 @@ function OutlineView:toggle_stack_order()
   local order = self.docket.state.stack_order == "head-first" and "base-first" or "head-first"
   self.docket.state.stack_order = order
   self:render()
+  self:sync_to_current(self.docket:current_file())
   vim.notify("Stack order: " .. order, vim.log.levels.INFO, { title = "Review" })
 end
 

@@ -172,3 +172,43 @@ describe("outline._items_for", function()
     assert.equals("empty", items[1].type)
   end)
 end)
+
+describe("outline._find_row", function()
+  local early = fc("a.lua", { changeset_id = "aaa" })
+  local late = fc("a.lua", { changeset_id = "uncommitted" })
+  local docket = {
+    changesets = {
+      { id = "aaa", title = "feat a", files = { early } },
+      { id = "uncommitted", title = "Uncommitted Changes", files = { late, fc("b.lua", { changeset_id = "uncommitted" }) } },
+    },
+    files = { early, late, fc("b.lua", { changeset_id = "uncommitted" }) },
+  }
+
+  it("returns nil for a nil file", function()
+    assert.is_nil(outline._find_row(outline._items_for(docket, "flat"), nil, "flat"))
+  end)
+
+  it("flat mode matches by path, even when current file is a superseded duplicate", function()
+    local items = outline._items_for(docket, "flat")
+    -- flat dedupes a.lua to `late`; `early` is a different object for the same path.
+    assert.equals(1, outline._find_row(items, early, "flat"))
+    assert.equals(1, outline._find_row(items, late, "flat"))
+  end)
+
+  it("tree mode matches by path", function()
+    local items = outline._items_for(docket, "tree")
+    local row = outline._find_row(items, early, "tree")
+    assert.equals("a.lua", items[row].change.path)
+  end)
+
+  it("stack mode matches by object identity, not just path", function()
+    local items = outline._items_for(docket, "stack")
+    assert.equals(2, outline._find_row(items, early, "stack"))
+    assert.equals(4, outline._find_row(items, late, "stack"))
+  end)
+
+  it("returns nil when the file isn't among the displayed items", function()
+    local items = outline._items_for(docket, "flat")
+    assert.is_nil(outline._find_row(items, fc("missing.lua", { changeset_id = "aaa" }), "flat"))
+  end)
+end)
