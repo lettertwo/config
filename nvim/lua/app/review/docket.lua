@@ -427,6 +427,9 @@ function Docket:show_file(view)
       r.dv:render(r.file, self.cwd, nil, r.mode)
     end
   end
+  if self.outline then
+    self.outline:sync_to_current(file)
+  end
   return true
 end
 
@@ -798,10 +801,10 @@ function Docket:load()
         break
       end
     end
-    self:show_file()
     if self.outline then
       self.outline:render()
     end
+    self:show_file()
     self:_start_watcher()
     self:_start_index_watcher()
   end)
