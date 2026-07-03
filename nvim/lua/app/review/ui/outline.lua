@@ -154,8 +154,9 @@ end
 -- docket.files/.changesets; exposed for unit tests.
 ---@param docket {files: Review.FileChange[], changesets: Review.Changeset[]}
 ---@param mode "flat"|"tree"|"stack"|"stack-tree"
+---@param order "head-first"|"base-first"|nil display order for stack/stack-tree headers (default base-first)
 ---@return table[]
-function M._items_for(docket, mode)
+function M._items_for(docket, mode, order)
   local items = {}
 
   if mode == "flat" then
@@ -189,7 +190,10 @@ function M._items_for(docket, mode)
     M._emit_tree_node(M._build_path_tree(paths, changed), nil, items)
   elseif mode == "stack" or mode == "stack-tree" then
     local n = #docket.changesets
-    for ci, cs in ipairs(docket.changesets) do
+    -- docket.changesets is always base->head; head-first only flips display order.
+    local reversed = order == "head-first"
+    for ci = 1, n do
+      local cs = docket.changesets[reversed and (n - ci + 1) or ci]
       local header = {
         type = "changeset",
         changeset = cs,
@@ -236,7 +240,7 @@ function M._items_for(docket, mode)
 end
 
 function OutlineView:_build_items()
-  return M._items_for(self.docket, self.mode)
+  return M._items_for(self.docket, self.mode, self.docket.state.stack_order)
 end
 
 -- (Re)open the picker sidebar. No-op when already open.
@@ -355,6 +359,12 @@ function OutlineView:open()
           view:cycle_mode()
         end,
       },
+      review_toggle_stack_order = {
+        desc = "Toggle stack order",
+        action = function()
+          view:toggle_stack_order()
+        end,
+      },
       review_next_file = {
         desc = "Next file",
         action = function()
@@ -453,6 +463,7 @@ function OutlineView:open()
       list = {
         keys = {
           ["i"] = "review_cycle_mode",
+          ["r"] = "review_toggle_stack_order",
           ["l"] = "review_layout",
           ["z"] = "review_zoom",
           ["<Space>"] = "review_toggle_stage_file",
@@ -517,6 +528,13 @@ function OutlineView:cycle_mode()
   end
   self:render()
   vim.notify("Outline: " .. self.mode, vim.log.levels.INFO, { title = "Review" })
+end
+
+function OutlineView:toggle_stack_order()
+  local order = self.docket.state.stack_order == "head-first" and "base-first" or "head-first"
+  self.docket.state.stack_order = order
+  self:render()
+  vim.notify("Stack order: " .. order, vim.log.levels.INFO, { title = "Review" })
 end
 
 function OutlineView:destroy()
