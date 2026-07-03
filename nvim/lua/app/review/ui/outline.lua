@@ -297,7 +297,13 @@ function OutlineView:open()
         docket[nav.method](docket)
       end,
     }
-    nav_keys[nav.lhs] = action_name
+    -- A bare string value here becomes its own desc verbatim (snacks/win.lua:
+    -- `spec = { key, spec, desc = spec }`) rather than looking up the
+    -- action's desc, so the outline's keymap help would otherwise show
+    -- "review_next_changeset" instead of "Review: next changeset" like the
+    -- diff panes. Supplying desc explicitly keeps both views' help text
+    -- matching.
+    nav_keys[nav.lhs] = { nav.lhs, action_name, desc = nav.desc }
   end
 
   ---@param item table
