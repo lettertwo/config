@@ -479,10 +479,13 @@ elseif scenario == "stack" then
     check("exactly one changeset marked current", current_headers == 1, current_headers)
 
     -- Focus-follow: moving the list cursor onto a file item renders it.
+    -- Stack source defaults to head-first order (stack.lua's
+    -- default_stack_order), so item 1 is the Uncommitted header and item 2
+    -- is base.lua, its only file — not a1.lua.
     picker:focus("list")
     feed("gg")
-    feed("j") -- item 2 = a1.lua (first file of the first changeset)
-    check("outline focus-follow renders a1.lua", wait_line1("a1"))
+    feed("j") -- item 2 = base.lua (the uncommitted changeset's file)
+    check("outline focus-follow renders base.lua", wait_line1("dirty"))
 
     -- Explicit nav keymaps ([f/]f, [c/]c) bypass on_change entirely (they
     -- call docket methods directly), so the outline's own list cursor must
