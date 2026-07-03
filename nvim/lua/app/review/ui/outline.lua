@@ -306,6 +306,116 @@ function OutlineView:open()
     nav_keys[nav.lhs] = { nav.lhs, action_name, desc = nav.desc }
   end
 
+  local actions = vim.tbl_extend("force", nav_actions, {
+    review_cycle_mode = {
+      desc = "Cycle outline mode",
+      action = function()
+        view:cycle_mode()
+      end,
+    },
+    review_toggle_stack_order = {
+      desc = "Toggle stack order",
+      action = function()
+        view:toggle_stack_order()
+      end,
+    },
+    review_refresh = {
+      desc = "Refresh source",
+      action = function()
+        docket:refresh()
+      end,
+    },
+    review_layout = {
+      desc = "Toggle side-by-side",
+      action = function()
+        docket:toggle_layout()
+      end,
+    },
+    review_zoom = {
+      desc = "Cycle staging zoom",
+      action = function()
+        docket:cycle_zoom()
+      end,
+    },
+    review_toggle_stage_file = {
+      desc = "Stage/unstage file",
+      action = function(picker)
+        local item = picker:current()
+        if item and item.change then
+          docket:toggle_stage_file(item.change)
+        end
+      end,
+    },
+    review_discard_file = {
+      desc = "Discard file",
+      action = function(picker)
+        local item = picker:current()
+        if item and item.change then
+          docket:discard_file(item.change)
+        end
+      end,
+    },
+    review_stage_all = {
+      desc = "Stage all",
+      action = function()
+        docket:stage_all()
+      end,
+    },
+    review_unstage_all = {
+      desc = "Unstage all",
+      action = function()
+        docket:unstage_all()
+      end,
+    },
+    review_close = {
+      desc = "Close review",
+      action = function()
+        view.on_close()
+      end,
+    },
+    review_focus_list = {
+      desc = "Focus list",
+      action = function(picker)
+        picker:focus("list")
+      end,
+    },
+    review_input_normal = {
+      desc = "Normal mode",
+      action = function()
+        vim.cmd("stopinsert")
+      end,
+    },
+    review_clear_and_focus_list = {
+      desc = "Clear filter",
+      action = function(picker)
+        picker.input:set("", "")
+        picker:find({ refresh = false })
+        picker:focus("list")
+      end,
+    },
+  })
+
+  -- Bare-string list.keys values become their own desc verbatim (see the
+  -- nav_keys comment above) instead of resolving the action's desc, so every
+  -- non-nav outline action gets the same {lhs, action, desc} treatment here.
+  local list_keys = vim.deepcopy(nav_keys)
+  for lhs, action_name in pairs({
+    ["i"] = "review_cycle_mode",
+    ["r"] = "review_toggle_stack_order",
+    ["l"] = "review_layout",
+    ["z"] = "review_zoom",
+    ["<Space>"] = "review_toggle_stage_file",
+    ["="] = "review_toggle_stage_file",
+    ["a"] = "review_stage_all",
+    ["A"] = "review_unstage_all",
+    ["d"] = "review_discard_file",
+    ["R"] = "review_refresh",
+    ["q"] = "review_close",
+    ["<Esc>"] = "review_close",
+  }) do
+    list_keys[lhs] = { lhs, action_name, desc = actions[action_name].desc }
+  end
+
   ---@param item table
   ---@param picker snacks.Picker
   ---@return snacks.picker.Highlight[]
@@ -409,116 +519,21 @@ function OutlineView:open()
         end
       end
     end,
-    actions = vim.tbl_extend("force", nav_actions, {
-      review_cycle_mode = {
-        desc = "Cycle outline mode",
-        action = function()
-          view:cycle_mode()
-        end,
-      },
-      review_toggle_stack_order = {
-        desc = "Toggle stack order",
-        action = function()
-          view:toggle_stack_order()
-        end,
-      },
-      review_refresh = {
-        desc = "Refresh source",
-        action = function()
-          docket:refresh()
-        end,
-      },
-      review_layout = {
-        desc = "Toggle side-by-side",
-        action = function()
-          docket:toggle_layout()
-        end,
-      },
-      review_zoom = {
-        desc = "Cycle staging zoom",
-        action = function()
-          docket:cycle_zoom()
-        end,
-      },
-      review_toggle_stage_file = {
-        desc = "Stage/unstage file",
-        action = function(picker)
-          local item = picker:current()
-          if item and item.change then
-            docket:toggle_stage_file(item.change)
-          end
-        end,
-      },
-      review_discard_file = {
-        desc = "Discard file",
-        action = function(picker)
-          local item = picker:current()
-          if item and item.change then
-            docket:discard_file(item.change)
-          end
-        end,
-      },
-      review_stage_all = {
-        desc = "Stage all",
-        action = function()
-          docket:stage_all()
-        end,
-      },
-      review_unstage_all = {
-        desc = "Unstage all",
-        action = function()
-          docket:unstage_all()
-        end,
-      },
-      review_close = {
-        desc = "Close review",
-        action = function()
-          view.on_close()
-        end,
-      },
-      review_focus_list = {
-        desc = "Focus list",
-        action = function(picker)
-          picker:focus("list")
-        end,
-      },
-      review_input_normal = {
-        desc = "Normal mode",
-        action = function()
-          vim.cmd("stopinsert")
-        end,
-      },
-      review_clear_and_focus_list = {
-        desc = "Clear filter",
-        action = function(picker)
-          picker.input:set("", "")
-          picker:find({ refresh = false })
-          picker:focus("list")
-        end,
-      },
-    }),
+    actions = actions,
     win = {
       input = {
         keys = {
-          ["<Esc>"] = { "review_input_normal", mode = "i" },
-          ["<CR>"] = { "review_focus_list", mode = { "i", "n" } },
-          ["<C-c>"] = { "review_clear_and_focus_list", mode = { "i", "n" } },
+          ["<Esc>"] = { "review_input_normal", mode = "i", desc = actions.review_input_normal.desc },
+          ["<CR>"] = { "review_focus_list", mode = { "i", "n" }, desc = actions.review_focus_list.desc },
+          ["<C-c>"] = {
+            "review_clear_and_focus_list",
+            mode = { "i", "n" },
+            desc = actions.review_clear_and_focus_list.desc,
+          },
         },
       },
       list = {
-        keys = vim.tbl_extend("force", nav_keys, {
-          ["i"] = "review_cycle_mode",
-          ["r"] = "review_toggle_stack_order",
-          ["l"] = "review_layout",
-          ["z"] = "review_zoom",
-          ["<Space>"] = "review_toggle_stage_file",
-          ["="] = "review_toggle_stage_file",
-          ["a"] = "review_stage_all",
-          ["A"] = "review_unstage_all",
-          ["d"] = "review_discard_file",
-          ["R"] = "review_refresh",
-          ["q"] = "review_close",
-          ["<Esc>"] = "review_close",
+        keys = vim.tbl_extend("force", list_keys, {
           ["/"] = "toggle_focus",
           -- disable snacks defaults that don't apply in the review outline
           ["<C-V>"] = false, -- edit_vsplit
