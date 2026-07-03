@@ -166,19 +166,20 @@ function M.discard_hunk(cwd, file, hunk, on_done)
   end, on_done)
 end
 
+-- Stage or unstage everything by the repo's LIVE status, resolved when the
+-- op runs (same rationale as toggle_file): stage everything if anything is
+-- unstaged, otherwise unstage everything.
 ---@param cwd string
 ---@param on_done fun()?
-function M.stage_all(cwd, on_done)
+function M.toggle_all(cwd, on_done)
   enqueue(function(cb)
-    git.stage_all(cwd, cb)
-  end, on_done)
-end
-
----@param cwd string
----@param on_done fun()?
-function M.unstage_all(cwd, on_done)
-  enqueue(function(cb)
-    git.unstage_all(cwd, cb)
+    git.has_unstaged(cwd, function(has_unstaged)
+      if has_unstaged then
+        git.stage_all(cwd, cb)
+      else
+        git.unstage_all(cwd, cb)
+      end
+    end)
   end, on_done)
 end
 

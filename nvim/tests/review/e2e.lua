@@ -673,8 +673,7 @@ elseif scenario == "staging" then
     check("collapse after staging everything", wait_view(1, "staged"), rendered_roles())
   end
 
-  -- Unstage that hunk from the staged pane (pane-aware toggle on r-'s
-  -- explicit sibling).
+  -- Unstage that hunk from the staged pane (same pane-aware toggle).
   vim.api.nvim_set_current_win(dk.win)
   local target
   for i, l in ipairs(vim.api.nvim_buf_get_lines(dk.dv.right.bufnr, 0, -1, false)) do
@@ -690,7 +689,7 @@ elseif scenario == "staging" then
   )
   if target then
     vim.api.nvim_win_set_cursor(dk.win, { target, 0 })
-    dk:unstage_current()
+    dk:stage_current()
     check("unstage hunk leaves the index", vim.wait(8000, function()
       return git_out("diff", "--cached"):match("compute_nine") == nil
     end, 100))
@@ -857,6 +856,7 @@ elseif scenario == "staging" then
   -- its direction from the live index when the op runs, so a stale
   -- FileChange snapshot (refresh in flight) must not matter. The wait above
   -- for ls-files after the undo toggle guarantees it is unstaged here.
+  local review_staging = require("app.review.staging")
   local uf2 = focus_path("untracked.lua")
   if uf2 then
     dk:toggle_stage_file(uf2)
@@ -864,15 +864,29 @@ elseif scenario == "staging" then
       return git_out("ls-files", "--cached"):match("untracked%.lua") ~= nil
     end, 100))
   end
-
-  -- stage_all / unstage_all.
-  dk:stage_all()
-  check("stage_all empties the worktree diff", vim.wait(8000, function()
-    return git_out("diff") == "" and git_out("ls-files", "--others", "--exclude-standard") == ""
+  -- Drain the queue before the toggle_all round trip: toggle_all resolves
+  -- stage-vs-unstage from live git status when its op runs (like
+  -- toggle_file), so if it queues behind a not-yet-run op, it reads state
+  -- that predates that op's effect and picks the wrong direction.
+  check("staging queue drained before toggle_all", vim.wait(8000, function()
+    return review_staging._queue_len() == 0
   end, 100))
-  dk:unstage_all()
-  check("unstage_all empties the index diff", vim.wait(8000, function()
-    return git_out("diff", "--cached") == ""
+
+  -- toggle_all: by this point the fixture is fully staged (gone.lua's
+  -- re-staged deletion, main.lua's staged edits, and the just-toggled
+  -- untracked.lua all have nothing left unstaged), so the first call
+  -- unstages everything and the second restages it. Each check also waits
+  -- for the queue to drain, not just for git's end state, so the next
+  -- toggle_all can't queue behind a not-yet-run op and read stale status.
+  dk:toggle_all()
+  check("toggle_all (unstage direction) empties the index diff", vim.wait(8000, function()
+    return git_out("diff", "--cached") == "" and review_staging._queue_len() == 0
+  end, 100))
+  dk:toggle_all()
+  check("toggle_all (stage direction) empties the worktree diff", vim.wait(8000, function()
+    return git_out("diff") == ""
+      and git_out("ls-files", "--others", "--exclude-standard") == ""
+      and review_staging._queue_len() == 0
   end, 100))
 
   -- External staging is noticed by the index watcher (no manual refresh).
@@ -896,8 +910,27 @@ elseif scenario == "staging" then
   table.insert(ml, "local tail_marker = true")
   vim.fn.writefile(ml, fixture .. "/main.lua")
   dk:refresh()
+  -- refresh() is async: wait for its rebuilt FileChange objects (main.lua's
+  -- new tail_marker hunk) before focus_path re-resolves the file, otherwise
+  -- focus_path can grab a FileChange that refresh is about to replace, and
+  -- the diff pane's render never syncs to the object that ends up current.
+  check("refresh picks up the worktree edit", vim.wait(8000, function()
+    for _, f in ipairs(dk.files) do
+      if f.path == "main.lua" and f.hunks and #f.hunks >= 2 then
+        return true
+      end
+    end
+    return false
+  end, 100))
   focus_path("main.lua")
+  -- A watcher-triggered refresh queued behind an earlier index touch (e.g.
+  -- from the toggle_all round trip above) can still be in flight here; its
+  -- stale `current_path` snapshot (taken before this focus_path call) can
+  -- re-focus an older file and clobber the render right after it lands. Poll
+  -- with focus_path repeated on every tick so it reclaims focus once that
+  -- straggler settles.
   check("expand precondition: single unstaged row", vim.wait(8000, function()
+    focus_path("main.lua")
     return #dk._rendered == 1
       and dk._rendered[1].role == "unstaged"
       and dk.dv._rendered_file == dk._rendered[1].file

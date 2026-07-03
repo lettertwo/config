@@ -659,27 +659,6 @@ function Docket:stage_current()
   end
 end
 
--- Explicitly unstage the hunk under the cursor (staged pane only).
-function Docket:unstage_current()
-  local file = self:_stageable_file()
-  if not file then
-    return
-  end
-  local r, hunk = self:_hunk_at_cursor()
-  if not r then
-    return
-  end
-  if r.role ~= "staged" then
-    self:_notify("Review: unstage acts in the staged pane")
-    return
-  end
-  if hunkwise(r.file) then
-    staging.unstage_hunk(self.cwd, r.file, hunk, self:_after_stage_op())
-  else
-    staging.unstage_file(self.cwd, file.path, self:_after_stage_op())
-  end
-end
-
 -- Discard the hunk under the cursor from the worktree (unstaged pane only).
 function Docket:discard_current()
   local file = self:_stageable_file()
@@ -716,14 +695,6 @@ function Docket:stage_current_file()
   else
     staging.stage_file(self.cwd, file.path, self:_after_stage_op())
   end
-end
-
-function Docket:unstage_current_file()
-  local file = self:_stageable_file()
-  if not file then
-    return
-  end
-  staging.unstage_file(self.cwd, file.path, self:_after_stage_op())
 end
 
 function Docket:discard_current_file()
@@ -764,18 +735,12 @@ function Docket:discard_file(change)
   end
 end
 
-function Docket:stage_all()
+-- Stage everything if anything is unstaged, otherwise unstage everything.
+function Docket:toggle_all()
   if not self:_can_stage_or_notify() then
     return
   end
-  staging.stage_all(self.cwd, self:_after_stage_op())
-end
-
-function Docket:unstage_all()
-  if not self:_can_stage_or_notify() then
-    return
-  end
-  staging.unstage_all(self.cwd, self:_after_stage_op())
+  staging.toggle_all(self.cwd, self:_after_stage_op())
 end
 
 -- Initial load: fetch changesets, open at the current-position changeset

@@ -355,16 +355,10 @@ function OutlineView:open()
         end
       end,
     },
-    review_stage_all = {
-      desc = "Stage all",
+    review_toggle_all = {
+      desc = "Stage/unstage all",
       action = function()
-        docket:stage_all()
-      end,
-    },
-    review_unstage_all = {
-      desc = "Unstage all",
-      action = function()
-        docket:unstage_all()
+        docket:toggle_all()
       end,
     },
     review_close = {
@@ -405,9 +399,7 @@ function OutlineView:open()
     ["l"] = "review_layout",
     ["z"] = "review_zoom",
     ["<Space>"] = "review_toggle_stage_file",
-    ["="] = "review_toggle_stage_file",
-    ["a"] = "review_stage_all",
-    ["A"] = "review_unstage_all",
+    ["a"] = "review_toggle_all",
     ["d"] = "review_discard_file",
     ["R"] = "review_refresh",
     ["q"] = "review_close",
