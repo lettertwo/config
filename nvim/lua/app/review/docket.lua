@@ -64,7 +64,7 @@ function M.new(opts)
   self._rendered = {}
   self._arranging = false
   self._closed = false
-  self._win_aug = vim.api.nvim_create_augroup("ReviewDocketWins_" .. opts.dv.bufnr, { clear = true })
+  self._win_aug = vim.api.nvim_create_augroup("ReviewDocketWins_" .. opts.dv.right.bufnr, { clear = true })
   self:_watch_primary()
   return self
 end
@@ -75,11 +75,7 @@ end
 function Docket:_watch_primary()
   self:_watch_close(self.win, function()
     -- This row's left pane lost its primary either way.
-    local left = self.dv.win_left
-    self.dv:set_layout("inline")
-    if left and vim.api.nvim_win_is_valid(left) then
-      pcall(vim.api.nvim_win_close, left, false)
-    end
+    self:_drop_left(self.dv, true)
     if self._win2 and vim.api.nvim_win_is_valid(self._win2) then
       -- Promote row 2; the DiffView objects swap roles.
       self.dv, self.dv2 = self.dv2, self.dv
@@ -169,14 +165,14 @@ function Docket:set_winbar()
   end
   for _, r in ipairs(self._rendered) do
     local role = r.role ~= "plain" and ("  " .. r.role:upper()) or ""
-    set(r.dv.win, (r.dv == self.dv and text or prefix) .. role)
-    if r.dv.win_left then
+    set(r.dv.right.win, (r.dv == self.dv and text or prefix) .. role)
+    if r.dv.left:win_valid() then
       local base = r.file and r.file.base_ref
       if not base or base == "" then
         base = "HEAD"
       end
       local lpath = r.file and (r.file.old_path or r.file.path) or ""
-      set(r.dv.win_left, prefix .. role .. ("  %s @ %s"):format(lpath, base))
+      set(r.dv.left.win, prefix .. role .. ("  %s @ %s"):format(lpath, base))
     end
   end
 end
@@ -186,6 +182,22 @@ end
 -- dv2, split zoom only), and each row's left pane (sbs layout). DiffViews
 -- render into whatever they're bound to; binding teardown happens BEFORE
 -- windows close.
+
+-- Unbind and close a row's left pane. set_layout("inline") only unbinds —
+-- the docket owns the window itself, so every collapse site funnels here.
+---@param dv Review.DiffView
+---@param safe boolean?  pcall the close (WinClosed handler contexts)
+function Docket:_drop_left(dv, safe)
+  local left = dv.left.win
+  dv:set_layout("inline")
+  if left and vim.api.nvim_win_is_valid(left) then
+    if safe then
+      pcall(vim.api.nvim_win_close, left, false)
+    else
+      vim.api.nvim_win_close(left, false)
+    end
+  end
+end
 
 -- One WinClosed handler per managed window: an out-of-band close (:q in a
 -- pane) re-syncs docket state and re-applies the arrangement. Owned closes
@@ -245,10 +257,8 @@ function Docket:_arrange(rows)
       -- In sbs, self.win is only the right column; a split there would hang
       -- row 2 under that column. Drop row 1's left pane so the split spans
       -- the diff area — the loop below re-creates both rows' left panes.
-      local left1 = self.dv.win_left
-      if left1 and vim.api.nvim_win_is_valid(left1) then
-        self.dv:set_layout("inline")
-        vim.api.nvim_win_close(left1, false)
+      if self.dv.left:win_valid() then
+        self:_drop_left(self.dv)
       end
       vim.api.nvim_set_current_win(self.win)
       vim.cmd("belowright split")
@@ -259,18 +269,10 @@ function Docket:_arrange(rows)
         self._win2 = nil
         self.state.zoom = "combined"
         -- The row's left pane has no primary anymore; drop it too.
-        local left2 = self.dv2.win_left
-        self.dv2:set_layout("inline")
-        if left2 and vim.api.nvim_win_is_valid(left2) then
-          pcall(vim.api.nvim_win_close, left2, false)
-        end
+        self:_drop_left(self.dv2, true)
       end)
     elseif rows == 1 and have2 then
-      local left2 = self.dv2.win_left
-      self.dv2:set_layout("inline")
-      if left2 and vim.api.nvim_win_is_valid(left2) then
-        vim.api.nvim_win_close(left2, false)
-      end
+      self:_drop_left(self.dv2)
       vim.api.nvim_win_close(self._win2, false)
       self._win2 = nil
       changed = true
@@ -283,7 +285,7 @@ function Docket:_arrange(rows)
     end
     for _, pair in ipairs(active) do
       local dv, primary = pair[1], pair[2]
-      local have_left = dv.win_left and vim.api.nvim_win_is_valid(dv.win_left)
+      local have_left = dv.left:win_valid()
       if self.state.layout == "sbs" and not have_left then
         vim.api.nvim_set_current_win(primary)
         vim.cmd("leftabove vsplit")
@@ -295,9 +297,7 @@ function Docket:_arrange(rows)
           self.state.layout = "inline"
         end)
       elseif self.state.layout ~= "sbs" and have_left then
-        local left = dv.win_left
-        dv:set_layout("inline")
-        vim.api.nvim_win_close(left, false)
+        self:_drop_left(dv)
         changed = true
       end
     end
@@ -316,9 +316,8 @@ function Docket:_arrange(rows)
         local total = vim.api.nvim_win_get_height(self.win) + vim.api.nvim_win_get_height(w2)
         vim.api.nvim_win_set_height(self.win, math.floor(total / 2))
       end
-      local l1, l2 = self.dv.win_left, self.dv2.win_left
-      if l1 and l2 and vim.api.nvim_win_is_valid(l1) and vim.api.nvim_win_is_valid(l2) then
-        vim.api.nvim_win_set_width(l2, vim.api.nvim_win_get_width(l1))
+      if self.dv.left:win_valid() and self.dv2.left:win_valid() then
+        vim.api.nvim_win_set_width(self.dv2.left.win, vim.api.nvim_win_get_width(self.dv.left.win))
       end
     end
   end)
@@ -411,14 +410,14 @@ function Docket:show_file(view)
           if view then
             vim.fn.winrestview(view)
           else
-            local hr = self.dv.hunk_rows[1]
+            local hr = self.dv.right.hunk_rows[1]
             if hr then
               self.dv:reveal(self.win, hr.first_diff + 1)
             end
           end
           -- API cursor/view changes don't run scrollbind; re-anchor the left
           -- pane so both panes show the same region after a restore.
-          if self.dv.win_left and vim.api.nvim_win_is_valid(self.dv.win_left) then
+          if self.dv.left:win_valid() then
             vim.cmd("syncbind")
           end
         end)
@@ -471,8 +470,8 @@ end
 function Docket:_dv_for_win(win)
   win = win or vim.api.nvim_get_current_win()
   for _, dv in ipairs({ self.dv, self.dv2 }) do
-    if win == dv.win or win == dv.win_left then
-      return dv, dv.win
+    if dv:pane_for_win(win) then
+      return dv, dv.right.win
     end
   end
   return self.dv, self.win
@@ -487,7 +486,7 @@ function Docket:next_hunk()
     return
   end
   local row = vim.api.nvim_win_get_cursor(win)[1] - 1
-  for _, hr in ipairs(dv.hunk_rows) do
+  for _, hr in ipairs(dv.right.hunk_rows) do
     if hr.s > row then
       dv:reveal(win, hr.first_diff + 1)
       return
@@ -502,7 +501,7 @@ function Docket:prev_hunk()
   end
   local row = vim.api.nvim_win_get_cursor(win)[1] - 1
   local target = nil
-  for _, hr in ipairs(dv.hunk_rows) do
+  for _, hr in ipairs(dv.right.hunk_rows) do
     if hr.e < row then
       target = hr
     end
@@ -550,7 +549,7 @@ end
 function Docket:_pane_at_cursor()
   local cur = vim.api.nvim_get_current_win()
   for _, r in ipairs(self._rendered) do
-    if cur == r.dv.win or cur == r.dv.win_left then
+    if r.dv:pane_for_win(cur) then
       return r, cur
     end
   end
@@ -871,7 +870,7 @@ end
 -- other buffers (embedded mode), never in the review buffer itself.
 function Docket:_start_watcher()
   local cwd = vim.fs.normalize(self.cwd)
-  self._aug = vim.api.nvim_create_augroup("ReviewSaveWatch_" .. self.dv.bufnr, { clear = true })
+  self._aug = vim.api.nvim_create_augroup("ReviewSaveWatch_" .. self.dv.right.bufnr, { clear = true })
 
   local function schedule_refresh()
     if self._timer then

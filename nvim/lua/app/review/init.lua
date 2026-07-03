@@ -48,14 +48,14 @@ local function set_keymaps(dk)
   -- the pressed row's primary window (its left pane follows via scrollbind);
   -- staging ops stay put — the pane under the cursor IS their target.
   for _, dv in ipairs({ dk.dv, dk.dv2 }) do
-    for _, bufnr in ipairs({ dv.bufnr, dv.bufnr_left }) do
+    for _, bufnr in ipairs({ dv.right.bufnr, dv.left.bufnr }) do
       local function map(lhs, method, desc, refocus)
         vim.keymap.set("n", lhs, function()
           if dk._closed then
             return
           end
-          if refocus and dv.win and vim.api.nvim_win_is_valid(dv.win) and vim.api.nvim_get_current_win() ~= dv.win then
-            vim.api.nvim_set_current_win(dv.win)
+          if refocus and dv.right:win_valid() and vim.api.nvim_get_current_win() ~= dv.right.win then
+            vim.api.nvim_set_current_win(dv.right.win)
           end
           dk[method](dk)
         end, { buffer = bufnr, silent = true, desc = desc })
@@ -146,10 +146,10 @@ function ReviewApp.open(kind, opts)
   -- The staged-row DiffView; its window arrives with the split zoom.
   local dv2 = require("app.review.ui.diff").new({ win = -1 })
   -- Name the buffers so the framework's D7 unnamed-buffer sweep skips them.
-  vim.api.nvim_buf_set_name(dv.bufnr, "review://" .. kind)
-  vim.api.nvim_buf_set_name(dv.bufnr_left, "review://" .. kind .. "//old")
-  vim.api.nvim_buf_set_name(dv2.bufnr, "review://" .. kind .. "//staged")
-  vim.api.nvim_buf_set_name(dv2.bufnr_left, "review://" .. kind .. "//staged//old")
+  vim.api.nvim_buf_set_name(dv.right.bufnr, "review://" .. kind)
+  vim.api.nvim_buf_set_name(dv.left.bufnr, "review://" .. kind .. "//old")
+  vim.api.nvim_buf_set_name(dv2.right.bufnr, "review://" .. kind .. "//staged")
+  vim.api.nvim_buf_set_name(dv2.left.bufnr, "review://" .. kind .. "//staged//old")
 
   docket = require("app.review.docket").new({
     kind = kind,
