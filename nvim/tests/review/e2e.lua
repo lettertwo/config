@@ -648,8 +648,7 @@ elseif scenario == "staging" then
   check("roles are unstaged,staged", rendered_roles() == "unstaged,staged")
   check("second row window exists", dk._win2 and vim.api.nvim_win_is_valid(dk._win2))
   check("staged pane renders the index side", vim.wait(8000, function()
-    local l = vim.api.nvim_buf_get_lines(dk.dv2.right.bufnr, 0, -1, false)
-    return #l > 1
+    return dk._rendered[2] ~= nil and dk.dv2._rendered_file == dk._rendered[2].file
   end, 50))
 
   -- gone.lua is a fully staged deletion → split collapses to the staged pane.
