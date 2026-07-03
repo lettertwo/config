@@ -121,6 +121,37 @@ describe("outline._items_for", function()
     assert.equals(5, #items)
   end)
 
+  it("stack mode defaults to base-first order when no order is given", function()
+    local items = outline._items_for(docket, "stack")
+    assert.equals(cs1, items[1].changeset)
+    assert.equals(cs2, items[3].changeset)
+  end)
+
+  it("stack mode reverses headers to head-first order, recomputing idx/total/last", function()
+    local items = outline._items_for(docket, "stack", "head-first")
+    assert.equals("changeset", items[1].type)
+    assert.equals(cs2, items[1].changeset)
+    assert.equals(1, items[1]._cs_idx)
+    assert.equals(2, items[1]._cs_total)
+    assert.equals("changeset", items[4].type)
+    assert.equals(cs1, items[4].changeset)
+    assert.equals(2, items[4]._cs_idx)
+    -- cs1's file is last overall in head-first order
+    assert.is_true(items[5].last)
+    assert.equals(5, #items)
+  end)
+
+  it("stack mode keeps base-first order when order is explicitly base-first", function()
+    local items = outline._items_for(docket, "stack", "base-first")
+    assert.equals(cs1, items[1].changeset)
+    assert.equals(cs2, items[3].changeset)
+  end)
+
+  it("stack-tree mode also reverses headers to head-first order", function()
+    local items = outline._items_for(docket, "stack-tree", "head-first")
+    assert.equals(cs2, items[1].changeset)
+  end)
+
   it("stack-tree mode nests each changeset's files as a tree", function()
     local items = outline._items_for(docket, "stack-tree")
     -- cs2: header, then dir c/ before file b.lua? dirs sort before files:

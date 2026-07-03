@@ -19,7 +19,7 @@ local staging = require("app.review.staging")
 ---@field files Review.FileChange[]  flattened across changesets, in changeset order
 ---@field cs_idx_by_id table<string, integer>
 ---@field idx integer
----@field state {outline_mode: string, layout: "inline"|"sbs", zoom: "split"|"combined"|"unstaged"|"staged"}
+---@field state {outline_mode: string, layout: "inline"|"sbs", zoom: "split"|"combined"|"unstaged"|"staged", stack_order: "head-first"|"base-first"}
 ---@field outline table?  OutlineView (set by init.lua after construction)
 ---@field _win2 integer?  row-2 primary window (dv2), nil unless split is active
 ---@field _rendered {dv: Review.DiffView, file: Review.FileChange, role: string}[]
@@ -58,6 +58,7 @@ function M.new(opts)
     outline_mode = opts.source.default_outline_mode or "flat",
     layout = "inline",
     zoom = "split",
+    stack_order = opts.source.default_stack_order or "head-first",
   }
   self.outline = nil
   self._win2 = nil

@@ -17,6 +17,7 @@ function M.new(opts)
     kind = "stack",
     cwd = cwd,
     default_outline_mode = "stack", -- consumed by the M3 outline
+    default_stack_order = "head-first", -- consumed by the outline's stack rendering
   }
 
   local graph = graph_factory.create(cwd)
