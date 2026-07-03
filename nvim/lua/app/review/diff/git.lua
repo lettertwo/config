@@ -67,6 +67,22 @@ function M.has_staged(cwd, path, callback)
   end)
 end
 
+-- Whether anything in the repo is unstaged: a worktree/index difference
+-- (porcelain Y column non-blank) or an untracked file (Y column "?").
+---@param cwd string
+---@param callback fun(has_unstaged: boolean)
+function M.has_unstaged(cwd, callback)
+  run(cwd, { "git", "status", "--porcelain" }, function(r)
+    for line in r.stdout:gmatch("[^\n]+") do
+      if line:sub(2, 2) ~= " " then
+        callback(true)
+        return
+      end
+    end
+    callback(false)
+  end)
+end
+
 ---@param cwd string
 ---@param callback fun(err: string?)
 function M.stage_all(cwd, callback)
