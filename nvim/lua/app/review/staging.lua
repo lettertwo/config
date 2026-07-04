@@ -217,11 +217,30 @@ end
 ---@param on_done fun()?
 function M.toggle_all(cwd, on_done)
   enqueue(function(cb)
-    git.has_unstaged(cwd, function(has_unstaged)
+    git.has_unstaged(cwd, nil, function(has_unstaged)
       if has_unstaged then
         git.stage_all(cwd, cb)
       else
         git.unstage_all(cwd, cb)
+      end
+    end)
+  end, on_done)
+end
+
+-- Stage or unstage a whole directory subtree by its LIVE state (same
+-- toggle_file rationale): `git add -- <dir>` stages modifications,
+-- deletions, and untracked files under the pathspec (git >= 2.0), so the
+-- file-level primitives work verbatim scoped to a dir.
+---@param cwd string
+---@param dir string
+---@param on_done fun()?
+function M.toggle_tree(cwd, dir, on_done)
+  enqueue(function(cb)
+    git.has_unstaged(cwd, dir, function(has_unstaged)
+      if has_unstaged then
+        git.stage_path(cwd, dir, cb)
+      else
+        git.unstage_path(cwd, dir, cb)
       end
     end)
   end, on_done)

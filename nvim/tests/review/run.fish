@@ -16,13 +16,13 @@ if test $status -ne 0
 end
 printf '%s\n' $spec_out | grep -aE "Testing:|Success: |Failed :|Errors :|^\s*Fail"
 
-for scenario in standalone degraded embedded stack trunk-ahead staging
+for scenario in standalone degraded embedded stack trunk-ahead staging outline-nodes
     echo "── e2e: $scenario ──────────────────────────────────────"
     set -l app_env
     if test $scenario != embedded
         set app_env VIM_APP=review
     end
-    if contains $scenario stack trunk-ahead
+    if contains $scenario stack trunk-ahead outline-nodes
         set -a app_env REVIEW_KIND=stack
     end
     env $app_env REVIEW_E2E=$scenario timeout 90 \

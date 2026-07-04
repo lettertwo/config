@@ -63,6 +63,20 @@ describe("outline._build_path_tree / _emit_tree_node", function()
     end
     assert.equals(app_dir, a_file.parent)
   end)
+
+  it("threads a full repo-relative path onto dir items", function()
+    local lua_dir, app_dir
+    for _, it in ipairs(items) do
+      if it.type == "dir" and it._name == "lua" then
+        lua_dir = it
+      end
+      if it.type == "dir" and it._name == "app" then
+        app_dir = it
+      end
+    end
+    assert.equals("lua", lua_dir.path)
+    assert.equals("lua/app", app_dir.path)
+  end)
 end)
 
 describe("outline._items_for", function()
