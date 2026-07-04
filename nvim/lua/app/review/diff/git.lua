@@ -67,12 +67,19 @@ function M.has_staged(cwd, path, callback)
   end)
 end
 
--- Whether anything in the repo is unstaged: a worktree/index difference
--- (porcelain Y column non-blank) or an untracked file (Y column "?").
+-- Whether anything is unstaged: a worktree/index difference (porcelain Y
+-- column non-blank) or an untracked file (Y column "?"). Scoped to a
+-- pathspec when `path` is given (dir subtree toggle); repo-wide otherwise.
 ---@param cwd string
+---@param path string?
 ---@param callback fun(has_unstaged: boolean)
-function M.has_unstaged(cwd, callback)
-  run(cwd, { "git", "status", "--porcelain" }, function(r)
+function M.has_unstaged(cwd, path, callback)
+  local args = { "git", "status", "--porcelain" }
+  if path then
+    table.insert(args, "--")
+    table.insert(args, path)
+  end
+  run(cwd, args, function(r)
     for line in r.stdout:gmatch("[^\n]+") do
       if line:sub(2, 2) ~= " " then
         callback(true)
@@ -346,6 +353,98 @@ function M.show(cwd, ref, path, callback)
   end
   run(cwd, { "git", "show", ref .. ":" .. path }, function(r)
     if r.code ~= 0 then
+      callback(nil, r.stderr)
+    else
+      callback(r.stdout, nil)
+    end
+  end)
+end
+
+-- One-level directory listing at a ref (peek: dir rows in stack mode must
+-- read the changeset's tree, not the worktree — a readdir would lie for
+-- mid-stack changesets). `dir == ""` lists the repo root. Entry `path` is
+-- repo-relative (full); `name` is the basename for display.
+---@param cwd string
+---@param ref string
+---@param dir string
+---@param callback fun(entries: {name: string, type: "dir"|"file", path: string}[]?, err: string?)
+function M.ls_tree(cwd, ref, dir, callback)
+  local args = { "git", "ls-tree", ref }
+  if dir ~= "" then
+    table.insert(args, "--")
+    table.insert(args, dir .. "/")
+  end
+  run(cwd, args, function(r)
+    if r.code ~= 0 then
+      callback(nil, r.stderr)
+      return
+    end
+    local entries = {}
+    for line in r.stdout:gmatch("[^\n]+") do
+      local kind, path = line:match("^%d+ (%a+) %x+\t(.*)$")
+      if kind and (kind == "tree" or kind == "blob") then
+        table.insert(entries, {
+          name = vim.fn.fnamemodify(path, ":t"),
+          type = kind == "tree" and "dir" or "file",
+          path = path,
+        })
+      end
+    end
+    callback(entries, nil)
+  end)
+end
+
+-- Full commit records in a range, base..head, oldest-first per git log's
+-- reverse-chronological default (peek reads commits[1] as the newest for the
+-- single-commit case). Fields are record/field-separated with ASCII
+-- 0x1e/0x1f so multi-line commit bodies round-trip safely.
+---@param cwd string
+---@param base string
+---@param head string
+---@param callback fun(commits: {sha: string, author: string, date: string, subject: string, body: string}[]?, err: string?)
+function M.log_range(cwd, base, head, callback)
+  run(cwd, {
+    "git",
+    "log",
+    "--date=short",
+    "--format=%H%x1f%an%x1f%ad%x1f%s%x1f%b%x1e",
+    base .. ".." .. head,
+  }, function(r)
+    if r.code ~= 0 then
+      callback(nil, r.stderr)
+      return
+    end
+    local commits = {}
+    for record in r.stdout:gmatch("([^\x1e]+)\x1e") do
+      record = record:gsub("^\n", "")
+      local sha, author, date, subject, body = record:match("^([^\x1f]*)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f(.*)$")
+      if sha then
+        table.insert(commits, {
+          sha = sha,
+          author = author,
+          date = date,
+          subject = subject,
+          body = vim.trim(body or ""),
+        })
+      end
+    end
+    callback(commits, nil)
+  end)
+end
+
+-- Diffstat for a range, wrapped to `width` columns (an explicit width
+-- prevents the histogram from wrapping to the containing terminal's width,
+-- which would look wrong in a fixed-width float). `head` omitted or
+-- "WORKTREE" diffs base against the worktree (the uncommitted changeset).
+---@param cwd string
+---@param base string
+---@param head string?
+---@param width integer
+---@param callback fun(stat: string?, err: string?)
+function M.stat_range(cwd, base, head, width, callback)
+  local range = (head and head ~= "WORKTREE") and (base .. ".." .. head) or base
+  run(cwd, { "git", "diff", "--stat=" .. width, range }, function(r)
+    if r.code ~= 0 and r.stdout == "" then
       callback(nil, r.stderr)
     else
       callback(r.stdout, nil)

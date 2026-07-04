@@ -99,7 +99,15 @@ local function set_keymaps(dk)
         end
       end, { buffer = bufnr, silent = true, desc = "Review: focus outline" })
 
-      vim.keymap.set("n", "q", close_review, { buffer = bufnr, silent = true, desc = "Close review" })
+      vim.keymap.set("n", "q", function()
+        -- An outline peek float can still be open (visible, unfocused) if
+        -- focus moved to a diff pane without dismissing it first — q here
+        -- should close it rather than closing the whole review.
+        if require("app.review.ui.peek").close() then
+          return
+        end
+        close_review()
+      end, { buffer = bufnr, silent = true, desc = "Close review" })
     end
   end
 end
@@ -115,8 +123,21 @@ local function open_outline(dk)
   dk.outline = require("app.review.ui.outline").new({
     docket = dk,
     on_select = function(item)
-      if item.change then
-        dk:focus_file(item.change)
+      -- Non-file rows have no diff of their own: <CR> enters the group at
+      -- its first file (quickfix-style), same as clicking a file directly.
+      local change = item.change
+      if not change and item.type == "changeset" then
+        change = item.changeset.files[1]
+      elseif not change and item.type == "dir" then
+        for _, f in ipairs(dk.files) do
+          if f.path:sub(1, #item.path + 1) == item.path .. "/" then
+            change = f
+            break
+          end
+        end
+      end
+      if change then
+        dk:focus_file(change)
         if vim.api.nvim_win_is_valid(dk.win) then
           vim.api.nvim_set_current_win(dk.win)
         end
