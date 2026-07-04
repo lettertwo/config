@@ -926,6 +926,16 @@ function Docket:toggle_stage_file(change)
   staging.toggle_file(self.cwd, change.path, self:_after_stage_op())
 end
 
+-- Stage/unstage a whole directory subtree (outline dir rows), same
+-- live-state toggle convention as toggle_stage_file/toggle_all.
+---@param dir string
+function Docket:toggle_stage_tree(dir)
+  if not self:_can_stage_or_notify() then
+    return
+  end
+  staging.toggle_tree(self.cwd, dir, self:_after_stage_op())
+end
+
 ---@param change Review.FileChange
 function Docket:discard_file(change)
   if not self:_can_stage_or_notify() then

@@ -142,6 +142,120 @@ describe("git staging primitives (real repo round-trips)", function()
     assert.is_string(err)
   end)
 
+  it("has_unstaged scopes to a pathspec", function()
+    local cwd, run = make_repo(lines, lines)
+    vim.fn.mkdir(cwd .. "/sub", "p")
+    vim.fn.writefile({ "a" }, cwd .. "/sub/a.lua")
+    vim.fn.writefile({ "b" }, cwd .. "/other.lua")
+    run("add", "sub/a.lua", "other.lua")
+    run("commit", "-qm", "seed")
+    vim.fn.writefile({ "a edited" }, cwd .. "/sub/a.lua")
+    local repo_wide, scoped_in, scoped_out
+    git.has_unstaged(cwd, nil, function(v)
+      repo_wide = v
+    end)
+    git.has_unstaged(cwd, "sub", function(v)
+      scoped_in = v
+    end)
+    git.has_unstaged(cwd, "other.lua", function(v)
+      scoped_out = v
+    end)
+    vim.wait(4000, function()
+      return repo_wide ~= nil and scoped_in ~= nil and scoped_out ~= nil
+    end, 10)
+    assert.is_true(repo_wide)
+    assert.is_true(scoped_in)
+    assert.is_false(scoped_out)
+  end)
+
+  it("ls_tree lists one level of a directory at a ref", function()
+    local cwd = vim.fn.tempname()
+    vim.fn.mkdir(cwd .. "/src/nested", "p")
+    vim.fn.writefile({ "a" }, cwd .. "/src/a.lua")
+    vim.fn.writefile({ "b" }, cwd .. "/src/nested/b.lua")
+    vim.fn.writefile({ "c" }, cwd .. "/top.lua")
+    local function run(...)
+      local r = vim.system({ "git", ... }, { cwd = cwd, text = true }):wait()
+      assert.equals(0, r.code, r.stderr)
+    end
+    run("init", "-q")
+    run("config", "user.email", "t@t")
+    run("config", "user.name", "t")
+    run("add", ".")
+    run("commit", "-qm", "init")
+
+    local entries, err
+    git.ls_tree(cwd, "HEAD", "src", function(e, er)
+      entries, err = e, er
+    end)
+    vim.wait(4000, function()
+      return entries ~= nil or err ~= nil
+    end, 10)
+    assert.is_nil(err)
+    table.sort(entries, function(a, b)
+      return a.name < b.name
+    end)
+    assert.same({
+      { name = "a.lua", type = "file", path = "src/a.lua" },
+      { name = "nested", type = "dir", path = "src/nested" },
+    }, entries)
+
+    local root_entries
+    git.ls_tree(cwd, "HEAD", "", function(e)
+      root_entries = e
+    end)
+    vim.wait(4000, function()
+      return root_entries ~= nil
+    end, 10)
+    table.sort(root_entries, function(a, b)
+      return a.name < b.name
+    end)
+    assert.same({
+      { name = "src", type = "dir", path = "src" },
+      { name = "top.lua", type = "file", path = "top.lua" },
+    }, root_entries)
+  end)
+
+  it("log_range and stat_range read commit history and diffstat", function()
+    local cwd = vim.fn.tempname()
+    vim.fn.mkdir(cwd, "p")
+    local function run(...)
+      local r = vim.system({ "git", ... }, { cwd = cwd, text = true }):wait()
+      assert.equals(0, r.code, r.stderr)
+    end
+    run("init", "-q")
+    run("config", "user.email", "t@t")
+    run("config", "user.name", "t")
+    vim.fn.writefile({ "1" }, cwd .. "/f.lua")
+    run("add", ".")
+    run("commit", "-qm", "base")
+    local base = vim.trim(vim.system({ "git", "rev-parse", "HEAD" }, { cwd = cwd, text = true }):wait().stdout)
+    vim.fn.writefile({ "1", "2" }, cwd .. "/f.lua")
+    run("add", ".")
+    run("commit", "-qm", "single commit\n\nbody text here")
+    local head = vim.trim(vim.system({ "git", "rev-parse", "HEAD" }, { cwd = cwd, text = true }):wait().stdout)
+
+    local commits
+    git.log_range(cwd, base, head, function(c)
+      commits = c
+    end)
+    vim.wait(4000, function()
+      return commits ~= nil
+    end, 10)
+    assert.equals(1, #commits)
+    assert.equals("single commit", commits[1].subject)
+    assert.equals("body text here", commits[1].body)
+
+    local stat
+    git.stat_range(cwd, base, head, 60, function(s)
+      stat = s
+    end)
+    vim.wait(4000, function()
+      return stat ~= nil
+    end, 10)
+    assert.is_truthy(stat:match("f%.lua"))
+  end)
+
   it("show reads the INDEX blob", function()
     local mutated = vim.deepcopy(lines)
     mutated[1] = "line 1 staged"
