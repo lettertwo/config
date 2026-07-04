@@ -114,3 +114,45 @@ describe("staging queue", function()
     assert.is_true(ran2)
   end)
 end)
+
+describe("staging.toggle_tree (real repo)", function()
+  local function make_repo()
+    local cwd = vim.fn.tempname()
+    vim.fn.mkdir(cwd .. "/sub", "p")
+    vim.fn.writefile({ "1" }, cwd .. "/sub/a.lua")
+    local function run(...)
+      local r = vim.system({ "git", ... }, { cwd = cwd, text = true }):wait()
+      assert.equals(0, r.code, r.stderr)
+      return r.stdout or ""
+    end
+    run("init", "-q")
+    run("config", "user.email", "t@t")
+    run("config", "user.name", "t")
+    run("add", ".")
+    run("commit", "-qm", "init")
+    return cwd, run
+  end
+
+  it("stages an unstaged subtree, then unstages it on repeat (live-state toggle)", function()
+    local cwd, run = make_repo()
+    vim.fn.writefile({ "1", "2" }, cwd .. "/sub/a.lua")
+
+    local done1 = false
+    staging.toggle_tree(cwd, "sub", function()
+      done1 = true
+    end)
+    vim.wait(4000, function()
+      return done1
+    end, 10)
+    assert.is_truthy(run("diff", "--cached"):match("%+2"))
+
+    local done2 = false
+    staging.toggle_tree(cwd, "sub", function()
+      done2 = true
+    end)
+    vim.wait(4000, function()
+      return done2
+    end, 10)
+    assert.equals("", run("diff", "--cached"))
+  end)
+end)

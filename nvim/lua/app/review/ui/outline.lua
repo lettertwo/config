@@ -33,6 +33,10 @@ local Y_STATUS = {
   U = { "?", "Comment" },
 }
 
+-- Exposed so ui/peek.lua's dir listing can reuse the same worktree-column
+-- glyph/highlight mapping instead of re-deriving it.
+M.Y_STATUS = Y_STATUS
+
 local function filetype_icon(path)
   local ok, icon, hl = pcall(Snacks.util.icon, path, "file")
   if ok and icon and icon ~= "" then
@@ -77,11 +81,16 @@ end
 
 -- Emit picker items recursively from a path trie node: directories after
 -- files at each level, alpha within each group, `last` flags for tree
--- guides. Pure; exposed for unit tests.
+-- guides. `prefix` accumulates the dir path independently of `parent_item`
+-- (which may be a changeset header, not a dir) — needed by peek/toggle-tree/
+-- <CR> to resolve a dir item back to a real repo-relative path. Pure;
+-- exposed for unit tests.
 ---@param node table
 ---@param parent_item table?
 ---@param items table[]
-function M._emit_tree_node(node, parent_item, items)
+---@param prefix string?
+function M._emit_tree_node(node, parent_item, items, prefix)
+  prefix = prefix or ""
   local real_keys = {}
   for k in pairs(node) do
     if k ~= "__path" and k ~= "__file" then
@@ -112,6 +121,7 @@ function M._emit_tree_node(node, parent_item, items)
         idx = #items + 1,
       })
     else
+      local path = prefix == "" and key or (prefix .. "/" .. key)
       local dir_item = {
         type = "dir",
         dir = true,
@@ -120,11 +130,12 @@ function M._emit_tree_node(node, parent_item, items)
         last = is_last,
         text = key,
         _name = key,
+        path = path,
         has_changes = node_has_changes(child),
         idx = #items + 1,
       }
       table.insert(items, dir_item)
-      M._emit_tree_node(child, dir_item, items)
+      M._emit_tree_node(child, dir_item, items, path)
     end
   end
 end
@@ -341,8 +352,15 @@ function OutlineView:open()
       desc = "Stage/unstage file",
       action = function(picker)
         local item = picker:current()
-        if item and item.change then
+        if not item then
+          return
+        end
+        if item.type == "file" then
           docket:toggle_stage_file(item.change)
+        elseif item.type == "dir" then
+          docket:toggle_stage_tree(item.path)
+        elseif item.type == "changeset" then
+          docket:toggle_all()
         end
       end,
     },
@@ -361,9 +379,24 @@ function OutlineView:open()
         docket:toggle_all()
       end,
     },
+    review_peek = {
+      desc = "Peek",
+      action = function(picker)
+        local item = picker:current()
+        if item then
+          require("app.review.ui.peek").peek(item, docket)
+        end
+      end,
+    },
     review_close = {
       desc = "Close review",
       action = function()
+        -- q/<Esc> dismiss an open peek float first (it's transient scratch
+        -- UI, not the thing the user meant to quit) rather than falling
+        -- through to closing the whole review.
+        if require("app.review.ui.peek").close() then
+          return
+        end
         view.on_close()
       end,
     },
@@ -401,6 +434,7 @@ function OutlineView:open()
     ["<Space>"] = "review_toggle_stage_file",
     ["a"] = "review_toggle_all",
     ["d"] = "review_discard_file",
+    ["K"] = "review_peek",
     ["R"] = "review_refresh",
     ["q"] = "review_close",
     ["<Esc>"] = "review_close",

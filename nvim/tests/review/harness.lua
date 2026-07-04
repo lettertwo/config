@@ -133,6 +133,42 @@ function M.build_trunk_ahead_fixture()
   return cwd
 end
 
+-- Stack fixture with a changed directory (src/) so dir-peek/dir-toggle
+-- checks have something to nest: two mid-stack commits each add a file
+-- under src/, then the uncommitted layer dirties one tracked file and adds
+-- an untracked one — also under src/. This is what lets a dir-peek check
+-- prove it reads the enclosing changeset's REF, not the worktree: src/'s
+-- worktree listing (a,b,c,d.lua) differs from what a1's head_ref actually
+-- contained (a,b.lua only).
+function M.build_stack_dirs_fixture()
+  local cwd = vim.fn.tempname()
+  vim.fn.mkdir(cwd .. "/src", "p")
+  local function git(...)
+    local r = vim.system({ "git", ... }, { cwd = cwd, text = true }):wait()
+    assert(r.code == 0, r.stderr)
+  end
+  git("init", "-q")
+  git("branch", "-M", "main")
+  git("config", "user.email", "t@t")
+  git("config", "user.name", "t")
+
+  vim.fn.writefile({ "local a = 1" }, cwd .. "/src/a.lua")
+  git("add", ".")
+  git("commit", "-qm", "init")
+  git("checkout", "-qb", "feature")
+  vim.fn.writefile({ "local b = 1" }, cwd .. "/src/b.lua")
+  git("add", ".")
+  git("commit", "-qm", "add b") -- changeset a1 (mid-stack): src/ = {a, b}
+  vim.fn.writefile({ "local c = 1" }, cwd .. "/src/c.lua")
+  git("add", ".")
+  git("commit", "-qm", "add c") -- changeset b1 (head): src/ = {a, b, c}
+  -- Uncommitted layer: dirty a tracked file, add an untracked one — both
+  -- under src/, both invisible to the mid-stack changesets' trees.
+  vim.fn.writefile({ "local a = 2 -- dirty" }, cwd .. "/src/a.lua")
+  vim.fn.writefile({ "local d = 1" }, cwd .. "/src/d.lua")
+  return cwd
+end
+
 -- ── Polling helpers ──────────────────────────────────────────────────────────
 
 function M.feed(keys)
