@@ -29,6 +29,7 @@ local staging = require("app.review.staging")
 ---@field _timer userdata?  save-watcher debounce timer
 ---@field _index_ev userdata?  index-watcher fs_event
 ---@field _index_timer userdata?
+---@field _collapse_timer userdata?  deferred row-2 collapse debounce timer
 ---@field _index_path string?
 ---@field _index_sig string?
 ---@field _closed boolean
@@ -65,6 +66,7 @@ function M.new(opts)
   self._rendered = {}
   self._arranging = false
   self._closed = false
+  self._collapse_timer = nil
   self._win_aug = vim.api.nvim_create_augroup("ReviewDocketWins_" .. opts.dv.right.bufnr, { clear = true })
   self:_watch_primary()
   return self
@@ -234,8 +236,12 @@ end
 -- Returns false when the arrangement couldn't be built (E36 in a cramped
 -- terminal, cmdline-window) so callers can revert the state that wanted it.
 ---@param rows integer  1 or 2
+---@param opts { keep_row2?: boolean }?  keep_row2 freezes row 2 open even when rows == 1
+---  (used to defer the collapse so a scan across mixed partial/clean files doesn't thrash
+---  the window); the caller is responsible for blanking row 2's content and scheduling the
+---  real collapse.
 ---@return boolean
-function Docket:_arrange(rows)
+function Docket:_arrange(rows, opts)
   if not vim.api.nvim_win_is_valid(self.win) then
     return false
   end
@@ -272,7 +278,7 @@ function Docket:_arrange(rows)
         -- The row's left pane has no primary anymore; drop it too.
         self:_drop_left(self.dv2, true)
       end)
-    elseif rows == 1 and have2 then
+    elseif rows == 1 and have2 and not (opts and opts.keep_row2) then
       self:_drop_left(self.dv2)
       vim.api.nvim_win_close(self._win2, false)
       self._win2 = nil
@@ -333,6 +339,43 @@ function Docket:_arrange(rows)
     self:_notify("Review: window arrange failed: " .. tostring(err), vim.log.levels.WARN)
   end
   return ok
+end
+
+-- Cancel a pending deferred row-2 collapse, if any. Call whenever a file
+-- wants row 2 open (either kept or freshly created) so a stale timer from an
+-- earlier clean file can't close it out from under the new render.
+function Docket:_cancel_collapse()
+  if self._collapse_timer then
+    self._collapse_timer:stop()
+    self._collapse_timer:close()
+    self._collapse_timer = nil
+  end
+end
+
+-- Arm the deferred row-2 collapse. show_file calls this after landing on a
+-- 1-row file while row 2 is still open (kept alive via _arrange(1, {
+-- keep_row2 = true }) so a scan across mixed partial/clean files doesn't
+-- thrash the window). Fires once, idle; re-checks the gate at fire time
+-- since the current file may have changed again by then.
+function Docket:_schedule_collapse()
+  self:_cancel_collapse()
+  self._collapse_timer = vim.uv.new_timer()
+  self._collapse_timer:start(200, 0, function()
+    if self._collapse_timer then
+      self._collapse_timer:close()
+      self._collapse_timer = nil
+    end
+    vim.schedule(function()
+      if self._closed then
+        return
+      end
+      local _, zoom_eff = M._gate(self.source:can_stage(), self.files[self.idx], self.state.zoom)
+      if zoom_eff ~= "split" and self._win2 and vim.api.nvim_win_is_valid(self._win2) then
+        self:_arrange(1)
+        self:set_winbar()
+      end
+    end)
+  end)
 end
 
 -- Toggle inline ↔ side-by-side. Layout persists across file nav. When the
@@ -399,8 +442,26 @@ function Docket:show_file(view)
     return true
   end
   local stageable, zoom_eff = M._gate(self.source:can_stage(), file, self.state.zoom)
-  if not self:_arrange(zoom_eff == "split" and 2 or 1) then
-    return false
+  if zoom_eff == "split" then
+    self:_cancel_collapse()
+    if not self:_arrange(2) then
+      return false
+    end
+  elseif self._win2 and vim.api.nvim_win_is_valid(self._win2) then
+    -- Row 2 is open but this file only wants 1 row. Keep the split geometry
+    -- (avoids the close/reopen pop when a scan flips back to a partial file)
+    -- and blank row 2's content; the deferred collapse tears it down only if
+    -- the user is still settled here once the debounce elapses.
+    if not self:_arrange(1, { keep_row2 = true }) then
+      return false
+    end
+    self.dv2:blank()
+    self:_schedule_collapse()
+  else
+    self:_cancel_collapse()
+    if not self:_arrange(1) then
+      return false
+    end
   end
 
   -- (When stageable, the gate guarantees at least one sub-diff exists, so
@@ -993,6 +1054,7 @@ function Docket:destroy()
   self._closed = true
   self:_stop_watcher()
   self:_stop_index_watcher()
+  self:_cancel_collapse()
   pcall(vim.api.nvim_del_augroup_by_id, self._win_aug)
   if self.outline then
     self.outline:destroy()
