@@ -50,9 +50,36 @@ return function(H, fixture)
   end, 50))
 
   -- gone.lua is a fully staged deletion → split collapses to the staged pane.
+  -- The collapse is deferred: row 2 lingers open (blanked) rather than
+  -- closing immediately, so a quick bounce back to a partial file doesn't
+  -- thrash the window.
+  local win2_before = dk._win2
   focus_path("gone.lua")
   check("fully staged file collapses split to staged pane", wait_view(1, "staged"), rendered_roles())
-  check("second row window closed on collapse", not (dk._win2 and vim.api.nvim_win_is_valid(dk._win2)))
+  check(
+    "second row window lingers open during the debounce",
+    dk._win2 == win2_before and vim.api.nvim_win_is_valid(dk._win2)
+  )
+  check("lingering row 2 is blanked, not showing stale staged content", dk.dv2._rendered_file == nil)
+
+  -- Bounce back to a partial file before the debounce elapses: row 2 must
+  -- be the same window throughout, never torn down and recreated.
+  focus_path("main.lua")
+  check("split renders two rows again after bouncing back", wait_view(2, "unstaged"), rendered_roles())
+  check(
+    "second row window was never torn down across the bounce",
+    dk._win2 == win2_before and vim.api.nvim_win_is_valid(dk._win2)
+  )
+
+  -- Settle on gone.lua this time and let the debounce actually fire.
+  focus_path("gone.lua")
+  check("fully staged file collapses split to staged pane", wait_view(1, "staged"), rendered_roles())
+  check(
+    "second row window eventually closes once settled",
+    vim.wait(2000, function()
+      return not (dk._win2 and vim.api.nvim_win_is_valid(dk._win2))
+    end, 50)
+  )
 
   -- Stage the unstaged fn_9 hunk from the unstaged pane.
   focus_path("main.lua")

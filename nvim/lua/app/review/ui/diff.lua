@@ -424,6 +424,23 @@ function DiffView:_show()
   end
 end
 
+-- Clear this pane's content without tearing down its window(s). Used by the
+-- docket's deferred row-2 collapse (see Docket:_schedule_collapse): row 2
+-- stays open across a scan of clean files, but must not keep showing the
+-- previous partial file's staged content while it waits to see whether the
+-- collapse should actually happen.
+function DiffView:blank()
+  self._render_seq = self._render_seq + 1
+  self:_clear_fold_sync()
+  self.right:write({})
+  self.right:clear()
+  if self.layout == "sbs" then
+    self.left:write({})
+    self.left:clear()
+  end
+  self._rendered_file = nil
+end
+
 function DiffView:_render_placeholder(msg)
   -- The rewrite drops the buffers' manual folds; a live sync closure would
   -- keep scanning fold ranges that no longer exist.
