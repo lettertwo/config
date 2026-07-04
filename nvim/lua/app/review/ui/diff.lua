@@ -716,7 +716,9 @@ function DiffView:_render_inline(file, old_lines, new_lines)
         end
 
         -- Anchor for del virt_lines: the first paired add line, else the next
-        -- context line, else past-the-end (trailing).
+        -- context line, else past-the-end (trailing). KEEP IN SYNC with
+        -- parser.line_predicates, which attributes del runs to the same
+        -- perceived line so visual selections stage what the user sees.
         local anchor_lnum
         if #seg.adds > 0 then
           anchor_lnum = seg.adds[1].new_lnum
@@ -841,12 +843,24 @@ end
 ---@param row integer
 ---@return Review.Hunk?
 function DiffView:hunk_at(win, row)
+  return self:hunks_in_range(win, row, row)[1]
+end
+
+-- Every hunk whose row range overlaps [row_lo, row_hi] (0-indexed, inclusive)
+-- in the given window, in render order — a visual selection can span hunks.
+---@param win integer
+---@param row_lo integer
+---@param row_hi integer
+---@return Review.Hunk[]
+function DiffView:hunks_in_range(win, row_lo, row_hi)
   local p = self:pane_for_win(win) or self.right
+  local hunks = {}
   for i, hr in ipairs(p.hunk_rows) do
-    if row >= hr.s and row <= hr.e then
-      return self._sorted_hunks and self._sorted_hunks[i] or nil
+    if hr.s <= row_hi and hr.e >= row_lo and self._sorted_hunks and self._sorted_hunks[i] then
+      table.insert(hunks, self._sorted_hunks[i])
     end
   end
+  return hunks
 end
 
 -- Annotation walk for the side-by-side layout. Buffer contents are exactly

@@ -324,6 +324,150 @@ return function(H, fixture)
     return false
   end, 100))
 
+  -- ── Line-precise staging ──────────────────────────────────────────────
+  -- Everything is staged and the worktree is clean here. Create two unstaged
+  -- hunks: an adjacent pair of adds mid-file (sel_a/sel_b — the partial-
+  -- selection target) and a lone add at EOF (far_marker — the multi-hunk
+  -- selection target).
+  local ml2 = vim.fn.readfile(fixture .. "/main.lua")
+  local ins_at
+  for i, l in ipairs(ml2) do
+    if l:match("local function fn_8") then
+      ins_at = i
+      break
+    end
+  end
+  check("line-staging insertion point found", ins_at ~= nil)
+  table.insert(ml2, ins_at, "local sel_b = 2")
+  table.insert(ml2, ins_at, "local sel_a = 1")
+  table.insert(ml2, "local far_marker = 3")
+  vim.fn.writefile(ml2, fixture .. "/main.lua")
+  dk:refresh()
+
+  -- Buffer line of a marker in a pane's rendered buffer (1-based; equals the
+  -- new-side lnum — inline right-pane rows map 1:1).
+  local function buf_line(bufnr, pat)
+    for i, l in ipairs(vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)) do
+      if l:match(pat) then
+        return i
+      end
+    end
+  end
+  -- Whether a sub-diff's parsed hunk data contains an add line matching pat —
+  -- something ONLY a fresh parse can satisfy. Waiting on buffer text alone is
+  -- not enough: the renderer reads worktree text live, so a stale FileChange
+  -- plan renders fresh-looking content (this wait's weaker ancestor let a
+  -- minutes-old plan through and exposed the refresh-livelock bug).
+  local function data_has_add(f, pat)
+    for _, h in ipairs((f and f.hunks) or {}) do
+      for _, rl in ipairs(h.raw or {}) do
+        if rl:sub(1, 1) == "+" and rl:match(pat) then
+          return true
+        end
+      end
+    end
+    return false
+  end
+  -- Fresh-render wait: the role plan, the async render, a drained queue, and
+  -- fresh PLAN DATA (adds present/absent in the parsed sub-diff).
+  local function wait_fresh(want, gone_pat)
+    local wants = type(want) == "table" and want or { want }
+    return vim.wait(8000, function()
+      focus_path("main.lua")
+      if
+        #dk._rendered ~= 2
+        or dk._rendered[1].role ~= "unstaged"
+        or dk.dv._rendered_file ~= dk._rendered[1].file
+        or review_staging._queue_len() ~= 0
+      then
+        return false
+      end
+      for _, p in ipairs(wants) do
+        if not data_has_add(dk._rendered[1].file, p) or not buf_line(dk.dv.right.bufnr, p) then
+          return false
+        end
+      end
+      return gone_pat == nil or not data_has_add(dk._rendered[1].file, gone_pat)
+    end, 100)
+  end
+
+  check("unstaged pane shows the line-staging hunks", wait_fresh("sel_a"), rendered_roles())
+
+  -- Stage ONLY sel_a through the real visual-mode keymap path.
+  vim.api.nvim_set_current_win(dk.win)
+  local la = buf_line(dk.dv.right.bufnr, "sel_a")
+  check("sel_a rendered in the unstaged pane", la ~= nil)
+  if la then
+    vim.api.nvim_win_set_cursor(dk.win, { la, 0 })
+    local leader = vim.g.mapleader or "\\"
+    vim.api.nvim_feedkeys("V" .. leader .. "rs", "x", false)
+    check("visual stage lands only the selected line in the index", vim.wait(8000, function()
+      local cached = git_out("diff", "--cached")
+      return cached:match("sel_a") ~= nil and not cached:match("sel_b") and not cached:match("far_marker")
+    end, 100), git_out("diff", "--cached"))
+    check("unselected line stays in the worktree diff", git_out("diff"):match("sel_b") ~= nil)
+  end
+
+  -- Unstage sel_a from the staged pane via the explicit-rows API (pane-aware
+  -- toggle: stage_selection in the staged pane unstages).
+  check("staged pane renders sel_a", vim.wait(8000, function()
+    focus_path("main.lua")
+    return #dk._rendered == 2
+      and dk._rendered[2] ~= nil
+      and dk.dv2._rendered_file == dk._rendered[2].file
+      and review_staging._queue_len() == 0
+      and data_has_add(dk._rendered[2].file, "sel_a")
+      and buf_line(dk.dv2.right.bufnr, "sel_a") ~= nil
+  end, 100), rendered_roles())
+  local sa2 = buf_line(dk.dv2.right.bufnr, "sel_a")
+  if sa2 and dk._win2 and vim.api.nvim_win_is_valid(dk._win2) then
+    vim.api.nvim_set_current_win(dk._win2)
+    vim.api.nvim_win_set_cursor(dk._win2, { sa2, 0 })
+    dk:stage_selection(sa2, sa2)
+    check("staged-pane selection unstages the line", vim.wait(8000, function()
+      return git_out("diff", "--cached"):match("sel_a") == nil
+    end, 100), git_out("diff", "--cached"))
+  end
+
+  -- Discard ONLY sel_b (confirm already stubbed to Yes above). Fresh data
+  -- must show sel_a back among the unstaged adds (the unstage landed).
+  check("unstaged pane refreshed for discard", wait_fresh({ "sel_a", "sel_b" }), rendered_roles())
+  vim.api.nvim_set_current_win(dk.win)
+  local lb = buf_line(dk.dv.right.bufnr, "sel_b")
+  if lb then
+    dk:discard_selection(lb, lb)
+    check("discard removes only the selected line from the worktree", vim.wait(8000, function()
+      local wt = table.concat(vim.fn.readfile(fixture .. "/main.lua"), "\n")
+      return not wt:match("sel_b") and wt:match("sel_a") ~= nil and wt:match("far_marker") ~= nil
+    end, 100), git_out("diff"))
+  end
+
+  -- Multi-hunk selection: a span from sel_a to far_marker crosses two hunks;
+  -- both hunks' adds inside the span stage in one gesture. sel_b must be
+  -- GONE from the fresh data — a stale plan still carrying it would stage
+  -- the just-discarded line back into the index.
+  check(
+    "unstaged pane refreshed for the multi-hunk span",
+    wait_fresh({ "sel_a", "far_marker" }, "sel_b"),
+    rendered_roles()
+  )
+  vim.api.nvim_set_current_win(dk.win)
+  local ma = buf_line(dk.dv.right.bufnr, "sel_a")
+  local mf = buf_line(dk.dv.right.bufnr, "far_marker")
+  check("both hunks rendered for the span", ma ~= nil and mf ~= nil)
+  if ma and mf then
+    dk:stage_selection(ma, mf)
+    check("multi-hunk selection stages both hunks' lines", vim.wait(8000, function()
+      local cached = git_out("diff", "--cached")
+      return cached:match("sel_a") ~= nil
+        and cached:match("far_marker") ~= nil
+        and review_staging._queue_len() == 0
+    end, 100), git_out("diff", "--cached"))
+    check("worktree diff is empty after the span stage", vim.wait(8000, function()
+      return git_out("diff") == ""
+    end, 100), git_out("diff"))
+  end
+
   -- Row-2 creation while sbs is already active: staging a hunk expands the
   -- collapsed split back to two rows, and the new row must span both diff
   -- columns (regression: `belowright split` from the right pane hung row 2

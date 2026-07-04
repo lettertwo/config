@@ -71,6 +71,28 @@ local function set_keymaps(dk)
       map("<leader>rd", "discard_current", "Review: discard hunk")
       map("<leader>rD", "discard_current_file", "Review: discard file")
 
+      -- Visual-mode variants: line-precise staging over the selected rows.
+      -- The live range is read from the active selection ('<,'> marks are
+      -- stale until visual exits), then visual is left SYNCHRONOUSLY —
+      -- discard's vim.fn.confirm reads input, so a queued <Esc> via
+      -- feedkeys would be eaten as a dialog abort.
+      local function vmap(lhs, method, desc)
+        vim.keymap.set("x", lhs, function()
+          if dk._closed then
+            return
+          end
+          local lo = vim.fn.getpos("v")[2]
+          local hi = vim.fn.line(".")
+          if lo > hi then
+            lo, hi = hi, lo
+          end
+          vim.cmd("normal! \27")
+          dk[method](dk, lo, hi)
+        end, { buffer = bufnr, silent = true, desc = desc })
+      end
+      vmap("<leader>rs", "stage_selection", "Review: toggle-stage selected lines")
+      vmap("<leader>rd", "discard_selection", "Review: discard selected lines")
+
       vim.keymap.set("n", "<leader>o", function()
         if not dk._closed and dk.outline then
           dk.outline:open()

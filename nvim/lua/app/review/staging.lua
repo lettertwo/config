@@ -4,8 +4,9 @@
 --
 -- Hunk ops reconstruct unified-diff patches from hunk.raw (parser.hunk_to_patch)
 -- and pipe them to `git apply` — byte-fidelity, which is what fixed the POC's
--- pure-deletion "corrupt patch" bug. Line-precise staging arrives with hunk
--- mode (deferred).
+-- pure-deletion "corrupt patch" bug. Line ops trim the patch to a selection
+-- (parser.hunk_to_patch_lines); the reverse-applied ones build against the
+-- NEW side, since that's the base they are undone from.
 
 local git = require("app.review.diff.git")
 local parser = require("app.review.diff.parser")
@@ -161,6 +162,49 @@ end
 ---@param on_done fun()?
 function M.discard_hunk(cwd, file, hunk, on_done)
   local patch = parser.hunk_to_patch(file, hunk)
+  enqueue(function(cb)
+    git.apply_patch(cwd, patch, { reverse = true }, cb)
+  end, on_done)
+end
+
+-- Stage selected lines of one hunk of the unstaged (INDEX→WORKTREE) sub-file.
+---@param cwd string
+---@param file Review.FileChange
+---@param hunk Review.Hunk
+---@param keep_add fun(entry: Review.HunkLine): boolean
+---@param keep_del fun(entry: Review.HunkLine): boolean
+---@param on_done fun()?
+function M.stage_lines(cwd, file, hunk, keep_add, keep_del, on_done)
+  local patch = parser.hunk_to_patch_lines(file, hunk, keep_add, keep_del, "old")
+  enqueue(function(cb)
+    git.apply_patch(cwd, patch, { cached = true }, cb)
+  end, on_done)
+end
+
+-- Unstage selected lines of one hunk of the staged_change (HEAD→INDEX) sub-file.
+---@param cwd string
+---@param file Review.FileChange
+---@param hunk Review.Hunk
+---@param keep_add fun(entry: Review.HunkLine): boolean
+---@param keep_del fun(entry: Review.HunkLine): boolean
+---@param on_done fun()?
+function M.unstage_lines(cwd, file, hunk, keep_add, keep_del, on_done)
+  local patch = parser.hunk_to_patch_lines(file, hunk, keep_add, keep_del, "new")
+  enqueue(function(cb)
+    git.apply_patch(cwd, patch, { cached = true, reverse = true }, cb)
+  end, on_done)
+end
+
+-- Discard selected lines of one hunk of the unstaged (INDEX→WORKTREE)
+-- sub-file from the worktree.
+---@param cwd string
+---@param file Review.FileChange
+---@param hunk Review.Hunk
+---@param keep_add fun(entry: Review.HunkLine): boolean
+---@param keep_del fun(entry: Review.HunkLine): boolean
+---@param on_done fun()?
+function M.discard_lines(cwd, file, hunk, keep_add, keep_del, on_done)
+  local patch = parser.hunk_to_patch_lines(file, hunk, keep_add, keep_del, "new")
   enqueue(function(cb)
     git.apply_patch(cwd, patch, { reverse = true }, cb)
   end, on_done)

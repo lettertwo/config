@@ -6,6 +6,7 @@
 
 local Statusline = require("config.mini.statusline")
 local staging = require("app.review.staging")
+local parser = require("app.review.diff.parser")
 
 ---@class Review.Docket
 ---@field kind string
@@ -688,17 +689,28 @@ function Docket:_after_stage_op()
   return self._stage_done
 end
 
--- The hunk under the cursor in a staged/unstaged pane, or nil (notifies).
--- Refuses while that pane's async render is behind the plan — the hunk
--- objects would belong to the previously rendered file.
-function Docket:_hunk_at_cursor()
+-- Shared guard for cursor-scoped staging ops: the pane must have a staged/
+-- unstaged role, and its async render must have caught up with the plan —
+-- stale hunk objects belong to the previously rendered file. Notifies and
+-- returns nil otherwise.
+---@param what string  op label for the role notify
+function Docket:_ready_pane(what)
   local r, cur = self:_pane_at_cursor()
   if not r or (r.role ~= "unstaged" and r.role ~= "staged") then
-    self:_notify("Review: hunk staging needs an unstaged/staged pane — cycle zoom (<leader>rz)")
+    self:_notify("Review: " .. what .. " needs an unstaged/staged pane — cycle zoom (<leader>rz)")
     return nil
   end
   if r.dv._rendered_file ~= r.file then
     self:_notify("Review: still rendering — try again")
+    return nil
+  end
+  return r, cur
+end
+
+-- The hunk under the cursor in a staged/unstaged pane, or nil (notifies).
+function Docket:_hunk_at_cursor()
+  local r, cur = self:_ready_pane("hunk staging")
+  if not r then
     return nil
   end
   local row = vim.api.nvim_win_get_cursor(cur)[1] - 1
@@ -766,6 +778,118 @@ function Docket:discard_current()
     return
   end
   staging.discard_hunk(self.cwd, r.file, hunk, self:_after_stage_op())
+end
+
+-- Selection context for the line-precise ops: the pane entry, its side, the
+-- selected source-line range, and the hunks the rows overlap. Row arguments
+-- are 1-based buffer lines captured from the visual selection.
+---@param row_lo integer
+---@param row_hi integer
+---@return {r: table, side: "LEFT"|"RIGHT", lo: integer, hi: integer, hunks: Review.Hunk[]}?
+function Docket:_selection_at_cursor(row_lo, row_hi)
+  local r, cur = self:_ready_pane("line staging")
+  if not r then
+    return nil
+  end
+  -- hunk_to_patch_lines headers can't express creations/deletions any more
+  -- than hunk_to_patch can. The hunk ops widen to file-level there; widening
+  -- a 3-line selection to the whole file would surprise, so refuse instead.
+  if not hunkwise(r.file) then
+    self:_notify("Review: line staging needs a modified file — use the file ops")
+    return nil
+  end
+  local info_lo = r.dv:row_to_source(cur, row_lo - 1)
+  local info_hi = r.dv:row_to_source(cur, row_hi - 1)
+  local hunks = r.dv:hunks_in_range(cur, row_lo - 1, row_hi - 1)
+  if not (info_lo and info_hi) or #hunks == 0 then
+    self:_notify("Review: no hunk in selection")
+    return nil
+  end
+  return { r = r, side = info_lo.side, lo = info_lo.lnum, hi = info_hi.lnum, hunks = hunks }
+end
+
+-- Per-hunk predicate plans for a selection; hunks the selection only grazes
+-- (context rows, nothing kept) are skipped. Notifies and returns nil when
+-- nothing in the span is a changed line. `lines` totals the kept add/del
+-- lines so destructive prompts can state their true scope.
+---@return {plans: {hunk: Review.Hunk, keep_add: function, keep_del: function}[], lines: integer}?
+function Docket:_selection_plans(sel)
+  local plans = {}
+  local lines = 0
+  for _, hunk in ipairs(sel.hunks) do
+    local keep_add, keep_del, kept = parser.line_predicates(hunk, sel.side, sel.lo, sel.hi)
+    if kept > 0 then
+      table.insert(plans, { hunk = hunk, keep_add = keep_add, keep_del = keep_del })
+      lines = lines + kept
+    end
+  end
+  if #plans == 0 then
+    self:_notify("Review: no changed lines in selection")
+    return nil
+  end
+  return { plans = plans, lines = lines }
+end
+
+-- Stage the visually selected lines; in the staged pane this unstages them
+-- (pane-aware toggle, matching stage_current).
+---@param row_lo integer
+---@param row_hi integer
+function Docket:stage_selection(row_lo, row_hi)
+  local file = self:_stageable_file()
+  if not file then
+    return
+  end
+  local sel = self:_selection_at_cursor(row_lo, row_hi)
+  if not sel then
+    return
+  end
+  local sp = self:_selection_plans(sel)
+  if not sp then
+    return
+  end
+  for _, p in ipairs(sp.plans) do
+    if sel.r.role == "staged" then
+      staging.unstage_lines(self.cwd, sel.r.file, p.hunk, p.keep_add, p.keep_del, self:_after_stage_op())
+    else
+      staging.stage_lines(self.cwd, sel.r.file, p.hunk, p.keep_add, p.keep_del, self:_after_stage_op())
+    end
+  end
+end
+
+-- Discard the visually selected lines from the worktree (unstaged pane only).
+---@param row_lo integer
+---@param row_hi integer
+function Docket:discard_selection(row_lo, row_hi)
+  local file = self:_stageable_file()
+  if not file then
+    return
+  end
+  local sel = self:_selection_at_cursor(row_lo, row_hi)
+  if not sel then
+    return
+  end
+  if sel.r.role ~= "unstaged" then
+    self:_notify("Review: discard acts in the unstaged pane")
+    return
+  end
+  local sp = self:_selection_plans(sel)
+  if not sp then
+    return
+  end
+  -- State the true scope: a linewise `j` over a closed context fold jumps
+  -- whole hunks, so the span can cover far more than what looked selected.
+  local msg = ("Discard %d line%s across %d hunk%s from the worktree?"):format(
+    sp.lines,
+    sp.lines == 1 and "" or "s",
+    #sp.plans,
+    #sp.plans == 1 and "" or "s"
+  )
+  if not self:_confirm(msg) then
+    return
+  end
+  for _, p in ipairs(sp.plans) do
+    staging.discard_lines(self.cwd, sel.r.file, p.hunk, p.keep_add, p.keep_del, self:_after_stage_op())
+  end
 end
 
 -- Stage the current file; in the staged pane this unstages it instead.
@@ -873,13 +997,24 @@ function Docket:refresh()
   -- watcher's debounce; without this a slow refresh (>300ms) gets doubled.
   self:_snapshot_index_sig()
   self.source:refresh(function(changesets, err)
-    if self._closed or seq ~= self._refresh_seq then
+    if self._closed then
       return
     end
-    -- Re-snapshot the index signature: the refresh's own `git diff` rewrites
-    -- the index stat cache, which would otherwise re-trigger the index
-    -- watcher into a refresh loop.
+    -- Re-snapshot the index signature BEFORE the supersede check: this
+    -- refresh's own `git diff` rewrote the index stat cache regardless of
+    -- who wins. Skipping the snapshot on a superseded completion lets the
+    -- fs_event echo schedule yet another refresh, whose completion then
+    -- supersedes the next one — a self-sustaining loop under staging storms
+    -- where NO completion ever applies and dk.files stays arbitrarily stale
+    -- (found by the line-staging e2e: files were minutes old).
+    -- Tradeoff (accepted): the snapshot reads the LIVE index sig, so an
+    -- external write landing in this window can be misread as our own echo
+    -- and its watcher event dropped. Winning completions always had that
+    -- window; forward progress beats narrowing it.
     self:_snapshot_index_sig()
+    if seq ~= self._refresh_seq then
+      return
+    end
     if err then
       vim.notify("Review refresh error: " .. err, vim.log.levels.ERROR, { title = "Review" })
       return
