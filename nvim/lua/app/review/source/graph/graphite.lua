@@ -139,7 +139,11 @@ function M.new(cwd, common_dir)
   end
 
   function self:head_ref(node)
-    return node.head_rev
+    -- node.head_rev is branch_revision from the metadata db — a snapshot
+    -- taken at gt-time, so it's stale for plain-git commits (e.g. agent-
+    -- authored). Resolve the live ref instead so head always reflects the
+    -- branch's actual tip.
+    return "refs/heads/" .. node.branch
   end
 
   function self:metadata(node)
