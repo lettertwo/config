@@ -11,7 +11,10 @@ input=$(cat)
 # rate limits (rate_limits.* is only present for subscription accounts —
 # its absence means API billing). resets_at is epoch seconds; tonumber?
 # guards against schema drift breaking the whole line.
-IFS=$'\t' read -r dir ctx_pct model_name session_id cost_usd ses_pct ses_resets wk_pct wk_resets <<< "$(echo "$input" | jq -r '[
+# NOTE: fields must never be empty strings — tab is IFS whitespace, so read
+# collapses consecutive tabs and empty fields shift everything after them.
+# Absent values use sentinels ("-" / -1) instead.
+IFS=$'\t' read -r dir ctx_pct model_name session_id cost_usd ses_pct ses_resets wk_pct wk_resets effort lines_add lines_del <<< "$(echo "$input" | jq -r '[
   .workspace.current_dir,
   (.context_window.used_percentage // -1),
   (.model.display_name // ""),
@@ -20,8 +23,17 @@ IFS=$'\t' read -r dir ctx_pct model_name session_id cost_usd ses_pct ses_resets 
   ((.rate_limits.five_hour.used_percentage // -1) | floor),
   ((.rate_limits.five_hour.resets_at // -1) | tonumber? // -1 | floor),
   ((.rate_limits.seven_day.used_percentage // -1) | floor),
-  ((.rate_limits.seven_day.resets_at // -1) | tonumber? // -1 | floor)
+  ((.rate_limits.seven_day.resets_at // -1) | tonumber? // -1 | floor),
+  (.effort.level // "-"),
+  (.cost.total_lines_added // 0),
+  (.cost.total_lines_removed // 0)
 ] | @tsv')"
+
+if [ "$effort" = "-" ]; then effort=""; fi
+lines_txt=""
+if [ "${lines_add:-0}" -gt 0 ] || [ "${lines_del:-0}" -gt 0 ]; then
+  lines_txt="+${lines_add} -${lines_del}"
+fi
 
 basename=$(basename "$dir")
 
@@ -35,12 +47,14 @@ BRIGHT_BLACK='\033[90m'
 BLUE='\033[34m'
 YELLOW='\033[33m'
 RED='\033[31m'
+GREEN='\033[32m'
 RESET='\033[0m'
 
 # Unicode symbols
 GIT_BRANCH_ICON="󰘬"
 FOLDER_ICON="󰝰"
 MODEL_ICON="󰚩"
+EFFORT_ICON="󰓅"
 BAR_FILLED="━"
 BAR_THIN="─"
 COL_WIDTH=10
@@ -66,8 +80,10 @@ if git rev-parse --is-inside-work-tree &>/dev/null; then
   term_cols=$(tput cols </dev/tty 2>/dev/null || stty size </dev/tty 2>/dev/null | awk '{print $2}')
   max_line1=$(( ${term_cols:-70} * 3 / 4 ))
   model_len=$([ -n "$model_name" ] && echo $(( ${#model_name} + 3 )) || echo 0)
+  effort_len=$([ -n "$effort" ] && echo $(( ${#effort} + 3 )) || echo 0)
+  lines_len=$([ -n "$lines_txt" ] && echo $(( ${#lines_txt} + 2 )) || echo 0)
   if [ -n "$branch" ] && [ "$branch" != "$dir_display" ]; then
-    branch_budget=$(( max_line1 - model_len - ${#dir_display} - 8 ))
+    branch_budget=$(( max_line1 - model_len - effort_len - lines_len - ${#dir_display} - 8 ))
     if [ "$branch_budget" -lt 8 ]; then branch_budget=8; fi
     if [ "${#branch}" -gt "$branch_budget" ]; then
       branch="${branch:0:$(( branch_budget - 1 ))}…"
@@ -81,9 +97,18 @@ else
   status="${BLACK}${FOLDER_ICON} ${basename}${RESET}"
 fi
 
-# Prepend model name if available
+# Prepend model name (with effort level when the model reports one)
 if [ -n "$model_name" ]; then
-  status="${CYAN}${MODEL_ICON} ${model_name}${RESET} ${status}"
+  model_seg="${CYAN}${MODEL_ICON} ${model_name}${RESET}"
+  if [ -n "$effort" ]; then
+    model_seg="${model_seg} ${BRIGHT_BLACK}${EFFORT_ICON} ${effort}${RESET}"
+  fi
+  status="${model_seg} ${status}"
+fi
+
+# Append lines added/removed when the session has changed anything
+if [ -n "$lines_txt" ]; then
+  status="${status}  ${GREEN}+${lines_add}${RESET} ${RED}-${lines_del}${RESET}"
 fi
 
 # ── Progress bar helper ───────────────────────────────────────────────────────
