@@ -19,7 +19,7 @@ local dir = vim.fn.fnamemodify(this_file, ":h")
 
 local H = dofile(dir .. "/harness.lua")
 
-local fixture = H.scenario == "stack" and H.build_stack_fixture()
+local fixture = (H.scenario == "stack" or H.scenario == "ref" or H.scenario == "ref-single") and H.build_stack_fixture()
   or H.scenario == "trunk-ahead" and H.build_trunk_ahead_fixture()
   or H.scenario == "outline-nodes" and H.build_stack_dirs_fixture()
   or H.build_fixture()

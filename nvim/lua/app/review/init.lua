@@ -19,7 +19,7 @@ local Statusline = require("config.mini.statusline")
 local nav_keymaps = require("app.review.keymaps")
 
 ---@class ReviewApp: App
----@field open fun(kind: "uncommitted"|"stack"|"pr"|"ref", opts?: {cwd?: string, title?: string})
+---@field open fun(kind: "uncommitted"|"stack"|"pr"|"ref", opts?: {cwd?: string, title?: string, ref?: string})
 local ReviewApp = {
   name = "review",
 }
@@ -152,7 +152,7 @@ end
 -- Does not create a tab — the caller is responsible. In standalone mode the
 -- process IS the review; in embedded mode _launch_embedded already ran tabnew.
 ---@param kind "uncommitted"|"stack"|"pr"|"ref"
----@param opts? { cwd?: string, title?: string }
+---@param opts? { cwd?: string, title?: string, ref?: string }
 function ReviewApp.open(kind, opts)
   opts = opts or {}
   local cwd = opts.cwd or Config.root("git") or vim.fn.getcwd()
@@ -173,7 +173,7 @@ function ReviewApp.open(kind, opts)
     vim.bo[init_buf].bufhidden = "wipe"
   end
 
-  local KINDS = { uncommitted = true, stack = true }
+  local KINDS = { uncommitted = true, stack = true, ref = true }
   if not KINDS[kind] then
     vim.notify("Review: kind " .. kind .. " arrives in a later milestone", vim.log.levels.WARN, { title = "Review" })
     return
@@ -195,7 +195,7 @@ function ReviewApp.open(kind, opts)
     win = win,
     dv = dv,
     dv2 = dv2,
-    source = require("app.review.source." .. kind).new({ cwd = cwd }),
+    source = require("app.review.source." .. kind).new({ cwd = cwd, ref = opts.ref }),
   })
   set_keymaps(docket)
   dv:_render_placeholder("Loading " .. title .. "  —  " .. cwd .. " …")
@@ -209,7 +209,16 @@ function ReviewApp:run(args)
   local kind = args.kind or args[1] or vim.g.review_kind or vim.env.REVIEW_KIND or "uncommitted"
   local cwd = args.cwd or vim.g.review_cwd or Config.root("git") or vim.fn.getcwd()
   local title = args.title or vim.g.review_title
-  ReviewApp.open(kind, { cwd = cwd, title = title })
+  -- `:App review ref abc` delivers the ref as args[2] (args[1] is the kind);
+  -- embedded/:Review callers may instead pass args.ref directly.
+  local ref = args.ref or (kind == "ref" and args[2]) or vim.g.review_ref or vim.env.REVIEW_REF
+  if ref == "" then
+    ref = nil
+  end
+  if kind == "ref" and not title then
+    title = ref or "HEAD"
+  end
+  ReviewApp.open(kind, { cwd = cwd, title = title, ref = ref })
 end
 
 function ReviewApp:teardown()
