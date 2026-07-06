@@ -18,7 +18,9 @@ export const meta = {
   ],
 }
 
-const { branches, flags, effort, dependentStack } = args
+// args may arrive as a JSON string depending on how the caller passed it — tolerant-parse.
+const cfg = typeof args === 'string' ? JSON.parse(args) : args
+const { branches, flags, effort, dependentStack } = cfg
 
 const EFFORT_INSTRUCTIONS = {
   low:    'Focus only on the most obvious correctness bugs. Skip anything uncertain.',
