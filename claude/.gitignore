@@ -11,6 +11,7 @@
 !/settings.json
 !/notify.sh
 !/statusline-command.sh
+!/subagent-statusline.sh
 !/terminal-progress.sh
 !/commands/
 !/skills/

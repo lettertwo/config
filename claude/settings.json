@@ -122,6 +122,10 @@
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"
   },
+  "subagentStatusLine": {
+    "type": "command",
+    "command": "bash ~/.claude/subagent-statusline.sh"
+  },
   "enabledPlugins": {
     "lua-lsp@claude-plugins-official": true,
     "rust-analyzer-lsp@claude-plugins-official": true,
