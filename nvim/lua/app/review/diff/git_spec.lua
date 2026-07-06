@@ -256,6 +256,62 @@ describe("git staging primitives (real repo round-trips)", function()
     assert.is_truthy(stat:match("f%.lua"))
   end)
 
+  it("rev_parse resolves a branch and peels tags, rejects non-commits", function()
+    local cwd = vim.fn.tempname()
+    vim.fn.mkdir(cwd, "p")
+    local function run(...)
+      local r = vim.system({ "git", ... }, { cwd = cwd, text = true }):wait()
+      assert.equals(0, r.code, r.stderr)
+    end
+    run("init", "-q")
+    run("branch", "-M", "main")
+    run("config", "user.email", "t@t")
+    run("config", "user.name", "t")
+    vim.fn.writefile({ "1" }, cwd .. "/f.lua")
+    run("add", ".")
+    run("commit", "-qm", "init")
+    local head = vim.trim(vim.system({ "git", "rev-parse", "HEAD" }, { cwd = cwd, text = true }):wait().stdout)
+    run("tag", "-a", "-m", "v1", "v1")
+
+    local function resolve(ref)
+      local sha, err
+      git.rev_parse(cwd, ref, function(s, e)
+        sha, err = s, e
+      end)
+      vim.wait(4000, function()
+        return sha ~= nil or err ~= nil
+      end, 10)
+      return sha, err
+    end
+
+    assert.equals(head, (resolve("main")))
+    assert.equals(head, (resolve("v1"))) -- annotated tag peeled to its commit
+    local sha, err = resolve("nosuchref")
+    assert.is_nil(sha)
+    assert.is_string(err)
+
+    -- A tree object is not a commit: rejected even though the object exists.
+    local tree_sha = vim.trim(vim.system({ "git", "rev-parse", "HEAD^{tree}" }, { cwd = cwd, text = true }):wait().stdout)
+    local tree_result, tree_err = resolve(tree_sha)
+    assert.is_nil(tree_result)
+    assert.is_string(tree_err)
+  end)
+
+  it("empty_tree returns a stable hash usable as a diff base", function()
+    local cwd = vim.fn.tempname()
+    vim.fn.mkdir(cwd, "p")
+    vim.system({ "git", "init", "-q" }, { cwd = cwd, text = true }):wait()
+    local sha
+    git.empty_tree(cwd, function(s)
+      sha = s
+    end)
+    vim.wait(4000, function()
+      return sha ~= nil
+    end, 10)
+    assert.is_string(sha)
+    assert.equals(40, #sha) -- SHA-1 in this repo's default hash algo
+  end)
+
   it("show reads the INDEX blob", function()
     local mutated = vim.deepcopy(lines)
     mutated[1] = "line 1 staged"

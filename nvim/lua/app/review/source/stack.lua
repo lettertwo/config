@@ -4,7 +4,7 @@
 
 local M = {}
 local git = require("app.review.diff.git")
-local parser = require("app.review.diff.parser")
+local changesets = require("app.review.source.changesets")
 local graph_factory = require("app.review.source.graph")
 local uncommitted = require("app.review.source.uncommitted")
 
@@ -22,53 +22,23 @@ function M.new(opts)
 
   local graph = graph_factory.create(cwd)
 
+  -- Adapt graph nodes to changesets.build's plain specs via the graph's own
+  -- base_ref/head_ref/metadata accessors (Graphite db or git-log fallback).
   ---@param nodes Review.StackNode[]
   ---@param callback fun(changesets: Review.Changeset[], err: string?)
   local function build_changesets(nodes, callback)
-    if #nodes == 0 then
-      callback({}, nil)
-      return
-    end
-
-    local by_id = {}
-    local pending = #nodes
-
+    local specs = {}
     for _, node in ipairs(nodes) do
-      local base = graph:base_ref(node)
-      local head = graph:head_ref(node)
       local meta = graph:metadata(node)
-      local node_id = node.id
-
-      git.diff(cwd, base, head, function(raw, _)
-        -- Per-node errors produce empty file lists rather than aborting the load.
-        local files = raw and parser.parse(raw) or {}
-        for _, f in ipairs(files) do
-          f.changeset_id = node_id
-          f.base_ref = base
-          f.head_ref = head
-        end
-        by_id[node_id] = {
-          id = node_id,
-          title = meta.title or node.branch or node_id,
-          base_ref = base,
-          head_ref = head,
-          files = files,
-          pr_number = meta.pr_number,
-          head_sha = head,
-        }
-        pending = pending - 1
-        if pending == 0 then
-          -- Results arrive out of order; emit in node (base→head) order.
-          local ordered = {}
-          for _, n in ipairs(nodes) do
-            if by_id[n.id] then
-              table.insert(ordered, by_id[n.id])
-            end
-          end
-          callback(ordered, nil)
-        end
-      end)
+      table.insert(specs, {
+        id = node.id,
+        title = meta.title or node.branch or node.id,
+        base = graph:base_ref(node),
+        head = graph:head_ref(node),
+        pr_number = meta.pr_number,
+      })
     end
+    changesets.build(cwd, specs, callback)
   end
 
   ---@param nodes Review.StackNode[]
