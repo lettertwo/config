@@ -37,9 +37,9 @@
       "Skill(update-config)",
       "WebSearch"
     ],
-    "defaultMode": "plan"
+    "defaultMode": "auto"
   },
-  "model": "opusplan[1m]",
+  "model": "claude-fable-5[1m]",
   "hooks": {
     "SessionStart": [
       {
@@ -148,7 +148,9 @@
     "claude-code-setup@claude-plugins-official": true
   },
   "effortLevel": "medium",
+  "tui": "fullscreen",
   "skipWorkflowUsageWarning": true,
+  "theme": "dark-daltonized",
   "terminalProgressBarEnabled": false,
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
