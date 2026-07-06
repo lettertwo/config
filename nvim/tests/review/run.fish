@@ -16,7 +16,7 @@ if test $status -ne 0
 end
 printf '%s\n' $spec_out | grep -aE "Testing:|Success: |Failed :|Errors :|^\s*Fail"
 
-for scenario in standalone degraded embedded stack trunk-ahead staging outline-nodes
+for scenario in standalone degraded embedded stack trunk-ahead staging outline-nodes ref ref-single
     echo "── e2e: $scenario ──────────────────────────────────────"
     set -l app_env
     if test $scenario != embedded
@@ -24,6 +24,12 @@ for scenario in standalone degraded embedded stack trunk-ahead staging outline-n
     end
     if contains $scenario stack trunk-ahead outline-nodes
         set -a app_env REVIEW_KIND=stack
+    end
+    if test $scenario = ref
+        set -a app_env REVIEW_KIND=ref REVIEW_REF=main..feature
+    end
+    if test $scenario = ref-single
+        set -a app_env REVIEW_KIND=ref REVIEW_REF=feature
     end
     env $app_env REVIEW_E2E=$scenario timeout 90 \
         nvim --headless -c "lua dofile('$e2e')" 2>&1 | grep -aE "PASS|FAIL|E2E-RESULT"

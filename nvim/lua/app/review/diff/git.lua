@@ -331,6 +331,33 @@ function M.head_sha(cwd, callback)
   end)
 end
 
+-- Validate and resolve a user-supplied ref to a commit sha. `^{commit}`
+-- peels tags and rejects non-commit objects (trees/blobs); `--verify --quiet`
+-- suppresses git's own error text so the caller can supply a clean message.
+---@param cwd string
+---@param ref string
+---@param callback fun(sha: string?, err: string?)
+function M.rev_parse(cwd, ref, callback)
+  run(cwd, { "git", "rev-parse", "--verify", "--quiet", ref .. "^{commit}" }, function(r)
+    if r.code ~= 0 then
+      callback(nil, r.stderr)
+    else
+      callback(vim.trim(r.stdout), nil)
+    end
+  end)
+end
+
+-- The empty tree's hash — base for diffing a root commit (whose `<ref>^`
+-- resolution fails). Computed via hash-object rather than hardcoded so it's
+-- correct in both SHA-1 and SHA-256 repos.
+---@param cwd string
+---@param callback fun(sha: string?)
+function M.empty_tree(cwd, callback)
+  run(cwd, { "git", "hash-object", "-t", "tree", "/dev/null" }, function(r)
+    callback(r.code == 0 and vim.trim(r.stdout) or nil)
+  end)
+end
+
 -- Fetch file content at a ref. "WORKTREE" reads from disk; "INDEX" reads the
 -- staged blob (`git show :path` — the index entry is keyed by the NEW path);
 -- anything else goes through `git show ref:path`.
