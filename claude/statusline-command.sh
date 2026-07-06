@@ -30,6 +30,13 @@ IFS=$'\t' read -r dir ctx_pct model_name session_id cost_usd ses_pct ses_resets 
 ] | @tsv')"
 
 if [ "$effort" = "-" ]; then effort=""; fi
+
+# Showrunner marker: the SessionStart hook touches a per-session file when the
+# policy was injected; absence here means the session is running vanilla.
+sr=""
+if [ -n "$session_id" ] && [ -f "${XDG_CACHE_HOME:-$HOME/.cache}/claude-showrunner/$session_id" ]; then
+  sr="sr"
+fi
 lines_txt=""
 if [ "${lines_add:-0}" -gt 0 ] || [ "${lines_del:-0}" -gt 0 ]; then
   lines_txt="+${lines_add} -${lines_del}"
@@ -53,7 +60,8 @@ RESET='\033[0m'
 # Unicode symbols
 GIT_BRANCH_ICON="󰘬"
 FOLDER_ICON="󰝰"
-MODEL_ICON="󰚩"
+SHOWRUNNER_ON_ICON="󰎁"
+SHOWRUNNER_OFF_ICON="󱛹"
 EFFORT_ICON="󰓅"
 BAR_FILLED="━"
 BAR_THIN="─"
@@ -99,7 +107,11 @@ fi
 
 # Prepend model name (with effort level when the model reports one)
 if [ -n "$model_name" ]; then
-  model_seg="${CYAN}${MODEL_ICON} ${model_name}${RESET}"
+  if [ -n "$sr" ]; then
+    model_seg="${CYAN}${SHOWRUNNER_ON_ICON} ${model_name}${RESET}"
+  else
+    model_seg="${RED}${SHOWRUNNER_OFF_ICON}${RESET} ${CYAN}${model_name}${RESET}"
+  fi
   if [ -n "$effort" ]; then
     model_seg="${model_seg} ${BRIGHT_BLACK}${EFFORT_ICON} ${effort}${RESET}"
   fi

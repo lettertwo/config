@@ -41,6 +41,17 @@
   },
   "model": "opusplan[1m]",
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/showrunner-hook.sh"
+          }
+        ]
+      }
+    ],
     "Notification": [
       {
         "hooks": [

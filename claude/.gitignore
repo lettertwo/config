@@ -10,8 +10,11 @@
 !/CLAUDE.md
 !/settings.json
 !/notify.sh
+!/showrunner.md
+!/showrunner-hook.sh
 !/statusline-command.sh
 !/subagent-statusline.sh
 !/terminal-progress.sh
+!/agents/
 !/commands/
 !/skills/
