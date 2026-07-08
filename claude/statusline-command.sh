@@ -62,7 +62,13 @@ GIT_BRANCH_ICON="󰘬"
 FOLDER_ICON="󰝰"
 SHOWRUNNER_ON_ICON="󰎁"
 SHOWRUNNER_OFF_ICON="󱛹"
-EFFORT_ICON="󰓅"
+# Effort gauge tracks the level: speedometer slow/medium/full, rocket beyond
+case "$effort" in
+  low)       EFFORT_ICON="󰾆" ;;
+  medium)    EFFORT_ICON="󰾅" ;;
+  xhigh|max) EFFORT_ICON="󱓞" ;;
+  *)         EFFORT_ICON="󰓅" ;;
+esac
 BAR_FILLED="━"
 BAR_THIN="─"
 COL_WIDTH=10
