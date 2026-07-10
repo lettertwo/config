@@ -13,11 +13,13 @@ local ConfigStats = setmetatable({}, {
       Config._stats.nvim = { version = version, commit = commit and commit:sub(1, 7) or "" }
       return Config._stats.nvim
     elseif key == "plugin" then
-      local plugins = vim.pack.get()
+      -- info=true would spawn git branch/tag queries per plugin and block on
+      -- them; only `active` is needed here.
+      local plugins = vim.pack.get(nil, { info = false })
       ---@diagnostic disable-next-line: inject-field
       Config._stats = Config._stats or {}
       Config._stats.plugin = { loaded = 0, count = 0 }
-      for _, spec in ipairs(vim.pack.get()) do
+      for _, spec in ipairs(plugins) do
         Config._stats.plugin.count = Config._stats.plugin.count + 1
         if spec.active then
           Config._stats.plugin.loaded = Config._stats.plugin.loaded + 1

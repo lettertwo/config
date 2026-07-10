@@ -49,7 +49,9 @@ function PackUtil.check_updates()
   update_state.pending = true
   emit_updates_changed()
 
-  local plugins = vim.pack.get()
+  -- info=true would spawn git branch/tag queries per plugin and block on
+  -- them (~1s for this config); only spec/path/rev are needed here.
+  local plugins = vim.pack.get(nil, { info = false })
   local update_count = 0
   local remaining = #plugins
 
