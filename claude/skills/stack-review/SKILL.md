@@ -47,7 +47,7 @@ git worktree list --porcelain
 
 ### 1. Discover the stack
 
-BFS from the current branch using `gt children` (and `--cwd` to avoid interactive checkout):
+Prefer the `gt` MCP server (registered user-wide, deferred-loaded — see `ToolSearch` for `mcp__gt__*` tools) for structured stack state if it's available in this session. **CLI fallback** (current implementation — used whenever the MCP tools aren't loaded or the query shape isn't covered yet): BFS from the current branch using `gt children` (and `--cwd` to avoid interactive checkout):
 
 ```bash
 gt children                          # direct children of current branch
@@ -95,7 +95,9 @@ Read [./workflow.js](./workflow.js) and pass its contents inline to the Workflow
 }
 ```
 
-The workflow runs one review agent per branch in parallel, each diffing against its immediate parent. When `flags.fix` is true and `dependentStack` is false, it also runs a parallel fix stage. When `dependentStack` is true, the workflow reviews only — fixes are handled in step 4 below.
+The workflow runs one review agent per branch in parallel, each diffing against its immediate parent, then an independent adversarial-verify agent that tries to refute each finding before it counts (cuts false positives reaching the report or an autofix commit). When `flags.fix` is true and `dependentStack` is false, it also runs a parallel fix stage on the confirmed findings, followed by a test gate (`cargo-gate test` for Rust workspaces, the project's own test command otherwise) before a branch's fixes are reported clean. When `dependentStack` is true, the workflow reviews and verifies only — fixes are handled in step 4 below.
+
+Resume: the Workflow tool journals every `agent()` call, so an interrupted run can resume from `/workflows` without re-running completed review/verify/fix agents.
 
 ---
 
@@ -108,13 +110,15 @@ For each branch:
 ```
 ### <branch>
 
-N finding(s):
+N finding(s) (M rejected on verify):
 
 1. **<title>** (`<kind>`, confidence <N>)
    <description>
    File: `<file>` lines <lines>
    [Note: may be addressed upstack in `<branch>`]
 ```
+
+Only confirmed (post-verify) findings are numbered and reported. If the workflow rejected any candidate findings during adversarial verify, note the count — don't list them individually unless asked; they were false positives caught before they reached you.
 
 #### `--comment`: post PR comments
 
@@ -124,11 +128,11 @@ For each branch: `gh pr view <branch> --json number` to find the PR. Skip branch
 
 #### `--fix` on independent targets
 
-Handled inside the workflow (stage 2). Collect `applied` / `skipped` per branch from the results and include in the report.
+Handled inside the workflow (stage 3). Collect `applied` / `skipped` per branch from the results and include in the report. If a branch's `testGate.ran` is true and `testGate.passed` is false, do **not** report that branch's fixes as clean — surface it under "Needs manual attention" with the gate's summary; the commits are already on the branch (nothing auto-reverts) but they need a human look before landing.
 
 #### `--fix` on dependent targets
 
-The workflow only ran review. Apply fixes serially, bottom-up:
+The workflow only ran review + verify. Apply fixes serially, bottom-up, using confirmed findings only:
 
 For each branch in topological order (parent before child):
 1. If the branch's worktree is user-owned with uncommitted changes → skip it and all descendants; record reason.
@@ -138,6 +142,7 @@ For each branch in topological order (parent before child):
    gt restack --cwd <worktree>
    ```
 4. If `gt restack` conflicts → stop the chain, report conflict for manual resolution.
+5. After a successful restack, run the test gate the same way the workflow's Fix stage does: `~/.claude/bin/cargo-gate test` for Rust workspaces (via the nearest `Cargo.toml`/workspace root), otherwise the project's own test command. A gate failure doesn't block the chain (dependent stacks must keep serializing) but gets flagged under "Needs manual attention" in the final report.
 
 ---
 
