@@ -14,7 +14,7 @@ input=$(cat)
 # NOTE: fields must never be empty strings — tab is IFS whitespace, so read
 # collapses consecutive tabs and empty fields shift everything after them.
 # Absent values use sentinels ("-" / -1) instead.
-IFS=$'\t' read -r dir ctx_pct model_name session_id cost_usd ses_pct ses_resets wk_pct wk_resets effort lines_add lines_del <<< "$(echo "$input" | jq -r '[
+IFS=$'\t' read -r dir ctx_pct model_name session_id cost_usd ses_pct ses_resets wk_pct wk_resets effort lines_add lines_del cache_read cache_creation in_tok <<< "$(echo "$input" | jq -r '[
   .workspace.current_dir,
   (.context_window.used_percentage // -1),
   (.model.display_name // ""),
@@ -26,7 +26,10 @@ IFS=$'\t' read -r dir ctx_pct model_name session_id cost_usd ses_pct ses_resets 
   ((.rate_limits.seven_day.resets_at // -1) | tonumber? // -1 | floor),
   (.effort.level // "-"),
   (.cost.total_lines_added // 0),
-  (.cost.total_lines_removed // 0)
+  (.cost.total_lines_removed // 0),
+  (.context_window.current_usage.cache_read_input_tokens // 0),
+  (.context_window.current_usage.cache_creation_input_tokens // 0),
+  (.context_window.current_usage.input_tokens // 0)
 ] | @tsv')"
 
 if [ "$effort" = "-" ]; then effort=""; fi
@@ -40,6 +43,16 @@ fi
 lines_txt=""
 if [ "${lines_add:-0}" -gt 0 ] || [ "${lines_del:-0}" -gt 0 ]; then
   lines_txt="+${lines_add} -${lines_del}"
+fi
+
+# Cache-hit rate for the most recent API response — surfaces cache
+# invalidation events (e.g. a mid-task model/effort switch) as a visible
+# drop instead of a silent cost spike.
+ch_txt=""
+ch_total=$(( ${cache_read:-0} + ${cache_creation:-0} + ${in_tok:-0} ))
+if [ "$ch_total" -gt 0 ]; then
+  ch_pct=$(( ${cache_read:-0} * 100 / ch_total ))
+  ch_txt="ch${ch_pct}%"
 fi
 
 basename=$(basename "$dir")
@@ -96,8 +109,9 @@ if git rev-parse --is-inside-work-tree &>/dev/null; then
   model_len=$([ -n "$model_name" ] && echo $(( ${#model_name} + 3 )) || echo 0)
   effort_len=$([ -n "$effort" ] && echo $(( ${#effort} + 3 )) || echo 0)
   lines_len=$([ -n "$lines_txt" ] && echo $(( ${#lines_txt} + 2 )) || echo 0)
+  ch_len=$([ -n "$ch_txt" ] && echo $(( ${#ch_txt} + 2 )) || echo 0)
   if [ -n "$branch" ] && [ "$branch" != "$dir_display" ]; then
-    branch_budget=$(( max_line1 - model_len - effort_len - lines_len - ${#dir_display} - 8 ))
+    branch_budget=$(( max_line1 - model_len - effort_len - lines_len - ch_len - ${#dir_display} - 8 ))
     if [ "$branch_budget" -lt 8 ]; then branch_budget=8; fi
     if [ "${#branch}" -gt "$branch_budget" ]; then
       branch="${branch:0:$(( branch_budget - 1 ))}…"
@@ -127,6 +141,11 @@ fi
 # Append lines added/removed when the session has changed anything
 if [ -n "$lines_txt" ]; then
   status="${status}  ${GREEN}+${lines_add}${RESET} ${RED}-${lines_del}${RESET}"
+fi
+
+# Append cache-hit rate for the last API response
+if [ -n "$ch_txt" ]; then
+  status="${status} ${BRIGHT_BLACK}${ch_txt}${RESET}"
 fi
 
 # ── Progress bar helper ───────────────────────────────────────────────────────
