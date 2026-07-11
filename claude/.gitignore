@@ -16,5 +16,8 @@
 !/subagent-statusline.sh
 !/terminal-progress.sh
 !/agents/
+!/attic/
+!/bin/
 !/commands/
+!/docs/
 !/skills/

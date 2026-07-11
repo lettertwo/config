@@ -1,0 +1,112 @@
+#!/bin/bash
+#
+# cargo-gate — serialize + filter wrapper around cargo check/test/clippy.
+#
+# Why: concurrent agents (implementer + hooks) running raw cargo caused CPU
+# contention that tripped Stop-hook timeouts, and forced-color env vars
+# leaked ANSI codes into hook output, producing false-positive blocks.
+# This wrapper machine-wide-serializes cargo invocations via a lock,
+# scrubs color-forcing env vars, and compresses output to a one-line
+# summary on success or a filtered error/warning list on failure — full
+# log is always saved to a temp file for on-demand reading.
+#
+# Usage: cargo-gate <check|test|clippy> [extra cargo args...]
+#
+# Gotcha: macOS ships no flock(1), so locking uses an atomic `mkdir`
+# spinlock with pid-liveness stale-lock detection instead.
+# Gotcha: system bash on macOS is 3.2 — no associative arrays, no
+# ${var,,}. Keep this script 3.2-compatible.
+
+set -u
+
+subcmd="${1:-}"
+case "$subcmd" in
+  check|test|clippy) shift ;;
+  *)
+    echo "usage: cargo-gate <check|test|clippy> [extra cargo args...]" >&2
+    exit 64
+    ;;
+esac
+
+lock_dir="${TMPDIR:-/tmp}/cargo-gate.lock"
+lock_pid_file="$lock_dir/pid"
+lock_timeout=120
+lock_acquired=0
+
+# shellcheck disable=SC2329 # invoked indirectly via trap
+release_lock() {
+  if [ "$lock_acquired" -eq 1 ]; then
+    rm -rf "$lock_dir" 2>/dev/null
+  fi
+}
+trap release_lock EXIT INT TERM
+
+acquire_lock() {
+  local waited=0
+  while ! mkdir "$lock_dir" 2>/dev/null; do
+    # Lock held by someone else — check whether the holder is still alive.
+    if [ -f "$lock_pid_file" ]; then
+      local holder_pid
+      holder_pid=$(cat "$lock_pid_file" 2>/dev/null)
+      if [ -n "$holder_pid" ] && ! kill -0 "$holder_pid" 2>/dev/null; then
+        # Stale lock — holder process is dead. Reclaim it.
+        rm -rf "$lock_dir" 2>/dev/null
+        continue
+      fi
+    fi
+    if [ "$waited" -ge "$lock_timeout" ]; then
+      echo "cargo-gate: warning: lock held after ${lock_timeout}s, proceeding without it" >&2
+      return 1
+    fi
+    sleep 1
+    waited=$((waited + 1))
+  done
+  echo "$$" > "$lock_pid_file" 2>/dev/null
+  lock_acquired=1
+  return 0
+}
+
+acquire_lock
+
+# Scrub forced-color env vars — a leaked CARGO_TERM_COLOR=always/FORCE_COLOR
+# from an ambient shell produced ANSI-code false positives in hook output.
+unset CLICOLOR_FORCE
+unset FORCE_COLOR
+export CARGO_TERM_COLOR=never
+
+log_file=$(mktemp "${TMPDIR:-/tmp}/cargo-gate.XXXXXX")
+
+case "$subcmd" in
+  check)
+    cmd=(cargo check --workspace "$@")
+    ;;
+  test)
+    cmd=(cargo test --workspace "$@")
+    ;;
+  clippy)
+    cmd=(cargo clippy --all-targets --all-features "$@" -- -D warnings)
+    ;;
+esac
+
+start_ts=$(date +%s)
+"${cmd[@]}" >"$log_file" 2>&1
+status=$?
+end_ts=$(date +%s)
+elapsed=$((end_ts - start_ts))
+
+if [ "$status" -eq 0 ]; then
+  case "$subcmd" in
+    test)
+      passed=$(grep -oE '[0-9]+ passed' "$log_file" | awk '{sum += $1} END {print sum+0}')
+      echo "ok: ${passed} passed in ${elapsed}s (log: $log_file)"
+      ;;
+    *)
+      echo "ok: ${subcmd} clean in ${elapsed}s (log: $log_file)"
+      ;;
+  esac
+else
+  echo "FAIL: ${subcmd} (exit ${status}) in ${elapsed}s — full log: $log_file"
+  grep -E '^(error|warning)(\[|:)|FAILED$|test .* \.\.\. FAILED' "$log_file"
+fi
+
+exit "$status"
