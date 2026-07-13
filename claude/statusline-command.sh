@@ -45,14 +45,40 @@ if [ "${lines_add:-0}" -gt 0 ] || [ "${lines_del:-0}" -gt 0 ]; then
   lines_txt="+${lines_add} -${lines_del}"
 fi
 
-# Cache-hit rate for the most recent API response — surfaces cache
-# invalidation events (e.g. a mid-task model/effort switch) as a visible
-# drop instead of a silent cost spike.
-ch_txt=""
+# Cache-hit rate for the most recent API response, paced against a
+# per-session EWMA so a drop below the session's typical rate (cache
+# invalidation: model/effort switch) colors the bar, while the routinely
+# cold first response just seeds the average and reads calm.
+# EWMA updates only when the token signature changes — the statusline
+# re-renders many times per response and repeated samples would drag
+# the average toward the latest value.
+ch_pct=-1
+ch_avg=-1
+ch_diff=""
 ch_total=$(( ${cache_read:-0} + ${cache_creation:-0} + ${in_tok:-0} ))
-if [ "$ch_total" -gt 0 ]; then
+if [ "$ch_total" -gt 0 ] && [ -n "$session_id" ]; then
   ch_pct=$(( ${cache_read:-0} * 100 / ch_total ))
-  ch_txt="ch${ch_pct}%"
+  CHR_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/claude-statusline-chr"
+  chr_file="$CHR_DIR/$session_id"
+  ch_sig="${cache_read}:${cache_creation}:${in_tok}"
+  prev_avg=""
+  prev_sig=""
+  if [ -f "$chr_file" ]; then
+    IFS=$'\t' read -r prev_avg prev_sig < "$chr_file"
+  fi
+  if [ -z "$prev_avg" ]; then
+    mkdir -p "$CHR_DIR"
+    find "$CHR_DIR" -type f -mtime +7 -delete 2>/dev/null
+    ch_avg=$ch_pct
+    printf "%s\t%s\n" "$ch_avg" "$ch_sig" > "$chr_file"
+  elif [ "$ch_sig" != "$prev_sig" ]; then
+    ch_avg=$(( (prev_avg * 7 + ch_pct * 3) / 10 ))
+    printf "%s\t%s\n" "$ch_avg" "$ch_sig" > "$chr_file"
+  else
+    ch_avg=$prev_avg
+  fi
+  # positive = latest response fell below the session average (bad)
+  ch_diff=$(( ch_avg - ch_pct ))
 fi
 
 basename=$(basename "$dir")
@@ -109,9 +135,8 @@ if git rev-parse --is-inside-work-tree &>/dev/null; then
   model_len=$([ -n "$model_name" ] && echo $(( ${#model_name} + 3 )) || echo 0)
   effort_len=$([ -n "$effort" ] && echo $(( ${#effort} + 3 )) || echo 0)
   lines_len=$([ -n "$lines_txt" ] && echo $(( ${#lines_txt} + 2 )) || echo 0)
-  ch_len=$([ -n "$ch_txt" ] && echo $(( ${#ch_txt} + 2 )) || echo 0)
   if [ -n "$branch" ] && [ "$branch" != "$dir_display" ]; then
-    branch_budget=$(( max_line1 - model_len - effort_len - lines_len - ch_len - ${#dir_display} - 8 ))
+    branch_budget=$(( max_line1 - model_len - effort_len - lines_len - ${#dir_display} - 8 ))
     if [ "$branch_budget" -lt 8 ]; then branch_budget=8; fi
     if [ "${#branch}" -gt "$branch_budget" ]; then
       branch="${branch:0:$(( branch_budget - 1 ))}…"
@@ -142,12 +167,6 @@ fi
 if [ -n "$lines_txt" ]; then
   status="${status}  ${GREEN}+${lines_add}${RESET} ${RED}-${lines_del}${RESET}"
 fi
-
-# Append cache-hit rate for the last API response
-if [ -n "$ch_txt" ]; then
-  status="${status} ${BRIGHT_BLACK}${ch_txt}${RESET}"
-fi
-
 # ── Progress bar helper ───────────────────────────────────────────────────────
 # Usage: render_bar <pct_int> [ideal_pct_int] [diff] [col_width]
 # Without ideal: thick filled + thin dim (ctx-style)
@@ -347,27 +366,61 @@ function make_label() {
   fi
 }
 
+# label_width <name> [value] [suffix] — visible chars of the assembled label;
+# each bar sizes to exactly its label's text, floored at 6 so empty/short
+# columns keep a legible bar
+function label_width() {
+  local t="$1"
+  if [ -n "${2:-}" ]; then t="$t $2"; fi
+  if [ -n "${3:-}" ]; then t="$t $3"; fi
+  local w=${#t}
+  if [ "$w" -lt 6 ]; then w=6; fi
+  printf "%s" "$w"
+}
+
+# dot_bar <width> — dim placeholder bar for columns with no data
+function dot_bar() {
+  printf "${BLACK}%s${RESET}" "$(printf "%*s" "$1" "" | tr ' ' '·')"
+}
+
 # Context window bar
 if [ "${ctx_pct%.*}" != "-1" ] && [ -n "$ctx_pct" ]; then
   ctx_int="${ctx_pct%.*}"
-  ctx_label=$(make_label "ctx" "${ctx_int}%" "$(severity_color "$ctx_int")")
-  ctx_bar=$(render_bar "$ctx_int")
+  ctx_w=$(label_width "ctx" "${ctx_int}%")
+  ctx_label=$(make_label "ctx" "${ctx_int}%" "$(severity_color "$ctx_int")" "" "$ctx_w")
+  ctx_bar=$(render_bar "$ctx_int" "" "" "$ctx_w")
 else
-  ctx_label=$(make_label "ctx")
-  ctx_bar="${BLACK}$(printf "%${COL_WIDTH}s" "" | tr ' ' '·')${RESET}"
+  ctx_w=$(label_width "ctx")
+  ctx_label=$(make_label "ctx" "" "" "" "$ctx_w")
+  ctx_bar=$(dot_bar "$ctx_w")
+fi
+
+# Cache-hit bar: thick marks the session EWMA, fill is the latest
+# response, color is the drop below avg
+if [ "$ch_pct" -ge 0 ]; then
+  ch_w=$(label_width "ch" "${ch_pct}%")
+  ch_label=$(make_label "ch" "${ch_pct}%" "$(severity_color "$ch_pct" "$ch_diff")" "" "$ch_w")
+  ch_bar=$(render_bar "$ch_pct" "$ch_avg" "$ch_diff" "$ch_w")
+else
+  ch_w=$(label_width "ch")
+  ch_label=$(make_label "ch" "" "" "" "$ch_w")
+  ch_bar=$(dot_bar "$ch_w")
 fi
 
 # Columns 2 & 3: subscription rate limits when present, else API session cost + burn rate
 if [ "$ses_pct" -ge 0 ]; then
   # Subscription: pace-aware session/weekly bars
-  col2_label=$(make_label "ses" "${ses_pct}%" "$(severity_color "$ses_pct" "$ses_diff")" "$ses_countdown" 13)
-  col2_bar=$(render_bar "$ses_pct" "$ses_time_pct" "$ses_diff" 13)
+  col2_w=$(label_width "ses" "${ses_pct}%" "$ses_countdown")
+  col2_label=$(make_label "ses" "${ses_pct}%" "$(severity_color "$ses_pct" "$ses_diff")" "$ses_countdown" "$col2_w")
+  col2_bar=$(render_bar "$ses_pct" "$ses_time_pct" "$ses_diff" "$col2_w")
   if [ "$wk_pct" -ge 0 ]; then
-    col3_label=$(make_label "wk" "${wk_pct}%" "$(severity_color "$wk_pct" "$wk_diff")")
-    col3_bar=$(render_bar "$wk_pct" "$wk_time_pct" "$wk_diff")
+    col3_w=$(label_width "wk" "${wk_pct}%")
+    col3_label=$(make_label "wk" "${wk_pct}%" "$(severity_color "$wk_pct" "$wk_diff")" "" "$col3_w")
+    col3_bar=$(render_bar "$wk_pct" "$wk_time_pct" "$wk_diff" "$col3_w")
   else
-    col3_label=$(make_label "wk")
-    col3_bar="${BLACK}$(printf "%${COL_WIDTH}s" "" | tr ' ' '·')${RESET}"
+    col3_w=$(label_width "wk")
+    col3_label=$(make_label "wk" "" "" "" "$col3_w")
+    col3_bar=$(dot_bar "$col3_w")
   fi
 elif [ -f "$SPEND_FILE" ]; then
   # API billing: day/week spend against soft budgets, paced against the
@@ -388,23 +441,27 @@ elif [ -f "$SPEND_FILE" ]; then
   }
 
   IFS=$'\t' read -r day_fmt day_pct day_ideal day_diff <<< "$(spend_stats "$day_spend" "$avg_day" "$DAY_BUDGET_USD")"
-  col2_label=$(make_label "day" "$day_fmt" "$(severity_color "$day_pct" "$day_diff")" "" 13)
-  col2_bar=$(render_bar "$day_pct" "$day_ideal" "$day_diff" 13)
+  col2_w=$(label_width "day" "$day_fmt")
+  col2_label=$(make_label "day" "$day_fmt" "$(severity_color "$day_pct" "$day_diff")" "" "$col2_w")
+  col2_bar=$(render_bar "$day_pct" "$day_ideal" "$day_diff" "$col2_w")
 
   IFS=$'\t' read -r wk_fmt wk_pct2 wk_ideal wk_diff2 <<< "$(spend_stats "$wk_spend" "$prev_wk" "$WK_BUDGET_USD")"
-  col3_label=$(make_label "wk" "$wk_fmt" "$(severity_color "$wk_pct2" "$wk_diff2")")
-  col3_bar=$(render_bar "$wk_pct2" "$wk_ideal" "$wk_diff2")
+  col3_w=$(label_width "wk" "$wk_fmt")
+  col3_label=$(make_label "wk" "$wk_fmt" "$(severity_color "$wk_pct2" "$wk_diff2")" "" "$col3_w")
+  col3_bar=$(render_bar "$wk_pct2" "$wk_ideal" "$wk_diff2" "$col3_w")
 else
   # No rate limits and no cost data: empty states
-  col2_label=$(make_label "ses" "" "" "" 14)
-  col2_bar="${BLACK}$(printf "%14s" "" | tr ' ' '·')${RESET}"
-  col3_label=$(make_label "wk")
-  col3_bar="${BLACK}$(printf "%${COL_WIDTH}s" "" | tr ' ' '·')${RESET}"
+  col2_w=$(label_width "ses")
+  col2_label=$(make_label "ses" "" "" "" "$col2_w")
+  col2_bar=$(dot_bar "$col2_w")
+  col3_w=$(label_width "wk")
+  col3_label=$(make_label "wk" "" "" "" "$col3_w")
+  col3_bar=$(dot_bar "$col3_w")
 fi
 
 # ── Output ────────────────────────────────────────────────────────────────────
 
-printf "%b\n%b  %b  %b\n%b  %b  %b" \
+printf "%b\n%b  %b  %b  %b\n%b  %b  %b  %b" \
   "$status" \
-  "$ctx_label" "$col2_label" "$col3_label" \
-  "$ctx_bar" "$col2_bar" "$col3_bar"
+  "$ctx_label" "$ch_label" "$col2_label" "$col3_label" \
+  "$ctx_bar" "$ch_bar" "$col2_bar" "$col3_bar"
