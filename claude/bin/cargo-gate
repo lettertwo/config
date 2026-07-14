@@ -1,6 +1,7 @@
 #!/bin/bash
 #
-# cargo-gate — serialize + filter wrapper around cargo check/test/clippy.
+# cargo-gate — serialize + filter wrapper around cargo check/test/clippy,
+# plus a per-crate metadata cache and proof-of-green tracking.
 #
 # Why: concurrent agents (implementer + hooks) running raw cargo caused CPU
 # contention that tripped Stop-hook timeouts, and forced-color env vars
@@ -10,23 +11,286 @@
 # summary on success or a filtered error/warning list on failure — full
 # log is always saved to a temp file for on-demand reading.
 #
-# Usage: cargo-gate <check|test|clippy> [extra cargo args...]
+# It also records "crate X is green at fingerprint F" after an unfiltered
+# test/clippy run, and exposes a cached workspace crate/dependency map, so
+# a Stop hook can skip re-proving crates nothing has touched since. See
+# the `map` and `proven` subcommands below.
+#
+# Usage:
+#   cargo-gate <check|test|clippy> [extra cargo args...]
+#   cargo-gate map
+#   cargo-gate proven <test|clippy> <crate>...
+#
+# `map` prints the cached crate map JSON itself on stdout (not just its
+# path), refreshing $git_dir/claude-cargo-map.json first if any workspace
+# manifest changed since it was last written.
 #
 # Gotcha: macOS ships no flock(1), so locking uses an atomic `mkdir`
 # spinlock with pid-liveness stale-lock detection instead.
 # Gotcha: system bash on macOS is 3.2 — no associative arrays, no
-# ${var,,}. Keep this script 3.2-compatible.
+# ${var,,}, no mapfile. Keep this script 3.2-compatible.
+# Gotcha: the fingerprint/proof logic below never invents a pass — an
+# empty fingerprint (no repo, unborn HEAD, missing shasum) means "never
+# record, never treat as proven," always falling through to actually
+# running cargo. Mirrors the posture in git-workon-review's
+# stop-check.sh, where the fingerprint computation was lifted from
+# verbatim so both sides agree on what "unchanged" means.
 
 set -u
 
+# ---------------------------------------------------------------------------
+# Shared helpers (used by the check/test/clippy path, `map`, and `proven`)
+# ---------------------------------------------------------------------------
+
+# Fingerprints the Rust-relevant working tree state: HEAD + tracked diff to
+# *.rs/*.toml/Cargo.lock + untracked *.rs/*.toml paths and contents. Prints
+# nothing on any failure (no repo, unborn HEAD, no shasum) — callers must
+# treat empty as "not comparable," never as a match.
+compute_fingerprint() {
+  {
+    git rev-parse HEAD 2>/dev/null
+    git diff HEAD -- '*.rs' '*.toml' 'Cargo.lock' 2>/dev/null
+    untracked=$(git ls-files --others --exclude-standard -- '*.rs' '*.toml' 2>/dev/null)
+    if [ -n "$untracked" ]; then
+      printf '%s\n' "$untracked"
+      printf '%s\n' "$untracked" | tr '\n' '\0' | xargs -0 cat 2>/dev/null
+    fi
+  } | shasum 2>/dev/null | cut -d' ' -f1
+}
+
+# shasum over every workspace Cargo.toml (root + each member) plus
+# Cargo.lock — cheap change-detector for the crate map cache, independent
+# of compute_fingerprint above (that one also reacts to *.rs edits, which
+# shouldn't force a map rebuild).
+compute_manifest_hash() {
+  workspace_root="$1"
+  member_dirs="$2" # newline-separated member directories
+  {
+    printf '%s\n' "$workspace_root/Cargo.toml"
+    printf '%s\n' "$member_dirs" | while IFS= read -r d; do
+      [ -n "$d" ] && printf '%s\n' "$d/Cargo.toml"
+    done
+    printf '%s\n' "$workspace_root/Cargo.lock"
+  } | sort -u | while IFS= read -r f; do
+    [ -f "$f" ] && cat "$f"
+  done | shasum 2>/dev/null | cut -d' ' -f1
+}
+
+# Ensures $git_dir/claude-cargo-map.json exists and matches the current
+# manifest_hash, regenerating via `cargo metadata` (jq only, no extra
+# tooling) when stale or missing. Prints nothing; callers read the file.
+# Returns non-zero if `cargo metadata` or the jq transform fails.
+ensure_map() {
+  git_dir="$1"
+  map_file="$git_dir/claude-cargo-map.json"
+
+  no_deps_json=$(cargo metadata --format-version 1 --no-deps 2>/dev/null) || return 1
+  workspace_root=$(printf '%s' "$no_deps_json" | jq -r '.workspace_root')
+  member_dirs=$(printf '%s' "$no_deps_json" | jq -r '.packages[].manifest_path | sub("/Cargo\\.toml$"; "")')
+  manifest_hash=$(compute_manifest_hash "$workspace_root" "$member_dirs")
+
+  if [ -f "$map_file" ] && [ -n "$manifest_hash" ]; then
+    cached_hash=$(jq -r '.manifest_hash // empty' "$map_file" 2>/dev/null)
+    if [ "$cached_hash" = "$manifest_hash" ]; then
+      echo "cargo-gate: map cache hit ($map_file)" >&2
+      return 0
+    fi
+  fi
+
+  # Full pass (with dependency resolution) to get workspace-internal
+  # reverse-dependency edges, including dev-dependencies — --no-deps above
+  # only gives us member identity/location, not the dependency graph.
+  # Both metadata blobs go through temp files + --slurpfile rather than
+  # --argjson on the command line: a workspace this size overflows
+  # ARG_MAX ("Argument list too long") if passed inline.
+  no_deps_file=$(mktemp "${TMPDIR:-/tmp}/cargo-gate-metadata.XXXXXX")
+  full_file=$(mktemp "${TMPDIR:-/tmp}/cargo-gate-metadata.XXXXXX")
+  printf '%s' "$no_deps_json" >"$no_deps_file"
+  cargo metadata --format-version 1 >"$full_file" 2>/dev/null
+  full_status=$?
+  if [ "$full_status" -ne 0 ]; then
+    rm -f "$no_deps_file" "$full_file"
+    return 1
+  fi
+
+  crates_json=$(jq -n --slurpfile nodeps "$no_deps_file" --slurpfile full "$full_file" '
+    $nodeps[0] as $nodeps
+    | $full[0] as $full
+    | ($nodeps.packages | map({key: .id, value: {name: .name, dir: (.manifest_path | sub("/Cargo\\.toml$"; ""))}}) | from_entries) as $members
+    | ($members | keys) as $member_ids
+    | (reduce ($full.resolve.nodes // [])[] as $node (
+        {};
+        if ($node.id | IN($member_ids[])) then
+          . as $acc
+          | reduce ($node.deps // [])[] as $dep (
+              $acc;
+              if ($dep.pkg | IN($member_ids[])) then
+                ($members[$dep.pkg].name) as $target
+                | ($members[$node.id].name) as $source
+                | .[$target] = ((.[$target] // []) + [$source])
+              else . end
+            )
+        else . end
+      )) as $dependents
+    | ($members | to_entries | map({
+        key: .value.name,
+        value: {
+          dir: .value.dir,
+          dependents: (($dependents[.value.name] // []) | unique | sort)
+        }
+      }) | from_entries)
+  ')
+  rm -f "$no_deps_file" "$full_file"
+  [ -n "$crates_json" ] || return 1
+
+  jq -n --argjson crates "$crates_json" --arg hash "$manifest_hash" \
+    '{manifest_hash: $hash, crates: $crates}' >"$map_file"
+  echo "cargo-gate: map regenerated ($map_file)" >&2
+}
+
+# Writes a green proof: $git_dir/claude-cargo-proofs/<subcmd>.<crate> holds
+# the fingerprint that was green.
+record_proof() {
+  proof_dir="$1/claude-cargo-proofs"
+  mkdir -p "$proof_dir"
+  printf '%s' "$4" >"$proof_dir/$2.$3"
+}
+
+# Parses $orig_args (the args cargo-gate itself was invoked with, before
+# --workspace/--all-targets get prepended) to decide what a green run
+# proves. Sets scope_filtered, scope_all, scope_packages as globals — no
+# associative arrays or arrays-of-structs, bash 3.2 has neither.
+#
+# --workspace or no -p at all => scope_all=1 (all member crates).
+# One or more -p X with no filter args => scope_packages="X Y ...".
+# Any positional filter, --lib, --test, --bin, --bins, --example, --doc,
+# or --exclude => scope_filtered=1 (record nothing).
+determine_scope() {
+  scope_filtered=0
+  scope_all=1
+  scope_packages=""
+  i=0
+  n=${#orig_args[@]}
+  while [ "$i" -lt "$n" ]; do
+    a="${orig_args[$i]}"
+    case "$a" in
+      --)
+        i=$n
+        continue
+        ;;
+      -p | --package)
+        i=$((i + 1))
+        val="${orig_args[$i]:-}"
+        scope_packages="$scope_packages $val"
+        scope_all=0
+        ;;
+      -p=*)
+        scope_packages="$scope_packages ${a#-p=}"
+        scope_all=0
+        ;;
+      --package=*)
+        scope_packages="$scope_packages ${a#--package=}"
+        scope_all=0
+        ;;
+      --workspace) : ;;
+      --lib | --bins | --doc)
+        scope_filtered=1
+        ;;
+      --test | --bin | --example | --exclude)
+        scope_filtered=1
+        i=$((i + 1)) # consume this flag's value too
+        ;;
+      --test=* | --bin=* | --example=* | --exclude=*)
+        scope_filtered=1 # =-joined form of the above, must not fall into -*
+        ;;
+      -*) : ;; # other flags (--release, --features, ...) don't narrow scope
+      *)
+        scope_filtered=1 # bare positional token = a test/bin-name filter
+        ;;
+    esac
+    i=$((i + 1))
+  done
+}
+
+# ---------------------------------------------------------------------------
+# Subcommand dispatch
+# ---------------------------------------------------------------------------
+
 subcmd="${1:-}"
 case "$subcmd" in
-  check|test|clippy) shift ;;
+  check | test | clippy | map | proven) shift ;;
   *)
     echo "usage: cargo-gate <check|test|clippy> [extra cargo args...]" >&2
+    echo "       cargo-gate map" >&2
+    echo "       cargo-gate proven <test|clippy> <crate>..." >&2
     exit 64
     ;;
 esac
+
+if [ "$subcmd" = "map" ]; then
+  git_dir=$(git rev-parse --git-dir 2>/dev/null)
+  if [ -z "$git_dir" ]; then
+    echo "cargo-gate: map: not in a git repo" >&2
+    exit 1
+  fi
+  if ! ensure_map "$git_dir"; then
+    echo "cargo-gate: map: cargo metadata failed" >&2
+    exit 1
+  fi
+  cat "$git_dir/claude-cargo-map.json"
+  exit 0
+fi
+
+if [ "$subcmd" = "proven" ]; then
+  gate_subcmd="${1:-}"
+  case "$gate_subcmd" in
+    test | clippy) shift ;;
+    *)
+      echo "usage: cargo-gate proven <test|clippy> <crate>..." >&2
+      exit 64
+      ;;
+  esac
+  if [ "$#" -eq 0 ]; then
+    echo "usage: cargo-gate proven <test|clippy> <crate>..." >&2
+    exit 64
+  fi
+  git_dir=$(git rev-parse --git-dir 2>/dev/null)
+  fingerprint=""
+  [ -n "$git_dir" ] && fingerprint=$(compute_fingerprint)
+  unproven=""
+  if [ -z "$fingerprint" ]; then
+    # Empty fingerprint => nothing is provably unchanged; fail through.
+    unproven="$*"
+  else
+    for crate in "$@"; do
+      proof_file="$git_dir/claude-cargo-proofs/$gate_subcmd.$crate"
+      recorded=""
+      [ -f "$proof_file" ] && recorded=$(cat "$proof_file" 2>/dev/null)
+      if [ "$recorded" != "$fingerprint" ]; then
+        unproven="$unproven $crate"
+      fi
+    done
+  fi
+  if [ -n "$unproven" ]; then
+    echo "cargo-gate: proven: unproven crates:$unproven" >&2
+    exit 1
+  fi
+  exit 0
+fi
+
+# --- check/test/clippy path ------------------------------------------------
+
+orig_args=("$@")
+
+# Fingerprint BEFORE running: if an edit lands while cargo runs, this
+# pre-run value won't match the post-edit tree, so the proof recorded
+# below correctly reads as stale instead of blessing untested state.
+pre_fingerprint=""
+if [ "$subcmd" = "test" ] || [ "$subcmd" = "clippy" ]; then
+  if git rev-parse --git-dir >/dev/null 2>&1; then
+    pre_fingerprint=$(compute_fingerprint)
+  fi
+fi
 
 lock_dir="${TMPDIR:-/tmp}/cargo-gate.lock"
 lock_pid_file="$lock_dir/pid"
@@ -76,12 +340,26 @@ export CARGO_TERM_COLOR=never
 
 log_file=$(mktemp "${TMPDIR:-/tmp}/cargo-gate.XXXXXX")
 
+# Widen to --workspace only when the caller didn't narrow with -p/--package:
+# cargo UNIONS --workspace with -p (all crates still build/run), which would
+# silently defeat crate-scoped gating — a "-p X" run would pay full-workspace
+# cost while recording only X's proof.
+scope_flag="--workspace"
+for a in "$@"; do
+  case "$a" in
+    -p | --package | -p=* | --package=*)
+      scope_flag=""
+      break
+      ;;
+  esac
+done
+
 case "$subcmd" in
   check)
-    cmd=(cargo check --workspace "$@")
+    cmd=(cargo check $scope_flag "$@")
     ;;
   test)
-    cmd=(cargo test --workspace "$@")
+    cmd=(cargo test $scope_flag "$@")
     ;;
   clippy)
     cmd=(cargo clippy --all-targets --all-features "$@" -- -D warnings)
@@ -104,6 +382,34 @@ if [ "$status" -eq 0 ]; then
       echo "ok: ${subcmd} clean in ${elapsed}s (log: $log_file)"
       ;;
   esac
+
+  # Record a green proof for test/clippy runs whose scope we can pin down
+  # exactly (see determine_scope). `check` never proves anything — it's
+  # not the gate the Stop hook (or anyone else) treats as a green bar.
+  # Uses the PRE-run fingerprint (see above): a mid-run edit makes the
+  # recorded proof stale by construction rather than falsely current.
+  if [ "$subcmd" = "test" ] || [ "$subcmd" = "clippy" ]; then
+    proof_git_dir=$(git rev-parse --git-dir 2>/dev/null)
+    if [ -n "$proof_git_dir" ]; then
+      proof_fingerprint="$pre_fingerprint"
+      if [ -n "$proof_fingerprint" ]; then
+        determine_scope
+        if [ "$scope_filtered" -eq 0 ]; then
+          if [ -n "$scope_packages" ]; then
+            for crate in $scope_packages; do
+              record_proof "$proof_git_dir" "$subcmd" "$crate" "$proof_fingerprint"
+            done
+          elif [ "$scope_all" -eq 1 ]; then
+            if ensure_map "$proof_git_dir"; then
+              for crate in $(jq -r '.crates | keys[]' "$proof_git_dir/claude-cargo-map.json" 2>/dev/null); do
+                record_proof "$proof_git_dir" "$subcmd" "$crate" "$proof_fingerprint"
+              done
+            fi
+          fi
+        fi
+      fi
+    fi
+  fi
 else
   echo "FAIL: ${subcmd} (exit ${status}) in ${elapsed}s — full log: $log_file"
   grep -E '^(error|warning)(\[|:)|FAILED$|test .* \.\.\. FAILED' "$log_file"
