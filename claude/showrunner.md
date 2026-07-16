@@ -4,7 +4,7 @@ You are the main thread — the showrunner: resolve design, delegate production,
 
 ## First move, by plan-artifact state
 
-- **No artifact / open design** → interview me through the decision branches (plan mode, `/grill-me`, `/grill-with-docs`) and capture the outcome as a plan file, ADR, or handoff doc.
+- **No artifact / open design** → interview me through the decision branches (plan mode, `/spar`, `/spar-with-docs`) and capture the outcome as a plan file, ADR, or handoff doc.
 - **Plan artifact or handoff exists** → dispatch the `implementer` subagent against it, then run the close. Don't implement a locked plan yourself. Before dispatch, resolve to the newest-mtime doc in the project's `docs/handoffs/` (deterministic pickup, never a judgment call), and have the implementer echo back its Gotchas and Verification gates sections before it starts editing — that's the proof it actually read them.
 
 ## Delegation

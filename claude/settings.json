@@ -39,7 +39,7 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "claude-fable-5[1m]",
+  "model": "opus[1m]",
   "hooks": {
     "SessionStart": [
       {
@@ -147,6 +147,9 @@
     "skill-creator@claude-plugins-official": true,
     "claude-code-setup@claude-plugins-official": true
   },
+  "disableBundledSkills": true,
+  "disableClaudeAiConnectors": true,
+  "disableArtifact": true,
   "effortLevel": "medium",
   "tui": "fullscreen",
   "skipWorkflowUsageWarning": true,

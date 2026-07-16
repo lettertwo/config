@@ -1,16 +1,19 @@
 ---
 name: stack-review
-description: Parallel code review (and optional autofix) of the current branch and every branch stacked upstack of it, each scoped to its own parent diff. Mirrors /code-review but operates over a Graphite stack. Use when you want to review (and optionally fix) the current branch and its stack. Pass --upstack to skip the current branch and review only descendants.
-argument-hint: "[low|medium|high|max] [--upstack] [--fix] [--comment]"
+description: Parallel code review (and optional autofix) of the current branch and every branch stacked upstack of it, each scoped to its own parent diff. Runs /code-review's shared workflow once per branch over a Graphite stack. Use when you want to review (and optionally fix) the current branch and its stack. Pass --upstack to skip the current branch and review only descendants.
+argument-hint: "[low|medium|high|max] [--upstack] [--fix]"
 ---
 
 Review the current branch and every branch stacked upstack of it. Each branch is reviewed against its immediate Graphite parent so already-reviewed downstack changes don't reappear as noise.
+
+**This skill is the stack driver for `/code-review`.** It does not define its own review model — the multi-axis (Correctness + Standards + Spec) review, the effort→axes gating, the smell baseline, adversarial verify, and the fix/test-gate loop all live in [`../code-review/workflow.js`](../code-review/workflow.js), which this skill invokes with one *review unit per branch*. Everything here is the stack-specific layer: discovery, worktrees, and the dependent-stack serialization the single-diff caller doesn't need. If you want to understand what a finding means or which axes run at a given effort, read `/code-review`.
+
+At this skill's default `medium` effort the axes are **Correctness + Standards** (Spec is off below `high`, and stack branches rarely resolve a spec anyway). Raise to `high` if you want Spec-conformance checked per branch.
 
 **Arguments:**
 - `effort` (optional, default `medium`): `low` | `medium` | `high` | `max`
 - `--upstack`: review only the branches stacked upstack; exclude the current branch.
 - `--fix`: apply and commit each confirmed finding as one `fix: <specific>` commit. Default is report-only.
-- `--comment`: post findings as a review comment on each branch's GitHub PR (via `gh`).
 
 ---
 
@@ -80,22 +83,36 @@ Track which worktrees you created (only those get removed in step 5).
 
 Build the final list: `[{branch, parent, worktree, label, userOwned}]`.
 
+For each branch also resolve, the way `/code-review` steps 2–3 do:
+- **standardsSources**: absolute paths of the standards docs in that branch's worktree (`<worktree>/CLAUDE.md`, `<worktree>/frontend/CLAUDE.md`, `CODING_STANDARDS.md`, etc. — only those that exist).
+- **specSource**: the originating spec for *that branch*, from its own commit messages (issue refs via `docs/agents/issue-tracker.md`). Most stack branches won't map cleanly to a spec — pass `null` and the Spec axis is skipped for that branch. Don't force one spec across the whole stack.
+- **descendants**: the branch names stacked upstack of this one (for `mayBeAddressedUpstack` annotation).
+
 ---
 
-### 3. Parallel review — Workflow
+### 3. Parallel review — the shared /code-review workflow
 
-Read [./workflow.js](./workflow.js) and pass its contents inline to the Workflow tool, with:
+Read [`../code-review/workflow.js`](../code-review/workflow.js) — the *same* file `/code-review` runs — and pass its contents inline to the Workflow tool, building **one unit per target branch**:
 
 ```json
 {
-  "branches": [ ...list from step 2... ],
-  "flags": { "fix": <bool>, "comment": <bool> },
+  "units": [{
+    "label": "<branch>",
+    "worktree": "<worktree>",
+    "base": "<parent branch>",
+    "head": "<branch>",
+    "standardsSources": ["<abs path>", "..."],
+    "specSource": null,
+    "descendants": ["<upstack branch>", "..."],
+    "userOwned": <bool>
+  }],
+  "flags": { "fix": <bool> },
   "effort": "<effort arg>",
   "dependentStack": <bool>
 }
 ```
 
-The workflow runs one review agent per branch in parallel, each diffing against its immediate parent, then an independent adversarial-verify agent that tries to refute each finding before it counts (cuts false positives reaching the report or an autofix commit). When `flags.fix` is true and `dependentStack` is false, it also runs a parallel fix stage on the confirmed findings, followed by a test gate (`cargo-gate test` for Rust workspaces, the project's own test command otherwise) before a branch's fixes are reported clean. When `dependentStack` is true, the workflow reviews and verifies only — fixes are handled in step 4 below.
+Per unit the workflow diffs `base...branch`, runs the effort-gated axes (Correctness always; Standards at `medium`+; Spec at `high`+ when `specSource` resolves) in parallel, adversarially verifies every finding, and — when `flags.fix` is true and `dependentStack` is false — applies confirmed fixes with a test gate (`cargo-gate test` for Rust workspaces, the project's own test command otherwise) before reporting a branch clean. When `dependentStack` is true, the workflow reviews and verifies only; fixes are handled serially in step 4 below.
 
 Resume: the Workflow tool journals every `agent()` call, so an interrupted run can resume from `/workflows` without re-running completed review/verify/fix agents.
 
@@ -105,26 +122,25 @@ Resume: the Workflow tool journals every `agent()` call, so an interrupted run c
 
 #### Default: print findings
 
-For each branch:
+Each result carries `axesRun` plus `correctness`, `standards` (or `null`), and `spec` (or `null`) finding arrays, and `rejected`. Per branch, report each axis that ran separately — same as `/code-review`, don't rerank across them:
 
 ```
-### <branch>
+### <branch>  (C correctness, S standards, P spec; M rejected on verify)
 
-N finding(s) (M rejected on verify):
-
-1. **<title>** (`<kind>`, confidence <N>)
+**Correctness**
+1. **<title>** (`<kind>`, <severity>, confidence <N>)
    <description>
    File: `<file>` lines <lines>
-   [Note: may be addressed upstack in `<branch>`]
+   [Note: may be addressed upstack in `<branch>`]  ← only when mayBeAddressedUpstack is set
+
+**Standards**
+1. ...
+
+**Spec**
+1. ...
 ```
 
-Only confirmed (post-verify) findings are numbered and reported. If the workflow rejected any candidate findings during adversarial verify, note the count — don't list them individually unless asked; they were false positives caught before they reached you.
-
-#### `--comment`: post PR comments
-
-Read [./comment-format.md](./comment-format.md) for the exact format and link rules.
-
-For each branch: `gh pr view <branch> --json number` to find the PR. Skip branches with no open PR (note them). Post via `gh pr comment <number>`.
+Only confirmed (post-verify) findings are numbered. A `null` axis array means that axis didn't run at this effort (Standards below `medium`, Spec below `high` or no spec source) — omit its heading rather than printing an empty one. If `rejected` is non-empty, note the count — don't list them individually unless asked; they were false positives caught before they reached you.
 
 #### `--fix` on independent targets
 
@@ -132,7 +148,7 @@ Handled inside the workflow (stage 3). Collect `applied` / `skipped` per branch 
 
 #### `--fix` on dependent targets
 
-The workflow only ran review + verify. Apply fixes serially, bottom-up, using confirmed findings only:
+The workflow only ran review + verify. Apply fixes serially, bottom-up, using each branch's confirmed findings only — the combined `standards` + `spec` arrays, and only those with a concrete `suggestedFix` (spec gaps usually have none; skip them):
 
 For each branch in topological order (parent before child):
 1. If the branch's worktree is user-owned with uncommitted changes → skip it and all descendants; record reason.
@@ -169,5 +185,3 @@ Layout: bare+worktree | normal clone
 ### Needs manual attention:
 - <branch>: <reason>
 ```
-
-If `--comment`, note which PRs received comments and which branches had no PR.
