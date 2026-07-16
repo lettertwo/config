@@ -1,4 +1,7 @@
 vim.filetype.add({
+  extension = {
+    mdx = "markdown.mdx",
+  },
   pattern = {
     ["%.eslintrc.*%.json"] = "jsonc",
     ["%.parcelrc.*"] = "jsonc",
