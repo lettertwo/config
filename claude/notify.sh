@@ -33,5 +33,9 @@ if [ -n "$KITTY_LISTEN_ON" ] && command -v kitten &>/dev/null; then
   args+=(-execute "kitten @ --to $KITTY_LISTEN_ON focus-window")
 fi
 
+# -execute keeps terminal-notifier resident until the banner is clicked; drop any
+# prior resident notifier for this session so they can't accumulate.
+pkill -f "terminal-notifier.*-group $session_id" 2>/dev/null
+
 terminal-notifier "${args[@]}" &
 disown
