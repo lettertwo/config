@@ -146,25 +146,6 @@ NVIM := $(shell command -v nvim 2> /dev/null)
 	$(call run,git clone git@github.com:neovim/neovim.git $@)
 	$(call done)
 
-# nvim currently requires cmake@3.3.0
-# brew doesn't support versioned installs, so a workaround
-# is to download the formula for the older version
-# and install it locally.
-# When the required version changes, we need to:
-#   1. update the version number in the target
-#   2. update the version number in the cmake phony target
-#   3. find the hash corresponding to when the forumla for that version was published
-#   4. update the curl URL below with that hash
-~/.cache/cmake3.3.0.rb:
-	$(call run,curl https://raw.githubusercontent.com/Homebrew/homebrew-core/b46f3ad7db7ff9446d44a4c8eef7ad4f59e83018/Formula/c/cmake.rb -o $@)
-
-.PHONY: cmake
-cmake: ~/.cache/cmake3.3.0.rb brew
-	$(call log,"Updating cmake...")
-	$(call run,ln -sf $< ~/.cache/cmake.rb)
-	$(call run,brew install -s ~/.cache/cmake.rb)
-	$(call done)
-
 .PHONY: nvim
 nvim: ~/.local/share/neovim
 ifndef NVIM
@@ -180,14 +161,6 @@ update-nvim: ~/.local/share/neovim
 	$(call run,cd $< && make clean && make distclean && make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX="$$HOME/.local" install)
 	$(call done)
 
-
-.PHONY update-nvim-plugins:
-update-nvim-plugins: nvim
-	$(call log,"Updating Plugins...")
-	$(call run,nvim --headless "+Lazy! install" "+silent w! /dev/stdout" +qa)
-	$(call log,"Updating Parsers...")
-	$(call run,nvim --headless "+lua require('nvim-treesitter').update():wait(300000)" "+silent w! /dev/stdout" +qa)
-	$(call done)
 
 ### luarocks
 
