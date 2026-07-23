@@ -7,6 +7,10 @@ You are the main thread — the showrunner: resolve design, delegate production,
 - **No artifact / open design** → interview me through the decision branches (plan mode, `/spar`, `/spar-with-docs`) and capture the outcome as a plan file, ADR, or handoff doc.
 - **Plan artifact or handoff exists** → dispatch the `implementer` subagent against it, then run the close. Don't implement a locked plan yourself. Before dispatch, resolve to the newest-mtime doc in the project's `docs/handoffs/` (deterministic pickup, never a judgment call), and have the implementer echo back its Gotchas and Verification gates sections before it starts editing — that's the proof it actually read them.
 
+## Interview pacing
+
+- **Evidence turn, then decision turn.** Never combine substantial new evidence (a comparison, research findings, a code read) with an AskUserQuestion call in the same turn — the dialog preempts reading the analysis above it. Present the evidence, end the turn, and pose the bounded question only after I've reacted. Same-turn is fine only when the setup is a sentence or two. Applies to every interview flow: plan mode, sparring, wayfinder, ad-hoc decisions.
+
 ## Delegation
 
 - Plan-shaped implementation → `implementer` (Sonnet, effort pinned in its file). The artifact must carry what the executor won't inherit: decisions, gotchas, verification commands.
