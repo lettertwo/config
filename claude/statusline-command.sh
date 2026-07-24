@@ -496,11 +496,16 @@ function render_ctx_bar() {
   # The whole bar carries the current zone colour — it reports state now, not
   # the history of how the context filled. Weight still separates the scales:
   # thick for the linear head, thin for the log tail.
+  #
+  # The head draws its FULL width thick, dim where unfilled, so the thick/thin
+  # boundary sits at CTX_TYPICAL on every render rather than only once the head
+  # fills. That restores the scale-change marker the divider glyph used to give
+  # us, and reuses render_bar's existing "thick dim = budget remaining" idiom.
   local zone
   zone=$(ctx_zone_color "$tok")
   for (( i=0; i<seg1; i++ )); do
     if [ "$i" -lt "$f1" ]; then out+="${zone}${BAR_FILLED}"
-    else out+="${BLACK}${BAR_THIN}"; fi
+    else out+="${BLACK}${BAR_FILLED}"; fi
   done
   for (( i=0; i<seg2; i++ )); do
     if [ "$i" -lt "$f2" ]; then out+="${zone}${BAR_THIN}"
