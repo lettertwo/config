@@ -7,6 +7,23 @@ input=$(cat)
 : "${DAY_BUDGET_USD:=50}"
 : "${WK_BUDGET_USD:=250}"
 
+# Context zones in ABSOLUTE tokens, not percent of window. Effective context is
+# a property of the model, not a fraction of its advertised window: a 1M window
+# does not push degradation 5x later than a 200K one (RULER, NoLiMa, Chroma's
+# context-rot report, and Anthropic's own "attention budget" framing all agree).
+# Percent thresholds silently became meaningless when the 1M model arrived —
+# 60% of 1M is 600K tokens, deep into degradation by any published account.
+#
+# These values are calibrated to THIS machine's observed usage rather than to
+# the 32K-100K onset range in the literature, which would read red two-thirds
+# of the time here and so tell us nothing. Measured over 6188 deduped requests
+# across the 91 most recent transcripts (2026-07-24): p50 142K, p90 327K.
+#   CTX_TYPICAL — median session; also where the bar switches scale
+#   CTX_HEAVY   — p90; this session is unusual for us, act
+# Recalibrate by re-running the percentile pass over ~/.claude/projects/*.jsonl.
+: "${CTX_TYPICAL_TOK:=142000}"
+: "${CTX_HEAVY_TOK:=327000}"
+
 # Extract dir, context pct, model, session id/cost, and subscription
 # rate limits (rate_limits.* is only present for subscription accounts —
 # its absence means API billing). resets_at is epoch seconds; tonumber?
@@ -14,7 +31,7 @@ input=$(cat)
 # NOTE: fields must never be empty strings — tab is IFS whitespace, so read
 # collapses consecutive tabs and empty fields shift everything after them.
 # Absent values use sentinels ("-" / -1) instead.
-IFS=$'\t' read -r dir ctx_pct model_name session_id cost_usd ses_pct ses_resets wk_pct wk_resets effort lines_add lines_del cache_read cache_creation in_tok <<< "$(echo "$input" | jq -r '[
+IFS=$'\t' read -r dir ctx_pct model_name session_id cost_usd ses_pct ses_resets wk_pct wk_resets effort lines_add lines_del cache_read cache_creation in_tok ctx_tok ctx_win <<< "$(echo "$input" | jq -r '[
   .workspace.current_dir,
   (.context_window.used_percentage // -1),
   (.model.display_name // ""),
@@ -29,7 +46,9 @@ IFS=$'\t' read -r dir ctx_pct model_name session_id cost_usd ses_pct ses_resets 
   (.cost.total_lines_removed // 0),
   (.context_window.current_usage.cache_read_input_tokens // 0),
   (.context_window.current_usage.cache_creation_input_tokens // 0),
-  (.context_window.current_usage.input_tokens // 0)
+  (.context_window.current_usage.input_tokens // 0),
+  (.context_window.total_input_tokens // 0),
+  (.context_window.context_window_size // 0)
 ] | @tsv')"
 
 if [ "$effort" = "-" ]; then effort=""; fi
@@ -182,7 +201,11 @@ function render_bar() {
   local bar_color
   bar_color=$(severity_color "$pct" "$diff")
 
+  # Floor a nonzero percentage at one cell: integer division otherwise draws
+  # an entirely empty bar below 100/cw percent (9% of 8 cells = 0), which reads
+  # as "no data" rather than "barely started".
   local filled=$(( pct * cw / 100 ))
+  if [ "$filled" -eq 0 ] && [ "$pct" -gt 0 ]; then filled=1; fi
 
   if [ -z "$ideal_pct" ]; then
     local unfilled=$(( cw - filled ))
@@ -337,27 +360,31 @@ function severity_color() {
 # make_label <name> [value] [color] [suffix] [col_width] — label padded to col_width visible chars
 # name is BLACK; value (pre-formatted, e.g. "42%" or "$4.52") uses the given color;
 # suffix (e.g. countdown) rendered in BLACK
+# An empty name is allowed: the ctx column leads with its value, since a token
+# count is self-identifying where "91%" or "$36.05" would not be.
 function make_label() {
   local name="$1"
   local value="${2:-}"
   local color="${3:-}"
   local suffix="${4:-}"
   local cw="${5:-$COL_WIDTH}"
-  local pad pad_len
+  local pad pad_len prefix=""
+
+  if [ -n "$name" ]; then prefix="${name} "; fi
 
   if [ -n "$value" ]; then
-    local text="${name} ${value}"
+    local text="${prefix}${value}"
     if [ -n "$suffix" ]; then
       local suffix_with_space=" ${suffix}"
       pad_len=$(( cw - ${#text} - ${#suffix_with_space} ))
       if [ "$pad_len" -lt 0 ]; then pad_len=0; fi
       pad=$(printf "%*s" "$pad_len" "")
-      printf "${BLACK}%s${color}%s%s${BLACK}%s${RESET}" "$name " "$value" "$pad" "$suffix_with_space"
+      printf "${BLACK}%s${color}%s%s${BLACK}%s${RESET}" "$prefix" "$value" "$pad" "$suffix_with_space"
     else
       pad_len=$(( cw - ${#text} ))
       if [ "$pad_len" -lt 0 ]; then pad_len=0; fi
       pad=$(printf "%*s" "$pad_len" "")
-      printf "${BLACK}%s${color}%s%s${RESET}" "$name " "$value" "$pad"
+      printf "${BLACK}%s${color}%s%s${RESET}" "$prefix" "$value" "$pad"
     fi
   else
     pad_len=$(( cw - ${#name} ))
@@ -383,12 +410,94 @@ function dot_bar() {
   printf "${BLACK}%s${RESET}" "$(printf "%*s" "$1" "" | tr ' ' '·')"
 }
 
-# Context window bar
-if [ "${ctx_pct%.*}" != "-1" ] && [ -n "$ctx_pct" ]; then
+# fmt_tok <tokens> — compact magnitude: 850 / 452k / 1.2M. Integer math rather
+# than awk: this runs on every render and needs no subprocess.
+function fmt_tok() {
+  local t="$1"
+  if [ "$t" -ge 1000000 ]; then
+    local tenths=$(( t / 100000 ))
+    printf "%d.%dM" "$(( tenths / 10 ))" "$(( tenths % 10 ))"
+  elif [ "$t" -ge 1000 ]; then
+    printf "%dk" "$(( t / 1000 ))"
+  else
+    printf "%d" "$t"
+  fi
+}
+
+# ctx_zone_color <tokens> — absolute-token zones (see CTX_* above), replacing
+# the percent-of-window thresholds severity_color applies to the other columns.
+function ctx_zone_color() {
+  local t="$1"
+  if   [ "$t" -lt "$CTX_TYPICAL_TOK" ]; then printf "%s" "$BLUE"
+  elif [ "$t" -lt "$CTX_HEAVY_TOK" ];   then printf "%s" "$YELLOW"
+  else                                       printf "%s" "$RED"
+  fi
+}
+
+# render_ctx_bar <tokens> <window> <width> — two-scale bar. The head is linear
+# 0→CTX_TYPICAL; past that the tail is LOG-scaled to the window, because a
+# linear tail wastes its cells (100K-400K collapses into one) exactly where
+# the compact/handoff call gets urgent. Cell budget follows observed usage:
+# ~half of requests fall either side of the median, so the head and tail get
+# comparable width. The scale change needs no divider glyph: the head draws
+# thick and the log tail draws thin, reusing the same weight vocabulary the
+# pace bars use for "past the marker".
+function render_ctx_bar() {
+  local tok="$1" win="$2" cw="$3"
+
+  # Window at or below the scale change: no second scale to show, stay linear.
+  if [ "$win" -le "$CTX_TYPICAL_TOK" ]; then
+    render_bar $(( tok * 100 / win )) "" "" "$cw"
+    return
+  fi
+
+  local seg1=$(( cw * 5 / 11 ))
+  if [ "$seg1" -lt 2 ]; then seg1=2; fi
+  if [ "$seg1" -gt $(( cw - 1 )) ]; then seg1=$(( cw - 1 )); fi
+  local seg2=$(( cw - seg1 ))
+
+  local f1 f2 i out=""
+  if [ "$tok" -lt "$CTX_TYPICAL_TOK" ]; then
+    f1=$(( tok * seg1 / CTX_TYPICAL_TOK ))
+    if [ "$f1" -eq 0 ] && [ "$tok" -gt 0 ]; then f1=1; fi
+    f2=0
+  else
+    f1=$seg1
+    # ceil so any overage lights at least one tail cell
+    f2=$(awk -v t="$tok" -v d="$CTX_TYPICAL_TOK" -v w="$win" -v c="$seg2" 'BEGIN{
+      r = log(t/d)/log(w/d); if (r<0) r=0; if (r>1) r=1
+      v = int(r*c + 0.999); if (v==0) v=1; if (v>c) v=c; print v }')
+  fi
+
+  # The whole bar carries the current zone colour — it reports state now, not
+  # the history of how the context filled. Weight still separates the scales:
+  # thick for the linear head, thin for the log tail.
+  local zone
+  zone=$(ctx_zone_color "$tok")
+  for (( i=0; i<seg1; i++ )); do
+    if [ "$i" -lt "$f1" ]; then out+="${zone}${BAR_FILLED}"
+    else out+="${BLACK}${BAR_THIN}"; fi
+  done
+  for (( i=0; i<seg2; i++ )); do
+    if [ "$i" -lt "$f2" ]; then out+="${zone}${BAR_THIN}"
+    else out+="${BLACK}${BAR_THIN}"; fi
+  done
+  printf "%b${RESET}" "$out"
+}
+
+# Context window bar — leads with the absolute token count, ratio subordinate:
+# the count is what drives clear/compact/handoff, and the pair pins the window
+# size (1M vs 200k) without spending characters on a denominator.
+if [ "${ctx_pct%.*}" != "-1" ] && [ -n "$ctx_pct" ] && [ "${ctx_tok:-0}" -gt 0 ]; then
   ctx_int="${ctx_pct%.*}"
-  ctx_w=$(label_width "ctx" "${ctx_int}%")
-  ctx_label=$(make_label "ctx" "${ctx_int}%" "$(severity_color "$ctx_int")" "" "$ctx_w")
-  ctx_bar=$(render_bar "$ctx_int" "" "" "$ctx_w")
+  ctx_val=$(fmt_tok "$ctx_tok")
+  ctx_w=$(label_width "ctx" "$ctx_val")
+  ctx_label=$(make_label "ctx" "$ctx_val" "$(ctx_zone_color "$ctx_tok")" "" "$ctx_w")
+  if [ "${ctx_win:-0}" -gt 0 ]; then
+    ctx_bar=$(render_ctx_bar "$ctx_tok" "$ctx_win" "$ctx_w")
+  else
+    ctx_bar=$(render_bar "$ctx_int" "" "" "$ctx_w")
+  fi
 else
   ctx_w=$(label_width "ctx")
   ctx_label=$(make_label "ctx" "" "" "" "$ctx_w")
