@@ -64,40 +64,27 @@ if [ "${lines_add:-0}" -gt 0 ] || [ "${lines_del:-0}" -gt 0 ]; then
   lines_txt="+${lines_add} -${lines_del}"
 fi
 
-# Cache-hit rate for the most recent API response, paced against a
-# per-session EWMA so a drop below the session's typical rate (cache
-# invalidation: model/effort switch) colors the bar, while the routinely
-# cold first response just seeds the average and reads calm.
-# EWMA updates only when the token signature changes — the statusline
-# re-renders many times per response and repeated samples would drag
-# the average toward the latest value.
-ch_pct=-1
-ch_avg=-1
-ch_diff=""
+# What this request's input actually cost, as a multiple of paying full
+# uncached price: cache reads bill at 0.1x, cache writes at 1.25x, uncached
+# input at 1.0x. 0.10x is the floor (every token served from cache); 1.25x is
+# a fully cold write.
+#
+# This replaces a plain cache-HIT ratio, which is degenerate here: measured
+# over 6188 deduped requests (2026-07-24), p50 is 99.2% and 94% of requests
+# land above 90%, so a 0-100 bar spent ~90% of its cells on 6% of the data
+# and rendered the middle 80% of requests identically. The multiplier has a
+# hard floor, a tight normal band, and a real blowout tail (p50 0.11x,
+# p90 0.16x, p99 1.25x) — and it rises as things get worse, matching every
+# other column on the line.
+#
+# Held in THOUSANDTHS so the whole path stays integer — the 0.1/1.25/1.0 weights
+# scale to 100/1250/1000 exactly, so this needs no awk. Like fmt_tok, it runs on
+# every render. Worst case is ~1e9, well inside bash's signed 64-bit range.
+ch_mult=-1
 ch_total=$(( ${cache_read:-0} + ${cache_creation:-0} + ${in_tok:-0} ))
-if [ "$ch_total" -gt 0 ] && [ -n "$session_id" ]; then
-  ch_pct=$(( ${cache_read:-0} * 100 / ch_total ))
-  CHR_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/claude-statusline-chr"
-  chr_file="$CHR_DIR/$session_id"
-  ch_sig="${cache_read}:${cache_creation}:${in_tok}"
-  prev_avg=""
-  prev_sig=""
-  if [ -f "$chr_file" ]; then
-    IFS=$'\t' read -r prev_avg prev_sig < "$chr_file"
-  fi
-  if [ -z "$prev_avg" ]; then
-    mkdir -p "$CHR_DIR"
-    find "$CHR_DIR" -type f -mtime +7 -delete 2>/dev/null
-    ch_avg=$ch_pct
-    printf "%s\t%s\n" "$ch_avg" "$ch_sig" > "$chr_file"
-  elif [ "$ch_sig" != "$prev_sig" ]; then
-    ch_avg=$(( (prev_avg * 7 + ch_pct * 3) / 10 ))
-    printf "%s\t%s\n" "$ch_avg" "$ch_sig" > "$chr_file"
-  else
-    ch_avg=$prev_avg
-  fi
-  # positive = latest response fell below the session average (bad)
-  ch_diff=$(( ch_avg - ch_pct ))
+if [ "$ch_total" -gt 0 ]; then
+  ch_mult=$(( ( ${cache_read:-0} * 100 + ${cache_creation:-0} * 1250
+                + ${in_tok:-0} * 1000 + ch_total / 2 ) / ch_total ))
 fi
 
 basename=$(basename "$dir")
@@ -424,6 +411,43 @@ function fmt_tok() {
   fi
 }
 
+# ch_zone_color <mult_x1000> — thresholds sit at the measured p90 (0.16x) and
+# just past p95 (0.25x), so blue is "normal", yellow is "worse than nine runs
+# in ten", and red is the ~4% of requests where caching genuinely failed.
+function ch_zone_color() {
+  local m="$1"
+  if   [ "$m" -lt 160 ]; then printf "%s" "$BLUE"
+  elif [ "$m" -lt 300 ]; then printf "%s" "$YELLOW"
+  else                        printf "%s" "$RED"
+  fi
+}
+
+# render_ch_bar <mult_x1000> <width> — log scale on the multiplier's EXCESS over
+# the 0.10x floor, i.e. on what the cache failed to save. Driving the bar from
+# the same number as the label keeps the two from ever disagreeing.
+#
+# The excess spans nearly five decades (p1 0.0001, p50 0.009, max 1.15), so the
+# low anchor is the measured p25 rather than zero: below that there is nothing
+# to report and the bar stays empty. Empty is unambiguous here because the
+# no-data state draws dots, not dashes.
+CH_BAR_FLOOR=0.004   # p25 of observed excess
+CH_BAR_CEIL=1.15     # excess at 1.25x — a fully cold request
+function render_ch_bar() {
+  local m="$1" cw="$2" f out="" i
+  f=$(awk -v m="$m" -v c="$cw" -v lo="$CH_BAR_FLOOR" -v hi="$CH_BAR_CEIL" 'BEGIN{
+    e = m/1000 - 0.1
+    if (e < lo) { print 0; exit }
+    r = log(e/lo)/log(hi/lo); if (r>1) r=1
+    v = int(r*c + 0.5); if (v==0) v=1; if (v>c) v=c; print v }')
+  local zone
+  zone=$(ch_zone_color "$m")
+  for (( i=0; i<cw; i++ )); do
+    if [ "$i" -lt "$f" ]; then out+="${zone}${BAR_FILLED}"
+    else out+="${BLACK}${BAR_THIN}"; fi
+  done
+  printf "%b${RESET}" "$out"
+}
+
 # ctx_zone_color <tokens> — absolute-token zones (see CTX_* above), replacing
 # the percent-of-window thresholds severity_color applies to the other columns.
 function ctx_zone_color() {
@@ -504,12 +528,15 @@ else
   ctx_bar=$(dot_bar "$ctx_w")
 fi
 
-# Cache-hit bar: thick marks the session EWMA, fill is the latest
-# response, color is the drop below avg
-if [ "$ch_pct" -ge 0 ]; then
-  ch_w=$(label_width "ch" "${ch_pct}%")
-  ch_label=$(make_label "ch" "${ch_pct}%" "$(severity_color "$ch_pct" "$ch_diff")" "" "$ch_w")
-  ch_bar=$(render_bar "$ch_pct" "$ch_avg" "$ch_diff" "$ch_w")
+# Cache bar: label is the input-cost multiplier, bar is how far above the
+# 0.10x floor it sits. Both rise together, and with the rest of the line.
+if [ "$ch_mult" -ge 0 ]; then
+  # thousandths → hundredths, rounded; 109 → "0.11x", 1250 → "1.25x"
+  ch_hun=$(( (ch_mult + 5) / 10 ))
+  ch_val=$(printf "%d.%02dx" "$(( ch_hun / 100 ))" "$(( ch_hun % 100 ))")
+  ch_w=$(label_width "ch" "$ch_val")
+  ch_label=$(make_label "ch" "$ch_val" "$(ch_zone_color "$ch_mult")" "" "$ch_w")
+  ch_bar=$(render_ch_bar "$ch_mult" "$ch_w")
 else
   ch_w=$(label_width "ch")
   ch_label=$(make_label "ch" "" "" "" "$ch_w")
