@@ -3,9 +3,16 @@
 # Read JSON input from stdin
 input=$(cat)
 
-# Soft spend budgets for API-billed accounts (bars fill toward these)
-: "${DAY_BUDGET_USD:=50}"
-: "${WK_BUDGET_USD:=250}"
+# Soft spend budgets for API-billed accounts (bars fill toward these).
+# Set to the p90 of observed spend on the API-billed machine (2026-07-24:
+# 29 days, daily p50 $35 / p90 $152 / max $902; 23 rolling weeks, p50 $502 /
+# p90 $1356 / max $1487), so roughly one day and one week in ten crosses the
+# line. The previous $50/$250 dated from June and were 3-10x too low: both the
+# fill and its pace marker capped at 100%, so the bars sat solid-thick nearly
+# every day and reported nothing. Recalibrate by re-running the percentile
+# pass over ~/.cache/claude-statusline-spend.json.
+: "${DAY_BUDGET_USD:=150}"
+: "${WK_BUDGET_USD:=1350}"
 
 # Context zones in ABSOLUTE tokens, not percent of window. Effective context is
 # a property of the model, not a fraction of its advertised window: a 1M window
@@ -567,6 +574,8 @@ elif [ -f "$SPEND_FILE" ]; then
   # API billing: day/week spend against soft budgets, paced against the
   # rolling average (avg daily over trailing 14 days / previous 7-day window)
   # via the same ideal-marker bars the subscription mode uses for time-pace.
+  # Thickness marks the rolling average, colour marks actual spend — the same
+  # grammar the ctx bar's head uses for its threshold.
   # spend_stats <value> <baseline> <budget> → "fmt<TAB>pct<TAB>ideal_pct<TAB>diff"
   # pct/ideal capped at 100 for bar geometry; diff (color) kept uncapped.
   function spend_stats() {
