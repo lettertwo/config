@@ -49,3 +49,4 @@ kitty/loading.py
 kitty/neighboring_window.py
 kitty/relative_resize.py
 kitty/split_window.py
+claude/statusline.local

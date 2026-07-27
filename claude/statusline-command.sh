@@ -3,16 +3,22 @@
 # Read JSON input from stdin
 input=$(cat)
 
-# Soft spend budgets for API-billed accounts (bars fill toward these).
-# Set to the p90 of observed spend on the API-billed machine (2026-07-24:
-# 29 days, daily p50 $35 / p90 $152 / max $902; 23 rolling weeks, p50 $502 /
-# p90 $1356 / max $1487), so roughly one day and one week in ten crosses the
-# line. The previous $50/$250 dated from June and were 3-10x too low: both the
-# fill and its pace marker capped at 100%, so the bars sat solid-thick nearly
-# every day and reported nothing. Recalibrate by re-running the percentile
-# pass over ~/.cache/claude-statusline-spend.json.
+# Soft spend budgets for API-billed accounts (bars fill toward these), set so
+# that roughly one day and one week in ten crosses the line. Measured on the
+# API-billed machine 2026-07-27: 27 active days, $2422 total, daily p50 $36.52
+# / p90 $152.35 / max $902.06; calendar weeks peaked at $1068 and have since
+# settled at $260-342.
+#
+# The daily figure is the daily p90. The weekly is NOT a weekly p90: percentiles
+# over ROLLING 7-day windows overstate, because every overlapping window that
+# contains a spike reads high — that method gave $1356, above the worst calendar
+# week ever recorded, so the bar could never fill. $800 is ~5 daily-p90 days,
+# which puts a typical week near half and the peak week clearly over.
+#
+# When recalibrating from ~/.cache/claude-statusline-spend.json, take the daily
+# p90 directly but bucket weeks as NON-OVERLAPPING calendar windows.
 : "${DAY_BUDGET_USD:=150}"
-: "${WK_BUDGET_USD:=1350}"
+: "${WK_BUDGET_USD:=800}"
 
 # Context zones in ABSOLUTE tokens, not percent of window. Effective context is
 # a property of the model, not a fraction of its advertised window: a 1M window
@@ -30,6 +36,20 @@ input=$(cat)
 # Recalibrate by re-running the percentile pass over ~/.claude/projects/*.jsonl.
 : "${CTX_TYPICAL_TOK:=142000}"
 : "${CTX_HEAVY_TOK:=327000}"
+
+# ch column calibration. These are MACHINE-SPECIFIC and the defaults below are
+# the API-billed machine's measured values; see the block above ch_mult for why
+# they cannot be shared. Override them in claude/statusline.local, which is
+# gitignored and sourced just below — the same split this repo already uses for
+# git/user and git/work. claude/bin/spend-by-model prints the values to put in
+# it, under CH COLUMN CALIBRATION.
+: "${CH_WRITE_W:=1150}"    # cache-write weight, THOUSANDTHS of base input
+: "${CH_ZONE_LO:=350}"     # blue -> yellow, at the measured p90
+: "${CH_ZONE_HI:=900}"     # yellow -> red, at the measured p95
+: "${CH_BAR_FLOOR:=0.004}" # p25 of observed excess; below this the bar is empty
+
+# shellcheck source=/dev/null
+[ -r "${BASH_SOURCE%/*}/statusline.local" ] && . "${BASH_SOURCE%/*}/statusline.local"
 
 # Extract dir, context pct, model, session id/cost, and subscription
 # rate limits (rate_limits.* is only present for subscription accounts —
@@ -72,25 +92,39 @@ if [ "${lines_add:-0}" -gt 0 ] || [ "${lines_del:-0}" -gt 0 ]; then
 fi
 
 # What this request's input actually cost, as a multiple of paying full
-# uncached price: cache reads bill at 0.1x, cache writes at 1.25x, uncached
-# input at 1.0x. 0.10x is the floor (every token served from cache); 1.25x is
-# a fully cold write.
+# uncached price: cache reads bill at 0.1x, uncached input at 1.0x, and cache
+# writes at CH_WRITE_W. 0.10x is the floor (every token served from cache).
 #
 # This replaces a plain cache-HIT ratio, which is degenerate here: measured
 # over 6188 deduped requests (2026-07-24), p50 is 99.2% and 94% of requests
 # land above 90%, so a 0-100 bar spent ~90% of its cells on 6% of the data
 # and rendered the middle 80% of requests identically. The multiplier has a
-# hard floor, a tight normal band, and a real blowout tail (p50 0.11x,
-# p90 0.16x, p99 1.25x) — and it rises as things get worse, matching every
-# other column on the line.
+# hard floor, a tight normal band, and a real blowout tail — and it rises as
+# things get worse, matching every other column on the line.
 #
-# Held in THOUSANDTHS so the whole path stays integer — the 0.1/1.25/1.0 weights
-# scale to 100/1250/1000 exactly, so this needs no awk. Like fmt_tok, it runs on
-# every render. Worst case is ~1e9, well inside bash's signed 64-bit range.
+# Why the write weight is a per-machine constant rather than a price:
+# Anthropic bills 5m-TTL cache writes and 1h-TTL writes at different rates, but
+# the statusline payload only carries a FLAT cache_creation_input_tokens with no
+# TTL breakdown, so the best it can do is one weight blended to whatever mix the
+# machine actually produces. Those mixes diverge completely — measured
+# 2026-07-27, the API-billed machine wrote 100% 5m while this one wrote 52% 1h —
+# and the weights fit from each machine's own spend ledger track that split
+# (1.15x against 1.65x). Extrapolating the two points puts the underlying rates
+# near the published 1.25x and 2.0x, which is the sanity check that the fits are
+# measuring TTL mix and not an artefact.
+#
+# So do NOT copy a weight between machines, and do not read it as a price. Run
+# claude/bin/spend-by-model on the machine in question and paste its CH COLUMN
+# CALIBRATION block into claude/statusline.local.
+#
+# Held in THOUSANDTHS so the whole path stays integer — the 0.1/1.0 weights
+# scale to 100/1000 exactly and CH_WRITE_W is already in thousandths, so this
+# needs no awk. Like fmt_tok, it runs on every render. Worst case is ~1e9, well
+# inside bash's signed 64-bit range.
 ch_mult=-1
 ch_total=$(( ${cache_read:-0} + ${cache_creation:-0} + ${in_tok:-0} ))
 if [ "$ch_total" -gt 0 ]; then
-  ch_mult=$(( ( ${cache_read:-0} * 100 + ${cache_creation:-0} * 1250
+  ch_mult=$(( ( ${cache_read:-0} * 100 + ${cache_creation:-0} * CH_WRITE_W
                 + ${in_tok:-0} * 1000 + ch_total / 2 ) / ch_total ))
 fi
 
@@ -418,14 +452,18 @@ function fmt_tok() {
   fi
 }
 
-# ch_zone_color <mult_x1000> — thresholds sit at the measured p90 (0.16x) and
-# just past p95 (0.25x), so blue is "normal", yellow is "worse than nine runs
-# in ten", and red is the ~4% of requests where caching genuinely failed.
+# ch_zone_color <mult_x1000> — thresholds sit at the machine's measured p90 and
+# p95, so blue is "normal", yellow is "worse than nine runs in ten", and red is
+# the worst ~5%. Like the write weight these are workload properties, not
+# constants: they are percentiles of the local multiplier distribution, so a
+# machine doing long cache-warm sessions and one doing many short cold ones will
+# disagree. Defaults are the API-billed machine's (blue 90%, yellow 4.9%,
+# red 5.0% over 6,846 requests); override in claude/statusline.local.
 function ch_zone_color() {
   local m="$1"
-  if   [ "$m" -lt 160 ]; then printf "%s" "$BLUE"
-  elif [ "$m" -lt 300 ]; then printf "%s" "$YELLOW"
-  else                        printf "%s" "$RED"
+  if   [ "$m" -lt "$CH_ZONE_LO" ]; then printf "%s" "$BLUE"
+  elif [ "$m" -lt "$CH_ZONE_HI" ]; then printf "%s" "$YELLOW"
+  else                                  printf "%s" "$RED"
   fi
 }
 
@@ -433,15 +471,19 @@ function ch_zone_color() {
 # the 0.10x floor, i.e. on what the cache failed to save. Driving the bar from
 # the same number as the label keeps the two from ever disagreeing.
 #
-# The excess spans nearly five decades (p1 0.0001, p50 0.009, max 1.15), so the
-# low anchor is the measured p25 rather than zero: below that there is nothing
-# to report and the bar stays empty. Empty is unambiguous here because the
-# no-data state draws dots, not dashes.
-CH_BAR_FLOOR=0.004   # p25 of observed excess
-CH_BAR_CEIL=1.15     # excess at 1.25x — a fully cold request
+# The excess spans nearly five decades, so the low anchor is the measured p25
+# (CH_BAR_FLOOR) rather than zero: below that there is nothing to report and the
+# bar stays empty. Empty is unambiguous here because the no-data state draws
+# dots, not dashes.
+#
+# The high anchor is DERIVED from CH_WRITE_W rather than stored: a fully cold
+# request is all cache-write, so its multiplier is exactly the write weight and
+# its excess is that minus the 0.10x floor. Deriving it means the bar cannot
+# saturate early or never fill when the weight is recalibrated per machine.
 function render_ch_bar() {
   local m="$1" cw="$2" f out="" i
-  f=$(awk -v m="$m" -v c="$cw" -v lo="$CH_BAR_FLOOR" -v hi="$CH_BAR_CEIL" 'BEGIN{
+  f=$(awk -v m="$m" -v c="$cw" -v lo="$CH_BAR_FLOOR" -v w="$CH_WRITE_W" 'BEGIN{
+    hi = w/1000 - 0.1
     e = m/1000 - 0.1
     if (e < lo) { print 0; exit }
     r = log(e/lo)/log(hi/lo); if (r>1) r=1
@@ -543,7 +585,7 @@ fi
 # Cache bar: label is the input-cost multiplier, bar is how far above the
 # 0.10x floor it sits. Both rise together, and with the rest of the line.
 if [ "$ch_mult" -ge 0 ]; then
-  # thousandths → hundredths, rounded; 109 → "0.11x", 1250 → "1.25x"
+  # thousandths → hundredths, rounded; 115 → "0.12x", 1650 → "1.65x"
   ch_hun=$(( (ch_mult + 5) / 10 ))
   ch_val=$(printf "%d.%02dx" "$(( ch_hun / 100 ))" "$(( ch_hun % 100 ))")
   ch_w=$(label_width "ch" "$ch_val")
@@ -578,10 +620,15 @@ elif [ -f "$SPEND_FILE" ]; then
   # grammar the ctx bar's head uses for its threshold.
   # spend_stats <value> <baseline> <budget> → "fmt<TAB>pct<TAB>ideal_pct<TAB>diff"
   # pct/ideal capped at 100 for bar geometry; diff (color) kept uncapped.
+  #
+  # ROUND rather than floor: render_bar floors again when it converts percent
+  # to cells, and two floors compound. $388 of a $1350 budget is 28.7%, which
+  # is 2.01 of 7 cells — but flooring to 28 first yields 1.96, so the bar drew
+  # one cell short. Rounding here leaves only the unavoidable cell quantization.
   function spend_stats() {
     awk -v v="$1" -v a="$2" -v b="$3" 'BEGIN {
       fmt = (v >= 100) ? sprintf("$%.0f", v) : sprintf("$%.2f", v)
-      p = int(v * 100 / b); ip = int(a * 100 / b)
+      p = int(v * 100 / b + 0.5); ip = int(a * 100 / b + 0.5)
       diff = p - ip
       if (p > 100) p = 100
       if (ip > 100) ip = 100
