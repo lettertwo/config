@@ -1,0 +1,507 @@
+#!/usr/bin/env python3
+"""Attribute real spend to models and to main-thread vs subagents.
+
+READ-ONLY.
+
+Unlike spend-report, this script reads Claude Code's internal transcript format
+(~/.claude/projects/*/*.jsonl and the per-session subagents/ directories). That
+is NOT a stable interface. A schema change here does not crash the script -- it
+silently drops requests and reports a confidently wrong breakdown, which is the
+worst possible failure. So everything the join depends on is checked up front in
+PREFLIGHT, and the script refuses to print a breakdown if a hard assumption
+fails.
+
+Nothing about pricing is hardcoded. Dollars come from the spend ledger, which
+holds Claude Code's own cost math; the only free parameter is the cache-WRITE
+weight, and that is FIT from the data (see CALIBRATION). If Anthropic changes
+cache pricing, the fit moves and the script keeps working. That matters because
+the weight is not what you would guess: these transcripts show 100% 1h-TTL
+writes, which bill well above the 1.25x that 5m writes do.
+
+What this answers: where the money went, by model and by week.
+What it CANNOT answer: whether a model is worth it. See CAVEATS.
+"""
+import json, os, glob, sys, statistics as st
+import datetime as _dt
+from collections import defaultdict
+
+HOME = os.path.expanduser("~")
+CACHE = os.environ.get("XDG_CACHE_HOME") or os.path.join(HOME, ".cache")
+LEDGER = os.path.join(CACHE, "claude-statusline-spend.json")
+
+CANDS = []
+if os.environ.get("CLAUDE_CONFIG_DIR"):
+    CANDS.append(os.path.join(os.environ["CLAUDE_CONFIG_DIR"], "projects"))
+CANDS += [os.path.join(HOME, ".claude", "projects"),
+          os.path.join(HOME, ".config", "claude", "projects")]
+ROOT = next((p for p in CANDS if os.path.isdir(p)), None)
+
+# Read weight is exact (cache reads bill 0.1x base input) and uncached input is
+# 1.0x by definition. OUT_RATIO is ~5x across the Claude family ($3/$15,
+# $15/$75) and barely affects anything here because output is a rounding error
+# next to cache reads -- see the OUT sweep in CALIBRATION. The write weight is
+# the one real unknown, so it is fit rather than assumed.
+R_READ, R_IN, OUT_RATIO = 0.1, 1.0, 5.0
+W_ASSUMED = 1.25          # what 5m-TTL writes bill; the null hypothesis
+W_GRID = [x / 20 for x in range(16, 81)]   # 0.80 .. 4.00
+
+# Sub-keys of usage.cache_creation we know how to weight. A new TTL tier
+# appearing here would be silently unweighted, so we check for strangers.
+KNOWN_CC_KEYS = {"ephemeral_1h_input_tokens", "ephemeral_5m_input_tokens"}
+
+
+def money(x):
+    return f"${x:,.2f}" if x < 1000 else f"${x:,.0f}"
+
+
+class Probe:
+    """Accumulates schema evidence while transcripts are scanned once."""
+    def __init__(self):
+        self.records = 0          # message.usage objects seen
+        self.usable = 0           # ... that we could actually attribute
+        self.no_reqid = 0
+        self.cc_nested = 0        # usage.cache_creation was a dict
+        self.cc_flat = 0          # only the legacy flat field was present
+        self.unknown_cc = defaultdict(int)
+        self.server_tool = defaultdict(int)
+        self.models = defaultdict(int)
+        self.missing_key = defaultdict(int)
+        # (read, write, uncached) per request, for the ch-column distribution.
+        # Kept as raw counts rather than a multiplier because the write weight
+        # is not known until after the fit.
+        self.reqs = []
+
+
+def scan(path, seen, probe):
+    """-> (tokens_by_model, n_requests). Dedupes by requestId across files.
+
+    Dedup is not simply first-seen. Subagent transcripts log ONE API request as
+    several assistant lines as the response streams: the input counts repeat
+    unchanged while output_tokens grows (2, 2, 2, 6081). Taking the first line
+    would undercount subagent output badly. Taking every line would trebly count
+    input. So input is counted once, on first sight, and output is carried as a
+    high-water mark per requestId -- only the increase is added.
+
+    `seen` maps requestId -> [model, output_counted_so_far] and is shared across
+    a session's main and subagent files by the caller, so a request appearing in
+    both is still counted once.
+    """
+    by_model, n = defaultdict(lambda: defaultdict(int)), 0
+    try:
+        fh = open(path, errors="replace")
+    except OSError:
+        return by_model, n
+    with fh:
+        for line in fh:
+            try:
+                o = json.loads(line)
+            except Exception:
+                continue
+            msg = o.get("message") or {}
+            u = msg.get("usage")
+            if not u:
+                continue
+            probe.records += 1
+            rid = o.get("requestId")
+            mdl = msg.get("model") or "unknown"
+            if not rid:
+                probe.no_reqid += 1
+                continue
+            # <synthetic> marks CC-generated messages with no real API call
+            if mdl.startswith("<"):
+                continue
+            out = u.get("output_tokens", 0)
+            if rid in seen:
+                # Repeat line for a streaming request: top up output only.
+                prev = seen[rid]
+                if out > prev[1]:
+                    by_model[prev[0]]["o"] += out - prev[1]
+                    prev[1] = out
+                continue
+            seen[rid] = [mdl, out]
+            probe.usable += 1
+            probe.models[mdl] += 1
+            for k in ("input_tokens", "output_tokens", "cache_read_input_tokens"):
+                if k not in u:
+                    probe.missing_key[k] += 1
+            a = by_model[mdl]
+            rd = u.get("cache_read_input_tokens", 0)
+            iu = u.get("input_tokens", 0)
+            a["r"] += rd
+            a["i"] += iu
+            a["o"] += out
+            c = u.get("cache_creation")
+            wr = 0
+            if isinstance(c, dict):
+                probe.cc_nested += 1
+                for k, v in c.items():
+                    if k in KNOWN_CC_KEYS:
+                        wr += v
+                    elif isinstance(v, int) and v > 0:
+                        probe.unknown_cc[k] += v
+            else:
+                probe.cc_flat += 1
+                wr = u.get("cache_creation_input_tokens", 0)
+            a["w"] += wr
+            if rd + wr + iu > 0:
+                probe.reqs.append((rd, wr, iu))
+            s = u.get("server_tool_use")
+            if isinstance(s, dict):
+                for k, v in s.items():
+                    if isinstance(v, int):
+                        probe.server_tool[k] += v
+            n += 1
+    return by_model, n
+
+
+def units(a, W):
+    return a["r"] * R_READ + a["w"] * W + a["i"] * R_IN + a["o"] * OUT_RATIO
+
+
+def dispersion(rows, W):
+    """Robust spread of implied $/unit: IQR over median.
+
+    Not a standard deviation. Sessions whose transcript only partly explains
+    their cost (resumed/compacted) produce huge implied rates, and a single one
+    of those swamps a variance-based objective -- that is what made an earlier
+    least-squares fit useless on the highest-volume model. IQR ignores the tail.
+    """
+    imp = sorted(c / units(a, W) for c, a in rows if units(a, W) > 0)
+    if len(imp) < 4:
+        return None, None
+    n = len(imp)
+    med = imp[n // 2]
+    if med <= 0:
+        return None, None
+    return (imp[(3 * n) // 4] - imp[n // 4]) / med, med
+
+
+def fit_write_weight(by_model):
+    """Fit the cache-write weight ONCE, globally.
+
+    The weight is a pricing RATIO to base input, so it is model-independent --
+    fitting it per model would just be fitting noise several times. We fit on
+    every model that has enough single-model sessions, then adopt the sharpest
+    result. Sharpness matters: on most models writes are too small a share of
+    weighted cost to identify the weight at all, and the fit comes back flat.
+    """
+    out = []
+    for mdl, rows in by_model.items():
+        if len(rows) < 4:
+            continue
+        scored = [(dispersion(rows, W)[0], W) for W in W_GRID]
+        scored = [(d, W) for d, W in scored if d is not None]
+        if not scored:
+            continue
+        d_best, w_best = min(scored)
+        d_null, _ = dispersion(rows, W_ASSUMED)
+        # Identified only if the minimum is both TIGHT and SHARP: a flat valley
+        # means the data cannot see the weight, however low the minimum sits.
+        flank = [d for d, W in scored if abs(W - w_best) > 0.4]
+        sharp = bool(flank) and min(flank) > 1.5 * d_best
+        out.append({"model": mdl, "n": len(rows), "w": w_best, "disp": d_best,
+                    "disp_null": d_null, "identified": d_best < 0.10 and sharp})
+    return sorted(out, key=lambda r: r["disp"])
+
+
+def ch_calibration(probe, W):
+    """Emit the ch-column constants for claude/statusline-command.sh.
+
+    The write weight is a pricing ratio and travels between machines. The zone
+    thresholds and bar anchors do NOT: they are percentiles of the multiplier
+    distribution, which is a property of the WORKLOAD. A machine doing long
+    cache-warm sessions and one doing many short cold ones will disagree, so
+    these must be recomputed per machine rather than copied.
+    """
+    if not probe.reqs:
+        return
+    mult = sorted((r * R_READ + w * W + i * R_IN) / (r + w + i)
+                  for r, w, i in probe.reqs)
+    n = len(mult)
+
+    def q(k):
+        return mult[min(int(n * k), n - 1)]
+
+    # Zones sit at p90/p95 so blue reads "normal", yellow "worse than nine runs
+    # in ten", red the worst ~5%. Rounded to a readable step; the exact
+    # percentile matters less than the share of renders landing in each zone.
+    def snap(x):
+        return int(round(x * 1000 / 50.0)) * 50
+    zlo, zhi = max(snap(q(0.90)), 150), max(snap(q(0.95)), 200)
+    if zhi <= zlo:
+        zhi = zlo + 50
+    floor = q(0.25) - 0.1
+    ceil = W - R_READ
+    blue = sum(1 for v in mult if v * 1000 < zlo) * 100 / n
+    yel = sum(1 for v in mult if zlo <= v * 1000 < zhi) * 100 / n
+
+    print("\n" + "=" * 70)
+    print("CH COLUMN CALIBRATION  (for claude/statusline-command.sh)")
+    print("=" * 70)
+    print(f"\n  Multiplier over {n:,} requests:")
+    for k in (0.05, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99):
+        print(f"    p{k*100:>4.1f}  {q(k):.4f}x")
+    print(f"\n  cache_creation weight      {int(round(W*1000))}   (in ch_mult)")
+    print(f"  ch_zone_color thresholds   {zlo} / {zhi}")
+    print(f"  CH_BAR_FLOOR={max(floor, 0.0):.3f}")
+    print(f"  CH_BAR_CEIL={ceil:.2f}")
+    print(f"\n  Gives blue {blue:.0f}%, yellow {yel:.1f}%, red {100-blue-yel:.1f}%.")
+    print("  The weight is a pricing ratio and is portable between machines.")
+    print("  The zones, floor and ceiling are percentiles of THIS machine's")
+    print("  workload — recompute them per machine rather than copying.")
+
+
+def main():
+    if not os.path.exists(LEDGER):
+        print(f"No ledger at {LEDGER}."); return 1
+    if not ROOT:
+        print("No transcript directory found; tried:")
+        for c in CANDS:
+            print(f"  {c}")
+        return 1
+    L = json.load(open(LEDGER))
+    sessions = L.get("sessions", {})
+    tx = {os.path.basename(p)[:-6]: p
+          for p in glob.glob(os.path.join(ROOT, "*", "*.jsonl"))}
+
+    probe = Probe()
+    joined = {}     # sid -> (cost, date, {model: {main:tokens}}, {model: {sub:tokens}}, nreq)
+    for sid, meta in sessions.items():
+        cost = meta.get("c", 0)
+        if cost <= 0 or sid not in tx:
+            continue
+        seen = {}
+        m_tok, nreq = scan(tx[sid], seen, probe)
+        s_tok = defaultdict(lambda: defaultdict(int))
+        for ap in glob.glob(os.path.join(os.path.dirname(tx[sid]), sid,
+                                         "subagents", "agent-*.jsonl")):
+            at, an = scan(ap, seen, probe)
+            for mdl, a in at.items():
+                for k, v in a.items():
+                    s_tok[mdl][k] += v
+            nreq += an
+        if not m_tok and not s_tok:
+            continue
+        joined[sid] = (cost, meta.get("d"), m_tok, s_tok, nreq)
+
+    tcost = sum(v.get("c", 0) for v in sessions.values())
+    jcost = sum(v[0] for v in joined.values())
+
+    # ---- PREFLIGHT ----------------------------------------------------------
+    print("=" * 70)
+    print("PREFLIGHT  (these checks gate the breakdown below)")
+    print("=" * 70)
+    hard = []
+    print(f"\n  transcript root      {ROOT}")
+    print(f"  transcript files     {len(tx):,}")
+    print(f"  usage records        {probe.records:,}  ({probe.usable:,} usable, "
+          f"{probe.no_reqid:,} without requestId)")
+    if probe.usable == 0:
+        hard.append("No usable usage records. The transcript schema has changed "
+                    "(message.usage / requestId).")
+    for k, n in probe.missing_key.items():
+        hard.append(f"{n:,} records missing usage.{k} — token field renamed?")
+
+    if probe.cc_nested and probe.cc_flat:
+        print(f"  cache_creation       mixed: {probe.cc_nested:,} nested, "
+              f"{probe.cc_flat:,} flat (both handled)")
+    elif probe.cc_nested:
+        print(f"  cache_creation       nested TTL breakdown on all {probe.cc_nested:,}")
+    else:
+        print(f"  cache_creation       legacy flat field on all {probe.cc_flat:,}")
+    if probe.unknown_cc:
+        for k, v in probe.unknown_cc.items():
+            hard.append(f"unknown cache_creation key {k!r} carrying {v:,} tokens — "
+                        f"a new cache tier is going unweighted.")
+    else:
+        print(f"  cache tiers          all known {sorted(KNOWN_CC_KEYS)}")
+
+    st_used = {k: v for k, v in probe.server_tool.items() if v}
+    if st_used:
+        print(f"  server tool use      NONZERO {dict(st_used)} — billed separately and")
+        print(f"                       NOT in these token counts; model mix is skewed")
+        print(f"                       toward whichever model made those calls.")
+    else:
+        print(f"  server tool use      none (nothing billed outside the token counts)")
+
+    if tcost:
+        share = jcost * 100 / tcost
+        print(f"  ledger join          {len(joined)}/{len(sessions)} sessions, "
+              f"{money(jcost)} of {money(tcost)} ({share:.0f}% of dollars)")
+        if share < 50:
+            hard.append(f"Only {share:.0f}% of session dollars joined a transcript. "
+                        f"The session-id/filename convention has probably changed.")
+        elif share < 80:
+            print(f"                       WARNING: {100-share:.0f}% of dollars "
+                  f"unattributed; treat percentages as indicative.")
+
+    if hard:
+        print("\n  FAILED — not printing a breakdown, because it would be wrong:")
+        for h in hard:
+            print(f"    * {h}")
+        print("\n  Fix the field mapping at the top of this script and re-run.")
+        return 2
+    print("\n  PASSED")
+
+    # ---- CALIBRATION --------------------------------------------------------
+    single = defaultdict(list)
+    for sid, (cost, d, m_tok, s_tok, nreq) in joined.items():
+        allm = defaultdict(lambda: defaultdict(int))
+        for src in (m_tok, s_tok):
+            for mdl, a in src.items():
+                for k, v in a.items():
+                    allm[mdl][k] += v
+        allm = {k: v for k, v in allm.items() if sum(v.values()) > 0}
+        if len(allm) == 1:
+            mdl = next(iter(allm))
+            single[mdl].append((cost, allm[mdl]))
+
+    fits = fit_write_weight(single)
+    print("\n" + "=" * 70)
+    print("CALIBRATION  (cache-write weight, fit from real dollars)")
+    print("=" * 70)
+    if not fits:
+        print("\n  Not enough single-model sessions to fit. Falling back to "
+              f"{W_ASSUMED}x.")
+        W = W_ASSUMED
+    else:
+        print(f"\n  {'model':<24} {'n':>3}  {'best W':>7} {'spread':>7}  "
+              f"{'at ' + str(W_ASSUMED) + 'x':>7}  verdict")
+        for f in fits:
+            v = "IDENTIFIED" if f["identified"] else "flat — no information"
+            print(f"  {f['model']:<24} {f['n']:>3}  {f['w']:>7.2f} {f['disp']:>7.3f}  "
+                  f"{f['disp_null']:>7.3f}  {v}")
+        best = next((f for f in fits if f["identified"]), None)
+        if best:
+            W = best["w"]
+            print(f"\n  Using W = {W:.2f}x, from {best['model']} "
+                  f"({best['n']} sessions, spread {best['disp']:.3f} vs "
+                  f"{best['disp_null']:.3f} at {W_ASSUMED}x).")
+            print(f"  The weight is a pricing ratio, so it is fit once and applied to")
+            print(f"  every model. Only models where cache writes are a large enough")
+            print(f"  share of weighted cost can identify it; the rest read flat.")
+            if W > W_ASSUMED * 1.15:
+                print(f"  NOTE: {W:.2f}x is well above the {W_ASSUMED}x that 5m-TTL writes")
+                print(f"  bill, consistent with these being 1h-TTL writes.")
+        else:
+            W = W_ASSUMED
+            print(f"\n  No model identifies the weight (all fits flat). Falling back")
+            print(f"  to {W_ASSUMED}x. Sessions here are too cache-read-dominated for")
+            print(f"  the write weight to be visible; it barely affects totals.")
+
+    # ---- rates + attribution ------------------------------------------------
+    rates, spreads = {}, {}
+    for mdl, rows in single.items():
+        d, med = dispersion(rows, W)
+        if med:
+            rates[mdl], spreads[mdl] = med, d
+        elif rows:
+            u = sum(units(a, W) for _, a in rows)
+            if u > 0:
+                rates[mdl] = sum(c for c, _ in rows) / u
+    fallback = st.median(list(rates.values())) if rates else 1.0
+
+    by_model = defaultdict(float)
+    by_week = defaultdict(lambda: defaultdict(float))
+    main_d = sub_d = 0.0
+    for sid, (cost, d, m_tok, s_tok, nreq) in joined.items():
+        weighted = {}
+        for src, tag in ((m_tok, "main"), (s_tok, "sub")):
+            for mdl, a in src.items():
+                u = units(a, W)
+                if u > 0:
+                    weighted[(tag, mdl)] = u * rates.get(mdl, fallback)
+        wtot = sum(weighted.values())
+        if wtot <= 0:
+            continue
+        try:
+            wk = "%d-W%02d" % _dt.date.fromisoformat(d).isocalendar()[:2] if d else "?"
+        except (ValueError, TypeError):
+            wk = "?"
+        for (tag, mdl), w in weighted.items():
+            share = cost * w / wtot
+            by_model[mdl] += share
+            by_week[wk][mdl] += share
+            if tag == "main":
+                main_d += share
+            else:
+                sub_d += share
+
+    print("\n" + "=" * 70)
+    print("WHERE THE MONEY WENT")
+    print("=" * 70)
+    print(f"\n{'model':<24} {'dollars':>10} {'share':>7}  {'$/1M units':>11}  spread")
+    for mdl, dv in sorted(by_model.items(), key=lambda x: -x[1]):
+        r = rates.get(mdl)
+        rs = f"{r*1e6:>10.2f}" if r else "         -"
+        sp = spreads.get(mdl)
+        spf = f"{sp:.2f}" + ("  (noisy)" if sp and sp > 0.35 else "") if sp else "n/a"
+        print(f"{mdl:<24} {money(dv):>10} {dv*100/jcost:6.1f}%  {rs}  {spf}")
+
+    print(f"\n{'main thread':<24} {money(main_d):>10} {main_d*100/jcost:6.1f}%")
+    print(f"{'subagents':<24} {money(sub_d):>10} {sub_d*100/jcost:6.1f}%")
+
+    # ---- the tier question --------------------------------------------------
+    print("\n" + "=" * 70)
+    print("MODEL MIX BY WEEK  (did a tier change show up in the bill?)")
+    print("=" * 70)
+    order = [m for m, _ in sorted(by_model.items(), key=lambda x: -x[1])]
+    short = {m: (m.replace("claude-", "")[:11]) for m in order}
+    print(f"\n{'week':<9} {'total':>9}  " + " ".join(f"{short[m]:>11}" for m in order))
+    for wk in sorted(by_week):
+        row = by_week[wk]
+        tot = sum(row.values())
+        cells = " ".join(f"{(row.get(m,0)*100/tot if tot else 0):>10.0f}%" for m in order)
+        print(f"{wk:<9} {money(tot):>9}  {cells}")
+
+    # ---- coverage -----------------------------------------------------------
+    cov = []
+    for sid, (cost, d, m_tok, s_tok, nreq) in joined.items():
+        exp = sum(units(a, W) * rates.get(mdl, fallback)
+                  for src in (m_tok, s_tok) for mdl, a in src.items())
+        if exp > 0:
+            cov.append((cost - exp, cost / exp, cost, exp, nreq, sid))
+    if cov:
+        tot = sum(c[2] for c in cov)
+        print("\n" + "=" * 70)
+        print("COVERAGE  (how much of the breakdown rests on complete evidence)")
+        print("=" * 70)
+        print(f"\n{'unexplained':>12} {'ratio':>6} {'ledger':>10} {'in transcript':>14}"
+              f" {'reqs':>5}  session")
+        print("-" * 70)
+        # Sorted by DOLLARS, not ratio: a 40x ratio on a $2 session is noise; a
+        # 3x ratio on a $400 session is what actually moves the percentages.
+        for excess, ratio, cost, exp, n, sid in sorted(cov, key=lambda r: -r[0])[:10]:
+            print(f"{money(excess):>12} {ratio:5.1f}x {money(cost):>10} "
+                  f"{money(exp):>14} {n:>5}  {sid[:8]}")
+        poor = [c for c in cov if c[1] > 3]
+        pd_ = sum(c[2] for c in poor)
+        print(f"\n  {len(poor)} session(s) whose transcript explains under a third of")
+        print(f"  their cost: {money(pd_)} ({pd_*100/tot:.0f}% of analysed spend). A resumed")
+        print(f"  or compacted session writes a NEW transcript while cost carries over,")
+        print(f"  so its model split is inferred from partial evidence. Totals are")
+        print(f"  unaffected — those come straight from the ledger.")
+
+    ch_calibration(probe, W)
+
+    print("""
+CAVEATS
+  * This measures cost per TOKEN, not cost per unit of WORK. A model that
+    bills less per token but needs more turns to finish is not cheaper. No
+    part of this script can tell you whether a tier was worth it; it can only
+    tell you what you were charged and for which model.
+  * The by-week table confounds model choice with what you were doing. A week
+    of heavy refactoring costs more than a week of review regardless of tier.
+    Read it for "when did the mix change", not "what did changing it cost".
+  * Model mix and main/subagent split are ATTRIBUTED, not measured: real
+    per-session dollars are divided by token volume at rates derived from
+    single-model sessions. Totals are exact; the split is an estimate, and
+    the spread column says how well-determined each model's rate is.
+  * 35-day rolling prune on the ledger, and headless runs never appear.
+  * Reads Claude Code internals. PREFLIGHT catches the failure modes we know
+    about; it cannot catch a field that changes MEANING while keeping its name.""")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

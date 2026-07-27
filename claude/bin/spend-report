@@ -1,0 +1,184 @@
+#!/usr/bin/env python3
+"""Summarise the statusline spend ledger and recompute the budget constants.
+
+READ-ONLY. Reads ~/.cache/claude-statusline-spend.json, which statusline-command.sh
+writes, and nothing else. That is deliberate: this script's only dependency is a
+file this repo also owns, so it cannot drift out from under us the way anything
+reading Claude Code's internal transcript format can. For the model/subagent
+breakdown -- which does read those internals -- see spend-by-model, which
+validates its assumptions before reporting.
+
+The recalibration section exists because deriving the weekly budget is easy to
+get wrong: percentiles over ROLLING 7-day windows overstate, because every
+overlapping window containing a spike reads high. That method once produced a
+figure above the worst calendar week ever recorded, which would have made the
+bar unable to fill. Weeks here are NON-OVERLAPPING calendar buckets.
+"""
+import json, os, sys
+import datetime as _dt
+
+HOME = os.path.expanduser("~")
+CACHE = os.environ.get("XDG_CACHE_HOME") or os.path.join(HOME, ".cache")
+LEDGER = os.path.join(CACHE, "claude-statusline-spend.json")
+
+
+def pct(vals, q):
+    """Nearest-rank percentile. Small n here, so no interpolation games."""
+    if not vals:
+        return 0.0
+    s = sorted(vals)
+    return s[min(int(len(s) * q), len(s) - 1)]
+
+
+def money(x):
+    return f"${x:,.2f}" if x < 1000 else f"${x:,.0f}"
+
+
+def main():
+    if not os.path.exists(LEDGER):
+        print(f"No ledger at {LEDGER} — nothing to report.")
+        return 1
+    L = json.load(open(LEDGER))
+    days, sessions = L.get("days", {}), L.get("sessions", {})
+    if not days:
+        print("Ledger has no day buckets yet.")
+        return 1
+
+    dk = sorted(days)
+    dv = [days[k] for k in dk]
+    total = sum(dv)
+    d_p90 = pct(dv, 0.9)
+
+    print("=" * 66)
+    print("SPEND REPORT")
+    print("=" * 66)
+    print(f"\nWindow      {dk[0]} .. {dk[-1]}  ({len(dk)} days with activity)")
+    print(f"Total       {money(total)}")
+    print(f"Mean/day    {money(total/len(dk))}     Median/day  {money(pct(dv,.5))}")
+    print(f"p90/day     {money(d_p90)}     Max/day     {money(max(dv))}")
+
+    # ---- calendar weeks (non-overlapping; see module docstring) -------------
+    wk = {}
+    for k, v in days.items():
+        d = _dt.date.fromisoformat(k)
+        wk.setdefault(d.isocalendar()[:2], 0.0)
+        wk[d.isocalendar()[:2]] += v
+    wkk = sorted(wk)
+    wkv = [wk[k] for k in wkk]
+    peak = max(wkv) or 1.0
+
+    # The newest bucket is usually mid-week, so it understates a full week and
+    # must not be treated as an observation when calibrating.
+    last_day = _dt.date.fromisoformat(dk[-1])
+    partial = last_day.isoweekday() != 7
+    complete = wkv[:-1] if partial and len(wkv) > 1 else wkv
+
+    print(f"\nISO WEEKS (non-overlapping)")
+    for k, v in zip(wkk, wkv):
+        tag = "  <- partial" if partial and k == wkk[-1] else ""
+        print(f"  {k[0]}-W{k[1]:02d}  {money(v):>10}  {'#' * int(v / peak * 34)}{tag}")
+
+    scost = sorted((v.get("c", 0) for v in sessions.values()), reverse=True)
+    scost = [c for c in scost if c > 0]
+    if scost:
+        top10 = sum(scost[: max(1, len(scost) // 10)])
+        print(f"\nSESSIONS    {len(scost)} with cost   median {money(pct(scost,.5))}"
+              f"   max {money(scost[0])}")
+        print(f"            top decile = {money(top10)} "
+              f"({top10*100/sum(scost):.0f}% of session spend)")
+
+    # ---- integrity: does .days reconcile with .sessions? --------------------
+    # These two sums measure different things, and the gap between them is
+    # informative rather than alarming.
+    #
+    # `claude --resume` keeps the session id while the reported cost restarts
+    # from zero. update_spend_ledger handles that: when cost drops below the
+    # last recorded value it adds the full new figure, so .days correctly
+    # accumulates run 1 + run 2. But .sessions[$sid].c is ASSIGNED the latest
+    # total on every render, never accumulated, so it ends up holding only the
+    # final run. A positive gap is therefore the cost of pre-resume runs -- a
+    # measure of how much work gets resumed, not a counting error.
+    #
+    # Pruning pushes the other way and cannot cause a positive gap: .days is
+    # pruned on the date key and .sessions on last-seen date, and a session's
+    # buckets are always dated at or before its last-seen date, so day buckets
+    # are dropped first.
+    #
+    # That leaves one way for .days to genuinely overstate: renders landing out
+    # of order, where a stale low cost trips the restart branch and adds a full
+    # total that was already counted. The lock makes this rare, and it is not
+    # separable from resume traffic here, so a large gap is reported as
+    # "mostly resumes" rather than diagnosed.
+    sd, ss = sum(days.values()), sum(v.get("c", 0) for v in sessions.values())
+    print(f"\nINTEGRITY   sum(days) {money(sd)}   sum(sessions) {money(ss)}", end="")
+    if sd:
+        gap = sd - ss
+        print(f"   gap {gap*100/sd:+.1f}%")
+        if gap < 0:
+            print("            days below sessions: expected, sessions spanning the prune edge")
+            print("            keep their full total after early day buckets are dropped.")
+        else:
+            print(f"            {money(gap)} of spend belongs to runs that were later resumed;")
+            print("            .days counts them, .sessions no longer does. Day totals stand.")
+    else:
+        print()
+
+    # ---- recalibration ------------------------------------------------------
+    # DAY is the daily p90 directly.
+    #
+    # WK takes the LOWER of two bounds, because each fails in a different regime:
+    #   5 x daily p90     -- overshoots when daily spend is top-heavy, since a few
+    #                        big days drag p90 up toward the max and no real week
+    #                        ever contains five of them.
+    #   0.85 x peak week  -- meaningless with only one or two complete weeks, and
+    #                        drifts down if the window happens to miss a spike.
+    # Whichever binds, the goal is the same: a typical week reads well under
+    # full, and the worst week on record clearly crosses the line.
+    day_budget = int(round(d_p90))
+    cand_daily = d_p90 * 5
+    print("\n" + "=" * 66)
+    print("RECALIBRATION")
+    print("=" * 66)
+
+    if complete:
+        cmax, cmed = max(complete), pct(complete, 0.5)
+        cand_week = cmax * 0.85
+        wk_budget = int(round(min(cand_daily, cand_week)))
+        binding = "peak week" if cand_week < cand_daily else "daily p90"
+    else:
+        cmax = cmed = 0.0
+        wk_budget = int(round(cand_daily))
+        binding = "daily p90 (no complete weeks to cross-check)"
+
+    print(f"\n  : \"${{DAY_BUDGET_USD:={day_budget}}}\"")
+    print(f"  : \"${{WK_BUDGET_USD:={wk_budget}}}\"")
+    print(f"\n  DAY = daily p90 ({money(d_p90)}), so ~1 day in 10 crosses the line.")
+    print(f"  WK  = min(5 x daily p90 = {money(cand_daily)}", end="")
+    if complete:
+        print(f", 0.85 x peak week = {money(cand_week)})  -> {binding} binds.")
+        print(f"  Across {len(complete)} complete calendar week(s): median {money(cmed)}, "
+              f"max {money(cmax)}.")
+        print(f"    Typical week reads {cmed*100/wk_budget:.0f}% full; "
+              f"peak week reads {cmax*100/wk_budget:.0f}%.")
+        if cmax <= wk_budget:
+            print("    WARNING — no week on record crosses the line; the bar cannot fill.")
+    else:
+        print(") — no complete weeks yet to cross-check.")
+
+    print(f"\n  Paste into claude/statusline-command.sh, and update the measurement")
+    print(f"  note above the constants: {len(dk)} active days, {money(total)} total,")
+    print(f"  daily p50 {money(pct(dv,.5))} / p90 {money(d_p90)} / max {money(max(dv))}.")
+
+    print("""
+CAVEATS
+  * 35-day rolling prune: older days and sessions are already gone. This is
+    the whole available window, not the full history of usage.
+  * Only interactive renders count. Headless `claude -p` and SDK runs never
+    draw a statusline, so their cost is invisible here.
+  * A session's recorded date is its last-seen date, so per-session date
+    attribution blurs across midnight. Day buckets themselves are correct.""")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
