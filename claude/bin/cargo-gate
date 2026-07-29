@@ -292,7 +292,17 @@ if [ "$subcmd" = "test" ] || [ "$subcmd" = "clippy" ]; then
   fi
 fi
 
-lock_dir="${TMPDIR:-/tmp}/cargo-gate.lock"
+# Per-build-dir lock: serialize only runs that share cargo's BUILD directory — the dir cargo
+# actually takes an exclusive file lock on during a build. Worktrees that share a build-dir
+# (e.g. via `build.build-dir` in .cargo/config.toml) would contend on that lock anyway, so they
+# must share this lock too; worktrees with independent build-dirs get independent locks and run
+# concurrently. Key on `build_directory` (falls back to `target_directory` on older cargo, then
+# CARGO_TARGET_DIR/CWD, then a single shared lock) — NOT target_directory, which cargo does not
+# lock and which stays per-worktree even when the build-dir is shared.
+gate_build_dir=$(cargo metadata --no-deps --format-version 1 2>/dev/null | jq -r '.build_directory // .target_directory // empty' 2>/dev/null)
+[ -n "$gate_build_dir" ] || gate_build_dir="${CARGO_TARGET_DIR:-$(pwd)}"
+gate_lock_key=$(printf '%s' "$gate_build_dir" | shasum 2>/dev/null | cut -c1-12)
+lock_dir="${TMPDIR:-/tmp}/cargo-gate.lock.${gate_lock_key:-shared}"
 lock_pid_file="$lock_dir/pid"
 lock_timeout=120
 lock_acquired=0
