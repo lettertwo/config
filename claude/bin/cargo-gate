@@ -372,7 +372,11 @@ case "$subcmd" in
     cmd=(cargo test $scope_flag "$@")
     ;;
   clippy)
-    cmd=(cargo clippy --all-targets --all-features "$@" -- -D warnings)
+    # $scope_flag is NOT optional here: without an explicit scope cargo falls back to the
+    # workspace's `default-members`, which in some repos is a strict subset (git-workon pins
+    # it to one of four crates). That silently lints a fraction of the tree and reports a
+    # green — a false pass, not a slow one. See the check/test arms above.
+    cmd=(cargo clippy $scope_flag --all-targets --all-features "$@" -- -D warnings)
     ;;
 esac
 
