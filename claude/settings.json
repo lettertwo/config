@@ -55,13 +55,14 @@
       "Bash(tail:*)",
       "Bash(wc:*)",
       "Bash(which:*)",
-      "Read(~/.claude/*)",
+      "Read(~/.claude/**)",
       "Skill(update-config)",
       "WebSearch"
     ],
     "defaultMode": "auto"
   },
   "model": "opus[1m]",
+  "outputStyle": "Cold Read",
   "hooks": {
     "SessionStart": [
       {
