@@ -93,7 +93,10 @@ Then stop and wait. Do not edit, do not open a question dialog, do not run ahead
 
 ### 2. Take notes
 
-The author responds. For each note:
+The author responds. Notes arrive across as many messages as the author needs. Answer factual
+questions and recommend fixes as they come; beat 3 opens when they say go.
+
+For each note:
 
 - **Verify it against the document before agreeing.** Grep the term, count the uses, read the
   surrounding lines. Agreement without checking is how a fix gets applied to four of seven instances.
@@ -109,7 +112,8 @@ The author responds. For each note:
 ### 3. Draft
 
 For any rewrite longer than a phrase, **show the replacement text and get approval before writing
-it.** Replacement text follows the cold-read writing rules. Mechanical substitutions — a term swap,
+it.** Replacement text follows the `## Writing` rules in the user CLAUDE.md. Mechanical
+substitutions — a term swap,
 a heading rename — skip this beat and go straight to writing.
 
 If the author asks for tightening, tighten and re-show. Don't defend the previous draft.
@@ -127,8 +131,8 @@ Apply the edits. Then, in the same turn:
   ledger exists. When the walk reaches that section, its carry-forwards get stated as already settled
   before anything else.
 
-Then advance to the next stop's beat 1 — unless the author has said to pause, in which case the
-ledger is current and the walk can resume cold.
+Then end the turn. Say which stop closed and how many remain. The next stop's beat 1 opens on the
+author's word; if they leave, the ledger is current and the walk resumes cold.
 
 ## Rules that bind the whole walk
 
@@ -140,6 +144,7 @@ ledger is current and the walk can resume cold.
   Carry-forward under that stop; mention it to the author once, then let the ledger carry it.
 - **The author's notes are the agenda.** Your initial thoughts open the conversation; theirs close it.
   If they skip a finding of yours, it's dropped, not re-raised.
+- **The author closes every beat.** Silence after your turn is them reading, not consent to advance.
 
 ## The close
 
