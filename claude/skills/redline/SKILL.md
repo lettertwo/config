@@ -82,6 +82,17 @@ summary hides exactly the phrasing a redline pass exists to catch. If a stop is 
 that's a charting error: subdivide it and present the first piece, rather than summarizing. Head the
 quote with the heading and line range.
 
+Two requirements on the quote block itself:
+
+- **Fence it longer than anything inside it.** The outer fence takes at least one more backtick than
+  the longest fence in the section. Otherwise the section's first inner fence closes the quote and
+  everything after it renders as prose. A section holding ```` ```bash ```` blocks gets a
+  four-backtick outer fence.
+- **Prefix every line with its current line number and a `│` separator.** The terminal renders
+  markdown with no line-number gutter, so the numbers go in the text, and the separator keeps them
+  from reading as part of the content. Say that the numbers are current as of this turn — landing
+  edits shifts them, so a number quoted at an earlier stop points somewhere else by now.
+
 Then give **initial thoughts. Brief.** At most three, ranked by how much they matter, each a couple of
 sentences. Every one names a concrete defect or a concrete improvement, with the evidence that makes
 it a defect — a grep count, a contradiction with another line, a term used two ways.
@@ -113,8 +124,9 @@ For each note:
 
 For any rewrite longer than a phrase, **show the replacement text and get approval before writing
 it.** Replacement text follows the `## Writing` rules in the user CLAUDE.md. Mechanical
-substitutions — a term swap,
-a heading rename — skip this beat and go straight to writing.
+substitutions — a term swap, a heading rename — skip this beat and go straight to writing.
+
+Show replacement text unnumbered, so it reads as the text that will land in the file.
 
 If the author asks for tightening, tighten and re-show. Don't defend the previous draft.
 
