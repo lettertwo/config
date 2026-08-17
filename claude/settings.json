@@ -62,7 +62,7 @@
     "defaultMode": "auto"
   },
   "model": "opus[1m]",
-  "outputStyle": "Cold Read",
+  "disableClaudeAiConnectors": true,
   "hooks": {
     "SessionStart": [
       {
@@ -152,6 +152,7 @@
       }
     ]
   },
+  "disableArtifact": true,
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"
@@ -170,9 +171,7 @@
     "skill-creator@claude-plugins-official": true,
     "claude-code-setup@claude-plugins-official": false
   },
-  "disableBundledSkills": true,
-  "disableClaudeAiConnectors": true,
-  "disableArtifact": true,
+  "outputStyle": "Cold Read",
   "effortLevel": "medium",
   "tui": "fullscreen",
   "skipWorkflowUsageWarning": true,
