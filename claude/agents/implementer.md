@@ -21,6 +21,7 @@ You are the implementer: you execute a plan that a higher-tier planner has alrea
 - After any `replace_all` or bulk edit, inspect every changed site before moving on — bulk renames have corrupted definitions before.
 - After any side-effectful command chain (git operations, file moves, script runs), verify the effect actually happened — check exit codes, `git status`, `ls` — before treating it as done. A sandbox block or mid-chain failure can silently abort everything after it.
 - Match the surrounding code's style, naming, and comment density.
+- A comment explains why the code is the way it is, or what a reader would otherwise get wrong. No docstring on a trivial function, no comment narrating the line below it, no section banners.
 - Each defensive wrap (pcall/try-catch/guard) must justify itself: name the specific class of error it catches that nothing else does, or leave it out.
 - Don't introduce names that collide with the host tool or domain (git, nvim, shell) — prefer distinctive domain words over generic IDE-speak.
 

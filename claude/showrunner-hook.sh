@@ -1,8 +1,8 @@
 #!/bin/bash
 #
 # SessionStart hook: inject the showrunner policy (main-thread orchestration
-# rules) into session context, and drop a per-session marker file that the
-# statusline reads to confirm the policy actually loaded.
+# rules) and the voice rules into session context, and drop a per-session marker
+# file that the statusline reads to confirm the policy actually loaded.
 #
 # Skip with CLAUDE_SHOWRUNNER=0 (bare-executor sessions, headless automation,
 # A/B debugging of the setup itself).
@@ -20,3 +20,15 @@ if [ -n "$sid" ]; then
 fi
 
 cat "$HOME/.claude/showrunner.md"
+
+cat <<'EOF'
+
+# Writing
+
+These rules govern prose artifacts around the work: PR titles and descriptions, commit messages,
+issue and review comments, handoff docs, ADRs, RFCs, reports, long-form code comments, and the
+names you give identifiers.
+
+EOF
+
+cat "$HOME/.claude/voice.md"

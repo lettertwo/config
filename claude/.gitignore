@@ -11,6 +11,7 @@
 !/settings.json
 !/notify.sh
 !/showrunner.md
+!/voice.md
 !/showrunner-hook.sh
 !/statusline-command.sh
 !/subagent-statusline.sh
