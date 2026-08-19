@@ -86,10 +86,14 @@ vim.api.nvim_create_user_command("Format", function(args)
     return
   end
 
-  local range = args.range > 0 and {
-    start = { args.line1, 0 },
-    ["end"] = { args.line2, math.huge },
-  } or nil
+  -- The end column must be a real byte count: conform adds it to the line's
+  -- byte offset, and `math.huge` becomes a literal `--range-end=inf`, which
+  -- prettier rejects.
+  local range = nil
+  if args.range > 0 then
+    local last = vim.api.nvim_buf_get_lines(bufnr, args.line2 - 1, args.line2, true)[1]
+    range = { start = { args.line1, 0 }, ["end"] = { args.line2, #last } }
+  end
   require("conform").format({ async = true, lsp_format = "fallback", range = range })
 end, {
   range = true,
