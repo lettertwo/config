@@ -72,11 +72,12 @@ brew "node"
 npm "corepack"
 npm "@mermaid-js/mermaid-cli"
 
-# misc. language servers
+# misc. language servers, etc.
 brew "tombi"
 npm "@github/copilot-language-server"
 npm "vscode-langservers-extracted"
 npm "yaml-language-server"
+npm "prettier"
 
 # No more font patching!
 cask "font-symbols-only-nerd-font" if OS.mac?
