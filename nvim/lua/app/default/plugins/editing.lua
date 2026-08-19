@@ -17,11 +17,31 @@ Config.once("BufReadPost", function()
 
   require("mini.splitjoin").setup({
     mappings = {
-      toggle = "J",
+      toggle = "",
       split = "",
       join = "",
     },
   })
+
+  -- `toggle()` bails silently when no bracket region covers the cursor, so fall
+  -- back to builtin join. `changedtick` is the signal: `toggle()` returns hook
+  -- output, not a did-it-fire boolean.
+  map("n", "J", function()
+    local tick = vim.b.changedtick
+    require("mini.splitjoin").toggle()
+    if vim.b.changedtick == tick then vim.cmd("normal! " .. vim.v.count1 .. "J") end
+  end, { desc = "Splitjoin toggle or join lines" })
+
+  -- `get_visual_region()` reads the `'<` / `'>` marks, so leave Visual mode
+  -- first to set them. An explicit region always acts, so the fallback here is
+  -- only a guard against a hook turning the toggle into a no-op.
+  map("x", "J", function()
+    local splitjoin = require("mini.splitjoin")
+    vim.cmd("normal! \27")
+    local tick = vim.b.changedtick
+    splitjoin.toggle({ region = splitjoin.get_visual_region() })
+    if vim.b.changedtick == tick then vim.cmd("normal! gvJ") end
+  end, { desc = "Splitjoin toggle or join selection" })
 
   -- on MacOS, <A-j> emits "∆", <A-k> emits "˚", <A-h> emits "˙", <A-l> emits "¬"
   require("mini.move").setup({
