@@ -61,9 +61,10 @@ gui:
   border: rounded
   animateExplosion: true
 git:
-  pagers:
-    - pager: delta --dark --paging=never --hyperlinks-file-link-format="lazygit-edit://{path}:{line}"
+  diffRenderers:
+    - command: delta --dark --paging=never --hyperlinks-file-link-format="lazygit-edit://{path}:{line}"
     - colorArg: always
+      type: rawGit
   commit:
     signOff: false
   merging:
@@ -167,6 +168,7 @@ keybinding:
     toggleWhitespaceInDiffView: <c+w>
     increaseContextInDiffView: "}"
     decreaseContextInDiffView: "{"
+    newWorktree: w
   status:
     checkForUpdate: u
     recentRepos: <enter>
@@ -202,8 +204,6 @@ keybinding:
     pushTag: P
     setUpstream: u
     fetchRemote: f
-  worktrees:
-    viewWorktreeOptions: w
   commits:
     squashDown: s
     renameCommit: r
