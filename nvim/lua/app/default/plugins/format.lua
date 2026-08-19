@@ -11,14 +11,21 @@ local formatters_by_ft = {
   json = { "prettier" },
   jsonc = { "prettier" },
   less = { "prettier" },
-  markdown = { "prettier" },
-  ["markdown.mdx"] = { "prettier" },
+  markdown = { "prettier_prose" },
+  ["markdown.mdx"] = { "prettier_prose" },
   scss = { "prettier" },
   typescript = { "prettier" },
   typescriptreact = { "prettier" },
   vue = { "prettier" },
   yaml = { "prettier" },
 }
+
+-- Prettier ignores `--range-start`/`--range-end` for markdown (it returns stdin
+-- unchanged), so drop the native range args for prose. Conform then formats the
+-- whole buffer and applies only the diff hunks overlapping the range. Native
+-- ranges still apply everywhere else prettier honors them, e.g. typescript.
+require("conform").formatters.prettier_prose =
+  vim.tbl_extend("force", require("conform.formatters.prettier"), { range_args = false })
 
 require("conform").setup({
   formatters_by_ft = formatters_by_ft,
