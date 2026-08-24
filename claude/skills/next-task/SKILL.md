@@ -6,6 +6,7 @@ allowed-tools:
   - Glob
   - AskUserQuestion
   - EnterPlanMode
+disable-model-invocation: true
 ---
 
 # Next Task
@@ -15,9 +16,11 @@ Discover, prioritize, and begin planning the next task to work on.
 ## Steps
 
 1. **Discover tasks** — Scan using the same approach as `/list-tasks`:
-   - Detect languages via marker files (`Cargo.toml`, `pyproject.toml`, `setup.py`, `go.mod`, `package.json`)
+   - Detect languages via marker files (`Cargo.toml`, `pyproject.toml`, `setup.py`, `go.mod`,
+     `package.json`)
    - Search for `\b(TODO|FIXME|HACK|XXX)\b` across all files
-   - Run additional language-specific patterns for detected languages (Rust macros, Python `NotImplementedError`, etc.)
+   - Run additional language-specific patterns for detected languages (Rust macros, Python
+     `NotImplementedError`, etc.)
    - Exclude: `.git/`, `node_modules/`, `target/`, `dist/`, `build/`
 
 2. **Categorize** each task by:
@@ -26,7 +29,8 @@ Discover, prioritize, and begin planning the next task to work on.
    - **Complexity**: simple (isolated, clear scope) vs involved (cross-cutting, unclear scope)
    - **Impact**: blocks other work, user-facing, internal/cleanup
 
-3. **Present prioritized options** — If `$ARGUMENTS` names a category or component, filter to it. Show the top 5–8 candidates with:
+3. **Present prioritized options** — If `$ARGUMENTS` names a category or component, filter to it.
+   Show the top 5–8 candidates with:
    - Description and `file:line` location
    - Type, estimated complexity, impact
    - Recommended order: unblocking > user-facing > bug fixes > well-scoped features
