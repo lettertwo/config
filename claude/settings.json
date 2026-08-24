@@ -63,6 +63,17 @@
   },
   "model": "opus[1m]",
   "disableClaudeAiConnectors": true,
+  "enableWorkflows": false,
+  "skillOverrides": {
+    "claude-api": "name-only",
+    "dataviz": "user-invocable-only",
+    "fewer-permission-prompts": "off",
+    "init": "off",
+    "keybindings-help": "name-only",
+    "loop": "user-invocable-only",
+    "simplify": "user-invocable-only",
+    "update-config": "name-only"
+  },
   "hooks": {
     "SessionStart": [
       {
@@ -152,7 +163,6 @@
       }
     ]
   },
-  "disableArtifact": true,
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"
@@ -168,7 +178,7 @@
     "claude-md-management@claude-plugins-official": false,
     "code-simplifier@claude-plugins-official": false,
     "frontend-design@claude-plugins-official": false,
-    "skill-creator@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": false,
     "claude-code-setup@claude-plugins-official": false
   },
   "outputStyle": "Cold Read",
