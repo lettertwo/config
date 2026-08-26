@@ -81,7 +81,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/showrunner-hook.sh"
+            "command": "bash ~/.claude/showrunner-hook.sh showrunner"
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/showrunner-hook.sh voice"
           }
         ]
       }

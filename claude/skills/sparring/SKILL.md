@@ -16,3 +16,5 @@ Never combine substantial new evidence with an AskUserQuestion call in the same 
 If a *fact* can be found by exploring the environment (filesystem, tools, etc.), look it up rather than asking me. The *decisions*, though, are mine — put each one to me and wait for my answer.
 
 Do not act on it until I confirm we have reached a shared understanding.
+
+When plan mode is active, the plan file is the only file you can edit: write the resolved decisions there as we go, and treat `ExitPlanMode` as the shared-understanding confirmation this skill is waiting for.
