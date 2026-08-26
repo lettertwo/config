@@ -14,7 +14,7 @@ findings handed off for someone else to act on are `/code-review`'s job.
 
 ## Invocation
 
-`/redline <path>` — or with no path, the document already under discussion.
+`/redline <path>` — or with no path, the document already under discussion. A Notion page URL puts the walk in **Notion mode**; see the section below.
 
 **If a ledger already exists for this document, load it and resume** at the first open stop. Say which
 stop you're resuming at and how many remain. Never restart a walk that's underway.
@@ -145,6 +145,28 @@ Apply the edits. Then, in the same turn:
 
 Then end the turn. Say which stop closed and how many remain. The next stop's beat 1 opens on the
 author's word; if they leave, the ledger is current and the walk resumes cold.
+
+## Notion mode
+
+A Notion page URL makes the page the document. The four beats and the ledger are unchanged; five
+mechanics differ, because a Notion page has no lines to number and no file to hold still.
+
+- **Fetch is how you read.** `notion-fetch` the page with `include_discussions: true`. The returned
+  markdown is the working copy for this turn only. Number its lines yourself for beat 1's quote
+  gutter, and say the numbers are local to the turn — they are not addresses anyone else can use.
+- **Chart stops on headings, and key the ledger to them.** The manifest lists headings, not line
+  ranges: `2. [ ] Engineering Requirements → Architecture`. Line ranges go stale on every write, so
+  they never enter the ledger.
+- **An anchored discussion dies when its text is edited, permanently.** At charting, list which
+  stops carry threads. Then at that stop's beat 1, say so before proposing anything: name the
+  anchored phrases and let the author decide whether the rewrite is worth the thread. Never rewrite
+  anchored text on your own judgement.
+- **Write with `notion-update-page`, one stop's section per call.** Then re-fetch before the next
+  stop's quote — a write reflows everything after it, and a quote from the stale copy is a quote of
+  text that no longer exists.
+- **The close verifies differently.** Fence parity and internal anchors don't apply. Re-fetch the
+  page and check three things instead: its heading outline matches the manifest, no repo-relative
+  path survives as a link, and every table has consistent column counts.
 
 ## Rules that bind the whole walk
 
