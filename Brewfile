@@ -39,6 +39,7 @@ brew "hyperfine"
 brew "jq"
 brew "lnav"
 brew "mise"
+brew "vale" # errata-ai/vale, prose linter; see claude/styles/Voice
 brew "watchman"
 
 # git

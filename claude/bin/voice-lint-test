@@ -1,0 +1,90 @@
+#!/bin/bash
+# Tests for voice-lint. Run after touching bin/voice-lint, .vale.ini, or
+# styles/Voice/*.yml. Adding a rule means adding a COVERAGE line for it.
+#
+# This is not a calibration. Whether a rule is CORRECT (fires on Claude's drift
+# and not on the user's voice) is measured against real corpora; see
+# docs/voice-calibration.md.
+
+set -u
+cd "$(dirname "$0")/.." || exit 1
+LINT=bin/voice-lint
+pass=0; fail=0
+
+ok()   { pass=$((pass+1)); }
+bad()  { fail=$((fail+1)); printf '  FAIL  %s\n' "$1"; }
+
+# hits <rule> <text> [flags] -> count of alerts for that rule
+hits() { printf '%s\n' "$2" | $LINT --advisory ${3:-} - 2>/dev/null | grep -c "Voice\.$1:"; }
+# code <text> [flags] -> exit status
+code() { printf '%s\n' "$1" | $LINT ${2:-} - >/dev/null 2>&1; echo $?; }
+
+echo "coverage: every rule fires exactly once on its own trigger"
+# One trigger per rule in styles/Voice/. Other rules may also fire; we only
+# assert that THIS rule fires exactly once, which catches a rule that has
+# silently stopped matching (the multiple-`raw:`-entries trap).
+while IFS='|' read -r rule text flags; do
+  [ -z "${rule:-}" ] && continue
+  n=$(hits "$rule" "$text" "${flags:-}")
+  if [ "$n" = "1" ]; then ok; else bad "$rule fired $n times on: $text"; fi
+done <<'CASES'
+Announcements|Here's the thing about the parser.
+Distance|People tend to over-engineer the parser.
+EmDash|The parser — the fast one, is done.
+FillerFrames|At its core, the parser is a loop.
+Fragments|The parser is done. That's it.
+Frames|The parser plays a crucial role.
+Grain|That change cuts against the grain.
+HumanVerbs|The data tells us the parser is slow.
+NarratingDoc|In this section, we'll cover the parser.
+NegationPivots|Not faster, but simpler.
+ParticipialTrailer|We reset the counter, ensuring the lanes recycle.
+Paths|Config lives at /Users/someone/.config/x.
+PRFirstPerson|I moved lane assignment onto subtree_size.|--pr
+RhetoricalSetups|The parser is slow. Think about it.
+SelfRating|The counter never reset. This matters because lanes drift.
+Vocabulary|The parser utilizes a lookahead buffer.
+VocabularyBare|The seam between modules is clean.
+CASES
+
+# Every rule in the package needs a case above, or coverage silently rots.
+for f in styles/Voice/*.yml; do
+  r=$(basename "$f" .yml)
+  grep -q "^$r|" "$0" || bad "no coverage case for rule $r"
+done
+[ "$fail" = "0" ] && ok
+
+echo "clean prose produces nothing"
+CLEAN='The forest-global counter never reset, so a row indent of `own_lane * 2`
+columns drifted right across the stack. Resetting it per subtree fixes the
+indent and leaves `emit_lane_rows` otherwise unchanged.'
+n=$(printf '%s\n' "$CLEAN" | $LINT --advisory - 2>/dev/null | wc -l | tr -d ' ')
+if [ "$n" = "0" ]; then ok; else bad "clean prose produced $n alerts"; fi
+
+echo "exit codes"
+check() { c=$(code "$2" "${3:-}"); if [ "$c" = "$1" ]; then ok; else bad "want exit $1, got $c: $2 ${3:-}"; fi; }
+check 0 'fix(cli): recycle sibling lanes in emit_lane_rows'
+check 1 'fix: recycle lanes — cleanly'
+check 1 'fix: the seam was intricate'
+check 1 'I moved lane assignment onto subtree_size.' --pr
+check 0 'I moved lane assignment onto subtree_size.'
+check 0 'This PR moves lane assignment onto subtree_size.' --pr
+
+echo "exemptions"
+ex() { n=$($LINT --advisory "$2" 2>/dev/null | wc -l | tr -d ' '); if [ "$n" = "$1" ]; then ok; else bad "$2 gave $n alerts, want $1"; fi; }
+ex 0 voice.md                      # restates its own banned lists
+n=$($LINT --advisory showrunner.md 2>/dev/null | grep -c EmDash)
+if [ "$n" = "0" ]; then ok; else bad "showrunner.md: agent-facing em dash exemption leaked ($n)"; fi
+n=$($LINT --advisory skills/tdd/SKILL.md 2>/dev/null | grep -c EmDash)
+if [ "$n" = "0" ]; then ok; else bad "skills/ em dash exemption leaked ($n)"; fi
+# ...but agent-facing docs still get every other rule
+n=$($LINT --advisory showrunner.md 2>/dev/null | grep -c Announcements)
+if [ "$n" -ge 1 ]; then ok; else bad "showrunner.md: non-EmDash rules wrongly exempted"; fi
+
+echo "escape hatch"
+c=$(printf 'fix — the seam was intricate\n' | VOICE_LINT=0 $LINT - >/dev/null 2>&1; echo $?)
+if [ "$c" = "0" ]; then ok; else bad "VOICE_LINT=0 did not disable the gate"; fi
+
+echo
+if [ "$fail" = "0" ]; then echo "ok: $pass passed"; exit 0; fi
+echo "FAILED: $fail failed, $pass passed"; exit 1

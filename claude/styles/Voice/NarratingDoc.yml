@@ -1,0 +1,9 @@
+extends: existence
+message: "Narrating the document: '%s'"
+level: error
+ignorecase: true
+tokens:
+  - "in this section, we'll"
+  - "let me walk you through"
+  - "as we'll see"
+  - "the rest of this doc"

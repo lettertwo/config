@@ -1,0 +1,102 @@
+#!/bin/bash
+# Lint prose against voice.md's mechanical rules (Tier 1 of the voice gate).
+#
+# Usage:
+#   voice-lint FILE...        lint files
+#   voice-lint -              lint stdin
+#   voice-lint --pr FILE      lint as a PR description (adds the first-person rule)
+#   voice-lint --advisory ..  report findings but always exit 0
+#   voice-lint --json ..      machine-readable output
+#
+# Exits 1 when an error-level rule fires. VOICE_LINT=0 disables it entirely.
+#
+# Agent-facing docs (skills/, agents/, commands/, output-styles/, showrunner.md,
+# CLAUDE.md, AGENTS.md) are exempt from Voice.EmDash: they are written for a
+# model, not a reviewer, and the repo carries ~424 em dashes in that prose. Every
+# other rule still applies to them.
+
+set -u
+CFGDIR="${CLAUDE_CONFIG_DIR:-$HOME/.config/claude}"
+CFG="$CFGDIR/.vale.ini"
+[ "${VOICE_LINT:-1}" = "0" ] && exit 0
+
+if ! command -v vale >/dev/null 2>&1; then
+  echo "voice-lint: vale not installed (brew install vale); skipping" >&2
+  exit 0
+fi
+
+ADVISORY=0; FMT=line; ASPR=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --advisory) ADVISORY=1; shift ;;
+    --json) FMT=JSON; shift ;;
+    --pr) ASPR=1; shift ;;
+    *) break ;;
+  esac
+done
+
+TMP=$(mktemp -d) || exit 0
+trap 'rm -rf "$TMP"' EXIT
+
+# voice.md restates its own banned lists verbatim, so every rule is a false
+# positive against it. (.vale.ini exempts it too, which covers a direct `vale`
+# run; section globs match the path as passed, so they cannot cover a file with
+# a directory component.)
+restates_the_rules() {
+  case "$(basename "$1")" in voice.md) return 0 ;; esac
+  return 1
+}
+
+# Written for a model rather than a reviewer; see the header note.
+is_agent_facing() {
+  case "$(cd "$(dirname "$1")" 2>/dev/null && pwd)/$(basename "$1")" in
+    "$CFGDIR"/skills/*|"$CFGDIR"/agents/*|"$CFGDIR"/commands/*|"$CFGDIR"/output-styles/*) return 0 ;;
+  esac
+  case "$(basename "$1")" in
+    showrunner.md|CLAUDE.md|AGENTS.md) return 0 ;;
+  esac
+  return 1
+}
+
+PROSE=(); AGENT=()
+for arg in "$@"; do
+  if [ "$arg" = "-" ]; then
+    name=stdin.md; [ "$ASPR" = "1" ] && name=PR_BODY.md
+    cat > "$TMP/$name"; PROSE+=("$TMP/$name")
+  elif [ -f "$arg" ]; then
+    f="$arg"
+    case "$arg" in
+      # Real .md files pass through uncopied so per-file config sections
+      # (the voice.md exemption) still match on the path.
+      *.md) [ "$ASPR" = "1" ] && { cp "$arg" "$TMP/PR_BODY.md"; f="$TMP/PR_BODY.md"; } ;;
+      # Anything else gets a .md name so Vale applies the Markdown parser.
+      *) b=$(basename "$arg"); cp "$arg" "$TMP/${b%.*}.md"; f="$TMP/${b%.*}.md" ;;
+    esac
+    if restates_the_rules "$arg"; then continue
+    elif is_agent_facing "$arg"; then AGENT+=("$f")
+    else PROSE+=("$f"); fi
+  fi
+done
+
+# The "write about the PR, not the author" rule is wrong everywhere else.
+BASE=""
+[ "$ASPR" = "0" ] && BASE='.Name!="Voice.PRFirstPerson"'
+AGENT_F='.Name!="Voice.EmDash"'
+[ -n "$BASE" ] && AGENT_F="$BASE && $AGENT_F"
+
+status=0
+run() {  # run <filter> <files...>
+  local filt="$1"; shift
+  [ $# -eq 0 ] && return 0
+  # bash 3.2 + set -u: an empty array must be expanded with the += default form.
+  local args=(); [ -n "$filt" ] && args=(--filter="$filt")
+  vale --config="$CFG" ${args[@]+"${args[@]}"} --output="$FMT" --minAlertLevel=suggestion "$@" | sed "s|$TMP/||g"
+  vale --config="$CFG" ${args[@]+"${args[@]}"} --output=JSON --minAlertLevel=error "$@" 2>/dev/null \
+    | grep -q '"Severity": *"error"' && status=1
+  return 0
+}
+run "$BASE" ${PROSE[@]+"${PROSE[@]}"}
+run "$AGENT_F" ${AGENT[@]+"${AGENT[@]}"}
+
+[ "$ADVISORY" = "1" ] && exit 0
+exit $status

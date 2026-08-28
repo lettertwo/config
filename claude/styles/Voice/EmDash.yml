@@ -1,0 +1,5 @@
+extends: existence
+message: "Em dash. Use parentheses, a period, or a colon."
+level: error
+raw:
+  - '\x{2014}'

@@ -1,0 +1,6 @@
+extends: existence
+message: "Human verb on an inanimate subject: '%s'"
+level: warning
+ignorecase: true
+raw:
+  - '\b(?:the|this|that|a|an) (?:decision|data|code|test|change|diff|design|arithmetic|entry|complaint|architecture|system|number|result|error|log|commit|patch|approach|pattern|module|type|schema|config|pipeline) (?:emerges|tells us|shifts|becomes|knows|wants|decides|believes|feels|thinks|hands|claims|argues|insists|admits|refuses|remembers|forgets|cares|suffers|struggles)\b'

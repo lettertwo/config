@@ -1,0 +1,9 @@
+extends: existence
+message: "Banned frame: '%s'"
+level: error
+ignorecase: true
+tokens:
+  - "plays a (?:crucial|pivotal|key|vital|critical) role"
+  - "is a testament to"
+  - "stands as"
+  - "add comprehensive tests"

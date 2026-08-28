@@ -1,0 +1,10 @@
+extends: existence
+message: "Negation pivot: '%s'"
+level: warning
+ignorecase: true
+nonword: true
+tokens:
+  - '\bnot (?:just |merely |only )?[\w-]+,? but (?:also )?'
+  - '\b(?:it|this|that) isn''t [^.!?]{2,60}\. it''s\b'
+  - '\bstops being [^.!?]{2,40} and starts being\b'
+  - '\bnot a [\w-]+\.\s+not a [\w-]+\.'

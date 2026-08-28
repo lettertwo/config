@@ -9,6 +9,7 @@
 !/.gitignore
 !/CLAUDE.md
 !/settings.json
+!/.vale.ini
 !/notify.sh
 !/showrunner.md
 !/voice.md
@@ -23,3 +24,4 @@
 !/docs/
 !/output-styles/
 !/skills/
+!/styles/

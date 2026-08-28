@@ -1,0 +1,12 @@
+extends: existence
+message: "Self-rating: '%s'"
+level: error
+ignorecase: true
+tokens:
+  - "this matters because"
+  - "let that sink in"
+  - "full stop\\."
+  - "make no mistake"
+  - "the implications are significant"
+  - "the reasons are structural"
+  - "the stakes are high"

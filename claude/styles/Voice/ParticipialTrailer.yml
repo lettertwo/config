@@ -1,0 +1,8 @@
+extends: existence
+message: "Participial trailer: '%s'. Give the clause its own sentence."
+level: suggestion
+scope: paragraph
+ignorecase: true
+nonword: true
+tokens:
+  - ',\s+(?:ensuring|allowing|providing|helping|creating|enabling|giving|resulting|causing|maximizing|minimizing|leveraging|reflecting|highlighting|underscoring|demonstrating|showcasing|leaving|making|taking|mirroring|relegating)\b'

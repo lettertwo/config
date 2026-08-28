@@ -1,0 +1,16 @@
+extends: substitution
+message: "Banned word. Use '%s' instead."
+level: error
+ignorecase: true
+nonword: false
+swap:
+  'belt and suspenders': redundant
+  'blast radius': what it affects
+  'enhanc(?:e|es|ed|ing|ement|ements)': improve
+  'intricac(?:y|ies)': detail
+  'intricate(?:ly)?': detailed
+  'load-bearing': required
+  'meticulous(?:ly|ness)?': careful
+  'showcas(?:e|es|ed|ing)': show
+  'surgical(?:ly)?': targeted
+  'utiliz(?:e|es|ed|ing|ation)': use

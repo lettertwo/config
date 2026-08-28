@@ -1,0 +1,8 @@
+extends: existence
+message: "Banned word: '%s'."
+level: warning
+ignorecase: true
+nonword: true
+tokens:
+  - '\b(?:against|with) the grain\b'
+  - '\bgrain of the (?:code|codebase|system|design|language|repo)\b'

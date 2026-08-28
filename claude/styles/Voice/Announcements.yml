@@ -1,0 +1,22 @@
+extends: existence
+message: "Announcement frame: '%s'"
+link: https://github.com/lettertwo/config/blob/main/claude/voice.md
+level: error
+ignorecase: true
+nonword: false
+tokens:
+  - "here's the thing"
+  - "here's what"
+  - "it turns out"
+  - "the real \\w+ is"
+  - "the uncomfortable truth is"
+  - "it's worth noting"
+  - "note that"
+  - "as you can see"
+  - "you'll want to"
+  - "let me be clear"
+  - "the truth is"
+  - "to be honest"
+  - "i'll be direct"
+  - "rather than bury this"
+  - "rather than leave you to find"

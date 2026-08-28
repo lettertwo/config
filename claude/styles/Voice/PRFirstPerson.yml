@@ -1,0 +1,7 @@
+extends: existence
+message: "First person in a PR description: '%s'. Write about the PR, not the author."
+level: error
+nonword: true
+tokens:
+  - '\bI (?:added|removed|moved|changed|fixed|wrote|reverted|refactored|renamed|updated|split|merged)\b'
+  - '\bmy (?:change|patch|PR|commit)\b'

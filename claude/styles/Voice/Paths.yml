@@ -1,0 +1,7 @@
+extends: existence
+message: "User-specific path: '%s'. Use a repo-relative path."
+level: error
+nonword: true
+tokens:
+  - '/Users/[a-z0-9_-]+'
+  - '/home/[a-z0-9_-]+'

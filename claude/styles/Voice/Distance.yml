@@ -1,0 +1,10 @@
+extends: existence
+message: "Distance construction: '%s'"
+level: warning
+ignorecase: true
+nonword: true
+tokens:
+  - '\bnobody (?:has |had |ever )?(?:designed|priced|owns|owned|noticed|checked|wrote|asked|thought)\b'
+  - '\bpeople tend to\b'
+  - '\bthis happens because\b'
+  - '\bthis is why\b'

@@ -1,0 +1,10 @@
+extends: existence
+message: "Fragment for emphasis: '%s'"
+level: error
+ignorecase: true
+nonword: true
+tokens:
+  - '\bthat''s it\.'
+  - '\bthat''s the \w+\.'
+  - '\.\s+period\.'
+  - '\bfull stop\.'

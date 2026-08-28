@@ -1,0 +1,10 @@
+extends: existence
+message: "Filler frame: '%s'"
+level: error
+ignorecase: true
+tokens:
+  - "at its core"
+  - "at the end of the day"
+  - "when it comes to"
+  - "the reality is"
+  - "in today's \\w+"

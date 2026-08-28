@@ -1,0 +1,13 @@
+extends: existence
+message: "Banned word: '%s'. Use the domain's own word."
+level: error
+ignorecase: true
+tokens:
+  - 'commendabl(?:e|y)'
+  - 'defensive(?:ly|ness)?'
+  - 'pivotal(?:ly)?'
+  - 'production-ready'
+  - 'seam(?:s|less|lessly)?'
+  - 'single source of truth'
+  - 'smoking gun'
+  - 'underscor(?:e|es|ed|ing)'

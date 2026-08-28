@@ -1,0 +1,16 @@
+#!/bin/bash
+# Lint the commit message against voice.md's mechanical rules.
+# Set VOICE_LINT=0 to skip.
+
+LINT="${CLAUDE_CONFIG_DIR:-$HOME/.config/claude}/bin/voice-lint"
+[ -x "$LINT" ] || exit 0
+
+# Strip comment lines and anything after the verbose-diff scissors line.
+MSG=$(sed '/^# ------------------------ >8 /,$d' "$1" | grep -v '^#')
+
+printf '%s\n' "$MSG" | "$LINT" --ext=.md - || {
+  echo ""
+  echo "Commit message tripped the voice gate. Fix it, or commit with VOICE_LINT=0."
+  exit 1
+}
+exit 0

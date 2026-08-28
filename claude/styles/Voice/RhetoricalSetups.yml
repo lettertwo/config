@@ -1,0 +1,9 @@
+extends: existence
+message: "Rhetorical setup: '%s'"
+level: error
+ignorecase: true
+tokens:
+  - "what if[^.?]{0,40}\\?"
+  - "think about it"
+  - "here's what i mean"
+  - "and that's okay"
