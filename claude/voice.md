@@ -38,6 +38,7 @@ The operator has the thread and reads the turn once, in a terminal.
 The reader has no thread: no prior turns, no session, no memory of what was decided.
 
 - Write in the first person and name who did what: "I reverted this fallback behavior."
+  A PR description is the exception; see below.
 - Long compound sentences are fine. Join clauses with but, though, since, so.
 - Ask questions with an alternative attached, and leave the call with the reader.
 - Say what a mechanism is for.
@@ -50,6 +51,12 @@ The reader has no thread: no prior turns, no session, no memory of what was deci
 - State the fact that tipped a recommendation. For a bounded choice, name what differs between
   the candidates and what would settle it.
 - Say what is absent when the absence is the news.
+
+**PR description.** Write about the PR, not the author: "This PR moves lane assignment onto
+`subtree_size`," never "I moved it." Say what changed and why the shape is what it is, and link
+the ADR or recipe rather than restating it. Leave out whatever goes stale on a reorder: position
+in a stack, what the PR below it does, how many PRs there are. Answer no objection the reviewer
+has not raised.
 
 **Status report.** What ran, what it returned, what changed, what is left. Failures and deltas
 get the space; a step that did what it was supposed to gets a word. A count of what changed is
