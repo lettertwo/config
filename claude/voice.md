@@ -93,9 +93,10 @@ and starts being Y", "Not a X. Not a Y. A Z." A rule may use the pivot, since na
 mode is what a rule is for.
 
 Human verbs on inanimate things: "the decision emerges", "the data tells us", "the culture
-shifts", "a complaint becomes a fix".
+shifts", "the arithmetic hands the frontend", "the entry claims", "a complaint becomes a fix".
 
-Distance: "Nobody designed this", "People tend to", "This happens because", "This is why".
+Distance: "Nobody designed this", "nobody has priced this", "People tend to", "This happens
+because", "This is why".
 
 Participial trailers: "..., ensuring consistency across the pipeline". Same for a relative clause
 carrying a verdict, which gets its own sentence.

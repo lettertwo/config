@@ -185,7 +185,7 @@
     "skill-creator@claude-plugins-official": false,
     "claude-code-setup@claude-plugins-official": false
   },
-  "outputStyle": "Cold Read",
+  "outputStyle": "Concise",
   "effortLevel": "medium",
   "tui": "fullscreen",
   "skipWorkflowUsageWarning": true,
