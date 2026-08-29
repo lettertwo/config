@@ -8,7 +8,10 @@
 #   voice-lint --advisory ..  report findings but always exit 0
 #   voice-lint --json ..      machine-readable output
 #
-# Exits 1 when an error-level rule fires. VOICE_LINT=0 disables it entirely.
+# Exits 1 when an error-level rule fires.
+#
+# Two ways off. VOICE_LINT=0 skips a single run. `git config voice.lint false`
+# opts a whole repo out, for one whose commit conventions are not mine.
 #
 # Agent-facing docs (skills/, agents/, commands/, output-styles/, showrunner.md,
 # CLAUDE.md, AGENTS.md) are exempt from Voice.EmDash: they are written for a
@@ -19,6 +22,13 @@ set -u
 CFGDIR="${CLAUDE_CONFIG_DIR:-$HOME/.config/claude}"
 CFG="$CFGDIR/.vale.ini"
 [ "${VOICE_LINT:-1}" = "0" ] && exit 0
+
+# A repo whose conventions are not mine opts out: git config voice.lint false
+if git rev-parse --git-dir >/dev/null 2>&1; then
+  case "$(git config --get voice.lint 2>/dev/null)" in
+    false|0|off|no) exit 0 ;;
+  esac
+fi
 
 if ! command -v vale >/dev/null 2>&1; then
   echo "voice-lint: vale not installed (brew install vale); skipping" >&2

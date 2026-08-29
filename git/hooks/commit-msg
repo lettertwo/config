@@ -1,6 +1,9 @@
 #!/bin/bash
 # Lint the commit message against voice.md's mechanical rules.
-# Set VOICE_LINT=0 to skip.
+#
+# This hook is global (core.hooksPath), so it reaches every repo. One whose
+# commit conventions are not mine opts out with `git config voice.lint false`;
+# VOICE_LINT=0 skips a single commit.
 
 LINT="${CLAUDE_CONFIG_DIR:-$HOME/.config/claude}/bin/voice-lint"
 [ -x "$LINT" ] || exit 0
@@ -10,7 +13,9 @@ MSG=$(sed '/^# ------------------------ >8 /,$d' "$1" | grep -v '^#')
 
 printf '%s\n' "$MSG" | "$LINT" --ext=.md - || {
   echo ""
-  echo "Commit message tripped the voice gate. Fix it, or commit with VOICE_LINT=0."
+  echo "Commit message tripped the voice gate."
+  echo "  skip once:       VOICE_LINT=0 git commit ..."
+  echo "  opt this repo out: git config voice.lint false"
   exit 1
 }
 exit 0

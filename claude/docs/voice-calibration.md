@@ -8,6 +8,10 @@ the test suite while being actively harmful.
 Run this after adding or rewriting a rule, or after editing `voice.md`'s Never
 or Vocabulary sections. Not per commit.
 
+Measure against my own repos only. The `commit-msg` hook is global, so it
+reaches work repos too, but those opt out with `git config voice.lint false`
+rather than being calibrated against.
+
 ## Why it exists
 
 The first version of the package shipped three rules that measurement killed.

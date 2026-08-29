@@ -8,7 +8,9 @@
 
 set -u
 cd "$(dirname "$0")/.." || exit 1
+ROOT=$(pwd)
 LINT=bin/voice-lint
+ABS_LINT="$ROOT/$LINT"
 pass=0; fail=0
 
 ok()   { pass=$((pass+1)); }
@@ -80,6 +82,20 @@ if [ "$n" = "0" ]; then ok; else bad "skills/ em dash exemption leaked ($n)"; fi
 # ...but agent-facing docs still get every other rule
 n=$($LINT --advisory showrunner.md 2>/dev/null | grep -c Announcements)
 if [ "$n" -ge 1 ]; then ok; else bad "showrunner.md: non-EmDash rules wrongly exempted"; fi
+
+echo "opt-out"
+# A repo can turn the gate off entirely. Verified in a throwaway repo so this
+# repo's own setting is never touched.
+OPT=$(mktemp -d)
+git -C "$OPT" init -q && echo x > "$OPT/a.txt"
+c=$(cd "$OPT" && printf 'fix: the seam was intricate\n' | "$ABS_LINT" - >/dev/null 2>&1; echo $?)
+if [ "$c" = "1" ]; then ok; else bad "opt-out fixture: gate should be on by default, got $c"; fi
+git -C "$OPT" config voice.lint false
+c=$(cd "$OPT" && printf 'fix: the seam was intricate\n' | "$ABS_LINT" - >/dev/null 2>&1; echo $?)
+if [ "$c" = "0" ]; then ok; else bad "voice.lint=false did not opt the repo out, got $c"; fi
+rm -rf "$OPT"
+# ...and this repo must not be opted out, or every check above is vacuous.
+if [ -z "$(git config --get voice.lint)" ]; then ok; else bad "this repo has voice.lint set; the suite proves nothing"; fi
 
 echo "escape hatch"
 c=$(printf 'fix — the seam was intricate\n' | VOICE_LINT=0 $LINT - >/dev/null 2>&1; echo $?)
