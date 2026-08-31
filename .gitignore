@@ -1,4 +1,5 @@
 .DS_Store
+1Password
 acra
 configstore
 git/user
@@ -14,7 +15,7 @@ yarn
 Brewfile.lock.json
 nnn
 lnav
-gh
+gh/hosts.yml
 github-copilot
 lazygit/state.yml
 githubnext_*
