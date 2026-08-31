@@ -63,7 +63,6 @@
   },
   "model": "fable",
   "disableClaudeAiConnectors": true,
-  "enableWorkflows": false,
   "skillOverrides": {
     "claude-api": "name-only",
     "dataviz": "user-invocable-only",
@@ -167,6 +166,7 @@
       }
     ]
   },
+  "enableWorkflows": false,
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"
@@ -193,5 +193,6 @@
   "terminalProgressBarEnabled": false,
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "enableArtifact": false
 }
