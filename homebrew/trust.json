@@ -1,7 +1,9 @@
 {
   "trustedformulae": [
+    "charmbracelet/tap/freeze",
     "jesseduffield/lazygit/lazygit",
     "lettertwo/tap/git-workon",
+    "oven-sh/bun/bun",
     "withgraphite/tap/graphite"
   ]
 }
