@@ -83,7 +83,7 @@ function SnacksPickerConfig.config(opts)
   map("n", "<leader>fd", function() Snacks.picker.pick("directories") end, { desc = "Find Directory" })
   map("n", "<leader>fn", function() Snacks.picker.pick("node_modules") end, { desc = "Find Package (node_modules)" })
   map("n", "<leader>fp", function() Snacks.picker.pick("packages") end, { desc = "Find Package" })
-  map("n", "<leader>fP", function() Snacks.picker.pick("plugins") end, { desc = "Find Plugin (lazy)" })
+  map("n", "<leader>fP", function() Snacks.picker.pick("plugins") end, { desc = "Find Plugin (nvim)" })
   -- stylua: ignore end
 
   -- stylua: ignore start
