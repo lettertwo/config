@@ -2,9 +2,9 @@
 name: explain-diff
 description:
   Produce a rich, interactive HTML explanation of a code change — background, intuition, a code
-  walkthrough, and a comprehension quiz. Stack-aware: a Graphite stack becomes bottom-up chapters
-  with a shared background and a stack-spanning quiz. Use when the user asks to explain a diff,
-  branch, PR, or stack.
+  walkthrough, and a comprehension quiz. Stack-aware: a Graphite or gh-stack stack becomes
+  bottom-up chapters with a shared background and a stack-spanning quiz. Use when the user asks to
+  explain a diff, branch, PR, or stack.
 ---
 
 Build a self-contained HTML page that teaches a reader what a code change does and why, deep enough
@@ -16,10 +16,11 @@ The user names a diff, branch, PR, or stack. Resolve it to a concrete `base...he
 way `/code-review` step 1 does (`git rev-parse`, three-dot diff, `git log`) — ask if it's ambiguous,
 fail fast on a bad ref or empty diff.
 
-**Stack-aware branch**: if the repo is Graphite-tracked and the target is a stack — the user asks
-for one explicitly, or the resolved ref spans multiple stacked branches — discover the branches and
-their parent→child edges by following [`../stack-review/DISCOVERY.md`](../stack-review/DISCOVERY.md)
-(read-only; no worktrees or checkouts needed). Otherwise this is a single-diff explanation.
+**Stack-aware branch**: if the current branch is in a Graphite or gh-stack stack and the target is
+a stack — the user asks for one explicitly, or the resolved ref spans multiple stacked branches —
+discover the branches and their parent→child edges by following
+[`../stack-review/DISCOVERY.md`](../stack-review/DISCOVERY.md) (read-only; no worktrees or
+checkouts needed). Otherwise this is a single-diff explanation.
 
 ## Sections
 
