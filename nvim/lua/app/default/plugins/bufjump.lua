@@ -1,4 +1,4 @@
-Config.once("BufReadPost", function()
+Config.once("BufEnter", function()
   Config.add("kwkarlwang/bufjump.nvim")
   require("bufjump").setup({
     forward_key = "<C-i>",

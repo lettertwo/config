@@ -63,7 +63,7 @@ if cwd ~= nil and is_plugin_dir then
   Config.link("lettertwo/occurrence.nvim", cwd)
   require("occurrence.dev").setup(opts)
 else
-  Config.once("BufReadPost", function()
+  Config.once("BufEnter", function()
     Config.add("lettertwo/occurrence.nvim")
     require("occurrence").setup(opts)
   end)

@@ -160,7 +160,7 @@ local pmenu_show = {
   end,
 }
 
-Config.once("BufReadPost", function()
+Config.once("BufEnter", function()
   Config.add("nvim-mini/mini.nvim")
 
   -- Don't show 'Text' suggestions (usually noisy) and show snippets last.

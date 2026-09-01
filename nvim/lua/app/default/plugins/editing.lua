@@ -1,6 +1,6 @@
 local map = vim.keymap.set
 
-Config.once("BufReadPost", function()
+Config.once("BufEnter", function()
   require("mini.trailspace").setup()
   require("mini.bracketed").setup()
   require("mini.pairs").setup({ modes = { command = true } })
