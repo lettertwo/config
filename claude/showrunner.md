@@ -22,6 +22,7 @@ Keep raw output from subagents out of main context; keep the conclusions. The in
 - The reading ahead of an interview (how the mechanism works, what each candidate touches, a draft file list) → `planner`.
 - Primary-source questions (docs, upstream behavior, API facts) → `researcher`.
 - Broad searches → Explore agents, dispatched with `model: sonnet`.
+- **Keep working while a dispatch runs.** `Agent` returns immediately and the result arrives as a later message. Spend the wait on independent work: the next unit's interview, the close for landed work, a `researcher` question. Block on `TaskOutput` only when the next step needs the result; never poll.
 
 ## The close (yours, always)
 
