@@ -1,9 +1,5 @@
 local map = vim.keymap.set
 
--- No more accidental macros
-map("n", "q", "<nop>", { noremap = true })
-map("n", "Q", "q", { noremap = true, desc = "Record macro" })
-
 -- no builtin keyword completions
 map("i", "<C-N>", "<nop>", { noremap = true })
 map("i", "<C-P>", "<nop>", { noremap = true })
@@ -55,17 +51,23 @@ map("n", "<leader><tab>]", "<cmd>tabnext<cr>", { desc = "Next Tab" })
 map("n", "<leader><tab>d", "<cmd>tabclose<cr>", { desc = "Close Tab" })
 map("n", "<leader><tab>[", "<cmd>tabprevious<cr>", { desc = "Previous Tab" })
 
--- Clear search, diff update and redraw on <esc>
-map({ "i", "n", "s" }, "<esc>", function()
-  if vim.fn.pumvisible() ~= 0 then
-    return "<C-e>" -- Close pum without choosing, but don't exit insert mode
-  else
-    vim.schedule(function()
-      vim.cmd("nohlsearch | diffupdate | normal! <C-L><CR>")
-    end)
-  end
+-- Clear search, diff update, multicursor, and redraw on <esc>
+map({ "n" }, "<esc>", function()
+  vim.schedule(function()
+    vim.cmd(
+      'nohlsearch | diffupdate | call nvim_buf_clear_namespace(0, nvim_create_namespace("nvim.multicursor"), 0, -1) | normal! <C-L><CR>'
+    )
+  end)
   return "<esc>"
 end, { expr = true, desc = "Escape and redraw" })
+
+-- Hide completion menu on <esc> without leaving insert
+map({ "i" }, "<esc>", function()
+  if vim.fn.pumvisible() ~= 0 then
+    return "<C-e>"
+  end
+  return "<esc>"
+end, { expr = true, desc = "hide completion" })
 
 map("n", "<leader>P", function()
   vim.pack.update()
