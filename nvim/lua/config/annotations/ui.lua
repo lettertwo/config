@@ -1,0 +1,415 @@
+-- User-facing actions for the annotation core: add/edit/delete/dismiss at a
+-- line or visual range, resolve/unresolve one by hand, list via a picker,
+-- jump between annotations in a buffer, send a batch, and clear the ones
+-- that got resolved. `config/annotations/init.lua` binds these to keys;
+-- nothing here assumes a particular key was pressed.
+
+local Store = require("config.annotations.store")
+local Anchor = require("config.annotations.anchor")
+local Send = require("config.annotations.send")
+
+local UI = {}
+
+local id_counter = 0
+
+local function new_id()
+  id_counter = id_counter + 1
+  return string.format("%d-%d", os.time(), id_counter)
+end
+
+-- Opens a named scratch buffer for a multi-line annotation body, pre-filled
+-- with `initial` when editing, and calls `on_submit(body)` when the user
+-- writes it (`:w`), or nothing on `:q`.
+---@param initial string?
+---@param on_submit fun(body: string)
+local function prompt_body(initial, on_submit)
+  local buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_name(buf, "annotations://new")
+  vim.bo[buf].filetype = "markdown"
+  vim.bo[buf].buftype = "acwrite"
+  vim.bo[buf].bufhidden = "wipe"
+  if initial then
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, vim.split(initial, "\n", { plain = true }))
+  end
+
+  local width = math.min(80, math.floor(vim.o.columns * 0.6))
+  local height = 8
+  local win = vim.api.nvim_open_win(buf, true, {
+    relative = "editor",
+    width = width,
+    height = height,
+    row = math.floor((vim.o.lines - height) / 2),
+    col = math.floor((vim.o.columns - width) / 2),
+    style = "minimal",
+    border = "rounded",
+    title = " annotation body: :w to submit, :q to cancel ",
+  })
+
+  local function submit()
+    local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+    local body = vim.trim(table.concat(lines, "\n"))
+    if vim.api.nvim_win_is_valid(win) then
+      vim.api.nvim_win_close(win, true)
+    end
+    if body ~= "" then
+      on_submit(body)
+    end
+  end
+
+  Config.on("BufWriteCmd", buf, function()
+    submit()
+    return true
+  end, "Submit the annotation body")
+
+  vim.keymap.set("n", "q", "<cmd>close<cr>", { buffer = buf, desc = "Cancel annotation" })
+end
+
+-- Adds an annotation at the cursor line, or over the given visual range.
+---@param opts? { line1: integer, line2: integer }
+function UI.add(opts)
+  local buf = vim.api.nvim_get_current_buf()
+  local name = vim.api.nvim_buf_get_name(buf)
+  local file = Store.relative_path(name)
+  if not file then
+    vim.notify("Buffer is not inside a git worktree", vim.log.levels.ERROR, { title = "Annotations" })
+    return
+  end
+
+  local line1, line2
+  if opts then
+    line1, line2 = opts.line1, opts.line2
+  else
+    local lnum = vim.api.nvim_win_get_cursor(0)[1]
+    line1, line2 = lnum, lnum
+  end
+  local anchor_text = table.concat(vim.api.nvim_buf_get_lines(buf, line1 - 1, line2, false), "\n")
+
+  prompt_body(nil, function(body)
+    Store.add({
+      id = new_id(),
+      file = file,
+      lnum = line1,
+      end_lnum = line2,
+      anchor_text = anchor_text,
+      body = body,
+      created_at = os.time(),
+    })
+  end)
+end
+
+-- Every annotation whose range covers the cursor line, most recently
+-- created first.
+---@return Config.Annotations.Record[]
+local function annotations_at_cursor()
+  local buf = vim.api.nvim_get_current_buf()
+  local name = vim.api.nvim_buf_get_name(buf)
+  local file = Store.relative_path(name)
+  if not file then
+    return {}
+  end
+  local lnum = vim.api.nvim_win_get_cursor(0)[1]
+  local matches = {}
+  for _, rec in ipairs(Store.for_file(file)) do
+    if lnum >= rec.lnum and lnum <= (rec.end_lnum or rec.lnum) then
+      table.insert(matches, rec)
+    end
+  end
+  table.sort(matches, function(a, b)
+    return a.created_at > b.created_at
+  end)
+  return matches
+end
+
+-- Resolves to one record among those covering the cursor line: the only one
+-- if there's exactly one, otherwise a `vim.ui.select` keyed on each body's
+-- first line. Calls `on_pick(rec)`, or nothing if there's no match or the
+-- picker is cancelled.
+---@param on_pick fun(rec: Config.Annotations.Record)
+local function pick_annotation_at_cursor(on_pick)
+  local matches = annotations_at_cursor()
+  if #matches == 0 then
+    vim.notify("No annotation on this line", vim.log.levels.WARN, { title = "Annotations" })
+    return
+  end
+  if #matches == 1 then
+    on_pick(matches[1])
+    return
+  end
+  vim.ui.select(matches, {
+    prompt = "Multiple annotations on this line, pick one:",
+    format_item = function(rec)
+      return (vim.split(rec.body, "\n", { plain = true })[1])
+    end,
+  }, function(choice)
+    if choice then
+      on_pick(choice)
+    end
+  end)
+end
+
+function UI.edit()
+  pick_annotation_at_cursor(function(rec)
+    prompt_body(rec.body, function(body)
+      Store.update(rec.id, { body = body })
+    end)
+  end)
+end
+
+function UI.delete()
+  pick_annotation_at_cursor(function(rec)
+    Store.remove(rec.id)
+  end)
+end
+
+-- Drops the annotation at cursor and, if Claude has resolved it, its rows
+-- from resolutions.jsonl too.
+function UI.dismiss()
+  pick_annotation_at_cursor(function(rec)
+    Store.dismiss(rec.id)
+  end)
+end
+
+-- Marks the annotation at cursor resolved by hand, for one that never needed
+-- to go to Claude at all. Prompts for an optional one-line note; leave it
+-- blank and just press enter to resolve without one.
+function UI.resolve()
+  pick_annotation_at_cursor(function(rec)
+    vim.ui.input({ prompt = "Resolution note (optional): " }, function(note)
+      if note == nil then
+        return -- cancelled, e.g. <Esc>
+      end
+      Store.resolve(rec.id, note)
+    end)
+  end)
+end
+
+-- Reverses a resolution (manual or Claude's) on the annotation at cursor and
+-- makes it pending again.
+function UI.unresolve()
+  pick_annotation_at_cursor(function(rec)
+    Store.unresolve(rec.id)
+  end)
+end
+
+function UI.toggle_body()
+  Anchor.toggle_body()
+end
+
+function UI.toggle_background()
+  Anchor.toggle_background()
+end
+
+-- Jumps to the next (`dir = 1`) or previous (`dir = -1`) annotation in the
+-- current buffer, wrapping.
+---@param dir 1|-1
+local function jump(dir)
+  local buf = vim.api.nvim_get_current_buf()
+  local name = vim.api.nvim_buf_get_name(buf)
+  local file = Store.relative_path(name)
+  if not file then
+    return
+  end
+  local records = Store.for_file(file)
+  if #records == 0 then
+    return
+  end
+  table.sort(records, function(a, b)
+    return a.lnum < b.lnum
+  end)
+  local cur = vim.api.nvim_win_get_cursor(0)[1]
+
+  local target
+  if dir == 1 then
+    for _, rec in ipairs(records) do
+      if rec.lnum > cur then
+        target = rec
+        break
+      end
+    end
+    target = target or records[1]
+  else
+    for i = #records, 1, -1 do
+      if records[i].lnum < cur then
+        target = records[i]
+        break
+      end
+    end
+    target = target or records[#records]
+  end
+  vim.api.nvim_win_set_cursor(0, { target.lnum, 0 })
+end
+
+function UI.next()
+  jump(1)
+end
+
+function UI.prev()
+  jump(-1)
+end
+
+-- Lists every annotation in the current worktree via a picker; confirming an
+-- item jumps to it, `annotation_delete` removes it, `annotation_resolve` /
+-- `annotation_unresolve` mark it resolved by hand or undo that. The preview
+-- frames the label/body/note the same way the buffer's block does, above the
+-- file excerpt at its range with the annotated lines highlighted; sent and
+-- resolved items are dimmed in the list, and resolved ones carry a state
+-- glyph prefix (a checkmark for "changed" and manual resolutions, a dash for
+-- "unchanged").
+function UI.list()
+  local toplevel = Store.toplevel(vim.uv.cwd())
+  local records = Store.load()
+  local items = {}
+  for _, rec in ipairs(records) do
+    local prefix = ""
+    if rec.resolution then
+      local glyph = Anchor.record_state(rec)
+      prefix = glyph .. " "
+    end
+    table.insert(items, {
+      text = string.format("%s%s:%d %s", prefix, rec.file, rec.lnum, rec.body:gsub("\n", " ")),
+      file = rec.file,
+      pos = { rec.lnum, 0 },
+      annotation_id = rec.id,
+      annotation = rec,
+    })
+  end
+
+  Snacks.picker.pick({
+    title = "Annotations",
+    items = items,
+    format = function(item, picker)
+      local ret = require("snacks.picker.format").file(item, picker)
+      if item.annotation.sent_at then
+        for _, chunk in ipairs(ret) do
+          chunk[2] = "Comment"
+        end
+      end
+      return ret
+    end,
+    preview = function(ctx)
+      local rec = ctx.item.annotation
+      local _, sign_hl = Anchor.record_state(rec)
+
+      -- Same three-part structure as the buffer's block: a label naming the
+      -- state, the body, then a note if there is one.
+      local block_lines = { "annotation · " .. Anchor.state_word(rec) }
+      vim.list_extend(block_lines, vim.split(rec.body, "\n", { plain = true }))
+      local note = rec.resolution and vim.trim(rec.resolution.note or "") or ""
+      if note ~= "" then
+        vim.list_extend(block_lines, vim.split(note, "\n", { plain = true }))
+      end
+
+      local lines = vim.list_extend({}, block_lines)
+      table.insert(lines, "")
+      local header_len = #lines
+
+      -- The file excerpt goes below the block, if the file can be read.
+      local abs = toplevel and vim.fs.joinpath(toplevel, rec.file) or rec.file
+      local from, to = 0, -1
+      if vim.fn.filereadable(abs) == 1 then
+        local file_lines = vim.fn.readfile(abs)
+        from = math.max(1, rec.lnum - 3)
+        to = math.min(#file_lines, (rec.end_lnum or rec.lnum) + 3)
+        for l = from, to do
+          table.insert(lines, file_lines[l] or "")
+        end
+      end
+
+      ctx.preview:reset()
+      ctx.preview:set_lines(lines)
+      ctx.preview:set_title(rec.file)
+
+      -- Frames the block the same way anchor.lua's buffer rendering does: a
+      -- full-row background plus a left bar in the state's color, an inline
+      -- extmark rather than text so the bar never becomes part of a yank or
+      -- search in the preview.
+      local buf = ctx.preview.win.buf
+      for row, line in ipairs(block_lines) do
+        vim.api.nvim_buf_set_extmark(buf, ctx.preview:ns(), row - 1, 0, {
+          end_col = #line,
+          hl_group = "AnnotationBlock",
+          hl_eol = true,
+          priority = 100,
+        })
+        vim.api.nvim_buf_set_extmark(buf, ctx.preview:ns(), row - 1, 0, {
+          virt_text = { { Anchor.block_bar() .. " ", sign_hl } },
+          virt_text_pos = "inline",
+          priority = 101,
+        })
+      end
+
+      if to >= from and from > 0 then
+        ctx.preview:highlight({ file = abs })
+        for l = rec.lnum, math.min(rec.end_lnum or rec.lnum, to) do
+          local row = header_len + (l - from)
+          vim.api.nvim_buf_set_extmark(buf, ctx.preview:ns(), row, 0, {
+            line_hl_group = "AnnotationRange",
+            priority = 100,
+          })
+        end
+      end
+    end,
+    confirm = function(picker, item)
+      picker:close()
+      if item then
+        -- item.file is repo-relative; `:edit` resolves relative to nvim's
+        -- cwd, which is not always the toplevel (e.g. cwd'd into a subdir).
+        local target = toplevel and vim.fs.joinpath(toplevel, item.file) or item.file
+        vim.cmd.edit(target)
+        vim.api.nvim_win_set_cursor(0, { item.pos[1], 0 })
+      end
+    end,
+    win = {
+      list = {
+        keys = { ["x"] = "annotation_delete", ["r"] = "annotation_resolve", ["u"] = "annotation_unresolve" },
+      },
+      input = {
+        keys = {
+          ["x"] = { "annotation_delete", mode = { "n" } },
+          ["r"] = { "annotation_resolve", mode = { "n" } },
+          ["u"] = { "annotation_unresolve", mode = { "n" } },
+        },
+      },
+    },
+    actions = {
+      annotation_delete = function(picker, item)
+        if item then
+          Store.remove(item.annotation_id)
+          picker:find()
+        end
+      end,
+      annotation_resolve = function(picker, item)
+        if not item then
+          return
+        end
+        vim.ui.input({ prompt = "Resolution note (optional): " }, function(note)
+          if note == nil then
+            return
+          end
+          Store.resolve(item.annotation_id, note)
+          picker:find()
+        end)
+      end,
+      annotation_unresolve = function(picker, item)
+        if item then
+          Store.unresolve(item.annotation_id)
+          picker:find()
+        end
+      end,
+    },
+  })
+end
+
+function UI.send()
+  Send.send()
+end
+
+-- Dismisses every resolved annotation, Claude's replies and manual resolves
+-- alike: there's nothing left to act on for any of them.
+function UI.clear_resolved()
+  for _, rec in ipairs(Store.resolved()) do
+    Store.dismiss(rec.id)
+  end
+end
+
+return UI
