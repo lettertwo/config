@@ -92,6 +92,17 @@
           {
             "type": "command",
             "command": "bash ~/.claude/showrunner-hook.sh voice"
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/kitty-tag.sh start",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/turn-snapshot.sh sweep",
+            "async": true,
+            "timeout": 120
           }
         ]
       }
@@ -136,6 +147,12 @@
             "type": "command",
             "command": "bash ~/.claude/terminal-progress.sh start",
             "async": true
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/turn-snapshot.sh prompt",
+            "async": true,
+            "timeout": 120
           }
         ]
       }
@@ -152,6 +169,12 @@
             "type": "command",
             "command": "bash ~/.claude/terminal-progress.sh clear",
             "async": true
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/turn-snapshot.sh stop",
+            "async": true,
+            "timeout": 120
           }
         ]
       }
@@ -178,6 +201,11 @@
           {
             "type": "command",
             "command": "bash ~/.claude/terminal-progress.sh clear",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/kitty-tag.sh end",
             "async": true
           }
         ]
