@@ -17,6 +17,8 @@
 !/statusline-command.sh
 !/subagent-statusline.sh
 !/terminal-progress.sh
+!/kitty-tag.sh
+!/turn-snapshot.sh
 !/agents/
 !/attic/
 !/bin/
