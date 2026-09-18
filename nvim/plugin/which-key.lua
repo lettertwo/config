@@ -8,6 +8,7 @@ vim.schedule(function()
       {
         mode = { "n", "x" },
         { "<leader><tab>", group = "tabs" },
+        { "<leader>a", group = "annotations" },
         { "<leader>c", group = "code" },
         { "<leader>d", group = "debug" },
         { "<leader>dp", group = "profiler" },
