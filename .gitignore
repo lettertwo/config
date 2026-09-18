@@ -33,6 +33,8 @@ cagent/*.debug.log
 homebrew/trust.json.lock
 cursor/*cache*
 cursor/chats/
+claude/statusline.local
+claude/skills/synced
 
 # laserwave.nvim
 git/laserwave.gitconfig
@@ -52,4 +54,3 @@ kitty/loading.py
 kitty/neighboring_window.py
 kitty/relative_resize.py
 kitty/split_window.py
-claude/statusline.local
