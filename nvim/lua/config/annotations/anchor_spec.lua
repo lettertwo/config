@@ -92,6 +92,33 @@ describe("Config.Annotations.Anchor range tracking", function()
     assert.equals(6, rec.end_lnum)
   end)
 
+  it("render_records draws into an untracked scratch buffer without letting sync write back", function()
+    -- A picker preview: the file's lines in a buffer that carries no path.
+    local buf = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, file_lines(10))
+
+    Store.add({
+      id = "r1",
+      file = "f.lua",
+      lnum = 3,
+      end_lnum = 5,
+      anchor_text = "line 3\nline 4\nline 5",
+      body = "b",
+      created_at = 0,
+    })
+    Anchor.render_records(buf, Store.for_file("f.lua"))
+
+    local marks = vim.api.nvim_buf_get_extmarks(buf, Anchor._ns(), 0, -1, { details = true })
+    assert.is_true(#marks > 0)
+
+    -- Editing the scratch buffer and syncing must leave the store alone.
+    vim.api.nvim_buf_set_lines(buf, 0, 0, false, { "inserted above" })
+    Anchor.sync(buf)
+    local rec = Store.for_file("f.lua")[1]
+    assert.equals(3, rec.lnum)
+    assert.equals(5, rec.end_lnum)
+  end)
+
   it("shifts both ends of the range together for an edit above it", function()
     local abs = vim.fs.joinpath(dir, "f.lua")
     local buf = vim.api.nvim_create_buf(true, false)
