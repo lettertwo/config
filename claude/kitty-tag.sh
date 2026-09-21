@@ -27,5 +27,10 @@ cwd=$(jq -r '.cwd // empty' <<<"$payload")
 session_id=$(jq -r '.session_id // empty' <<<"$payload")
 [ -n "$cwd" ] || exit 0
 
-kitten @ set-user-vars --match id:"$KITTY_WINDOW_ID" claude_cwd="$cwd" claude_session="$session_id" >/dev/null 2>&1
+# send.lua matches this tag against the git worktree toplevel, not the raw
+# cwd, so a Claude started in a subdirectory still gets found: tag the
+# toplevel when this cwd is inside a git worktree, else fall back to cwd.
+toplevel=$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null) || toplevel="$cwd"
+
+kitten @ set-user-vars --match id:"$KITTY_WINDOW_ID" claude_cwd="$toplevel" claude_session="$session_id" >/dev/null 2>&1
 exit 0
