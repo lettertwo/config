@@ -40,6 +40,7 @@ local defaults = {
     range_end = "╵",
     resolved_changed = "✓",
     resolved_unchanged = "–",
+    stale = "?",
   },
   show_body = true,
   show_background = false,

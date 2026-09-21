@@ -28,6 +28,7 @@ local signs = {
   range_end = "╵",
   resolved_changed = "✓",
   resolved_unchanged = "–",
+  stale = "?",
 }
 local show_body = true
 local show_background = false
@@ -69,6 +70,7 @@ local function register_highlights()
   vim.api.nvim_set_hl(0, "AnnotationRange", { link = "Visual", default = true })
   vim.api.nvim_set_hl(0, "AnnotationSentSign", { link = "Comment", default = true })
   vim.api.nvim_set_hl(0, "AnnotationResolvedSign", { link = "DiagnosticHint", default = true })
+  vim.api.nvim_set_hl(0, "AnnotationStaleSign", { link = "DiagnosticWarn", default = true })
   -- Background for the whole block; linking is fine here since it's the only
   -- attribute this group carries (no foreground text is ever drawn in it
   -- directly, only the padding after the block-only groups' own text).
@@ -124,14 +126,21 @@ function Anchor.configure(opts)
   end
 end
 
--- The sign glyph and highlight group for a record's current state: resolved
--- (Claude addressed it, or the user marked it resolved by hand) beats sent
--- (delivered, no reply yet) beats pending (not sent). A manual resolution
--- gets the same checkmark as "changed": either way there's nothing left to
--- act on, which is the distinction this glyph exists to carry.
+-- The sign glyph and highlight group for a record's current state: stale
+-- (render couldn't find its anchor_text near the stored position) beats
+-- everything else, since the position it's drawn at can't be trusted; below
+-- that, resolved (Claude addressed it, or the user marked it resolved by
+-- hand) beats sent (delivered, no reply yet) beats pending (not sent). A
+-- manual resolution gets the same checkmark as "changed": either way
+-- there's nothing left to act on, which is the distinction this glyph
+-- exists to carry. `rec._stale` is set only on the transient copy
+-- render_records builds for drawing, never persisted.
 ---@param rec Config.Annotations.Record
 ---@return string sign_text, string sign_hl
 local function record_state(rec)
+  if rec._stale then
+    return signs.stale, "AnnotationStaleSign"
+  end
   if rec.resolution then
     local glyph = rec.resolution.status == "unchanged" and signs.resolved_unchanged or signs.resolved_changed
     return glyph, "AnnotationResolvedSign"
@@ -147,6 +156,9 @@ end
 ---@param rec Config.Annotations.Record
 ---@return string
 local function state_word(rec)
+  if rec._stale then
+    return "stale"
+  end
   if rec.resolution then
     if rec.resolution.status == "manual" then
       return "resolved by you"
@@ -355,6 +367,88 @@ local function place_record(buf, rec, line_count)
   end
 end
 
+local DRIFT_SEARCH_RADIUS = 50
+
+-- Reads `buf`'s lines at the 1-indexed, inclusive range [lnum, end_lnum],
+-- clamped to the buffer, joined the same way `sync` builds anchor_text so
+-- the two are comparable.
+---@param buf integer
+---@param lnum integer
+---@param end_lnum integer
+---@param line_count integer
+---@return string
+local function lines_at(buf, lnum, end_lnum, line_count)
+  local lo = clamp(lnum, line_count)
+  local hi = clamp(end_lnum, line_count)
+  if hi < lo then
+    hi = lo
+  end
+  return table.concat(vim.api.nvim_buf_get_lines(buf, lo - 1, hi, false), "\n")
+end
+
+-- Searches outward from `lnum` (nearest offset first) for a span of
+-- `height` lines whose text matches `anchor_text`: an edit Claude makes on
+-- disk only reaches `sync` on the next `BufWritePost`, so a stale position
+-- has to be found here, at render time, instead. Nil if nothing within
+-- `DRIFT_SEARCH_RADIUS` lines either side matches.
+---@param buf integer
+---@param lnum integer
+---@param height integer number of lines the anchor spans
+---@param anchor_text string
+---@param line_count integer
+---@return integer?
+local function find_drifted_lnum(buf, lnum, height, anchor_text, line_count)
+  for offset = 1, DRIFT_SEARCH_RADIUS do
+    for _, candidate in ipairs({ lnum - offset, lnum + offset }) do
+      if candidate >= 1 and candidate + height - 1 <= line_count then
+        local text = table.concat(vim.api.nvim_buf_get_lines(buf, candidate - 1, candidate + height - 1, false), "\n")
+        if text == anchor_text then
+          return candidate
+        end
+      end
+    end
+  end
+  return nil
+end
+
+-- Checks one record's anchor_text against the buffer at its stored
+-- position and returns the record to draw: unchanged if it still matches,
+-- a relocated copy (and a queued patch) if the same lines were found
+-- nearby, or a copy carrying `_stale` if they weren't found at all. Never
+-- mutates `rec` or the store directly; the caller applies every queued
+-- patch in one `Store.update_many` after the whole buffer is drawn.
+---@param buf integer
+---@param rec Config.Annotations.Record
+---@param line_count integer
+---@param patches table<string, table> id -> patch, appended to on a find
+---@return Config.Annotations.Record
+local function resolve_drift(buf, rec, line_count, patches)
+  local end_lnum = rec.end_lnum or rec.lnum
+  local height = math.max(end_lnum - rec.lnum + 1, 1)
+  if lines_at(buf, rec.lnum, end_lnum, line_count) == rec.anchor_text then
+    return rec
+  end
+
+  local found = find_drifted_lnum(buf, rec.lnum, height, rec.anchor_text, line_count)
+  if found then
+    local moved = vim.tbl_extend("force", {}, rec)
+    moved.lnum = found
+    moved.end_lnum = found + height - 1
+    patches[rec.id] = { lnum = moved.lnum, end_lnum = moved.end_lnum }
+    return moved
+  end
+
+  local stale = vim.tbl_extend("force", {}, rec)
+  stale._stale = true
+  return stale
+end
+
+-- Set for the duration of the Store.update_many call in render_records, so
+-- the AnnotationsChanged it fires doesn't re-render every buffer while this
+-- one is already mid-render with corrected positions; without the guard,
+-- render_records would call itself through that autocmd.
+local applying_drift = false
+
 -- Clears and redraws every extmark for `buf` from the store.
 ---@param buf integer
 function Anchor.render(buf)
@@ -368,7 +462,26 @@ function Anchor.render(buf)
   if not file then
     return
   end
-  Anchor.render_records(buf, Store.for_file(file))
+
+  -- Checked here, not in render_records: an edit Claude makes on disk only
+  -- reaches `sync` on the next BufWritePost, so a stale position has to be
+  -- caught on render instead. The picker preview calls render_records
+  -- directly with a scratch buffer that carries no path, and must not have
+  -- its content mistaken for drift against the real file.
+  local line_count = vim.api.nvim_buf_line_count(buf)
+  local patches = {}
+  local resolved = {}
+  for _, rec in ipairs(Store.for_file(file)) do
+    table.insert(resolved, resolve_drift(buf, rec, line_count, patches))
+  end
+
+  Anchor.render_records(buf, resolved)
+
+  if next(patches) then
+    applying_drift = true
+    Store.update_many(patches)
+    applying_drift = false
+  end
 end
 
 -- Draws `records` into `buf` exactly as `render` would, but for a caller
@@ -498,6 +611,13 @@ function Anchor.setup()
   end, "Sync drifted annotation positions back to the store")
 
   Config.on("User", "AnnotationsChanged", function()
+    -- Anchor.render's own Store.update_many call (drift relocation) fires
+    -- this same event; skip re-entering while that's in flight; the render
+    -- it's already mid-way through already reflects the corrected
+    -- positions.
+    if applying_drift then
+      return
+    end
     for buf in pairs(marks_by_buf) do
       Anchor.render(buf)
     end
