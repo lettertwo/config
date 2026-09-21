@@ -204,16 +204,28 @@ end
 ---@param id string
 ---@param patch table
 function AnnotationStore.update(id, patch)
+  AnnotationStore.update_many({ [id] = patch })
+end
+
+-- Applies several patches in one save and one emit, so a caller updating a
+-- batch of records (anchor.lua relocating drifted annotations on render)
+-- doesn't write the file or fire AnnotationsChanged once per record.
+---@param patches table<string, table> id -> patch
+function AnnotationStore.update_many(patches)
   local records = AnnotationStore.load()
+  local touched = {}
   for _, rec in ipairs(records) do
-    if rec.id == id then
+    local patch = patches[rec.id]
+    if patch then
       for k, v in pairs(patch) do
         rec[k] = v
       end
-      AnnotationStore.save()
-      emit({ id })
-      return
+      table.insert(touched, rec.id)
     end
+  end
+  if #touched > 0 then
+    AnnotationStore.save()
+    emit(touched)
   end
 end
 

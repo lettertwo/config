@@ -286,7 +286,15 @@ describe("Config.Annotations.Anchor range tracking", function()
     }, res_path)
 
     for i, id in ipairs({ "changed", "unchanged", "manual" }) do
-      Store.add({ id = id, file = "f.lua", lnum = 2 + i, end_lnum = 2 + i, anchor_text = "x", body = "c", created_at = 2 + i })
+      Store.add({
+        id = id,
+        file = "f.lua",
+        lnum = 2 + i,
+        end_lnum = 2 + i,
+        anchor_text = "line " .. (2 + i),
+        body = "c",
+        created_at = 2 + i,
+      })
     end
     Store.mark_sent({ "changed", "unchanged", "manual" }, "batch-1")
     Store._reset_cache()
@@ -318,6 +326,51 @@ describe("Config.Annotations.Anchor range tracking", function()
       "annotation · sent",
       "annotation · unchanged",
     }, labels)
+  end)
+
+  it("relocates a drifted annotation to wherever its anchor_text now lives, and persists the move", function()
+    local abs = vim.fs.joinpath(dir, "f.lua")
+    local buf = vim.api.nvim_create_buf(true, false)
+    vim.api.nvim_buf_set_name(buf, abs)
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, file_lines(10))
+
+    Store.add({ id = "r1", file = "f.lua", lnum = 3, end_lnum = 3, anchor_text = "line 3", body = "b", created_at = 1 })
+
+    -- An edit on disk that never went through sync(): two lines land above
+    -- what was line 3, so its content is now at line 5.
+    vim.api.nvim_buf_set_lines(buf, 0, 0, false, { "new 1", "new 2" })
+    Anchor.render(buf)
+
+    local rec = Store.for_file("f.lua")[1]
+    assert.equals(5, rec.lnum)
+    assert.equals(5, rec.end_lnum)
+  end)
+
+  it("marks an annotation stale when its anchor_text can't be found nearby", function()
+    local abs = vim.fs.joinpath(dir, "f.lua")
+    local buf = vim.api.nvim_create_buf(true, false)
+    vim.api.nvim_buf_set_name(buf, abs)
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, file_lines(10))
+
+    Store.add({ id = "r1", file = "f.lua", lnum = 3, end_lnum = 3, anchor_text = "line 3", body = "b", created_at = 1 })
+
+    -- The annotated line itself is gone; nothing in the buffer matches
+    -- anchor_text any more.
+    vim.api.nvim_buf_set_lines(buf, 2, 3, false, {})
+    Anchor.render(buf)
+
+    local sign
+    for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(buf, Anchor._ns(), 0, -1, { details = true })) do
+      if mark[4].sign_text then
+        sign = vim.trim(mark[4].sign_text)
+      end
+    end
+    assert.equals("?", sign)
+
+    -- A stale record is never written back: the store still has its
+    -- original, untrustworthy position rather than the clamped draw one.
+    local rec = Store.for_file("f.lua")[1]
+    assert.equals(3, rec.lnum)
   end)
 end)
 
