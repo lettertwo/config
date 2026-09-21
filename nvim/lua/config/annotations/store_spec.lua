@@ -178,6 +178,17 @@ describe("Config.Annotations.Store", function()
     assert.equals("manual", row.status)
   end)
 
+  it("never writes a resolution key into annotations.json", function()
+    Store.add({ id = "1", file = "a.lua", lnum = 1, end_lnum = 1, anchor_text = "a", body = "b", created_at = 1 })
+    write_resolution({ id = "1", status = "changed", note = "done", ts = 100 })
+    Store._reset_cache()
+    Store.load()
+    Store.update("1", { lnum = 2 })
+
+    local raw = table.concat(vim.fn.readfile(vim.fs.joinpath(dir, ".git", "claude-annotations", "annotations.json")), "\n")
+    assert.is_nil(raw:find('"resolution"', 1, true))
+  end)
+
   it("unresolve removes the resolutions.jsonl rows and clears sent_at/batch", function()
     Store.add({ id = "1", file = "a.lua", lnum = 1, end_lnum = 1, anchor_text = "a", body = "b", created_at = 1 })
     Store.mark_sent({ "1" }, "batch-1")
