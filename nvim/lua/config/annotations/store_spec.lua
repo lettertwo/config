@@ -189,6 +189,21 @@ describe("Config.Annotations.Store", function()
     assert.is_nil(raw:find('"resolution"', 1, true))
   end)
 
+  it("resolve appends a line without rewriting the ones already on disk", function()
+    Store.add({ id = "1", file = "a.lua", lnum = 1, end_lnum = 1, anchor_text = "a", body = "b", created_at = 1 })
+    Store.add({ id = "2", file = "a.lua", lnum = 2, end_lnum = 2, anchor_text = "c", body = "d", created_at = 2 })
+    write_resolution({ id = "1", status = "changed", note = "done", ts = 100 })
+    local before = vim.fn.readfile(resolutions_path())
+
+    Store.resolve("2", "manual note")
+
+    local after = vim.fn.readfile(resolutions_path())
+    assert.equals(#before + 1, #after)
+    for i, line in ipairs(before) do
+      assert.equals(line, after[i])
+    end
+  end)
+
   it("unresolve removes the resolutions.jsonl rows and clears sent_at/batch", function()
     Store.add({ id = "1", file = "a.lua", lnum = 1, end_lnum = 1, anchor_text = "a", body = "b", created_at = 1 })
     Store.mark_sent({ "1" }, "batch-1")

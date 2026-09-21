@@ -285,7 +285,11 @@ function AnnotationStore.resolved()
   return out
 end
 
--- Rewrites resolutions.jsonl without any row for `id`.
+-- Rewrites resolutions.jsonl without any row for `id`. This is the one
+-- operation on this file that has to rewrite rather than append, since it
+-- removes rows; the read happens immediately before the writefile call so
+-- the window in which a concurrent append could be lost is as small as it
+-- can be without a lock.
 ---@param res_path string
 ---@param id string
 local function drop_resolution_rows(res_path, id)
@@ -328,8 +332,9 @@ end
 
 -- Marks a record resolved without sending it anywhere: appends a "manual"
 -- row to resolutions.jsonl (the same file the skill appends to; both only
--- ever append, so there's nothing to conflict). Updates the in-memory record
--- immediately rather than waiting on the file watcher's debounce.
+-- ever append, so there's nothing to conflict, and neither side has to read
+-- the file back before writing). Updates the in-memory record immediately
+-- rather than waiting on the file watcher's debounce.
 ---@param id string
 ---@param note string? one line, may be empty
 function AnnotationStore.resolve(id, note)
@@ -348,12 +353,11 @@ function AnnotationStore.resolve(id, note)
   local resolution = { status = "manual", note = note or "", ts = os.time() }
   local res_path = resolutions_path(cache_path)
   vim.fn.mkdir(vim.fs.dirname(res_path), "p")
-  local lines = {}
-  if vim.fn.filereadable(res_path) == 1 then
-    lines = vim.fn.readfile(res_path)
+  local fh = io.open(res_path, "a")
+  if fh then
+    fh:write(vim.json.encode(vim.tbl_extend("force", { id = id }, resolution)) .. "\n")
+    fh:close()
   end
-  table.insert(lines, vim.json.encode(vim.tbl_extend("force", { id = id }, resolution)))
-  vim.fn.writefile(lines, res_path)
 
   rec.resolution = resolution
   emit({ id })
