@@ -21,9 +21,13 @@
 # leak. `seq` and the ledger row live under a mkdir-based lock
 # (`<git-common-dir>/claude-turns/.lock`) since macOS has no `flock` binary
 # and two hooks (e.g. two concurrent sessions) can race on the same repo.
-# A lock held past 30s is treated as abandoned (a killed or timed-out hook —
-# `-p` mode cancels async Stop hooks outright, and a hook that hits its own
-# timeout is killed the same way) and broken rather than waited on forever.
+# A lock held past 30s is treated as abandoned and broken rather than waited
+# on forever: this script only does the ~100ms of work above (a `write-tree`
+# against a throwaway index and a ledger append), so a holder still sitting
+# on the lock 30s in is not making progress, whatever killed it. `claude/
+# settings.json` gives all three of this hook's entries a 120s timeout, so a
+# waiter has to be able to outlast one stale lock and still make its own
+# attempt inside that cap; see acquire_lock's wait ceiling below.
 #
 # `Stop` never fires on user interrupt, so prompt/stop rows do not strictly
 # alternate; the next `UserPromptSubmit` still closes the gap. Consecutive
@@ -68,11 +72,18 @@ acquire_lock() {
       age=$(( $(date +%s) - mtime ))
       if [ "$age" -gt "$STALE_LOCK_SECS" ]; then
         rmdir "$lock" 2>/dev/null
+        # A failing rmdir (another waiter already broke it, or won the
+        # mkdir first) must not spin this loop as fast as it can go.
+        sleep 0.05
         continue
       fi
     fi
     waited=$((waited + 1))
-    [ "$waited" -ge 100 ] && return 1
+    # 700 * 0.05s = 35s, past STALE_LOCK_SECS, so a waiter is guaranteed a
+    # chance to break a stale lock rather than giving up while it's still
+    # waiting out someone else's live one; still well inside the 120s hook
+    # timeout.
+    [ "$waited" -ge 700 ] && return 1
     sleep 0.05
   done
 }
