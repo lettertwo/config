@@ -1,5 +1,5 @@
 -- User-facing actions for the annotation core: add/edit/delete/dismiss at a
--- line or visual range, resolve/unresolve one by hand, list via a picker,
+-- line or visual range, toggle one resolved by hand, list via a picker,
 -- jump between annotations in a buffer, send a batch, and clear the ones
 -- that got resolved. `config/annotations/init.lua` binds these to keys;
 -- nothing here assumes a particular key was pressed.
@@ -173,25 +173,23 @@ function UI.dismiss()
   end)
 end
 
--- Marks the annotation at cursor resolved by hand, for one that never needed
--- to go to Claude at all. Prompts for an optional one-line note; leave it
--- blank and just press enter to resolve without one.
+-- Toggles resolution on the annotation at cursor. A pending one is marked
+-- resolved by hand, for one that never needed to go to Claude at all: prompts
+-- for an optional one-line note; leave it blank and just press enter to
+-- resolve without one. A resolved one (manual or Claude's) is made pending
+-- again.
 function UI.resolve()
   pick_annotation_at_cursor(function(rec)
+    if rec.resolution then
+      Store.unresolve(rec.id)
+      return
+    end
     vim.ui.input({ prompt = "Resolution note (optional): " }, function(note)
       if note == nil then
         return -- cancelled, e.g. <Esc>
       end
       Store.resolve(rec.id, note)
     end)
-  end)
-end
-
--- Reverses a resolution (manual or Claude's) on the annotation at cursor and
--- makes it pending again.
-function UI.unresolve()
-  pick_annotation_at_cursor(function(rec)
-    Store.unresolve(rec.id)
   end)
 end
 
@@ -252,8 +250,8 @@ function UI.prev()
 end
 
 -- Lists every annotation in the current worktree via a picker; confirming an
--- item jumps to it, `annotation_delete` removes it, `annotation_resolve` /
--- `annotation_unresolve` mark it resolved by hand or undo that. The preview
+-- item jumps to it, `annotation_delete` removes it, `annotation_resolve`
+-- toggles it resolved by hand or back to pending. The preview
 -- frames the label/body/note the same way the buffer's block does, above the
 -- file excerpt at its range with the annotated lines highlighted; sent and
 -- resolved items are dimmed in the list, and resolved ones carry a state
@@ -365,13 +363,12 @@ function UI.list()
     end,
     win = {
       list = {
-        keys = { ["x"] = "annotation_delete", ["r"] = "annotation_resolve", ["u"] = "annotation_unresolve" },
+        keys = { ["x"] = "annotation_delete", ["r"] = "annotation_resolve" },
       },
       input = {
         keys = {
           ["x"] = { "annotation_delete", mode = { "n" } },
           ["r"] = { "annotation_resolve", mode = { "n" } },
-          ["u"] = { "annotation_unresolve", mode = { "n" } },
         },
       },
     },
@@ -382,8 +379,14 @@ function UI.list()
           picker:find()
         end
       end,
+      -- Same toggle as UI.resolve, against the picker's current item.
       annotation_resolve = function(picker, item)
         if not item then
+          return
+        end
+        if item.annotation.resolution then
+          Store.unresolve(item.annotation_id)
+          picker:find()
           return
         end
         vim.ui.input({ prompt = "Resolution note (optional): " }, function(note)
@@ -393,12 +396,6 @@ function UI.list()
           Store.resolve(item.annotation_id, note)
           picker:find()
         end)
-      end,
-      annotation_unresolve = function(picker, item)
-        if item then
-          Store.unresolve(item.annotation_id)
-          picker:find()
-        end
       end,
     },
   })

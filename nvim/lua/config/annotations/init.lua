@@ -17,7 +17,6 @@ local DEFAULT_KEYMAPS = {
   ["<leader>ad"] = "delete",
   ["<leader>ax"] = "dismiss",
   ["<leader>ar"] = "resolve",
-  ["<leader>au"] = "unresolve",
   ["<leader>al"] = "list",
   ["<leader>at"] = "toggle_body",
   ["<leader>ab"] = "toggle_background",
