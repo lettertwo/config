@@ -28,31 +28,37 @@ local function kitty(args)
   return vim.system(cmd, { text = true }):wait()
 end
 
--- Windows tagged by claude/kitty-tag.sh with claude_cwd == toplevel, else
--- windows whose foreground process is a `claude` invocation cwd'd there.
+-- A tag or a process cwd matches when it's the toplevel itself or a path
+-- under it, so a Claude started in a subdirectory of the worktree still
+-- matches: kitty-tag.sh tags the toplevel it resolves at hook time, but an
+-- older-tagged window or the process-cwd fallback can still carry a
+-- subdirectory.
+---@param candidate string
 ---@param toplevel string
----@return table[] windows, string? err
-local function find_claude_windows(toplevel)
-  local result = kitty({ "ls" })
-  if result.code ~= 0 then
-    return {}, "kitty @ ls failed: " .. (result.stderr or "")
-  end
-  local ok, tabs = pcall(vim.json.decode, result.stdout)
-  if not ok then
-    return {}, "kitty @ ls returned invalid JSON"
-  end
+---@return boolean
+local function under_toplevel(candidate, toplevel)
+  local normalized = vim.fs.normalize(candidate)
+  return normalized == toplevel or normalized:sub(1, #toplevel + 1) == toplevel .. "/"
+end
 
+-- Pure over the `kitty @ ls` JSON: windows tagged by claude/kitty-tag.sh
+-- with claude_cwd under toplevel win over windows whose foreground process
+-- is a `claude` invocation cwd'd there.
+---@param os_windows table[] decoded `kitty @ ls` output
+---@param toplevel string
+---@return table[] windows
+function Send._match_windows(os_windows, toplevel)
   local tagged, by_process = {}, {}
-  for _, os_window in ipairs(tabs) do
+  for _, os_window in ipairs(os_windows) do
     for _, tab in ipairs(os_window.tabs or {}) do
       for _, win in ipairs(tab.windows or {}) do
         local user_vars = win.user_vars or {}
-        if user_vars.claude_cwd == toplevel then
+        if user_vars.claude_cwd and under_toplevel(user_vars.claude_cwd, toplevel) then
           table.insert(tagged, win)
         else
           for _, proc in ipairs(win.foreground_processes or {}) do
             local cmdline = proc.cmdline or {}
-            if proc.cwd == toplevel and cmdline[1] and cmdline[1]:match("claude$") then
+            if proc.cwd and under_toplevel(proc.cwd, toplevel) and cmdline[1] and cmdline[1]:match("claude$") then
               table.insert(by_process, win)
               break
             end
@@ -62,7 +68,24 @@ local function find_claude_windows(toplevel)
     end
   end
 
-  return #tagged > 0 and tagged or by_process, nil
+  return #tagged > 0 and tagged or by_process
+end
+
+-- Windows tagged by claude/kitty-tag.sh with claude_cwd under toplevel, else
+-- windows whose foreground process is a `claude` invocation cwd'd there.
+---@param toplevel string
+---@return table[] windows, string? err
+local function find_claude_windows(toplevel)
+  local result = kitty({ "ls" })
+  if result.code ~= 0 then
+    return {}, "kitty @ ls failed: " .. (result.stderr or "")
+  end
+  local ok, os_windows = pcall(vim.json.decode, result.stdout)
+  if not ok then
+    return {}, "kitty @ ls returned invalid JSON"
+  end
+
+  return Send._match_windows(os_windows, toplevel), nil
 end
 
 -- Exports pending annotations, finds the Claude window for this repo, and
