@@ -20,7 +20,9 @@ local ns = vim.api.nvim_create_namespace("config.annotations")
 local SIGN_PRIORITY = 200
 local BACKGROUND_PRIORITY = 100
 
-local signs = {
+-- Exported so `init.lua`'s `defaults.signs` can reference this table
+-- instead of carrying a second literal that drifts from this one.
+Anchor.default_signs = {
   pending = "▶",
   sent = "▸",
   connector = "│",
@@ -30,6 +32,7 @@ local signs = {
   resolved_unchanged = "–",
   stale = "?",
 }
+local signs = vim.tbl_extend("force", {}, Anchor.default_signs)
 local show_body = true
 local show_background = false
 
