@@ -178,7 +178,16 @@ function AnnotationStore.save()
   if vim.fn.isdirectory(dir) == 0 then
     vim.fn.mkdir(dir, "p")
   end
-  local ok, encoded = pcall(vim.json.encode, cache)
+  -- `resolution` is merged onto each record in memory by load(); strip it
+  -- back off here so annotations.json never gains that key, keeping
+  -- resolutions.jsonl the only place a resolution is stored on disk.
+  local without_resolution = {}
+  for _, rec in ipairs(cache) do
+    local copy = vim.tbl_extend("force", {}, rec)
+    copy.resolution = nil
+    table.insert(without_resolution, copy)
+  end
+  local ok, encoded = pcall(vim.json.encode, without_resolution)
   if ok and encoded then
     vim.fn.writefile({ encoded }, cache_path)
   end
