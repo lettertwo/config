@@ -365,9 +365,11 @@ end
 -- Dismisses every resolved annotation, Claude's replies and manual resolves
 -- alike: there's nothing left to act on for any of them.
 function UI.clear_resolved()
+  local ids = {}
   for _, rec in ipairs(Store.resolved()) do
-    Store.dismiss(rec.id)
+    table.insert(ids, rec.id)
   end
+  Store.dismiss_many(ids)
 end
 
 return UI

@@ -560,6 +560,10 @@ function Anchor.sync(buf)
     end
   end
 
+  -- Collected into one Store.update_many below rather than one Store.update
+  -- per drifted record, so a buffer with several annotations gets one save
+  -- and one AnnotationsChanged instead of one of each per record.
+  local patches = {}
   for ann_id, pos in pairs(positions) do
     local rec = records[ann_id]
     if rec then
@@ -570,9 +574,12 @@ function Anchor.sync(buf)
       end
       local anchor_text = table.concat(vim.api.nvim_buf_get_lines(buf, lnum - 1, end_lnum, false), "\n")
       if lnum ~= rec.lnum or end_lnum ~= rec.end_lnum or anchor_text ~= rec.anchor_text then
-        Store.update(ann_id, { lnum = lnum, end_lnum = end_lnum, anchor_text = anchor_text })
+        patches[ann_id] = { lnum = lnum, end_lnum = end_lnum, anchor_text = anchor_text }
       end
     end
+  end
+  if next(patches) then
+    Store.update_many(patches)
   end
 end
 
@@ -601,7 +608,11 @@ end
 Anchor.record_state = record_state
 
 function Anchor.setup()
-  Config.on({ "BufReadPost", "BufEnter" }, function(ev)
+  -- BufEnter is not in this list: BufReadPost covers the load and
+  -- BufWinEnter below covers every time the buffer becomes visible, and
+  -- extmarks persist on a buffer that isn't currently displayed, so nothing
+  -- needs re-rendering just because the cursor moved into it.
+  Config.on("BufReadPost", function(ev)
     Anchor.render(ev.buf)
   end, "Render stored annotations for the buffer")
 
