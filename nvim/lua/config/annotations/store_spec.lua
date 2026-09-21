@@ -162,6 +162,48 @@ describe("Config.Annotations.Store", function()
     assert.equals("2", row.id)
   end)
 
+  it("update_many applies several patches with one emit", function()
+    Store.add({ id = "1", file = "a.lua", lnum = 1, end_lnum = 1, anchor_text = "a", body = "b", created_at = 1 })
+    Store.add({ id = "2", file = "a.lua", lnum = 2, end_lnum = 2, anchor_text = "c", body = "d", created_at = 2 })
+
+    local emits = 0
+    local autocmd_id = vim.api.nvim_create_autocmd("User", {
+      pattern = "AnnotationsChanged",
+      callback = function()
+        emits = emits + 1
+      end,
+    })
+
+    Store.update_many({ ["1"] = { lnum = 10 }, ["2"] = { lnum = 20 } })
+    vim.api.nvim_del_autocmd(autocmd_id)
+
+    assert.equals(1, emits)
+    local records = Store.load()
+    assert.equals(10, records[1].lnum)
+    assert.equals(20, records[2].lnum)
+  end)
+
+  it("dismiss_many removes several records and their resolutions.jsonl rows in one rewrite", function()
+    Store.add({ id = "1", file = "a.lua", lnum = 1, end_lnum = 1, anchor_text = "a", body = "b", created_at = 1 })
+    Store.add({ id = "2", file = "a.lua", lnum = 2, end_lnum = 2, anchor_text = "c", body = "d", created_at = 2 })
+    Store.add({ id = "3", file = "a.lua", lnum = 3, end_lnum = 3, anchor_text = "e", body = "f", created_at = 3 })
+    Store.mark_sent({ "1", "2", "3" }, "batch-1")
+    write_resolution({ id = "1", status = "changed", note = "done", ts = 100 })
+    write_resolution({ id = "2", status = "unchanged", note = "fine as is", ts = 100 })
+    write_resolution({ id = "3", status = "changed", note = "also done", ts = 100 })
+    Store._reset_cache()
+
+    Store.dismiss_many({ "1", "2" })
+
+    local records = Store.load()
+    assert.equals(1, #records)
+    assert.equals("3", records[1].id)
+
+    local remaining_rows = vim.fn.readfile(resolutions_path())
+    assert.equals(1, #remaining_rows)
+    assert.equals("3", vim.json.decode(remaining_rows[1]).id)
+  end)
+
   it("resolve appends a manual row and updates the record in memory", function()
     Store.add({ id = "1", file = "a.lua", lnum = 1, end_lnum = 1, anchor_text = "a", body = "b", created_at = 1 })
 

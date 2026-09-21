@@ -297,14 +297,14 @@ function AnnotationStore.resolved()
   return out
 end
 
--- Rewrites resolutions.jsonl without any row for `id`. This is the one
--- operation on this file that has to rewrite rather than append, since it
--- removes rows; the read happens immediately before the writefile call so
--- the window in which a concurrent append could be lost is as small as it
--- can be without a lock.
+-- Rewrites resolutions.jsonl without any row for an id in `ids`. This is the
+-- one operation on this file that has to rewrite rather than append, since
+-- it removes rows; the read happens immediately before the writefile call
+-- so the window in which a concurrent append could be lost is as small as
+-- it can be without a lock.
 ---@param res_path string
----@param id string
-local function drop_resolution_rows(res_path, id)
+---@param ids table<string, true>
+local function drop_resolution_rows(res_path, ids)
   if vim.fn.filereadable(res_path) ~= 1 then
     return
   end
@@ -312,7 +312,7 @@ local function drop_resolution_rows(res_path, id)
   for _, line in ipairs(vim.fn.readfile(res_path)) do
     if line ~= "" then
       local ok, row = pcall(vim.json.decode, line)
-      if ok and type(row) == "table" and row.id ~= id then
+      if ok and type(row) == "table" and not ids[row.id] then
         table.insert(kept, line)
       end
     end
@@ -325,21 +325,40 @@ end
 -- resolved if its id is ever reused.
 ---@param id string
 function AnnotationStore.dismiss(id)
-  local records = AnnotationStore.load()
-  local removed = false
-  for i, rec in ipairs(records) do
-    if rec.id == id then
-      table.remove(records, i)
-      removed = true
-      break
-    end
-  end
-  if not removed or cache_path == nil then
+  AnnotationStore.dismiss_many({ id })
+end
+
+-- Removes every record in `ids` and drops all of their resolutions.jsonl
+-- rows in one rewrite, so a caller dismissing a batch (`UI.clear_resolved`)
+-- doesn't rewrite the file once per record.
+---@param ids string[]
+function AnnotationStore.dismiss_many(ids)
+  if #ids == 0 then
     return
   end
+  local wanted = {}
+  for _, id in ipairs(ids) do
+    wanted[id] = true
+  end
+
+  local records = AnnotationStore.load()
+  if cache_path == nil then
+    return
+  end
+  local removed = {}
+  for i = #records, 1, -1 do
+    if wanted[records[i].id] then
+      table.insert(removed, records[i].id)
+      table.remove(records, i)
+    end
+  end
+  if #removed == 0 then
+    return
+  end
+
   AnnotationStore.save()
-  drop_resolution_rows(resolutions_path(cache_path), id)
-  emit({ id })
+  drop_resolution_rows(resolutions_path(cache_path), wanted)
+  emit(removed)
 end
 
 -- Marks a record resolved without sending it anywhere: appends a "manual"
@@ -392,7 +411,7 @@ function AnnotationStore.unresolve(id)
     return
   end
 
-  drop_resolution_rows(resolutions_path(cache_path), id)
+  drop_resolution_rows(resolutions_path(cache_path), { [id] = true })
   rec.resolution = nil
   rec.sent_at = nil
   rec.batch = nil
