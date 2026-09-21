@@ -93,6 +93,11 @@ end
 -- anything sent if no window is found, or if more than one is ambiguous and
 -- the user cancels the picker.
 function Send.send()
+  if vim.fn.executable("kitty") ~= 1 then
+    vim.notify("kitty is not on PATH", vim.log.levels.ERROR, { title = "Annotations" })
+    return
+  end
+
   local pending = Store.pending()
   if #pending == 0 then
     vim.notify("No pending annotations to send", vim.log.levels.INFO, { title = "Annotations" })
