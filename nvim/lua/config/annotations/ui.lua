@@ -17,16 +17,18 @@ local function new_id()
   return string.format("%d-%d", os.time(), id_counter)
 end
 
--- Opens a named scratch buffer for a multi-line annotation body, pre-filled
--- with `initial` when editing, and calls `on_submit(body)` when the user
--- writes it (`:w`), or nothing on `:q`.
+-- Opens a scratch float for a multi-line annotation body, pre-filled with
+-- `initial` when editing, and calls `on_submit(body)` on normal-mode <cr>,
+-- or nothing on <esc> / q. Insert-mode <cr> still breaks a line, so bodies
+-- can span several. The keys are buffer-local, so nothing here reaches the
+-- window or file commands (:w, :q) that would act on the wrong thing.
+-- Leaving the float any other way (a click elsewhere, <c-w> motions) cancels
+-- it too, so a second `add` never stacks a prompt on top of a live one.
 ---@param initial string?
 ---@param on_submit fun(body: string)
 local function prompt_body(initial, on_submit)
   local buf = vim.api.nvim_create_buf(false, true)
-  vim.api.nvim_buf_set_name(buf, "annotations://new")
   vim.bo[buf].filetype = "markdown"
-  vim.bo[buf].buftype = "acwrite"
   vim.bo[buf].bufhidden = "wipe"
   if initial then
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, vim.split(initial, "\n", { plain = true }))
@@ -42,26 +44,28 @@ local function prompt_body(initial, on_submit)
     col = math.floor((vim.o.columns - width) / 2),
     style = "minimal",
     border = "rounded",
-    title = " annotation body: :w to submit, :q to cancel ",
+    title = " annotation body: <cr> to submit, <esc> to cancel ",
   })
+
+  local function close()
+    if vim.api.nvim_win_is_valid(win) then
+      vim.api.nvim_win_close(win, true)
+    end
+  end
 
   local function submit()
     local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
     local body = vim.trim(table.concat(lines, "\n"))
-    if vim.api.nvim_win_is_valid(win) then
-      vim.api.nvim_win_close(win, true)
-    end
+    close()
     if body ~= "" then
       on_submit(body)
     end
   end
 
-  Config.on("BufWriteCmd", buf, function()
-    submit()
-    return true
-  end, "Submit the annotation body")
-
-  vim.keymap.set("n", "q", "<cmd>close<cr>", { buffer = buf, desc = "Cancel annotation" })
+  vim.keymap.set("n", "<cr>", submit, { buffer = buf, desc = "Submit annotation" })
+  vim.keymap.set("n", "<esc>", close, { buffer = buf, desc = "Cancel annotation" })
+  vim.keymap.set("n", "q", close, { buffer = buf, desc = "Cancel annotation" })
+  Config.on("WinLeave", buf, close, "Cancel the annotation prompt on focus loss")
 end
 
 -- Adds an annotation at the cursor line, or over the given visual range.
