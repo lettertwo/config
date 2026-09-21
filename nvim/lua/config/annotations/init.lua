@@ -32,16 +32,7 @@ local ACTION_MODES = { add = { "n", "x" } }
 
 local defaults = {
   keymaps = DEFAULT_KEYMAPS,
-  signs = {
-    pending = "▶",
-    sent = "▸",
-    connector = "│",
-    branch = "├",
-    range_end = "╵",
-    resolved_changed = "✓",
-    resolved_unchanged = "–",
-    stale = "?",
-  },
+  signs = Anchor.default_signs,
   show_body = true,
   show_background = false,
   context_lines = 3,
