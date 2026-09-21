@@ -371,4 +371,8 @@ function UI.clear_resolved()
   Store.dismiss_many(ids)
 end
 
+-- Test-only: exposes the body-prompt float so a spec can drive it without
+-- going through UI.add/UI.edit, matching the `Anchor._ns` pattern.
+UI._prompt_body = prompt_body
+
 return UI
