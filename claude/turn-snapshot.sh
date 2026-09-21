@@ -22,12 +22,12 @@
 # (`<git-common-dir>/claude-turns/.lock`) since macOS has no `flock` binary
 # and two hooks (e.g. two concurrent sessions) can race on the same repo.
 # A lock held past 30s is treated as abandoned and broken rather than waited
-# on forever: this script only does the ~100ms of work above (a `write-tree`
+# on forever: the locked section below is ~100ms of work (a `write-tree`
 # against a throwaway index and a ledger append), so a holder still sitting
-# on the lock 30s in is not making progress, whatever killed it. `claude/
-# settings.json` gives all three of this hook's entries a 120s timeout, so a
-# waiter has to be able to outlast one stale lock and still make its own
-# attempt inside that cap; see acquire_lock's wait ceiling below.
+# on the lock 30s in is not making progress, whatever killed it.
+# `claude/settings.json` gives all three of this hook's entries a 120s
+# timeout, so a waiter has to be able to outlast one stale lock and still
+# make its own attempt inside that cap; see acquire_lock's wait ceiling.
 #
 # `Stop` never fires on user interrupt, so prompt/stop rows do not strictly
 # alternate; the next `UserPromptSubmit` still closes the gap. Consecutive
@@ -72,12 +72,11 @@ acquire_lock() {
       age=$(( $(date +%s) - mtime ))
       if [ "$age" -gt "$STALE_LOCK_SECS" ]; then
         rmdir "$lock" 2>/dev/null
-        # A failing rmdir (another waiter already broke it, or won the
-        # mkdir first) must not spin this loop as fast as it can go.
-        sleep 0.05
-        continue
       fi
     fi
+    # Counted and slept on the stale-break path too, so a rmdir that keeps
+    # failing (another waiter won the mkdir first, or the dir is not ours to
+    # remove) neither spins nor waits past the ceiling.
     waited=$((waited + 1))
     # 700 * 0.05s = 35s, past STALE_LOCK_SECS, so a waiter is guaranteed a
     # chance to break a stale lock rather than giving up while it's still
