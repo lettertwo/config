@@ -259,26 +259,31 @@ end
 -- "unchanged").
 function UI.list()
   local toplevel = Store.toplevel(vim.uv.cwd())
-  local records = Store.load()
-  local items = {}
-  for _, rec in ipairs(records) do
-    local prefix = ""
-    if rec.resolution then
-      local glyph = Anchor.record_state(rec)
-      prefix = glyph .. " "
+
+  -- A finder rather than a static `items` list, so `picker:find()` after an
+  -- action re-reads the store and the list reflects the change.
+  local function finder()
+    local items = {}
+    for _, rec in ipairs(Store.load()) do
+      local prefix = ""
+      if rec.resolution then
+        local glyph = Anchor.record_state(rec)
+        prefix = glyph .. " "
+      end
+      table.insert(items, {
+        text = string.format("%s%s:%d %s", prefix, rec.file, rec.lnum, rec.body:gsub("\n", " ")),
+        file = rec.file,
+        pos = { rec.lnum, 0 },
+        annotation_id = rec.id,
+        annotation = rec,
+      })
     end
-    table.insert(items, {
-      text = string.format("%s%s:%d %s", prefix, rec.file, rec.lnum, rec.body:gsub("\n", " ")),
-      file = rec.file,
-      pos = { rec.lnum, 0 },
-      annotation_id = rec.id,
-      annotation = rec,
-    })
+    return items
   end
 
   Snacks.picker.pick({
     title = "Annotations",
-    items = items,
+    finder = finder,
     format = function(item, picker)
       local ret = require("snacks.picker.format").file(item, picker)
       if item.annotation.sent_at then
