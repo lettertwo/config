@@ -251,10 +251,9 @@ end
 
 -- Lists every annotation in the current worktree via a picker; confirming an
 -- item jumps to it, `annotation_delete` removes it, `annotation_resolve`
--- toggles it resolved by hand or back to pending. The preview
--- frames the label/body/note the same way the buffer's block does, above the
--- file excerpt at its range with the annotated lines highlighted; sent and
--- resolved items are dimmed in the list, and resolved ones carry a state
+-- toggles it resolved by hand or back to pending. The preview is the file
+-- itself with the selected annotation rendered as the buffer renders it; sent
+-- and resolved items are dimmed in the list, and resolved ones carry a state
 -- glyph prefix (a checkmark for "changed" and manual resolutions, a dash for
 -- "unchanged").
 function UI.list()
@@ -273,6 +272,9 @@ function UI.list()
       table.insert(items, {
         text = string.format("%s%s:%d %s", prefix, rec.file, rec.lnum, rec.body:gsub("\n", " ")),
         file = rec.file,
+        -- `file` is repo-relative; snacks resolves it against `cwd` for the
+        -- preview, and nvim's cwd is not always the toplevel.
+        cwd = toplevel,
         pos = { rec.lnum, 0 },
         annotation_id = rec.id,
         annotation = rec,
@@ -293,68 +295,12 @@ function UI.list()
       end
       return ret
     end,
+    -- The preview is the real file with the selected annotation drawn on it
+    -- by anchor.lua, so it looks the same as it does in the buffer, minus
+    -- its neighbours.
     preview = function(ctx)
-      local rec = ctx.item.annotation
-      local _, sign_hl = Anchor.record_state(rec)
-
-      -- Same three-part structure as the buffer's block: a label naming the
-      -- state, the body, then a note if there is one.
-      local block_lines = { "annotation · " .. Anchor.state_word(rec) }
-      vim.list_extend(block_lines, vim.split(rec.body, "\n", { plain = true }))
-      local note = rec.resolution and vim.trim(rec.resolution.note or "") or ""
-      if note ~= "" then
-        vim.list_extend(block_lines, vim.split(note, "\n", { plain = true }))
-      end
-
-      local lines = vim.list_extend({}, block_lines)
-      table.insert(lines, "")
-      local header_len = #lines
-
-      -- The file excerpt goes below the block, if the file can be read.
-      local abs = toplevel and vim.fs.joinpath(toplevel, rec.file) or rec.file
-      local from, to = 0, -1
-      if vim.fn.filereadable(abs) == 1 then
-        local file_lines = vim.fn.readfile(abs)
-        from = math.max(1, rec.lnum - 3)
-        to = math.min(#file_lines, (rec.end_lnum or rec.lnum) + 3)
-        for l = from, to do
-          table.insert(lines, file_lines[l] or "")
-        end
-      end
-
-      ctx.preview:reset()
-      ctx.preview:set_lines(lines)
-      ctx.preview:set_title(rec.file)
-
-      -- Frames the block the same way anchor.lua's buffer rendering does: a
-      -- full-row background plus a left bar in the state's color, an inline
-      -- extmark rather than text so the bar never becomes part of a yank or
-      -- search in the preview.
-      local buf = ctx.preview.win.buf
-      for row, line in ipairs(block_lines) do
-        vim.api.nvim_buf_set_extmark(buf, ctx.preview:ns(), row - 1, 0, {
-          end_col = #line,
-          hl_group = "AnnotationBlock",
-          hl_eol = true,
-          priority = 100,
-        })
-        vim.api.nvim_buf_set_extmark(buf, ctx.preview:ns(), row - 1, 0, {
-          virt_text = { { Anchor.block_bar() .. " ", sign_hl } },
-          virt_text_pos = "inline",
-          priority = 101,
-        })
-      end
-
-      if to >= from and from > 0 then
-        ctx.preview:highlight({ file = abs })
-        for l = rec.lnum, math.min(rec.end_lnum or rec.lnum, to) do
-          local row = header_len + (l - from)
-          vim.api.nvim_buf_set_extmark(buf, ctx.preview:ns(), row, 0, {
-            line_hl_group = "AnnotationRange",
-            priority = 100,
-          })
-        end
-      end
+      Snacks.picker.preview.file(ctx)
+      Anchor.render_records(ctx.buf, { ctx.item.annotation })
     end,
     confirm = function(picker, item)
       picker:close()
@@ -367,6 +313,7 @@ function UI.list()
       end
     end,
     win = {
+      preview = { wo = { signcolumn = "yes" } },
       list = {
         keys = { ["x"] = "annotation_delete", ["r"] = "annotation_resolve" },
       },

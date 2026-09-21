@@ -32,11 +32,6 @@ local signs = {
 local show_body = true
 local show_background = false
 
--- The picker preview's own left bar (`ui.lua`'s `Anchor.block_bar()`), kept
--- separate from `signs` so it isn't affected by the gutter glyphs below: the
--- preview has its own framing, untouched by this module's sign-column work.
-local PREVIEW_BAR = "▎"
-
 -- Every virt_line chunk in the block (bar, label, body, note, and the
 -- trailing pad) needs the same background so the block reads as one solid
 -- panel; a plain `link` can't combine one group's background with another's
@@ -318,7 +313,10 @@ local function place_record(buf, rec, line_count)
     sign_hl_group = sign_hl,
     priority = SIGN_PRIORITY,
   })
-  marks_by_buf[buf][start_id] = { id = rec.id, role = "start" }
+  local marks = marks_by_buf[buf]
+  if marks then
+    marks[start_id] = { id = rec.id, role = "start" }
+  end
 
   if multiline then
     -- The range's last line continues the gutter's connector down into the
@@ -331,7 +329,9 @@ local function place_record(buf, rec, line_count)
       sign_hl_group = sign_hl,
       priority = SIGN_PRIORITY,
     })
-    marks_by_buf[buf][end_id] = { id = rec.id, role = "end" }
+    if marks then
+      marks[end_id] = { id = rec.id, role = "end" }
+    end
 
     for l = lnum + 1, end_lnum - 1 do
       vim.api.nvim_buf_set_extmark(buf, ns, l - 1, 0, {
@@ -368,6 +368,22 @@ function Anchor.render(buf)
   if not file then
     return
   end
+  Anchor.render_records(buf, Store.for_file(file))
+end
+
+-- Draws `records` into `buf` exactly as `render` would, but for a caller
+-- that already knows which records belong there: the picker preview, whose
+-- scratch buffer holds a file's contents without carrying its path. Such a
+-- buffer must not be tracked in `marks_by_buf`, or `sync` would read its
+-- positions back into the store; `render` sets the tracking table up before
+-- calling this, and nobody else should.
+---@param buf integer
+---@param records Config.Annotations.Record[]
+function Anchor.render_records(buf, records)
+  if not vim.api.nvim_buf_is_loaded(buf) then
+    return
+  end
+  vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
 
   local line_count = vim.api.nvim_buf_line_count(buf)
   local textoff = textoff_for_buf(buf)
@@ -377,7 +393,7 @@ function Anchor.render(buf)
   -- Grouping by that line lets several annotations ending on it share one
   -- body block instead of each drawing its own virt_lines.
   local groups, order = {}, {}
-  for _, rec in ipairs(Store.for_file(file)) do
+  for _, rec in ipairs(records) do
     local end_lnum = clamp(rec.end_lnum or rec.lnum, line_count)
     if not groups[end_lnum] then
       groups[end_lnum] = {}
@@ -467,14 +483,9 @@ function Anchor._ns()
   return ns
 end
 
--- Exposed so `ui.lua`'s picker preview can draw the same label/state color
--- the buffer block uses, without duplicating the state rules here.
+-- Exposed so `ui.lua`'s picker list can prefix each item with the same state
+-- glyph the buffer's sign column shows.
 Anchor.record_state = record_state
-Anchor.state_word = state_word
-
-function Anchor.block_bar()
-  return PREVIEW_BAR
-end
 
 function Anchor.setup()
   Config.on({ "BufReadPost", "BufEnter" }, function(ev)
