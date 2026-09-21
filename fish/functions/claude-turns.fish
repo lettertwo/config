@@ -36,10 +36,15 @@ function claude-turns -d "List or diff turn snapshots written by claude/turn-sna
         end
     end
 
-    set -l a b
+    set -l a
+    set -l b
     if test (count $seqs) -eq 1
         set b (printf '%04d' $seqs[1])
         set a (printf '%04d' (math $seqs[1] - 1))
+        if test $a = 0000
+            echo "claude-turns: turn 1 has no predecessor; pass two seqs" >&2
+            return 1
+        end
     else if test (count $seqs) -eq 2
         set a (printf '%04d' $seqs[1])
         set b (printf '%04d' $seqs[2])
