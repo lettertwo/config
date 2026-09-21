@@ -173,23 +173,32 @@ function UI.dismiss()
   end)
 end
 
--- Toggles resolution on the annotation at cursor. A pending one is marked
--- resolved by hand, for one that never needed to go to Claude at all: prompts
--- for an optional one-line note; leave it blank and just press enter to
--- resolve without one. A resolved one (manual or Claude's) is made pending
--- again.
+-- Toggles resolution on a record. A resolved one (manual or Claude's) is
+-- made pending again; a pending one is prompted for an optional one-line
+-- note (leave it blank and press enter to resolve without one) and marked
+-- resolved by hand. Shared between `UI.resolve` (the annotation at cursor)
+-- and the picker's `annotation_resolve` action, which differ only in how
+-- they refresh afterward.
+---@param rec Config.Annotations.Record
+---@param on_done fun()
+local function toggle_resolve(rec, on_done)
+  if rec.resolution then
+    Store.unresolve(rec.id)
+    on_done()
+    return
+  end
+  vim.ui.input({ prompt = "Resolution note (optional): " }, function(note)
+    if note == nil then
+      return -- cancelled, e.g. <Esc>
+    end
+    Store.resolve(rec.id, note)
+    on_done()
+  end)
+end
+
 function UI.resolve()
   pick_annotation_at_cursor(function(rec)
-    if rec.resolution then
-      Store.unresolve(rec.id)
-      return
-    end
-    vim.ui.input({ prompt = "Resolution note (optional): " }, function(note)
-      if note == nil then
-        return -- cancelled, e.g. <Esc>
-      end
-      Store.resolve(rec.id, note)
-    end)
+    toggle_resolve(rec, function() end)
   end)
 end
 
@@ -336,21 +345,11 @@ function UI.list()
           picker:find()
         end
       end,
-      -- Same toggle as UI.resolve, against the picker's current item.
       annotation_resolve = function(picker, item)
         if not item then
           return
         end
-        if item.annotation.resolution then
-          Store.unresolve(item.annotation_id)
-          picker:find()
-          return
-        end
-        vim.ui.input({ prompt = "Resolution note (optional): " }, function(note)
-          if note == nil then
-            return
-          end
-          Store.resolve(item.annotation_id, note)
+        toggle_resolve(item.annotation, function()
           picker:find()
         end)
       end,
