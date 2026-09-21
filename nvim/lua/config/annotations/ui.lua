@@ -370,10 +370,15 @@ function UI.list()
       list = {
         keys = { ["x"] = "annotation_delete", ["r"] = "annotation_resolve" },
       },
+      -- The input opens in insert mode, where a bare letter belongs to the
+      -- filter, so each action also gets a ctrl chord that works in both
+      -- modes.
       input = {
         keys = {
           ["x"] = { "annotation_delete", mode = { "n" } },
           ["r"] = { "annotation_resolve", mode = { "n" } },
+          ["<c-x>"] = { "annotation_delete", mode = { "i", "n" } },
+          ["<c-r>"] = { "annotation_resolve", mode = { "i", "n" } },
         },
       },
     },
