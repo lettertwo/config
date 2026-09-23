@@ -95,6 +95,17 @@
         ]
       }
     ],
+    "SubagentStart": [
+      {
+        "matcher": "implementer|researcher",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/showrunner-hook.sh subagent-voice"
+          }
+        ]
+      }
+    ],
     "Notification": [
       {
         "hooks": [

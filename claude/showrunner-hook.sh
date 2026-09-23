@@ -9,6 +9,11 @@
 # 10,000 lands whole, 10,001 gets persisted to a file the session never reads).
 # The budget is per hook entry, so two entries carry both files intact.
 #
+# The subagent-voice part runs from SubagentStart, matched to the agents that
+# write prose for the user. SubagentStart ignores plain stdout, so that part
+# wraps the voice rules in hookSpecificOutput.additionalContext, which carries
+# the same 10,000-char cap.
+#
 # Skip with CLAUDE_SHOWRUNNER=0 (bare-executor sessions, headless automation,
 # A/B debugging of the setup itself).
 
@@ -47,4 +52,9 @@ if [ "${#payload}" -gt "$BUDGET" ]; then
     "$part" "${#payload}" "$BUDGET"
 fi
 
-printf '%s\n' "$payload"
+if [ "$part" = "subagent-voice" ]; then
+  jq -n --arg ctx "$payload" \
+    '{hookSpecificOutput: {hookEventName: "SubagentStart", additionalContext: $ctx}}'
+else
+  printf '%s\n' "$payload"
+fi
