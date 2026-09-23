@@ -24,6 +24,8 @@
 ---@field staged_hunks? Review.Hunk[]  -- staged hunks when both staged and unstaged exist
 ---@field unstaged? Review.FileChange      -- worktree↔index sub-diff (base_ref="INDEX", head_ref="WORKTREE")
 ---@field staged_change? Review.FileChange -- index↔HEAD sub-diff (base_ref="HEAD", head_ref="INDEX")
+---@field old_mode? string  -- "old mode NNNNNN" header, when the diff carries a chmod
+---@field new_mode? string  -- "new mode NNNNNN" header, when the diff carries a chmod
 
 local M = {}
 
@@ -99,6 +101,16 @@ function M.parse(raw)
     end
     if line:match("^deleted file mode") then
       current_file.status = "D"
+      goto continue
+    end
+    local old_mode = line:match("^old mode (%d+)$")
+    if old_mode then
+      current_file.old_mode = old_mode
+      goto continue
+    end
+    local new_mode = line:match("^new mode (%d+)$")
+    if new_mode then
+      current_file.new_mode = new_mode
       goto continue
     end
 
@@ -181,11 +193,13 @@ end
 function M.hunk_to_patch(file, hunk)
   local a_path = file.old_path or file.path
   local b_path = file.path
-  local lines = {
-    "diff --git a/" .. a_path .. " b/" .. b_path,
-    "--- a/" .. a_path,
-    "+++ b/" .. b_path,
-  }
+  local lines = { "diff --git a/" .. a_path .. " b/" .. b_path }
+  if file.old_mode and file.new_mode and file.old_mode ~= file.new_mode then
+    table.insert(lines, "old mode " .. file.old_mode)
+    table.insert(lines, "new mode " .. file.new_mode)
+  end
+  table.insert(lines, "--- a/" .. a_path)
+  table.insert(lines, "+++ b/" .. b_path)
   for _, raw_line in ipairs(hunk.raw or {}) do
     table.insert(lines, raw_line)
   end
@@ -234,12 +248,34 @@ function M.hunk_to_patch_lines(file, hunk, keep_add, keep_del, base)
   -- canonical del+re-add form when anything follows it.
   local eof_ctx -- {idx: position of the converted text in out, text, n_markers}
 
+  -- Precompute which entries will render as a context-shaped (" ") line —
+  -- real context, or a dropped add converted to context under base="new" —
+  -- and, from that, whether a LATER entry does. A kept del carrying the
+  -- old-side no-newline marker is only dangerous when a context-shaped line
+  -- follows it (see the kept-del handling below); a kept add or a real
+  -- deletion following it is the ordinary, well-formed shape.
+  local is_ctx_shaped = {}
+  for i, entry in ipairs(hunk.lines) do
+    is_ctx_shaped[i] = entry.kind == "ctx"
+      or (entry.kind == "add" and drop_to_ctx_kind == "add" and not keep_add(entry))
+  end
+  local later_has_ctx = {}
+  do
+    local seen = false
+    for i = #hunk.lines, 1, -1 do
+      later_has_ctx[i] = seen
+      if is_ctx_shaped[i] then
+        seen = true
+      end
+    end
+  end
+
   -- Walk raw lines (skipping the @@ header at index 1) in parallel with hunk.lines,
   -- grouping each entry with any following "\ No newline" markers.
   local raw = hunk.raw or {}
   local ri = 2  -- raw[1] is the @@ header
 
-  for _, entry in ipairs(hunk.lines) do
+  for i, entry in ipairs(hunk.lines) do
     local raw_line = raw[ri]
     ri = ri + 1
     local markers = {}
@@ -269,8 +305,18 @@ function M.hunk_to_patch_lines(file, hunk, keep_add, keep_del, base)
     elseif entry.kind == "del" then
       if keep_del(entry) then
         table.insert(out, raw_line or ("-" .. entry.text))
-        for _, m in ipairs(markers) do table.insert(out, m) end
         old_count = old_count + 1
+        if #markers > 0 and later_has_ctx[i] then
+          -- A kept del carries the old-side no-newline marker, but a
+          -- context-shaped line follows it (a real ctx line, or — under
+          -- base="new" — a dropped add converted to context). Since this
+          -- line is pure OUTPUT (never matched against source bytes, unlike
+          -- the dropped-del-to-context case below), the fix is just to drop
+          -- the marker: the "\n" that joins patch lines gives it a real
+          -- trailing newline, which is exactly what the new side needs.
+        else
+          for _, m in ipairs(markers) do table.insert(out, m) end
+        end
       elseif drop_to_ctx_kind == "del" then
         -- base="old": the unkept del is still present in the base — context.
         table.insert(out, " " .. entry.text)
@@ -281,10 +327,7 @@ function M.hunk_to_patch_lines(file, hunk, keep_add, keep_del, base)
         old_count = old_count + 1
         new_count = new_count + 1
       end
-      -- base="new": dropped del omitted entirely (markers too). A converted
-      -- add can also carry a marker (new-side EOF), but git orders dels
-      -- before adds within a block, so nothing kept can follow it — the
-      -- eof_ctx splice is only needed on the del side.
+      -- base="new": dropped del omitted entirely (markers too).
     end
   end
 
@@ -298,12 +341,14 @@ function M.hunk_to_patch_lines(file, hunk, keep_add, keep_del, base)
   end
 
   local header = ("@@ -%d,%d +%d,%d @@"):format(hunk.old_start, old_count, hunk.new_start, new_count)
-  local result = {
-    "diff --git a/" .. a_path .. " b/" .. b_path,
-    "--- a/" .. a_path,
-    "+++ b/" .. b_path,
-    header,
-  }
+  local result = { "diff --git a/" .. a_path .. " b/" .. b_path }
+  if file.old_mode and file.new_mode and file.old_mode ~= file.new_mode then
+    table.insert(result, "old mode " .. file.old_mode)
+    table.insert(result, "new mode " .. file.new_mode)
+  end
+  table.insert(result, "--- a/" .. a_path)
+  table.insert(result, "+++ b/" .. b_path)
+  table.insert(result, header)
   for _, l in ipairs(out) do
     table.insert(result, l)
   end

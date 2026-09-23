@@ -457,6 +457,45 @@ describe("parser.hunk_to_patch_lines", function()
       assert.equals("a\nb\nlast\nreplaced", content)
     end)
 
+    it("splices a KEPT deletion's no-newline marker under base=new so a later context line doesn't concatenate", function()
+      -- Old side ends without a trailing newline at "last"; new side adds
+      -- "replaced" and "more" after it, both dropped and converted to
+      -- context under base=new. Keep only the deletion of "last": it still
+      -- carries the old-side no-newline marker, and the dropped adds land
+      -- as context AFTER it, which is exactly the shape that makes git
+      -- concatenate the next line onto the marker line.
+      local cwd = vim.fn.tempname()
+      vim.fn.mkdir(cwd, "p")
+      local function git(...)
+        local r = vim.system({ "git", ... }, { cwd = cwd, text = true }):wait()
+        assert.equals(0, r.code, r.stderr)
+      end
+      git("init", "-q")
+      git("config", "user.email", "t@t")
+      git("config", "user.name", "t")
+      vim.fn.writefile({ "a", "b", "last" }, cwd .. "/f.lua", "b") -- no trailing newline
+      git("add", ".")
+      git("commit", "-qm", "init")
+      vim.fn.writefile({ "a", "b", "replaced", "more" }, cwd .. "/f.lua") -- trailing newline present
+      local r = vim.system({ "git", "diff", "--no-color", "--unified=3", "HEAD" }, { cwd = cwd, text = true }):wait()
+      local files = parser.parse(r.stdout)
+
+      local patch = parser.hunk_to_patch_lines(files[1], files[1].hunks[1], function()
+        return false
+      end, function(e)
+        return e.text == "last"
+      end, "new")
+      local ar = vim.system(
+        { "git", "apply", "--reverse", "-" },
+        { cwd = cwd, text = true, stdin = patch }
+      ):wait()
+      assert.equals(0, ar.code, ar.stderr)
+      local fh = assert(io.open(cwd .. "/f.lua", "rb"))
+      local content = fh:read("*a")
+      fh:close()
+      assert.equals("a\nb\nlast\nreplaced\nmore\n", content)
+    end)
+
     it("stages part of a pure-deletion run (base=old, forward)", function()
       local lines = {}
       for i = 1, 20 do
