@@ -101,8 +101,10 @@ run() {  # run <filter> <files...>
   # bash 3.2 + set -u: an empty array must be expanded with the += default form.
   local args=(); [ -n "$filt" ] && args=(--filter="$filt")
   vale --config="$CFG" ${args[@]+"${args[@]}"} --output="$FMT" --minAlertLevel=suggestion "$@" | sed "s|$TMP/||g"
-  vale --config="$CFG" ${args[@]+"${args[@]}"} --output=JSON --minAlertLevel=error "$@" 2>/dev/null \
-    | grep -q '"Severity": *"error"' && status=1
+  # Exit 1 means an error-level alert. Exit 2 is a Vale runtime error: one file
+  # with unparseable frontmatter aborts the whole batch, so it cannot read as clean.
+  vale --config="$CFG" ${args[@]+"${args[@]}"} --output=JSON --minAlertLevel=error "$@" >/dev/null 2>&1 \
+    || status=1
   return 0
 }
 run "$BASE" ${PROSE[@]+"${PROSE[@]}"}

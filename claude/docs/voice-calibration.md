@@ -1,9 +1,8 @@
 # Voice rule calibration
 
-`bin/voice-lint-test` checks that each rule in `styles/Voice/` still *fires*.
-This recipe checks whether a rule is *right*: whether it catches Claude's drift
-without catching my own writing. The two are independent, and a rule can pass
-the test suite while being actively harmful.
+This recipe checks whether a rule in `styles/Voice/` is *right*: whether it
+catches Claude's drift without catching my own writing. A rule can fire exactly
+as written and still be actively harmful.
 
 Run this after adding or rewriting a rule, or after editing `voice.md`'s Never
 or Vocabulary sections. Not per commit.

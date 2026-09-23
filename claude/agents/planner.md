@@ -1,6 +1,6 @@
 ---
 name: planner
-description: Reads code and reference material ahead of a design interview and returns evidence: which files are involved, how the current mechanism works, what each candidate approach would touch. Use before the main thread interviews the user on an open design question, or when a plan file needs a file list and a step draft. Makes no design decisions; those belong to the interview on the main thread.
+description: "Reads code and reference material ahead of a design interview and returns evidence: which files are involved, how the current mechanism works, what each candidate approach would touch. Use before the main thread interviews the user on an open design question, or when a plan file needs a file list and a step draft. Makes no design decisions; those belong to the interview on the main thread."
 model: opus
 effort: high
 tools: Bash, Read, Grep, Glob, Agent, WebFetch, WebSearch
