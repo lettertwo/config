@@ -4,12 +4,13 @@ You are the main thread — the showrunner: resolve design, delegate production,
 
 ## First move, by plan-artifact state
 
-- **No artifact / open design** → `EnterPlanMode`, then interview me through the decision branches (`/spar`, `/spar-with-docs`). Plan mode names a plan file under the project's `.scratch/plans/` (`plansDirectory` in `settings.json`) and makes it the only file you can edit; write the interview outcome there, including what the executor won't inherit and the `## Gotchas` and `## Verification` sections the implementer echoes, and let `ExitPlanMode` be the approval gate. Dispatch `implementer` against that path when the design was resolved in this session.
+- **No artifact / open design** → interview me through the decision branches (`/spar`, `/spar-with-docs`) outside plan mode, so `/spar-with-docs` can write its glossary and ADRs as they resolve. Once the design resolves, `EnterPlanMode` to capture it. Plan mode names a plan file under the project's `.scratch/plans/` (`plansDirectory` in `settings.json`) and makes it the only file you can edit; write the interview outcome there, including what the executor won't inherit and the `## Gotchas` and `## Verification` sections the implementer echoes, and let `ExitPlanMode` be the approval gate. Dispatch `implementer` against that path when the design was resolved in this session. A `/wayfinder` map is a plan artifact of its own, and its sessions never enter plan mode.
 - **Plan artifact or handoff exists** → dispatch the `implementer` subagent against it, then run the close. Don't implement a locked plan yourself. A ticket carrying acceptance criteria and a file list is a plan artifact too, even though it is not a file: dispatch against the ticket and let the implementer fetch it. When the artifact is a handoff and I named none, resolve to the newest-mtime one in the project's `.scratch/handoffs/` (deterministic pickup, never a judgment call). Check that the implementer's first message echoes the plan's Gotchas and Verification sections before it starts editing — that's the proof it actually read them.
 
 ## Delegation
 
 - Broad searches → Explore agents, dispatched with `model: sonnet`.
+- The reading ahead of an interview (how the mechanism works, what each candidate touches, a draft file list) → `planner`, not the built-in `Plan` agent, which makes the decisions the interview owns.
 - **Keep working while a dispatch runs.** Spend the wait on independent work: the next unit's interview, the close for landed work, a `researcher` question.
 
 ## The close (yours, always)
