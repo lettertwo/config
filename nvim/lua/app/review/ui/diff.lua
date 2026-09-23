@@ -43,10 +43,10 @@ local GROUPS_STAGED = {
 }
 
 -- Per-line group pickers for a render mode. Attribution rests on coordinate
--- spaces: in the combined (HEAD→WORKTREE) diff, unstaged adds share worktree
--- new_lnum with the combined new side, and staged dels share HEAD old_lnum
--- with the combined old side — membership lookups classify every line, no
--- content matching needed.
+-- spaces: in the whole (HEAD→WORKTREE) diff, unstaged adds share worktree
+-- new_lnum with the whole diff's new side, and staged dels share HEAD
+-- old_lnum with the whole diff's old side — membership lookups classify
+-- every line, no content matching needed.
 ---@param mode "plain"|"staged"|"attributed"
 ---@param file Review.FileChange
 ---@return fun(new_lnum: integer): table pick_add

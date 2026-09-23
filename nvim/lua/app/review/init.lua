@@ -20,6 +20,7 @@
 local Statusline = require("config.mini.statusline")
 local nav_keymaps = require("app.review.keymaps")
 local classify = require("app.review.source.classify")
+local Docket = require("app.review.docket")
 
 ---@class ReviewApp: App
 ---@field open fun(classified: table, opts?: {cwd?: string, title?: string})
@@ -76,7 +77,7 @@ local function set_keymaps(dk)
         map(nav.lhs, nav.method, nav.desc, true)
       end
       map("<leader>rl", "toggle_layout", "Review: toggle side-by-side")
-      map("<leader>rz", "cycle_zoom", "Review: cycle zoom")
+      map("<leader>rz", "toggle_view", "Review: " .. Docket.TOGGLE_VIEW_DESC)
       map("<leader>rs", "stage_current", "Review: toggle-stage hunk")
       map("<leader>rS", "stage_current_file", "Review: toggle-stage file")
       map("<leader>rd", "discard_current", "Review: discard hunk")
@@ -206,7 +207,7 @@ function ReviewApp.open(classified, opts)
   end
 
   local dv = require("app.review.ui.diff").new({ win = win })
-  -- The staged-row DiffView; its window arrives with the split zoom.
+  -- The staged-row DiffView; its window arrives with split view.
   local dv2 = require("app.review.ui.diff").new({ win = -1 })
   -- Name the buffers so the framework's D7 unnamed-buffer sweep skips them.
   vim.api.nvim_buf_set_name(dv.right.bufnr, "review://" .. kind)
@@ -231,7 +232,7 @@ function ReviewApp.open(classified, opts)
     end
   end
 
-  docket = require("app.review.docket").new({
+  docket = Docket.new({
     kind = kind,
     cwd = cwd,
     title = title,

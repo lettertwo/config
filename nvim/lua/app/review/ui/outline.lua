@@ -342,10 +342,10 @@ function OutlineView:open()
         docket:toggle_layout()
       end,
     },
-    review_zoom = {
-      desc = "Cycle staging zoom",
+    review_toggle_view = {
+      desc = "Toggle whole view",
       action = function()
-        docket:cycle_zoom()
+        docket:toggle_view()
       end,
     },
     review_toggle_stage_file = {
@@ -430,7 +430,7 @@ function OutlineView:open()
     ["i"] = "review_cycle_mode",
     ["r"] = "review_toggle_stack_order",
     ["l"] = "review_layout",
-    ["z"] = "review_zoom",
+    ["z"] = "review_toggle_view",
     ["<Space>"] = "review_toggle_stage_file",
     ["a"] = "review_toggle_all",
     ["d"] = "review_discard_file",

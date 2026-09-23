@@ -152,7 +152,7 @@ describe("diff._sbs_annotations", function()
   end)
 
   it("attributed pickers classify lines by sub-diff coordinate membership", function()
-    -- Combined file with one unstaged add (worktree lnum 5) and one staged
+    -- Whole file with one unstaged add (worktree lnum 5) and one staged
     -- del (HEAD lnum 3).
     local file = {
       path = "f.lua",
@@ -160,10 +160,10 @@ describe("diff._sbs_annotations", function()
       staged_change = { hunks = { { lines = { { kind = "del", text = "s", old_lnum = 3 } } } } },
     }
     local pick_add, pick_del = diff._group_pickers("attributed", file)
-    -- Unstaged add keeps plain colors; any other combined add is staged.
+    -- Unstaged add keeps plain colors; any other whole-view add is staged.
     assert.equals("ReviewDiffAdd", pick_add(5).add)
     assert.equals("ReviewDiffStagedAdd", pick_add(6).add)
-    -- Staged del gets staged colors; any other combined del is unstaged.
+    -- Staged del gets staged colors; any other whole-view del is unstaged.
     assert.equals("ReviewDiffStagedDelete", pick_del(3).del)
     assert.equals("ReviewDiffDelete", pick_del(4).del)
 
