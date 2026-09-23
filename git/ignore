@@ -77,6 +77,8 @@ local_settings.py
 
 src/sheldon/plugins.lock
 
+.scratch/
+
 **/.claude/settings.local.json
 
 **/.claude/settings.local.json

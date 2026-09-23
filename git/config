@@ -2,8 +2,7 @@
 
 # core config
 [core]
-	excludesfile = ./ignore
-	attributesfile = ./attributes
+	excludesfile = ~/.config/git/ignore
 	whitespace = space-before-tab,trailing-space
 	pager = delta
 	hooksPath = "~/.config/git/hooks"
