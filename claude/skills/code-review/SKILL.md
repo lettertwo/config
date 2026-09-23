@@ -1,20 +1,12 @@
 ---
 name: code-review
 description:
-  Review the changes since a fixed point (commit, branch, tag, or merge-base): several independent
+  Review the changes since a fixed point (commit, branch, tag, or merge-base). Several independent
   reviewers — Claude subagents plus Cursor's CLI — examine the identical prompt in parallel, then a
   judge pass cross-references and verifies every finding before it's reported. Use when the user
   wants to review a branch, a PR, work-in-progress changes, or asks to "review since X".
 argument-hint: "[low|medium|high|max] [--fix]"
 ---
-
-Review of the diff between `HEAD` and a fixed point the user supplies, judged by cross-referencing
-several independent reviewers rather than trusting any one of them:
-
-- **Reviewers** — one or more Claude subagents plus `cursor-agent` (Cursor's CLI), all given the
-  identical review prompt so their findings can be compared rather than blended.
-- **Judge** (this session, main thread) — compiles and deduplicates every finding first, only then
-  reads the actual source to verify each one, and reports a single ranked list.
 
 **Effort gates the reviewer set** (count, tier mix, recall) — that's the cost lever:
 
@@ -36,9 +28,6 @@ worthless as a signal; different tiers are cheap, partially-decorrelated reviewe
   `fix: <specific>` commit, then gate on tests. Default is report-only. (Spec gaps and much
   correctness feedback are missing work, not local edits — those fall through unfixed.)
 
-The issue tracker should have been provided to you — run `/setup-tracking` if
-`docs/agents/issue-tracker.md` is missing.
-
 ## Process
 
 ### 1. Pin the fixed point
@@ -59,10 +48,8 @@ git log <fixed-point>..HEAD --oneline
 
 **Spec source** — look for the originating spec, in this order, and stop at the first hit:
 
-1. Issue references in the commit messages (`#123`, `Closes #45`, GitLab `!67`, etc.) — fetch via
-   the procedure in `docs/agents/issue-tracker.md`.
-2. A path the user passed as an argument.
-3. A PRD/spec file under `docs/`, `specs/`, or `.scratch/` matching the branch name or feature.
+1. Issue references in the commit messages (`#123`, `Closes #45`, GitLab `!67`, etc.)
+2. A PRD/spec file under `docs/`, `specs/`, or `.scratch/` matching the branch name or feature.
 
 If none resolves, proceed without one — don't ask the user and don't block. Spec conformance simply
 isn't a category in this run's prompt.
@@ -156,8 +143,8 @@ You are the judge. Two rules, in this order, and not reversed:
 
 ### 6. Report
 
-Call `ReportFindings` once with every CONFIRMED and PLAUSIBLE finding, ranked most-severe first,
-each carrying its `verdict` (`CONFIRMED` or `PLAUSIBLE`) and `level` set to this run's effort.
+Call `ReportFindings` once with every CONFIRMED and PLAUSIBLE finding (dismissed ones stay out),
+with `level` set to this run's effort.
 
 Alongside the tool call, give a prose report:
 
@@ -172,13 +159,3 @@ on tests: `~/.claude/bin/cargo-gate test` for Rust workspaces, otherwise the pro
 command. Re-call `ReportFindings` with an `outcome` per finding (fixed / skipped, with reason). If
 the test gate fails, flag the run as "needs manual attention" in the report — the commits stay on
 the branch; nothing auto-reverts.
-
-## Why independent reviewers + a sequenced judge
-
-A single reviewer's blind spots are invisible to itself — it can't catch what it isn't looking for.
-Running several reviewers on the identical prompt surfaces disagreement, which is signal: an issue
-every reviewer independently raises is more likely real than one only stated by the judge's own
-first impression. But that only works if the judge stays a judge — reading the code before the
-findings are in front of it turns it into a fourth, biased reviewer. Compiling first and verifying
-second keeps the judge's one advantage (it alone gets to check against ground truth) without letting
-that advantage curdle into a veto.

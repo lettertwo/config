@@ -2,8 +2,6 @@
 
 Generate **several radically different UI variations** on a single route, switchable from a floating bottom bar. The user flips between variants in the browser, picks one (or steals bits from each), then throws the rest away.
 
-If the question is about logic/state rather than what something looks like — wrong branch. Use [LOGIC.md](LOGIC.md).
-
 ## When this is the right shape
 
 - "What should this page look like?"
@@ -21,13 +19,7 @@ The route already exists. Variants are rendered **on the same route**, gated by 
 
 If the prototype is for something that doesn't yet have a page but *would naturally live inside one* (a new section of the dashboard, a new card on the settings screen, a new step in an existing flow) — that's still sub-shape A. Mount the variants inside the host page.
 
-### Sub-shape B — a new page (last resort)
-
-Only use this when the thing being prototyped genuinely has no existing page to live inside — e.g. an entirely new top-level surface, or a flow that can't be embedded anywhere sensible.
-
-Create a **throwaway route** following whatever routing convention the project already uses — don't invent a new top-level structure. Name it so it's obviously a prototype (e.g. include the word `prototype` in the path or filename). Same `?variant=` pattern.
-
-Before committing to sub-shape B, sanity-check: is there really no existing page this could be embedded in? An empty route hides design problems that a populated one would expose.
+**Sub-shape B — a new page, last resort:** only when the thing being prototyped genuinely has no existing page to live inside. Sanity-check first — an empty route hides design problems a populated one would expose. Same `?variant=` pattern as sub-shape A.
 
 In both sub-shapes the floating bottom bar is identical.
 
@@ -35,7 +27,7 @@ In both sub-shapes the floating bottom bar is identical.
 
 ### 1. State the question and pick N
 
-Default to **3 variants**. More than 5 stops being radically different and starts being noise — cap there.
+Default to **3 variants**. Cap at 5 — beyond that it reads as noise, not genuine difference.
 
 Write down the plan in one line, in the prototype's location or a top-of-file comment:
 
@@ -109,4 +101,3 @@ The full set of variants is the primary source, so it lands on the throwaway bra
 - **Variants that differ only in colour or copy.** That's a tweak, not a prototype. Real variants disagree about structure.
 - **Sharing too much code between variants.** A shared `<Header>` is fine; a shared `<Layout>` defeats the point. Each variant should be free to throw out the layout.
 - **Wiring variants to real mutations.** Read-only prototypes are fine. If a variant needs to mutate, point it at a stub — the question is "what should this look like", not "does the backend work".
-- **Promoting the prototype directly to production.** The variant code was written under prototype constraints (no tests, minimal error handling). Rewrite it properly when you fold it in.

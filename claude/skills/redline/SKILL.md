@@ -14,7 +14,7 @@ findings handed off for someone else to act on are `/code-review`'s job.
 
 ## Invocation
 
-`/redline <path>` — or with no path, the document already under discussion. A Notion page URL puts the walk in **Notion mode**; see the section below.
+`/redline <path>` — or with no path, the document already under discussion.
 
 **If a ledger already exists for this document, load it and resume** at the first open stop. Say which
 stop you're resuming at and how many remain. Never restart a walk that's underway.
@@ -58,12 +58,12 @@ Before the first stop, read the document's heading outline and propose a manifes
 author and get approval before walking** — they need to see how long this is.
 
 A **stop** is a run of the document short enough to quote in full — call it 80 lines, and stretch to
-100 only when the alternative is a bad seam. Build stops from the heading outline:
+100 only when the alternative is a bad split point. Build stops from the heading outline:
 
 - **Merge** a heading whose body is a few lines into its neighbor. A two-line stub is not a
   conversation.
 - **Split** anything longer at its subheadings, and if it has none, at paragraph boundaries. There is
-  always a seam — prose divides. Never split inside a code fence or a table.
+  always a split point — prose divides. Never split inside a code fence or a table.
 - **Repetitive sections merge past the limit.** Nine task entries built from one template are one
   stop, not nine; the author is reading a pattern, not nine arguments.
 
@@ -117,14 +117,14 @@ For each note:
 - **If the literal reading would over-apply, name the boundary and get it ratified.** "Remove every
   statement of this shape" usually has a class of exceptions the author didn't mean to catch. Propose
   the split; don't silently under-apply and don't silently over-apply.
-- **A note that applies document-wide is a standing rule**, not a section note. Record it under
+- **A document-wide note is a standing rule**, not a section note. Record it under
   Standing rules, apply it to every remaining stop, and sweep the closed ones at the close.
 
 ### 3. Draft
 
 For any rewrite longer than a phrase, **show the replacement text and get approval before writing
-it.** Replacement text follows the `## Writing` rules in the user CLAUDE.md. Mechanical
-substitutions — a term swap, a heading rename — skip this beat and go straight to writing.
+it.** Replacement text follows `claude/voice.md`. Mechanical substitutions — a term swap, a
+heading rename — skip this beat and go straight to writing.
 
 Show replacement text unnumbered, so it reads as the text that will land in the file.
 
@@ -146,36 +146,12 @@ Apply the edits. Then, in the same turn:
 Then end the turn. Say which stop closed and how many remain. The next stop's beat 1 opens on the
 author's word; if they leave, the ledger is current and the walk resumes cold.
 
-## Notion mode
-
-A Notion page URL makes the page the document. The four beats and the ledger are unchanged; five
-mechanics differ, because a Notion page has no lines to number and no file to hold still.
-
-- **Fetch is how you read.** `notion-fetch` the page with `include_discussions: true`. The returned
-  markdown is the working copy for this turn only. Number its lines yourself for beat 1's quote
-  gutter, and say the numbers are local to the turn — they are not addresses anyone else can use.
-- **Chart stops on headings, and key the ledger to them.** The manifest lists headings, not line
-  ranges: `2. [ ] Engineering Requirements → Architecture`. Line ranges go stale on every write, so
-  they never enter the ledger.
-- **An anchored discussion dies when its text is edited, permanently.** At charting, list which
-  stops carry threads. Then at that stop's beat 1, say so before proposing anything: name the
-  anchored phrases and let the author decide whether the rewrite is worth the thread. Never rewrite
-  anchored text on your own judgement.
-- **Write with `notion-update-page`, one stop's section per call.** Then re-fetch before the next
-  stop's quote — a write reflows everything after it, and a quote from the stale copy is a quote of
-  text that no longer exists.
-- **The close verifies differently.** Fence parity and internal anchors don't apply. Re-fetch the
-  page and check three things instead: its heading outline matches the manifest, no repo-relative
-  path survives as a link, and every table has consistent column counts.
-
 ## Rules that bind the whole walk
 
-- **One stop at a time.** Never present two sections in a turn, never edit a section you haven't
-  presented.
 - **Never edit outside the current stop** except to apply a standing rule or to fix an anchor the
-  current stop's edit broke. Anything else goes to Carry-forward.
-- **Scope stays where the author put it.** A defect you notice three sections ahead goes to
-  Carry-forward under that stop; mention it to the author once, then let the ledger carry it.
+  current stop's edit broke.
+- **Scope stays where the author put it.** Mention a defect you notice ahead of the current stop
+  once, then let Carry-forward hold it until the walk gets there.
 - **The author's notes are the agenda.** Your initial thoughts open the conversation; theirs close it.
   If they skip a finding of yours, it's dropped, not re-raised.
 - **The author closes every beat.** Silence after your turn is them reading, not consent to advance.

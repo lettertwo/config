@@ -37,10 +37,7 @@ ordering is just so the probe is deterministic.
 
 ## 2a. Walk the stack: Graphite
 
-Prefer the `graphite` MCP server (registered user-wide, deferred-loaded — see `ToolSearch` for
-`mcp__graphite__*` tools) for structured stack state if it's available in this session. **CLI
-fallback** (used whenever the MCP tools aren't loaded or the query shape isn't covered yet): BFS
-from the current branch using `gt children` (and `--cwd` to avoid interactive checkout):
+BFS from the current branch using `gt children` (and `--cwd` to avoid interactive checkout):
 
 ```bash
 gt children                          # direct children of current branch

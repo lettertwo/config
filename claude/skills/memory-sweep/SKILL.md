@@ -20,18 +20,8 @@ single recalled memory looked wrong.
 
 ## Locating the store
 
-Slugify the **git common dir**, not the working directory, dropping a trailing `/.git` component
-first. A standard checkout therefore slugifies its repo root, and a bare-worktree setup slugifies the
-bare dir:
-
-```bash
-git rev-parse --path-format=absolute --git-common-dir | sed 's:/\.git$::; s:[/.]:-:g'
-# /path/to/repo/.git       -> -path-to-repo
-# /path/to/monorepo/.bare  -> -path-to-monorepo--bare
-```
-
-That slug names the directory under `~/.claude/projects/<slug>/memory/`. Worktrees of one repo share
-a single store, so a sweep run from any worktree edits the same files every other worktree loads.
+Use the memory directory the system prompt names for this session. Worktrees of one repo share a
+single store, so a sweep run from any worktree edits the same files every other worktree loads.
 Confirm the resolved path exists before reading anything; if it doesn't, stop and say so rather than
 sweeping a neighbouring project's store.
 
@@ -50,40 +40,22 @@ comm -3 /tmp/mem-files.txt /tmp/mem-indexed.txt   # left = unindexed file, right
 An unindexed file is invisible to recall. A dangling pointer promises a memory that isn't there. Both
 are drift, not judgment calls — there is no verdict to weigh, and one approval covers them all.
 
-## Pass 1b — identity and link integrity
+## Pass 1b — link integrity
 
-Also mechanical, also no verdict to weigh. Three invariants, established 2026-08-13 when a sweep found
-21 of 37 `[[wikilinks]]` resolving to nothing:
-
-- **A memory's `name:` equals its filename slug.** That slug is the one canonical id. Filenames are what
-  `MEMORY.md` points at, so anchoring identity there leaves nothing to disagree.
-- **`[[links]]` use that slug.** Not a kebab variant, not a prefix-stripped short form.
-- **`type:` lives under `metadata:`**, with `node_type: memory` beside it — a top-level `type:` is drift.
-
-These govern the files already on disk. The instructions that write new memories assign a kebab-case
-`name:` and point `[[links]]` at it, so a memory created after a sweep arrives with a `name:` that
-does not match its filename — the next sweep finds it again, and that recurrence is expected.
-
-Link targets are checked against filenames, not against `name:` values, because the `name:` values are
-the thing this pass is about to rewrite:
+Also mechanical, also no verdict to weigh. `name:` is a kebab-case slug that identifies a memory —
+independent of its filename, which drifts freely and never has to match it. `[[links]]` resolve
+against those `name:` values, not against filenames:
 
 ```bash
 cd "$STORE"
-ls *.md | grep -v '^MEMORY.md$' | sed 's/\.md$//' | sort > /tmp/mem-files.txt
+grep -h '^name:' *.md | sed 's/^name: *//' | sort -u > /tmp/mem-names.txt
 grep -oh '\[\[[^]]*\]\]' *.md | tr -d '[]' | sort -u > /tmp/mem-links.txt
-comm -23 /tmp/mem-links.txt /tmp/mem-files.txt           # link targets that resolve to nothing
-for f in *.md; do [ "$f" = MEMORY.md ] && continue
-  n=$(grep -m1 '^name:' "$f" | sed 's/^name: *//'); [ "$n" != "${f%.md}" ] && echo "$f -> $n"; done
-grep -l '^type:' *.md                                    # frontmatter schema drift
-grep -L 'node_type' *.md | grep -v '^MEMORY.md$'         # missing node_type: memory
+comm -23 /tmp/mem-links.txt /tmp/mem-names.txt   # link targets that resolve to nothing
 ```
 
-Repairing links needs an alias map from every historical spelling to the current slug. Most spellings
-derive mechanically — the slug, its kebab form, the old `name:`, that name lowercased with spaces
-hyphenated, and each of those with the `feedback_`/`project_`/`reference_` prefix stripped. **A renamed
-memory breaks that derivation**, so check the unresolved list for targets no rule can reach and map them
-by hand before rewriting. Print every rewrite and every remaining unresolved target; a silent alias map
-is how a link gets pointed at the wrong memory.
+A broken link is usually a rename: find the file whose `name:` is closest to the stale target and
+point the link at its current value. Print every rewrite and every remaining unresolved target; a
+silent guess is how a link gets pointed at the wrong memory.
 
 ## Pass 2 — compound files
 
@@ -127,7 +99,7 @@ One per file, and every one cites the evidence that produced it.
 | `resolved` | the work landed or the question closed | delete file + pointer line |
 | `drifted` | partly true; some claims outlived their premise | rewrite body and pointer line |
 | `split` | body carries facts the description doesn't advertise | split into N files, N pointer lines |
-| `retype` | wrong `type:` for what it holds | rename file, edit `type:` and `name:`, rewrite pointer line; body kept |
+| `retype` | wrong `type:` for what it holds | rename file, edit `type:`, rewrite pointer line; body kept |
 | `unverified` | premise not checkable from here | none, and report it |
 
 ## Promotion candidates
@@ -171,8 +143,9 @@ mkdir -p "$B" && cp "$STORE"/*.md "$B"/ && echo "backed up to $B"
 
 1. **Filenames** — retypes, deletions, and splits, which together settle which files exist.
 2. **Bodies** — the `drifted` rewrites, and the content distributed into split files.
-3. **`name:` fields** — each set from the filename its file now carries.
-4. **`[[links]]`** — rewritten to those filenames through the alias map.
+3. **`name:` fields** — assign a fresh kebab-case slug to each new split file; existing files keep
+   theirs.
+4. **`[[links]]`** — rewritten to the current `name:` values for anything split or retyped.
 5. **`MEMORY.md`** — reconciled last, against the files that exist by then.
 
 Diagnosing in a different order is fine; the passes do. A write out of sequence repairs a filename

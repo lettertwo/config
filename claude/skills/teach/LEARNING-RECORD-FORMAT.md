@@ -22,15 +22,11 @@ Only include these when they add genuine value. Most records won't need them.
 - **Evidence** — how the user demonstrated the understanding (a question answered, an exercise completed, prior experience cited). Useful when the claim might be revisited.
 - **Implications** — what this unlocks or rules out for future sessions. Worth recording when non-obvious.
 
-## Numbering
-
-Scan `./learning-records/` for the highest existing number and increment by one.
-
 ## When to write a learning record
 
 Write one when any of these is true:
 
-1. **The user demonstrated genuine understanding of something non-trivial** — not just exposure, but evidence they can use the concept correctly. This sets a new floor for what to teach next.
+1. **The user demonstrated genuine understanding of something non-trivial** — evidence they can use the concept correctly, beyond having merely seen it. This sets a new floor for what to teach next.
 2. **The user disclosed prior knowledge** — "I already know X." Record it so future sessions don't re-teach it. Also record the _depth_ claimed.
 3. **A misconception was corrected** — the user previously believed something wrong and now sees why. These are high-value: they predict future stumbling blocks for related topics.
 4. **The mission shifted in response to learning** — the user discovered they cared about something different than they thought. Cross-link to [[MISSION.md]] and update it.

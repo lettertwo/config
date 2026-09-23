@@ -3,14 +3,16 @@ name: stack-review
 description:
   Parallel code review (and optional autofix) of the current branch and every branch stacked upstack
   of it, each scoped to its own parent diff. Runs /code-review's reviewer-and-judge process once per
-  branch over a Graphite stack. Use when you want to review (and optionally fix) the current branch
-  and its stack. Pass --upstack to skip the current branch and review only descendants.
+  branch over a Graphite or gh-stack stack. Use when you want to review (and optionally fix) the
+  current branch and its stack. Pass --upstack to skip the current branch and review only
+  descendants.
 argument-hint: "[low|medium|high|max] [--upstack] [--fix]"
 disable-model-invocation: true
 ---
 
 Review the current branch and every branch stacked upstack of it. Each branch is reviewed against
-its immediate Graphite parent so already-reviewed downstack changes don't reappear as noise.
+its immediate parent (via `DISCOVERY.md`, Graphite or gh-stack) so already-reviewed downstack
+changes don't reappear as noise.
 
 **This skill is the stack driver for `/code-review`.** It does not define its own review model — the
 shared review prompt, the effort→reviewer-set table, and the judge's compile-then-verify rules all
@@ -35,11 +37,17 @@ how many reviewers run at a given effort, read `/code-review`.
 
 Run in sequence; stop with a clear error message if any check fails.
 
-**a. Require Graphite:**
+**a. Require a stack tool:** either Graphite (`gt`) or gh-stack (`gh stack`), per the same probe
+`DISCOVERY.md` §1 uses.
 
 ```bash
-command -v gt || { echo "stack-review requires Graphite (gt). Install from https://graphite.dev."; exit 1; }
-gt log short 2>&1 | grep -q '\.' || { echo "stack-review: this repo is not tracked by Graphite. Run 'gt init' first."; exit 1; }
+if command -v gt >/dev/null && gt log short 2>&1 | grep -q '\.'; then
+  :
+elif gh extension list 2>/dev/null | grep -q 'github/gh-stack' && gh stack view --json >/dev/null 2>&1; then
+  :
+else
+  echo "stack-review requires a stack tracked by Graphite (gt) or gh-stack (gh stack)."; exit 1
+fi
 ```
 
 **b. Detect default branch and guard against reviewing it:**
@@ -67,12 +75,12 @@ git worktree list --porcelain
 
 ### 1. Discover the stack
 
-Follow [`./DISCOVERY.md`](./DISCOVERY.md) — the shared read-only procedure (MCP-preferred, `gt`-BFS
-fallback, default-branch filter) that yields the target branches and their parent→child edges. Its
-§1 checks are already covered by preflight steps a–b above; skip them.
+Follow [`./DISCOVERY.md`](./DISCOVERY.md) — the shared read-only procedure (Graphite or gh-stack
+backend, default-branch filter) that yields the target branches and their parent→child edges. Its §1
+checks are already covered by preflight steps a–b above; skip them.
 
-By default, also prepend the current branch (diff base = `gt parent`). If `--upstack`, skip the
-current branch and include only the descendants.
+By default, also prepend the current branch (diff base = its parent, per `DISCOVERY.md` §4). If
+`--upstack`, skip the current branch and include only the descendants.
 
 From the parent→child edges, classify:
 
