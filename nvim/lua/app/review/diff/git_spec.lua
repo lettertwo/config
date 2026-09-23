@@ -297,6 +297,37 @@ describe("git staging primitives (real repo round-trips)", function()
     assert.is_string(tree_err)
   end)
 
+  it("rev_parse_many answers every ref in one call, even after a miss", function()
+    local cwd = vim.fn.tempname()
+    vim.fn.mkdir(cwd, "p")
+    local function run(...)
+      local r = vim.system({ "git", ... }, { cwd = cwd, text = true }):wait()
+      assert.equals(0, r.code, r.stderr)
+    end
+    run("init", "-q")
+    run("branch", "-M", "main")
+    run("config", "user.email", "t@t")
+    run("config", "user.name", "t")
+    vim.fn.writefile({ "1" }, cwd .. "/f.lua")
+    run("add", ".")
+    run("commit", "-qm", "init")
+    local head = vim.trim(vim.system({ "git", "rev-parse", "HEAD" }, { cwd = cwd, text = true }):wait().stdout)
+    run("tag", "-a", "-m", "v1", "v1")
+
+    local shas
+    -- The miss sits in the middle: a resolver that stops at the first
+    -- failure would leave every ref after it unanswered.
+    git.rev_parse_many(cwd, { "main", "nosuchref", "v1", "main" }, function(result)
+      shas = result
+    end)
+    vim.wait(4000, function()
+      return shas ~= nil
+    end, 10)
+    assert.equals(head, shas["main"])
+    assert.is_nil(shas["nosuchref"])
+    assert.equals(head, shas["v1"]) -- annotated tag peeled, matching rev_parse
+  end)
+
   it("empty_tree returns a stable hash usable as a diff base", function()
     local cwd = vim.fn.tempname()
     vim.fn.mkdir(cwd, "p")

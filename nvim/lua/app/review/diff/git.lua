@@ -376,6 +376,46 @@ function M.rev_parse(cwd, ref, callback)
   end)
 end
 
+-- Resolve several refs in one process. `git rev-parse` stops at the first
+-- ref that fails to resolve, so it can't answer for a batch; `cat-file
+-- --batch-check` reads one rev per stdin line, resolves the same rev syntax,
+-- and answers every line in order, printing "<rev> missing" for a miss.
+-- Each rev is peeled to its commit, as `rev_parse` does, so an annotated tag
+-- resolves to the same sha by either path. Duplicate refs are coalesced.
+---@param cwd string
+---@param refs string[]
+---@param callback fun(shas: table<string, string?>)
+function M.rev_parse_many(cwd, refs, callback)
+  local seen, order = {}, {}
+  for _, ref in ipairs(refs) do
+    if ref ~= "" and not seen[ref] then
+      seen[ref] = true
+      table.insert(order, ref)
+    end
+  end
+  if #order == 0 then
+    callback({})
+    return
+  end
+  local input = {}
+  for _, ref in ipairs(order) do
+    table.insert(input, ref .. "^{commit}")
+  end
+  run(cwd, { "git", "cat-file", "--batch-check=%(objectname)" }, function(r)
+    local lines = vim.split(r.stdout or "", "\n", { plain = true })
+    local shas = {}
+    for i, ref in ipairs(order) do
+      local line = lines[i]
+      -- A resolved commit line is a bare sha; "<rev> missing" or a short
+      -- read means that ref didn't resolve to a commit.
+      if line and line:match("^%x+$") and #line >= 40 then
+        shas[ref] = line
+      end
+    end
+    callback(shas)
+  end, table.concat(input, "\n") .. "\n")
+end
+
 -- The empty tree's hash — base for diffing a root commit (whose `<ref>^`
 -- resolution fails). Computed via hash-object rather than hardcoded so it's
 -- correct in both SHA-1 and SHA-256 repos.

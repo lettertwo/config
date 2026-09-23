@@ -120,7 +120,10 @@ function M._gate(can_stage, file, view)
 end
 
 -- Flatten changesets into the nav list (changeset order). The outline renders
--- the grouped structure; the flat list is the ]f/[f nav model.
+-- the grouped structure; the flat list is the ]f/[f nav model. A changeset
+-- still fetching its diff, or one that failed, has an empty `files` and so
+-- contributes nothing here — its id is still indexed, so file-nav functions
+-- that walk `self.files` skip straight past it without special-casing it.
 ---@param changesets Review.Changeset[]?
 function Docket:set_changesets(changesets)
   self.changesets = changesets or {}
@@ -605,14 +608,25 @@ function Docket:next_changeset()
   end
 end
 
+-- A Pending or Failed changeset between the current one and its nearest
+-- file-bearing predecessor contributes no entries to self.files, so "the
+-- previous changeset" means the nearest LOWER index that has any — not
+-- necessarily ci - 1. Two passes: find that index, then its first file.
 function Docket:prev_changeset()
   local file = self.files[self.idx]
   local ci = file and self.cs_idx_by_id[file.changeset_id] or 0
-  if ci <= 1 then
+  local target_ci = nil
+  for _, f in ipairs(self.files) do
+    local fci = self.cs_idx_by_id[f.changeset_id]
+    if fci < ci then
+      target_ci = fci
+    end
+  end
+  if not target_ci then
     return
   end
-  for i = 1, #self.files do
-    if self.cs_idx_by_id[self.files[i].changeset_id] == ci - 1 then
+  for i, f in ipairs(self.files) do
+    if self.cs_idx_by_id[f.changeset_id] == target_ci then
       self.idx = i
       self:show_file()
       return
@@ -963,9 +977,68 @@ function Docket:toggle_all()
   staging.toggle_all(self.cwd, self:_after_stage_op())
 end
 
+-- Any changeset still fetching its diff. Drives the empty-list placeholder:
+-- "[No changes]" only holds once nothing is left to arrive.
+---@return boolean
+function Docket:_has_pending()
+  for _, cs in ipairs(self.changesets) do
+    if cs.status == "pending" then
+      return true
+    end
+  end
+  return false
+end
+
+-- A stack/stack-tree outline carries a Failed mark on the header row itself;
+-- flat and tree modes have no header row for a fileless changeset to land
+-- on, so the wave's first failure gets one notify instead. `notified` is an
+-- upvalue owned by the caller's load/refresh call, so repeat snapshots for
+-- the same wave notify at most once.
+---@param notified boolean[]  single-element flag, boxed so this can set it
+function Docket:_notify_wave_failure(notified)
+  if notified[1] or self.state.outline_mode == "stack" or self.state.outline_mode == "stack-tree" then
+    return
+  end
+  for _, cs in ipairs(self.changesets) do
+    if cs.status == "failed" then
+      notified[1] = true
+      self:_notify("Review: " .. cs.title .. " failed to load — " .. (cs.error or "unknown error"), vim.log.levels.ERROR)
+      return
+    end
+  end
+end
+
+-- Where to land after a changeset snapshot lands: the same (path, changeset)
+-- pair as `pin` if it's still there (a changeset's files can move around in
+-- `self.files` as siblings settle around it), otherwise wherever `pick`
+-- computes. Returns nil when there's nothing to show yet (every changeset is
+-- still Pending, or there really is nothing).
+---@param pin {path: string, changeset_id: string}?
+---@param pick fun(): integer
+---@return integer?
+function Docket:_reposition(pin, pick)
+  if #self.files == 0 then
+    return nil
+  end
+  if pin then
+    for i, f in ipairs(self.files) do
+      if f.path == pin.path and f.changeset_id == pin.changeset_id then
+        return i
+      end
+    end
+  end
+  return pick()
+end
+
 -- Initial load: fetch changesets, open at the current-position changeset
--- (the source marks it), start the save watcher.
+-- (the source marks it), start the save watcher. A streaming source calls
+-- back more than once (a Pending skeleton, then again as each changeset's
+-- diff lands); `landed` gates the one-time work (watchers, first render) to
+-- the first snapshot that has anything to show, and `pin` keeps the docket
+-- on that file across the snapshots that follow, however the growing
+-- changeset list reorders `self.files` under it.
 function Docket:load()
+  local pin, landed, notified = nil, false, {}
   self.source:load(function(changesets, err)
     if self._closed then
       return
@@ -975,30 +1048,38 @@ function Docket:load()
       return
     end
     self:set_changesets(changesets)
-    if #self.files == 0 then
-      self.dv:_render_placeholder("[No changes]")
-      return
-    end
-    for i, f in ipairs(self.files) do
-      local ci = self.cs_idx_by_id[f.changeset_id]
-      if ci and self.changesets[ci].current then
-        self.idx = i
-        break
-      end
-    end
+    self:_notify_wave_failure(notified)
     if self.outline then
       self.outline:render()
     end
+    local idx = self:_reposition(pin, function()
+      for i, f in ipairs(self.files) do
+        local ci = self.cs_idx_by_id[f.changeset_id]
+        if ci and self.changesets[ci].current then
+          return i
+        end
+      end
+      return 1
+    end)
+    if not idx then
+      self.dv:_render_placeholder(self:_has_pending() and "[Loading changes…]" or "[No changes]")
+      return
+    end
+    self.idx = idx
+    local file = self.files[self.idx]
+    pin = { path = file.path, changeset_id = file.changeset_id }
     self:show_file()
-    self:_start_watcher()
-    self:_start_index_watcher()
+    if not landed then
+      landed = true
+      self:_start_watcher()
+      self:_start_index_watcher()
+    end
   end)
 end
 
 function Docket:refresh()
   local current = self.files[self.idx]
-  local current_path = current and current.path
-  local current_cs = current and current.changeset_id
+  local pin = current and { path = current.path, changeset_id = current.changeset_id }
   -- Refreshes can overlap (staging op completion + watchers); only the
   -- newest one's completion may apply, or a slow stale read overwrites
   -- fresh data last-writer-wins.
@@ -1007,6 +1088,7 @@ function Docket:refresh()
   -- Snapshot at start too: a staging op's index write already scheduled the
   -- watcher's debounce; without this a slow refresh (>300ms) gets doubled.
   self:_snapshot_index_sig()
+  local notified = {}
   self.source:refresh(function(changesets, err)
     if self._closed then
       return
@@ -1031,32 +1113,28 @@ function Docket:refresh()
       return
     end
     self:set_changesets(changesets)
+    self:_notify_wave_failure(notified)
     if self.outline then
       self.outline:render()
     end
-    if #self.files == 0 then
+    -- A streaming refresh can call back several times; `pin` was captured
+    -- once, before the first of them, so every snapshot relocates from the
+    -- same starting point rather than chasing whatever the previous
+    -- snapshot briefly clamped to.
+    local idx = self:_reposition(pin, function()
+      return math.min(self.idx, #self.files)
+    end)
+    if not idx then
       self.idx = 1
       self._rendered = {}
       self:_arrange(1)
-      self.dv:_render_placeholder("[No changes]")
+      self.dv:_render_placeholder(self:_has_pending() and "[Loading changes…]" or "[No changes]")
       self:set_winbar()
       return
     end
-    -- Keep the current file when it still exists (same path can appear in
-    -- several changesets, so match both); clamp the index otherwise.
-    local same_file = false
-    if current_path then
-      for i, f in ipairs(self.files) do
-        if f.path == current_path and f.changeset_id == current_cs then
-          self.idx = i
-          same_file = true
-          break
-        end
-      end
-    end
-    if not same_file then
-      self.idx = math.min(self.idx, #self.files)
-    end
+    local landed_file = self.files[idx]
+    local same_file = pin ~= nil and landed_file.path == pin.path and landed_file.changeset_id == pin.changeset_id
+    self.idx = idx
     local view = same_file
         and vim.api.nvim_win_is_valid(self.win)
         and vim.api.nvim_win_call(self.win, vim.fn.winsaveview)

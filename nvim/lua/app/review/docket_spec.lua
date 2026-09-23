@@ -232,3 +232,62 @@ describe("docket: cursor-scoped staging ops (fake pane)", function()
     dk:destroy()
   end)
 end)
+
+describe("docket: changeset nav past a fileless changeset", function()
+  -- Bare enough for next_changeset/prev_changeset and set_changesets, which
+  -- is all this exercises; render never runs.
+  local function fake_dv()
+    return { right = { bufnr = vim.api.nvim_get_current_buf() }, destroy = function() end }
+  end
+
+  local function fake_docket()
+    local dk = docket.new({
+      kind = "test",
+      cwd = "/tmp",
+      title = "test",
+      win = vim.api.nvim_get_current_win(),
+      dv = fake_dv(),
+      dv2 = fake_dv(),
+      source = {
+        can_stage = function()
+          return false
+        end,
+      },
+    })
+    dk.show_file = function()
+      return true
+    end
+    return dk
+  end
+
+  -- A Pending or Failed changeset has no files (source/changesets.lua never
+  -- fills `files` for either), so it never occupies a slot in `self.files` —
+  -- next_changeset/prev_changeset walk that list, so they land on the next
+  -- real file on either side without ever seeing the empty one.
+  local function changesets()
+    return {
+      { id = "a", title = "a", status = "ready", files = { { path = "a.lua", changeset_id = "a" } } },
+      { id = "b", title = "b", status = "pending", files = {} },
+      { id = "c", title = "c", status = "failed", error = "boom", files = {} },
+      { id = "d", title = "d", status = "ready", files = { { path = "d.lua", changeset_id = "d" } } },
+    }
+  end
+
+  it("next_changeset skips a Pending and a Failed changeset with no files", function()
+    local dk = fake_docket()
+    dk:set_changesets(changesets())
+    dk.idx = 1
+    dk:next_changeset()
+    assert.equals("d.lua", dk.files[dk.idx].path)
+    dk:destroy()
+  end)
+
+  it("prev_changeset skips back over the same fileless changesets", function()
+    local dk = fake_docket()
+    dk:set_changesets(changesets())
+    dk.idx = 2 -- d.lua, the second (and last) entry in self.files
+    dk:prev_changeset()
+    assert.equals("a.lua", dk.files[dk.idx].path)
+    dk:destroy()
+  end)
+end)

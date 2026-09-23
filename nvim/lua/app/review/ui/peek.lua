@@ -86,6 +86,15 @@ function M._changeset_lines(item, commits, stat)
 
   local lines, hl = { header, "" }, {}
 
+  if cs.status == "pending" then
+    table.insert(lines, "[loading…]")
+    return lines, hl
+  end
+  if cs.status == "failed" then
+    table.insert(lines, "[error] " .. (cs.error or "unknown error"))
+    return lines, hl
+  end
+
   if commits and #commits == 1 then
     local c = commits[1]
     table.insert(lines, c.subject)
@@ -176,6 +185,12 @@ end
 ---@param callback fun(lines: string[], highlights: table[])
 local function changeset_content(item, docket, callback)
   local cs = item.changeset
+  if cs.status == "pending" or cs.status == "failed" then
+    -- Nothing to diff or log yet (or ever, for a failed slot); _changeset_lines
+    -- reads the status straight off `cs` and skips the commit/stat sections.
+    callback(M._changeset_lines(item, nil, nil))
+    return
+  end
   local width = 60
 
   local function with_stat(commits)
