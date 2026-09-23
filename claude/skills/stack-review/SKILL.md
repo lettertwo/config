@@ -42,9 +42,9 @@ Run in sequence; stop with a clear error message if any check fails.
 
 ```bash
 if command -v gt >/dev/null && gt log short 2>&1 | grep -q '\.'; then
-  :
+  BACKEND=graphite
 elif gh extension list 2>/dev/null | grep -q 'github/gh-stack' && gh stack view --json >/dev/null 2>&1; then
-  :
+  BACKEND=gh-stack
 else
   echo "stack-review requires a stack tracked by Graphite (gt) or gh-stack (gh stack)."; exit 1
 fi
@@ -95,7 +95,7 @@ For each target:
 
 1. Check the existing-worktree map from step 0c.
 2. Already checked out → **reuse** that path (`userOwned: true`). Don't call `git worktree add`.
-3. Not checked out → create at the path from step 0b (`userOwned: false`).
+3. Not checked out → create at the path from step 0c (`userOwned: false`).
 
 ```bash
 git worktree add <computed-path> <branch>
@@ -171,23 +171,54 @@ commits are already on the branch (nothing auto-reverts) but need a human look b
 #### `--fix` on dependent targets
 
 Apply fixes serially, bottom-up, using each branch's CONFIRMED findings only — those with a concrete
-fix (spec gaps usually have none; skip them):
+fix (spec gaps usually have none; skip them).
+
+Neither `gt` nor `gh stack` can rebase a branch that is checked out in another worktree, and this
+flow puts every target in one. The worktrees this skill created (`userOwned: false`) are free to
+detach around each restack; user-owned ones are not.
 
 For each branch in topological order (parent before child):
 
 1. If the branch's worktree is user-owned with uncommitted changes → skip it and all descendants;
    record reason.
-2. If the branch is in a user-owned worktree → cannot run `gt restack` through it. Surface for
-   manual resolution and stop the chain.
-3. Otherwise: apply each finding's fix, commit it (`fix: <specific>`), then run:
+2. If any descendant is checked out in a user-owned worktree → the restack cannot move it. Surface
+   for manual resolution and stop the chain. The branch's own worktree may be user-owned (the
+   current branch always is unless `--upstack`); a clean one is fine, since the restack below moves
+   that branch only when its own parent has moved, and otherwise only the branches above it.
+3. Apply each finding's fix and commit it (`fix: <specific>`). If nothing was committed, skip to
+   step 8: there is nothing to restack.
+4. Detach every created worktree that holds a descendant, which frees its branch without touching
+   its files:
    ```bash
-   gt restack --cwd <worktree>
+   git -C <descendant-worktree> switch --detach
    ```
-4. If `gt restack` conflicts → stop the chain, report conflict for manual resolution.
-5. After a successful restack, run the test gate: `~/.claude/bin/cargo-gate test` for Rust
-   workspaces (via the nearest `Cargo.toml`/workspace root), otherwise the project's own test
-   command. A gate failure doesn't block the chain (dependent stacks must keep serializing) but gets
-   flagged under "Needs manual attention" in the final report.
+5. Restack the branch and its descendants, from the branch's worktree. `--upstack` leaves
+   ancestors, already processed, alone; `--no-trunk` keeps gh-stack from fetching and rebasing onto
+   a moved trunk.
+   ```bash
+   gt restack --upstack --cwd <worktree>                   # BACKEND=graphite
+   (cd <worktree> && gh stack rebase --upstack --no-trunk)  # BACKEND=gh-stack
+   ```
+6. On a conflict (`gt restack` stops, or `gh stack rebase` exits 3), work through it. The conflict
+   is almost always this branch's fix meeting a descendant's edit of the same code, and the fix,
+   its finding, and the descendant's diff are all already in hand. Resolve each conflicted file,
+   `git add` it, and continue (`gt continue --cwd <worktree>`, or `gh stack rebase --continue` from
+   the worktree) until the cascade finishes. Record every resolution: branch, file, which side won,
+   and why. A resolution that keeps the descendant's version drops the fix on that branch; list it
+   under "Needs manual attention", since the fix did not carry upstack. When a resolution is not
+   clear (both sides change behavior, not just neighboring lines), abort instead (`gt abort --cwd
+   <worktree>` or `gh stack rebase --abort`), which restores every branch; the fix commits stay on
+   this branch. Reattach as in step 7, report the conflict for manual resolution, and stop the chain.
+7. Reattach every worktree detached in step 4, whether the restack finished or was aborted:
+   ```bash
+   git -C <descendant-worktree> switch <descendant-branch>
+   ```
+8. Run the test gate on this branch: `~/.claude/bin/cargo-gate test` for Rust workspaces (via the
+   nearest `Cargo.toml`/workspace root), otherwise the project's own test command. Every branch
+   reaches this step once, after its parent's restack (and any conflict resolution) moved it and
+   its own fixes landed, so each is gated exactly once. A gate failure doesn't block the chain
+   (dependent stacks must keep serializing) but gets flagged under "Needs manual attention" in the
+   final report, with any resolutions on that branch named.
 
 Re-call `ReportFindings` with an `outcome` per finding once `--fix` has run.
 
@@ -214,6 +245,7 @@ Layout: bare+worktree | normal clone
 ### <branch> (N findings, M fixed, K skipped/manual)
 - Fixed: <sha> fix: <message>
 - Skipped: <title> — <reason>
+- Resolved: <file> — <which side won, and why>
 
 ### Needs manual attention:
 - <branch>: <reason>

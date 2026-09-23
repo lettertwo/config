@@ -86,5 +86,5 @@ The target branch list plus the parent→child edges, and the current branch's o
 base). The edges are what downstream consumers order by: bottom-up chapters for an explanation,
 topological fix order for a review.
 
-Consumers that go beyond discovery should check `BACKEND`: `/stack-review`'s restack step is
-`gt restack` and has no gh-stack equivalent wired up yet (`gh stack rebase` is the analogue).
+Consumers that go beyond discovery should check `BACKEND`: `/stack-review`'s restack step runs
+`gt restack` on Graphite and `gh stack rebase` on gh-stack.
