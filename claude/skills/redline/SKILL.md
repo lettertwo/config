@@ -123,7 +123,7 @@ For each note:
 ### 3. Draft
 
 For any rewrite longer than a phrase, **show the replacement text and get approval before writing
-it.** Replacement text follows `claude/voice.md`. Mechanical substitutions — a term swap, a
+it.** Replacement text follows the voice rules in context. Mechanical substitutions — a term swap, a
 heading rename — skip this beat and go straight to writing.
 
 Show replacement text unnumbered, so it reads as the text that will land in the file.
