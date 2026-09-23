@@ -13,8 +13,8 @@
 #
 # It also records "crate X is green at fingerprint F" after an unfiltered
 # test/clippy run, and exposes a cached workspace crate/dependency map, so
-# a Stop hook can skip re-proving crates nothing has touched since. See
-# the `map` and `proven` subcommands below.
+# a later gate (the showrunner close) can skip re-proving crates nothing
+# has touched since. See the `map` and `proven` subcommands below.
 #
 # Usage:
 #   cargo-gate <check|test|clippy> [extra cargo args...]
@@ -32,9 +32,7 @@
 # Gotcha: the fingerprint/proof logic below never invents a pass — an
 # empty fingerprint (no repo, unborn HEAD, missing shasum) means "never
 # record, never treat as proven," always falling through to actually
-# running cargo. Mirrors the posture in git-workon-review's
-# stop-check.sh, where the fingerprint computation was lifted from
-# verbatim so both sides agree on what "unchanged" means.
+# running cargo.
 
 set -u
 
