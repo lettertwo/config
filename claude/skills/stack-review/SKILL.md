@@ -97,15 +97,14 @@ Track which worktrees you created (only those get removed in step 5).
 
 Build the final list: `[{branch, parent, worktree, label, userOwned}]`.
 
-For each branch also resolve, the way `/code-review` step 2 does:
+For each branch also resolve context the way `/code-review` step 2 does.
 
 - **standardsSources**: absolute paths of the standards docs in that branch's worktree
   (`<worktree>/CLAUDE.md`, `<worktree>/frontend/CLAUDE.md`, `CODING_STANDARDS.md`, etc. — only those
   that exist).
-- **specSource**: the originating spec for _that branch_, from its own commit messages (issue refs
-  via `docs/agents/issue-tracker.md`). Most stack branches won't map cleanly to a spec — leave it
-  unresolved and spec conformance is simply not a category for that branch's prompt. Don't force one
-  spec across the whole stack.
+- **specSource**: the originating spec for _that branch_, from its own commit messages. Most stack
+  branches won't map cleanly to a spec — leave it unresolved and spec conformance is simply not a
+  category for that branch's prompt. Don't force one spec across the whole stack.
 - **descendants**: the branch names stacked upstack of this one (for the `mayBeAddressedUpstack`
   annotation below).
 
