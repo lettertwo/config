@@ -18,7 +18,6 @@
 --   default ""  (classifies as "stack")
 
 local Statusline = require("config.mini.statusline")
-local nav_keymaps = require("app.review.keymaps")
 local classify = require("app.review.source.classify")
 local Docket = require("app.review.docket")
 
@@ -56,39 +55,40 @@ local function fail(reason)
   close_review(1)
 end
 
-local function set_keymaps(dk)
-  -- Every pane buffer of both rows gets the maps. Cursor-based nav refocuses
-  -- the pressed row's primary window (its left pane follows via scrollbind);
-  -- staging ops stay put — the pane under the cursor IS their target.
+-- Bind every diff-pane key from the config's registry-driven key tables.
+-- Every pane buffer of both rows gets the maps. Cursor-based nav refocuses
+-- the pressed row's primary window (its left pane follows via scrollbind);
+-- staging ops stay put — the pane under the cursor IS their target, so only
+-- actions flagged `refocus` in the registry (the six nav actions) move focus
+-- before running.
+---@param dk Review.Docket
+---@param config table  app.review.config's resolved keys
+local function set_keymaps(dk, config)
+  local actions = require("app.review.actions")
+  local ctx = { docket = dk, close = close_review }
+
   for _, dv in ipairs({ dk.dv, dk.dv2 }) do
     for _, bufnr in ipairs({ dv.right.bufnr, dv.left.bufnr }) do
-      local function map(lhs, method, desc, refocus)
+      for lhs, name in pairs(config.keys.diff) do
+        local spec = actions.list[name].diff
         vim.keymap.set("n", lhs, function()
           if dk._closed then
             return
           end
-          if refocus and dv.right:win_valid() and vim.api.nvim_get_current_win() ~= dv.right.win then
+          if spec.refocus and dv.right:win_valid() and vim.api.nvim_get_current_win() ~= dv.right.win then
             vim.api.nvim_set_current_win(dv.right.win)
           end
-          dk[method](dk)
-        end, { buffer = bufnr, silent = true, desc = desc })
+          spec.handler(ctx)
+        end, { buffer = bufnr, silent = true, desc = "Review: " .. actions.list[name].desc })
       end
-      for _, nav in ipairs(nav_keymaps) do
-        map(nav.lhs, nav.method, nav.desc, true)
-      end
-      map("<leader>rl", "toggle_layout", "Review: toggle side-by-side")
-      map("<leader>rz", "toggle_view", "Review: " .. Docket.TOGGLE_VIEW_DESC)
-      map("<leader>rs", "stage_current", "Review: toggle-stage hunk")
-      map("<leader>rS", "stage_current_file", "Review: toggle-stage file")
-      map("<leader>rd", "discard_current", "Review: discard hunk")
-      map("<leader>rD", "discard_current_file", "Review: discard file")
 
       -- Visual-mode variants: line-precise staging over the selected rows.
       -- The live range is read from the active selection ('<,'> marks are
       -- stale until visual exits), then visual is left SYNCHRONOUSLY —
       -- discard's vim.fn.confirm reads input, so a queued <Esc> via
       -- feedkeys would be eaten as a dialog abort.
-      local function vmap(lhs, method, desc)
+      for lhs, name in pairs(config.keys.diff_visual) do
+        local spec = actions.list[name].diff
         vim.keymap.set("x", lhs, function()
           if dk._closed then
             return
@@ -99,27 +99,9 @@ local function set_keymaps(dk)
             lo, hi = hi, lo
           end
           vim.cmd("normal! \27")
-          dk[method](dk, lo, hi)
-        end, { buffer = bufnr, silent = true, desc = desc })
+          spec.handler(ctx, lo, hi)
+        end, { buffer = bufnr, silent = true, desc = "Review: " .. actions.list[name].desc })
       end
-      vmap("<leader>rs", "stage_selection", "Review: toggle-stage selected lines")
-      vmap("<leader>rd", "discard_selection", "Review: discard selected lines")
-
-      vim.keymap.set("n", "<leader>o", function()
-        if not dk._closed and dk.outline then
-          dk.outline:open()
-        end
-      end, { buffer = bufnr, silent = true, desc = "Review: focus outline" })
-
-      vim.keymap.set("n", "q", function()
-        -- An outline peek float can still be open (visible, unfocused) if
-        -- focus moved to a diff pane without dismissing it first — q here
-        -- should close it rather than closing the whole review.
-        if require("app.review.ui.peek").close() then
-          return
-        end
-        close_review()
-      end, { buffer = bufnr, silent = true, desc = "Close review" })
     end
   end
 end
@@ -191,6 +173,13 @@ function ReviewApp.open(classified, opts)
   local title = opts.title or default_title
   local kind = classified.kind
 
+  -- Cleared before every open, not just the first: in embedded mode this
+  -- module survives between one `:Review` and the next in the same nvim
+  -- session, so a stale package.loaded entry would carry forward whatever
+  -- vim.g.review looked like at the FIRST open and never see later edits.
+  package.loaded["app.review.config"] = nil
+  local config = require("app.review.config")
+
   close_docket()
   require("app.review.ui.signs").setup()
   Statusline.setup_highlights()
@@ -241,7 +230,7 @@ function ReviewApp.open(classified, opts)
     dv2 = dv2,
     source = source,
   })
-  set_keymaps(docket)
+  set_keymaps(docket, config)
   dv:_render_placeholder("Loading " .. title .. "  —  " .. cwd .. " …")
   docket:set_winbar()
   open_outline(docket)
