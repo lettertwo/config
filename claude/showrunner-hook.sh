@@ -36,15 +36,7 @@ if [ "$part" = "showrunner" ]; then
 
   payload=$(cat "$HOME/.claude/showrunner.md")
 else
-  payload=$(cat <<'HEADER'
-# Writing
-
-These rules govern prose artifacts around the work: PR titles and descriptions, commit messages,
-issue and review comments, handoff docs, ADRs, RFCs, reports, long-form code comments, and the
-names you give identifiers.
-
-HEADER
-  cat "$HOME/.claude/voice.md")
+  payload=$(cat "$HOME/.claude/voice.md")
 fi
 
 if [ "${#payload}" -gt "$BUDGET" ]; then
