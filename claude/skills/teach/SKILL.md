@@ -116,7 +116,7 @@ You should attempt to find high-reputation communities the user can join. If the
 
 While creating lessons, you should also create reference documents. Lessons can reference these documents - they are useful for tracking raw units of knowledge useful across lessons.
 
-Lessons will rarely be revisited later - reference documents will be. They should be the compressed essence of the lesson, in a format designed for quick reference.
+Reference documents get revisited far more often than lessons. They should be the compressed essence of the lesson, in a format designed for quick reference.
 
 Some learning topics lend themselves to reference:
 
