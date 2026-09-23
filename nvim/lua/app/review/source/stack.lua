@@ -20,7 +20,8 @@ function M.new(opts)
     default_stack_order = "head-first", -- consumed by the outline's stack rendering
   }
 
-  local graph = graph_factory.create(cwd)
+  local current_branch = git.current_branch_sync(cwd)
+  local graph = graph_factory.create(cwd, current_branch)
 
   -- Adapt graph nodes to changesets.build's plain specs via the graph's own
   -- base_ref/head_ref/metadata accessors (Graphite db or git-log fallback).
@@ -48,10 +49,9 @@ function M.new(opts)
     -- top of ITS commits (not at the head of the whole stack), and the
     -- session opens focused here. Graphite node ids are branch names; the
     -- git fallback has no descendants, so its position is the tip.
-    local current = git.current_branch_sync(cwd)
     local cur_idx = nil
     for i, n in ipairs(nodes) do
-      if n.id == current then
+      if n.id == current_branch then
         cur_idx = i
       end
     end
