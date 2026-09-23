@@ -171,6 +171,9 @@ local function dispatch(classified, cwd)
     end
     return classified.ref, { cwd = cwd, classified = classified }
   end
+  if classified.kind == "pr" then
+    return "#" .. tostring(classified.number), { cwd = cwd, classified = classified }
+  end
   return classified.kind, { cwd = cwd }
 end
 
@@ -211,6 +214,23 @@ function ReviewApp.open(classified, opts)
   vim.api.nvim_buf_set_name(dv2.right.bufnr, "review://" .. kind .. "//staged")
   vim.api.nvim_buf_set_name(dv2.left.bufnr, "review://" .. kind .. "//staged//old")
 
+  local source = require("app.review.source." .. kind).new(source_opts)
+  if kind == "pr" then
+    -- The pr source's failures (gh unavailable, bad metadata, no remote, a
+    -- failed fetch) are all pre-launch: name them and close instead of
+    -- leaving the docket sitting on an inline error.
+    local resolve = source.load
+    function source:load(callback)
+      resolve(self, function(changesets, err)
+        if err then
+          fail(err)
+          return
+        end
+        callback(changesets, err)
+      end)
+    end
+  end
+
   docket = require("app.review.docket").new({
     kind = kind,
     cwd = cwd,
@@ -218,7 +238,7 @@ function ReviewApp.open(classified, opts)
     win = win,
     dv = dv,
     dv2 = dv2,
-    source = require("app.review.source." .. kind).new(source_opts),
+    source = source,
   })
   set_keymaps(docket)
   dv:_render_placeholder("Loading " .. title .. "  —  " .. cwd .. " …")
@@ -236,11 +256,6 @@ function ReviewApp:run(args)
   local classified, err = classify.classify(text)
   if not classified then
     fail(err)
-    return
-  end
-  -- The pr arm classifies here; resolving it against gh lands separately.
-  if classified.kind == "pr" then
-    fail("PR review is not implemented yet")
     return
   end
 
