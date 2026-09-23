@@ -347,6 +347,116 @@ describe("parser.hunk_to_patch_lines", function()
       assert.equals("a\nb\nold_last\nnew_two", blob.stdout)
     end)
 
+    it("TRIPWIRE: the naive unspliced shape is accepted and DOES corrupt the index", function()
+      -- Same fixture as the splice test above, but the patch is hand-written
+      -- in the naive shape the splice exists to avoid: the dropped del
+      -- rendered as plain context, carrying the no-newline marker, with the
+      -- kept add appended straight after. This pins the git BINARY's
+      -- behavior, not nvim's code — if a future git starts rejecting this
+      -- shape instead of silently concatenating, this test is the one that
+      -- notices.
+      local cwd = vim.fn.tempname()
+      vim.fn.mkdir(cwd, "p")
+      local function git(...)
+        local r = vim.system({ "git", ... }, { cwd = cwd, text = true }):wait()
+        assert.equals(0, r.code, r.stderr)
+      end
+      git("init", "-q")
+      git("config", "user.email", "t@t")
+      git("config", "user.name", "t")
+      vim.fn.writefile({ "a", "b", "old_last" }, cwd .. "/f.lua", "b") -- no trailing newline
+      git("add", ".")
+      git("commit", "-qm", "init")
+
+      local naive_patch = table.concat({
+        "diff --git a/f.lua b/f.lua",
+        "--- a/f.lua",
+        "+++ b/f.lua",
+        "@@ -1,3 +1,4 @@",
+        " a",
+        " b",
+        " old_last",
+        "\\ No newline at end of file",
+        "+new_two",
+        "\\ No newline at end of file",
+      }, "\n") .. "\n"
+      local ar = vim.system({ "git", "apply", "--cached", "-" }, { cwd = cwd, text = true, stdin = naive_patch }):wait()
+      assert.equals(0, ar.code, ar.stderr)
+      local blob = vim.system({ "git", "show", ":f.lua" }, { cwd = cwd, text = true }):wait()
+      assert.equals("a\nb\nold_lastnew_two", blob.stdout)
+    end)
+
+    it("keeps a dropped deletion at the last line as context with no splice needed", function()
+      -- Negative control for the splice above: the dropped deletion here
+      -- lands as the LAST line of the emitted body, so no add follows it to
+      -- concatenate onto. Fixture: neither side has a trailing newline.
+      local cwd = vim.fn.tempname()
+      vim.fn.mkdir(cwd, "p")
+      local function git(...)
+        local r = vim.system({ "git", ... }, { cwd = cwd, text = true }):wait()
+        assert.equals(0, r.code, r.stderr)
+      end
+      git("init", "-q")
+      git("config", "user.email", "t@t")
+      git("config", "user.name", "t")
+      vim.fn.writefile({ "x", "y", "last" }, cwd .. "/f.lua", "b")
+      git("add", ".")
+      git("commit", "-qm", "init")
+      vim.fn.writefile({ "X", "y", "replacedlast" }, cwd .. "/f.lua", "b")
+      local r = vim.system({ "git", "diff", "--no-color", "--unified=3", "HEAD" }, { cwd = cwd, text = true }):wait()
+      local files = parser.parse(r.stdout)
+
+      -- Keep the x→X change; drop the last→replacedlast change, converting
+      -- the deletion of "last" to context under base=old.
+      local patch = parser.hunk_to_patch_lines(files[1], files[1].hunks[1], function(e)
+        return e.text == "X"
+      end, function(e)
+        return e.text == "x"
+      end, "old")
+      assert.is_nil(patch:find("\n+last", 1, true))
+      local ar = vim.system({ "git", "apply", "--cached", "-" }, { cwd = cwd, text = true, stdin = patch }):wait()
+      assert.equals(0, ar.code, ar.stderr)
+      local blob = vim.system({ "git", "show", ":f.lua" }, { cwd = cwd, text = true }):wait()
+      assert.equals("X\ny\nlast", blob.stdout)
+    end)
+
+    it("keeps a dropped addition as context under base=new with no splice needed", function()
+      -- base=new mirror of the case above: the dropped ADD is what converts
+      -- to context here, and it's the file's new EOF (no trailing newline).
+      local cwd = vim.fn.tempname()
+      vim.fn.mkdir(cwd, "p")
+      local function git(...)
+        local r = vim.system({ "git", ... }, { cwd = cwd, text = true }):wait()
+        assert.equals(0, r.code, r.stderr)
+      end
+      git("init", "-q")
+      git("config", "user.email", "t@t")
+      git("config", "user.name", "t")
+      vim.fn.writefile({ "a", "b", "last" }, cwd .. "/f.lua") -- trailing newline present
+      git("add", ".")
+      git("commit", "-qm", "init")
+      vim.fn.writefile({ "a", "b", "replaced" }, cwd .. "/f.lua", "b") -- no trailing newline
+      local r = vim.system({ "git", "diff", "--no-color", "--unified=3", "HEAD" }, { cwd = cwd, text = true }):wait()
+      local files = parser.parse(r.stdout)
+
+      -- Keep the deletion of "last"; drop the addition of "replaced",
+      -- converting it to context under base=new.
+      local patch = parser.hunk_to_patch_lines(files[1], files[1].hunks[1], function()
+        return false
+      end, function(e)
+        return e.text == "last"
+      end, "new")
+      local ar = vim.system(
+        { "git", "apply", "--reverse", "-" },
+        { cwd = cwd, text = true, stdin = patch }
+      ):wait()
+      assert.equals(0, ar.code, ar.stderr)
+      local fh = assert(io.open(cwd .. "/f.lua", "rb"))
+      local content = fh:read("*a")
+      fh:close()
+      assert.equals("a\nb\nlast\nreplaced", content)
+    end)
+
     it("stages part of a pure-deletion run (base=old, forward)", function()
       local lines = {}
       for i = 1, 20 do
