@@ -9,8 +9,6 @@
 
 ---@module "snacks"
 
-local nav_keymaps = require("app.review.keymaps")
-
 local M = {}
 
 -- XY git-short format: X = staged/index column, Y = worktree/unstaged column
@@ -294,153 +292,62 @@ function OutlineView:open()
   local docket = self.docket
   local can_stage = docket.source:can_stage()
 
-  -- Nav actions/keys shared with the diff panes (app.review.keymaps): file
-  -- and changeset nav have outline state (docket.idx) to keep in sync via
-  -- sync_to_current; hunk nav has no outline row of its own, so it's just a
-  -- forwarded keypress. All of them leave focus in the outline list.
-  local nav_actions = {}
-  local nav_keys = {}
-  for _, nav in ipairs(nav_keymaps) do
-    local action_name = "review_" .. nav.method
-    nav_actions[action_name] = {
-      desc = nav.desc,
-      action = function()
-        docket[nav.method](docket)
-      end,
-    }
-    -- A bare string value here becomes its own desc verbatim (snacks/win.lua:
-    -- `spec = { key, spec, desc = spec }`) rather than looking up the
-    -- action's desc, so the outline's keymap help would otherwise show
-    -- "review_next_changeset" instead of "Review: next changeset" like the
-    -- diff panes. Supplying desc explicitly keeps both views' help text
-    -- matching.
-    nav_keys[nav.lhs] = { nav.lhs, action_name, desc = nav.desc }
+  local registry = require("app.review.actions")
+  local review_config = require("app.review.config")
+  local ctx = { docket = docket, view = view, close = self.on_close }
+
+  -- Every registry action with an outline handler, wrapped for snacks: the
+  -- picker under the cursor is read fresh on each press (`ctx.picker`), not
+  -- captured once at open, since it drives which row (file, dir, changeset)
+  -- an op like stage/discard applies to.
+  local actions = {}
+  for name, action in pairs(registry.list) do
+    if action.outline then
+      actions["review_" .. name] = {
+        desc = action.desc,
+        action = function(picker)
+          ctx.picker = picker
+          action.outline.handler(ctx)
+        end,
+      }
+    end
   end
 
-  local actions = vim.tbl_extend("force", nav_actions, {
-    review_cycle_mode = {
-      desc = "Cycle outline mode",
-      action = function()
-        view:cycle_mode()
-      end,
-    },
-    review_toggle_stack_order = {
-      desc = "Toggle stack order",
-      action = function()
-        view:toggle_stack_order()
-      end,
-    },
-    review_refresh = {
-      desc = "Refresh source",
-      action = function()
-        docket:refresh()
-      end,
-    },
-    review_layout = {
-      desc = "Toggle side-by-side",
-      action = function()
-        docket:toggle_layout()
-      end,
-    },
-    review_toggle_view = {
-      desc = "Toggle whole view",
-      action = function()
-        docket:toggle_view()
-      end,
-    },
-    review_toggle_stage_file = {
-      desc = "Stage/unstage file",
-      action = function(picker)
-        local item = picker:current()
-        if not item then
-          return
-        end
-        if item.type == "file" then
-          docket:toggle_stage_file(item.change)
-        elseif item.type == "dir" then
-          docket:toggle_stage_tree(item.path)
-        elseif item.type == "changeset" then
-          docket:toggle_all()
-        end
-      end,
-    },
-    review_discard_file = {
-      desc = "Discard file",
-      action = function(picker)
-        local item = picker:current()
-        if item and item.change then
-          docket:discard_file(item.change)
-        end
-      end,
-    },
-    review_toggle_all = {
-      desc = "Stage/unstage all",
-      action = function()
-        docket:toggle_all()
-      end,
-    },
-    review_peek = {
-      desc = "Peek",
-      action = function(picker)
-        local item = picker:current()
-        if item then
-          require("app.review.ui.peek").peek(item, docket)
-        end
-      end,
-    },
-    review_close = {
-      desc = "Close review",
-      action = function()
-        -- q/<Esc> dismiss an open peek float first (it's transient scratch
-        -- UI, not the thing the user meant to quit) rather than falling
-        -- through to closing the whole review.
-        if require("app.review.ui.peek").close() then
-          return
-        end
-        view.on_close()
-      end,
-    },
-    review_focus_list = {
-      desc = "Focus list",
-      action = function(picker)
-        picker:focus("list")
-      end,
-    },
-    review_input_normal = {
-      desc = "Normal mode",
-      action = function()
-        vim.cmd("stopinsert")
-      end,
-    },
-    review_clear_and_focus_list = {
-      desc = "Clear filter",
-      action = function(picker)
-        picker.input:set("", "")
-        picker:find({ refresh = false })
-        picker:focus("list")
-      end,
-    },
-  })
+  -- Filter/list-focus mechanics: not part of the action registry since a
+  -- config key table would never rebind them — they're how the input line
+  -- and the list hand focus back and forth, not a review operation.
+  actions.review_focus_list = {
+    desc = "Focus list",
+    action = function(picker)
+      picker:focus("list")
+    end,
+  }
+  actions.review_input_normal = {
+    desc = "Normal mode",
+    action = function()
+      vim.cmd("stopinsert")
+    end,
+  }
+  actions.review_clear_and_focus_list = {
+    desc = "Clear filter",
+    action = function(picker)
+      picker.input:set("", "")
+      picker:find({ refresh = false })
+      picker:focus("list")
+    end,
+  }
 
-  -- Bare-string list.keys values become their own desc verbatim (see the
-  -- nav_keys comment above) instead of resolving the action's desc, so every
-  -- non-nav outline action gets the same {lhs, action, desc} treatment here.
-  local list_keys = vim.deepcopy(nav_keys)
-  for lhs, action_name in pairs({
-    ["i"] = "review_cycle_mode",
-    ["r"] = "review_toggle_stack_order",
-    ["l"] = "review_layout",
-    ["z"] = "review_toggle_view",
-    ["<Space>"] = "review_toggle_stage_file",
-    ["a"] = "review_toggle_all",
-    ["d"] = "review_discard_file",
-    ["K"] = "review_peek",
-    ["R"] = "review_refresh",
-    ["q"] = "review_close",
-    ["<Esc>"] = "review_close",
-  }) do
+  -- Bare-string list.keys values become their own desc verbatim
+  -- (snacks/win.lua: `spec = { key, spec, desc = spec }`) rather than
+  -- looking up the action's desc, so every key here gets desc supplied
+  -- explicitly instead.
+  local list_keys = {}
+  for lhs, name in pairs(review_config.keys.outline) do
+    local action_name = "review_" .. name
     list_keys[lhs] = { lhs, action_name, desc = actions[action_name].desc }
   end
+  -- <Esc> always runs the peek → close cascade; config can't rebind it.
+  list_keys["<Esc>"] = { "<Esc>", "review_close", desc = actions.review_close.desc }
 
   ---@param item table
   ---@param picker snacks.Picker

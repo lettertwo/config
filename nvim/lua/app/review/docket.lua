@@ -39,11 +39,6 @@ Docket.__index = Docket
 
 local M = {}
 
--- One string for the toggle's own binding and for any refusal that points
--- at it, so the two can't drift apart. Refusal copy names what the action
--- does, never the key it happens to be bound to.
-M.TOGGLE_VIEW_DESC = "toggle whole view"
-
 ---@param opts {kind: string, cwd: string, title: string, win: integer, dv: Review.DiffView, dv2: Review.DiffView, source: Review.Source}
 ---@return Review.Docket
 function M.new(opts)
@@ -701,7 +696,8 @@ function Docket:_ready_pane(what)
     elseif why == "unstageable" then
       self:_notify("Review: " .. what .. " — this file isn't stageable")
     else
-      self:_notify("Review: " .. what .. ' needs split view — "' .. M.TOGGLE_VIEW_DESC .. '"')
+      local toggle_whole_desc = require("app.review.actions").list.toggle_whole.desc
+      self:_notify("Review: " .. what .. ' needs split view — "' .. toggle_whole_desc .. '"')
     end
     return nil
   end
