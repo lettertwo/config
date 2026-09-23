@@ -585,6 +585,28 @@ function DiffView:_setup_fold_sync()
   })
 end
 
+-- How many lines follow the last hunk on each side. A hunk list describes
+-- a diff between two specific blobs; if a side's blob has since changed
+-- (a live worktree read racing a concurrent writer), the two trailing
+-- lengths stop matching even though every hunk's own geometry still looks
+-- fine in isolation. Comparing these two numbers is the cheapest total
+-- check for "these hunks no longer describe this blob".
+---@param hunks Review.Hunk[]
+---@param n_old integer
+---@param n_new integer
+---@return integer tail_old
+---@return integer tail_new
+local function trailing_lengths(hunks, n_old, n_new)
+  local last_old, last_new = 0, 0
+  for _, h in ipairs(hunks) do
+    local oe = h.old_count > 0 and (h.old_start + h.old_count - 1) or h.old_start
+    local ne = h.new_count > 0 and (h.new_start + h.new_count - 1) or h.new_start
+    last_old = math.max(last_old, oe)
+    last_new = math.max(last_new, ne)
+  end
+  return n_old - last_old, n_new - last_new
+end
+
 -- Load old- and new-side content for a file. git.show may call back
 -- synchronously (WORKTREE reads from disk), so guard against double-finish.
 local function load_both(file, cwd, cb)
@@ -638,19 +660,33 @@ function DiffView:render(file, cwd, on_done, mode)
     return
   end
 
-  load_both(file, cwd, function(old_lines, new_lines)
-    if self._render_seq ~= seq or not vim.api.nvim_buf_is_valid(self.right.bufnr) then
-      return
-    end
-    -- Fall back to inline when the left window vanished out-of-band (:q in
-    -- the pane); the next toggle re-syncs the docket's layout state.
-    if self.layout == "sbs" and self.left:win_valid() then
-      self:_render_sbs(file, old_lines, new_lines)
-    else
-      self:_render_inline(file, old_lines, new_lines)
-    end
-    if on_done then on_done() end
-  end)
+  -- retries_left bounds the re-acquire to one extra attempt: a file under a
+  -- continuous writer must still render something rather than loop forever.
+  -- _render_seq (not the docket's refresh generation) guards every attempt,
+  -- so a newer render() call — a real file switch or an explicit refresh —
+  -- abandons a retry in flight rather than racing it.
+  local function attempt(retries_left)
+    load_both(file, cwd, function(old_lines, new_lines)
+      if self._render_seq ~= seq or not vim.api.nvim_buf_is_valid(self.right.bufnr) then
+        return
+      end
+      local tail_old, tail_new = trailing_lengths(file.hunks, #old_lines, #new_lines)
+      if tail_old ~= tail_new and retries_left > 0 then
+        attempt(retries_left - 1)
+        return
+      end
+      -- Fall back to inline when the left window vanished out-of-band (:q in
+      -- the pane); the next toggle re-syncs the docket's layout state.
+      if self.layout == "sbs" and self.left:win_valid() then
+        self:_render_sbs(file, old_lines, new_lines)
+      else
+        self:_render_inline(file, old_lines, new_lines)
+      end
+      if on_done then on_done() end
+    end)
+  end
+
+  attempt(1)
 end
 
 ---@param file Review.FileChange
@@ -956,6 +992,16 @@ function M._sbs_annotations(hunks, old_lines, new_lines, pickers)
 
     table.insert(hunk_rows_l, rows_entry(hunk.old_start, hunk.old_count, #old_lines, fd_l, ld_l))
     table.insert(hunk_rows_r, rows_entry(hunk.new_start, hunk.new_count, #new_lines, fd_r, ld_r))
+  end
+
+  -- Context after the last hunk is unchanged, so it must run the same
+  -- length on both sides; pad the shorter one so scrollbind holds all the
+  -- way to the end of the file instead of drifting once the hunks run out.
+  local tail_old, tail_new = trailing_lengths(hunks, #old_lines, #new_lines)
+  if tail_new > tail_old then
+    filler(fillers_l, #old_lines - 1, tail_new - tail_old, #old_lines > 0)
+  elseif tail_old > tail_new then
+    filler(fillers_r, #new_lines - 1, tail_old - tail_new, #new_lines > 0)
   end
 
   return {

@@ -278,4 +278,109 @@ describe("diff._sbs_annotations", function()
     end
     assert_parity(ann, old_lines, new_lines)
   end)
+
+  it("file grown past the hunk's trailing context: shorter side gets a tail filler", function()
+    -- The hunk describes a diff against a 5-line blob; the live blob has
+    -- since grown by 3 lines past where the hunk's context ends. Nothing in
+    -- any hunk is wrong, but the two sides' unchanged tails no longer run
+    -- the same length.
+    local old_lines = { "a", "b", "c", "d", "e" }
+    local new_lines = { "a", "B", "c", "d", "e", "f", "g", "h" }
+    local hunks = {
+      {
+        old_start = 1,
+        old_count = 3,
+        new_start = 1,
+        new_count = 3,
+        lines = { ctx("a", 1, 1), del("b", 2), add("B", 2), ctx("c", 3, 3) },
+      },
+    }
+    local ann = diff._sbs_annotations(hunks, old_lines, new_lines)
+    assert_parity(ann, old_lines, new_lines)
+    assert.same({ { row = 4, count = 3, above = false } }, ann.fillers_l)
+  end)
+end)
+
+describe("diff.render alignment re-acquire", function()
+  vim.cmd.packadd("codediff.nvim")
+  local diff = require("app.review.ui.diff")
+  local git = require("app.review.diff.git")
+
+  -- Replaces git.show for the life of one test: HEAD always answers with
+  -- `head_content`; WORKTREE answers with the next entry of `worktree_reads`
+  -- (the last entry repeats once exhausted, simulating a file that never
+  -- settles). Returns a call counter and a restore function.
+  local function stub_show(head_content, worktree_reads)
+    local orig = git.show
+    local worktree_calls = 0
+    git.show = function(_, ref, _, cb)
+      if ref == "HEAD" then
+        cb(head_content, nil)
+        return
+      end
+      worktree_calls = worktree_calls + 1
+      cb(worktree_reads[worktree_calls] or worktree_reads[#worktree_reads], nil)
+    end
+    return function()
+      return worktree_calls
+    end, function()
+      git.show = orig
+    end
+  end
+
+  -- A single-hunk change (line 2, "b" -> "B") against a 5-line HEAD blob.
+  -- Trailing context after the hunk is lines 4-5, so a consistent worktree
+  -- read must also total 5 lines.
+  local head_content = "a\nb\nc\nd\ne"
+  local hunks = {
+    {
+      old_start = 1,
+      old_count = 3,
+      new_start = 1,
+      new_count = 3,
+      lines = {
+        { kind = "ctx", text = "a", old_lnum = 1, new_lnum = 1 },
+        { kind = "del", text = "b", old_lnum = 2 },
+        { kind = "add", text = "B", new_lnum = 2 },
+        { kind = "ctx", text = "c", old_lnum = 3, new_lnum = 3 },
+      },
+    },
+  }
+
+  local function make_view()
+    return diff.new({ win = vim.api.nvim_get_current_win() })
+  end
+
+  it("recovers on one retry when the first worktree read races a writer", function()
+    -- First read catches the file mid-write (truncated to 3 lines); the
+    -- second, retried read lands after the writer finishes.
+    local calls, restore = stub_show(head_content, { "a\nB\nc", "a\nB\nc\nd\ne" })
+    local dv = make_view()
+    local done = false
+    dv:render({ path = "f.txt", hunks = hunks }, "/tmp", function()
+      done = true
+    end)
+    restore()
+    assert.is_true(done)
+    assert.equals(2, calls())
+    assert.equals(5, vim.api.nvim_buf_line_count(dv.right.bufnr))
+    dv:destroy()
+  end)
+
+  it("renders whatever it has once the one retry is spent", function()
+    -- The worktree read never settles; every attempt sees the same
+    -- mismatched, truncated content.
+    local calls, restore = stub_show(head_content, { "a\nB\nc" })
+    local dv = make_view()
+    local done = false
+    dv:render({ path = "f.txt", hunks = hunks }, "/tmp", function()
+      done = true
+    end)
+    restore()
+    assert.is_true(done)
+    -- One initial read plus exactly one retry, never more.
+    assert.equals(2, calls())
+    assert.equals(3, vim.api.nvim_buf_line_count(dv.right.bufnr))
+    dv:destroy()
+  end)
 end)
