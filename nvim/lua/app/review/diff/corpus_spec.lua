@@ -83,11 +83,7 @@ describe("parser.hunk_to_patch: end-state bytes", function()
     assert.equals("a\nB\nc\n", git_show(cwd, "my file.lua"))
   end)
 
-  -- Known bug: parser.parse skips old mode/new mode header lines, and
-  -- hunk_to_patch has nothing to re-emit them from, so a chmod-plus-content
-  -- hunk stages the content and silently drops the bit. Flip to `it` once
-  -- hunk_to_patch carries the mode headers.
-  pending("stages the executable bit alongside a content change in one hunk", function()
+  it("stages the executable bit alongside a content change in one hunk", function()
     local cwd = vim.fn.tempname()
     vim.fn.mkdir(cwd, "p")
     local function git(...)
@@ -114,5 +110,37 @@ describe("parser.hunk_to_patch: end-state bytes", function()
     assert.equals(0, ar.code, ar.stderr)
     local ls = vim.system({ "git", "ls-files", "--stage", "run.sh" }, { cwd = cwd, text = true }):wait()
     assert.truthy(ls.stdout:match("^100755"), ls.stdout)
+  end)
+
+  it("discards the executable bit alongside a content change in one hunk", function()
+    local cwd = vim.fn.tempname()
+    vim.fn.mkdir(cwd, "p")
+    local function git(...)
+      local r = vim.system({ "git", ... }, { cwd = cwd, text = true }):wait()
+      assert.equals(0, r.code, r.stderr)
+    end
+    git("init", "-q")
+    git("config", "user.email", "t@t")
+    git("config", "user.name", "t")
+    vim.fn.writefile({ "echo committed" }, cwd .. "/run.sh")
+    vim.uv.fs_chmod(cwd .. "/run.sh", 420) -- 0644
+    git("add", ".")
+    git("commit", "-qm", "init")
+    vim.fn.writefile({ "echo modified" }, cwd .. "/run.sh")
+    vim.uv.fs_chmod(cwd .. "/run.sh", 493) -- 0755
+    local r = vim.system(
+      { "git", "diff", "--no-color", "--unified=3", "HEAD" },
+      { cwd = cwd, text = true }
+    ):wait()
+    local files = parser.parse(r.stdout)
+
+    local patch = parser.hunk_to_patch(files[1], files[1].hunks[1])
+    local ar = vim.system({ "git", "apply", "--reverse", "-" }, { cwd = cwd, text = true, stdin = patch }):wait()
+    assert.equals(0, ar.code, ar.stderr)
+    assert.equals("echo committed\n", read_bytes(cwd .. "/run.sh"))
+    -- Only the exec bits are asserted: the exact mode git writes back
+    -- depends on the process umask.
+    local stat = assert(vim.uv.fs_stat(cwd .. "/run.sh"))
+    assert.equals(0, bit.band(stat.mode, tonumber("111", 8)), ("mode %o"):format(stat.mode))
   end)
 end)

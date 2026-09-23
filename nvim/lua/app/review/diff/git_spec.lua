@@ -328,4 +328,50 @@ describe("git staging primitives (real repo round-trips)", function()
     assert.is_truthy(content and content:match("line 1 staged"))
     assert.is_falsy(content and content:match("worktree only"))
   end)
+
+  -- diff_uncommitted diffs an untracked file with `--no-index` against
+  -- `/dev/null` (see its header-rewrite comment). That diff carries a real
+  -- "new file mode" header — the same header a genuinely staged addition
+  -- carries — so parser.parse reads it as status "A", not "U": parser has
+  -- no notion of "untracked", only of diff shape. "U" is a distinct,
+  -- app-level status (git --short's "??") that source/uncommitted.lua's
+  -- merge_files assigns deliberately, from `git ls-files --others`, on top
+  -- of whatever parser.parse returns. This spec pins that division: raw
+  -- parser output stays "A" here on purpose.
+  it("parses an untracked file's --no-index diff as status A, not U", function()
+    local cwd = vim.fn.tempname()
+    vim.fn.mkdir(cwd, "p")
+    local function run(...)
+      local r = vim.system({ "git", ... }, { cwd = cwd, text = true }):wait()
+      assert.equals(0, r.code, r.stderr)
+      return r.stdout or ""
+    end
+    run("init", "-q")
+    run("config", "user.email", "t@t")
+    run("config", "user.name", "t")
+    vim.fn.writefile({ "committed" }, cwd .. "/f.lua")
+    run("add", ".")
+    run("commit", "-qm", "init")
+    vim.fn.writefile({ "untracked" }, cwd .. "/new.lua")
+
+    local combined, unstaged_only
+    git.diff_uncommitted(cwd, function(c, _, u)
+      combined, unstaged_only = c, u
+    end)
+    vim.wait(4000, function()
+      return combined ~= nil
+    end, 10)
+
+    for _, raw in ipairs({ combined, unstaged_only }) do
+      local files = parser.parse(raw)
+      local new_file
+      for _, f in ipairs(files) do
+        if f.path == "new.lua" then
+          new_file = f
+        end
+      end
+      assert.is_truthy(new_file, raw)
+      assert.equals("A", new_file.status)
+    end
+  end)
 end)
