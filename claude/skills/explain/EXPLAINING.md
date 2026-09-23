@@ -27,7 +27,7 @@ structure wins over the flat section list below.
 ## Output
 
 A single self-contained HTML file (CSS and JS inline, no external assets) at
-`/tmp/YYYY-MM-DD-explanation-<slug>.html`, the slug naming the subject. Today's date first so files
+`.scratch/explain/YYYY-MM-DD-<slug>.html`, the slug naming the subject. Today's date first so files
 sort chronologically and stay out of version control by living outside the repo. One long page
 with section headers and a table of contents; no tabs for top-level structure. Basic responsive
 styling so it's readable on a phone.

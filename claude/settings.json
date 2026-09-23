@@ -67,6 +67,7 @@
     "defaultMode": "auto"
   },
   "model": "opus",
+  "plansDirectory": ".scratch/plans",
   "disableClaudeAiConnectors": true,
   "syncClaudeAiSkills": false,
   "skillOverrides": {
