@@ -744,6 +744,16 @@ local function hunkwise(sub)
   return sub.status == "M" or sub.status == "R"
 end
 
+-- Line-precise ops need a shape hunk_to_patch_lines can express: a real
+-- modification/rename (hunkwise), or a from-scratch creation (Added,
+-- Untracked) which it renders its own file-mode/dev-null headers for.
+-- Deleted, Unmerged, and binary sub-files have no such shape — deleting a
+-- file, or resolving a conflict, isn't a subset of lines — so they still
+-- widen to the whole-file op.
+local function supports_line_ops(sub)
+  return hunkwise(sub) or sub.status == "A" or sub.status == "U"
+end
+
 -- Stage the hunk under the cursor; in the staged pane this unstages instead
 -- (pane-aware toggle). Untracked/added/deleted sub-files fall back to the
 -- equivalent file-level op.
@@ -806,11 +816,11 @@ function Docket:_selection_at_cursor(row_lo, row_hi)
   if not r then
     return nil
   end
-  -- hunk_to_patch_lines headers can't express creations/deletions any more
-  -- than hunk_to_patch can. The hunk ops widen to file-level there; widening
-  -- a 3-line selection to the whole file would surprise, so refuse instead.
-  if not hunkwise(r.file) then
-    self:_notify("Review: line staging needs a modified file — use the file ops")
+  -- Deleted/Unmerged/binary sub-files have no line-precise shape to build;
+  -- widening a selection to the whole file there would surprise, so refuse
+  -- instead of falling back like the hunk ops do.
+  if not supports_line_ops(r.file) then
+    self:_notify("Review: line staging needs a modified or new file — use the file ops")
     return nil
   end
   local info_lo = r.dv:row_to_source(cur, row_lo - 1)
@@ -871,6 +881,23 @@ function Docket:stage_selection(row_lo, row_hi)
   end
 end
 
+-- Every changed line of a hunk is kept: nothing of the original content
+-- would be left out of the discard, so there's nothing left to build a
+-- same-shaped patch against.
+---@param hunk Review.Hunk
+---@param keep_add fun(entry: Review.HunkLine): boolean
+---@param keep_del fun(entry: Review.HunkLine): boolean
+local function covers_whole_hunk(hunk, keep_add, keep_del)
+  for _, entry in ipairs(hunk.lines) do
+    if entry.kind == "add" and not keep_add(entry) then
+      return false
+    elseif entry.kind == "del" and not keep_del(entry) then
+      return false
+    end
+  end
+  return true
+end
+
 -- Discard the visually selected lines from the worktree (unstaged pane only).
 ---@param row_lo integer
 ---@param row_hi integer
@@ -889,6 +916,16 @@ function Docket:discard_selection(row_lo, row_hi)
   end
   local sp = self:_selection_plans(sel)
   if not sp then
+    return
+  end
+  -- An untracked file's whole content is one from-scratch hunk; selecting
+  -- every line of it for discard has no prior state to revert to — it's the
+  -- same file removal the whole-file discard does, not an empty patch.
+  if file.status == "U" and #sp.plans == 1 and covers_whole_hunk(sp.plans[1].hunk, sp.plans[1].keep_add, sp.plans[1].keep_del) then
+    if not self:_confirm(("Delete untracked %s?"):format(file.path)) then
+      return
+    end
+    staging.delete_untracked(self.cwd, file.path, self:_after_stage_op())
     return
   end
   -- State the true scope: a linewise `j` over a closed context fold jumps

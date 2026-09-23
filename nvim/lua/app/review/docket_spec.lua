@@ -85,7 +85,9 @@ describe("docket: cursor-scoped staging ops (fake pane)", function()
       hunk_at = function()
         return hunk
       end,
-      row_to_source = function(_, row0)
+      -- Called as `dv:row_to_source(win, row0)`: the leading `self` from the
+      -- colon call is a real parameter here, not the ignored one.
+      row_to_source = function(_, _, row0)
         return { side = "RIGHT", lnum = row0 + 1 }
       end,
       hunks_in_range = function()
@@ -184,9 +186,9 @@ describe("docket: cursor-scoped staging ops (fake pane)", function()
     dk:destroy()
   end)
 
-  it("refuses a line selection on a non-hunkwise file without running git", function()
+  it("refuses a line selection on a deleted file without running git", function()
     local cwd = make_repo()
-    local file = { path = "new.lua", status = "U", head_ref = "WORKTREE", unstaged = {} }
+    local file = { path = "gone.lua", status = "D", head_ref = "WORKTREE", unstaged = {} }
     local dk = fake_docket(cwd, file, nil)
     local notified
     local orig = vim.notify
@@ -197,7 +199,7 @@ describe("docket: cursor-scoped staging ops (fake pane)", function()
     dk:stage_selection(1, 1)
     vim.notify = orig
     assert.equals(before, staging._queue_len())
-    assert.truthy(notified and notified:match("line staging needs a modified file"))
+    assert.truthy(notified and notified:match("line staging needs a modified or new file"))
     dk:destroy()
   end)
 
@@ -229,6 +231,58 @@ describe("docket: cursor-scoped staging ops (fake pane)", function()
     vim.notify = orig
     assert.equals(before, staging._queue_len())
     assert.truthy(notified and notified:match("no changed lines in selection"))
+    dk:destroy()
+  end)
+
+  -- An untracked file's whole content renders as one hunk of add-only lines
+  -- (parser.hunk_to_patch_lines's own /dev/null headers, exercised end-to-end
+  -- in staging_spec.lua); this pins the routing decision that reaches it.
+  local function untracked_multi_hunk()
+    return parser.parse(table.concat({
+      "diff --git a/multi.txt b/multi.txt",
+      "new file mode 100644",
+      "--- /dev/null",
+      "+++ b/multi.txt",
+      "@@ -0,0 +1,4 @@",
+      "+one",
+      "+two",
+      "+three",
+      "+four",
+    }, "\n") .. "\n")[1].hunks[1]
+  end
+
+  it("routes a line selection on an untracked file to a real stage instead of refusing", function()
+    local cwd = make_repo()
+    vim.fn.writefile({ "one", "two", "three", "four" }, cwd .. "/multi.txt")
+    local hunk = untracked_multi_hunk()
+    local file = { path = "multi.txt", status = "U", head_ref = "WORKTREE", unstaged = {}, hunks = { hunk } }
+    local dk = fake_docket(cwd, file, hunk)
+    -- Row 2 maps to RIGHT lnum 2: "two" alone.
+    dk:stage_selection(2, 2)
+    vim.wait(4000, function()
+      return staging._queue_len() == 0
+    end, 10)
+    local shown = vim.system({ "git", "show", ":multi.txt" }, { cwd = cwd, text = true }):wait()
+    assert.equals(0, shown.code, shown.stderr)
+    assert.equals("two\n", shown.stdout)
+    dk:destroy()
+  end)
+
+  it("routes a full-selection discard on an untracked file to file removal, not an empty patch", function()
+    local cwd = make_repo()
+    vim.fn.writefile({ "one", "two", "three", "four" }, cwd .. "/multi.txt")
+    local hunk = untracked_multi_hunk()
+    local file = { path = "multi.txt", status = "U", head_ref = "WORKTREE", unstaged = {}, hunks = { hunk } }
+    local dk = fake_docket(cwd, file, hunk)
+    dk._confirm = function()
+      return true
+    end
+    -- Rows 1-4 cover every line of the file.
+    dk:discard_selection(1, 4)
+    vim.wait(4000, function()
+      return staging._queue_len() == 0
+    end, 10)
+    assert.equals(0, vim.fn.filereadable(cwd .. "/multi.txt"), "a full-selection discard must remove the file, not leave it empty")
     dk:destroy()
   end)
 end)
