@@ -1,0 +1,25 @@
+textures a persist
+
+# GROUP_STEP
+startgroup
+    animation_start window-focus-in | tab-change
+    animation_stop 250
+    animation_curve ease-out
+    animation_step 16
+    output_texture a
+    shaders dim-inactive-windows
+endgroup
+
+# GROUP_STORE
+startgroup
+    attach
+    animation_step 16
+    output_texture persist
+    shaders dim-inactive-windows
+endgroup
+
+# Applies the dim on every redraw, animating or not.
+startgroup
+    animation_step 0
+    shaders dim-inactive-windows
+endgroup
