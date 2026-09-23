@@ -343,3 +343,244 @@ describe("staging file ops (real repo)", function()
     assert.is_true(r.code ~= 0, "expected git apply --cached to reject the mode-line-less creation patch")
   end)
 end)
+
+describe("staging line ops on untracked/added files (real repo)", function()
+  local function make_repo()
+    local cwd = vim.fn.tempname()
+    vim.fn.mkdir(cwd, "p")
+    local function run(...)
+      local r = vim.system({ "git", ... }, { cwd = cwd, text = true }):wait()
+      assert.equals(0, r.code, r.stderr)
+      return r.stdout or ""
+    end
+    run("init", "-q")
+    run("config", "user.email", "t@t")
+    run("config", "user.name", "t")
+    return cwd, run
+  end
+
+  local function read_bytes(path)
+    local fh = assert(io.open(path, "rb"))
+    local data = fh:read("*a")
+    fh:close()
+    return data
+  end
+
+  -- The exact `git diff --no-index` shape production's untracked fan-out
+  -- feeds the parser (diff/git.lua rewrites the a/dev/null header the same
+  -- way; skipped here since the header's path already matches).
+  local function untracked_hunk(cwd, path)
+    local r = vim.system(
+      { "git", "diff", "--no-color", "--unified=3", "--no-index", "--", "/dev/null", path },
+      { cwd = cwd, text = true }
+    ):wait()
+    return parser.parse(r.stdout)[1]
+  end
+
+  -- Once part of an untracked file is staged, its remainder is an ordinary
+  -- index-vs-worktree diff, not a /dev/null one — the index side is real
+  -- now, just shorter than the worktree.
+  local function unstaged_hunk(cwd, path)
+    local r = vim.system(
+      { "git", "diff", "--no-color", "--unified=3", "--", path },
+      { cwd = cwd, text = true }
+    ):wait()
+    assert.equals(0, r.code, r.stderr)
+    return parser.parse(r.stdout)[1]
+  end
+
+  local function staged_creation_hunk(cwd, path)
+    local r = vim.system(
+      { "git", "diff", "--no-color", "--cached", "HEAD", "--", path },
+      { cwd = cwd, text = true }
+    ):wait()
+    assert.equals(0, r.code, r.stderr)
+    return parser.parse(r.stdout)[1]
+  end
+
+  -- A selection by line text rather than buffer row: these scenarios pin
+  -- the patch synthesis and staging primitives directly, not the
+  -- contiguous-row selection docket.lua builds them from.
+  local function keep_texts(...)
+    local texts = { ... }
+    local set = {}
+    for _, t in ipairs(texts) do
+      set[t] = true
+    end
+    return function(entry)
+      return set[entry.text] == true
+    end
+  end
+  local function keep_none()
+    return false
+  end
+
+  it("stages a contiguous run of an untracked file's lines, worktree untouched", function()
+    local cwd = make_repo()
+    vim.fn.writefile({ "one", "two", "three", "four" }, cwd .. "/multi.txt")
+    local file = untracked_hunk(cwd, "multi.txt")
+
+    local done = false
+    staging.stage_lines(cwd, file, file.hunks[1], keep_texts("two", "three"), keep_none, function()
+      done = true
+    end)
+    vim.wait(4000, function()
+      return done
+    end, 10)
+
+    local shown = vim.system({ "git", "show", ":multi.txt" }, { cwd = cwd, text = true }):wait()
+    assert.equals(0, shown.code, shown.stderr)
+    assert.equals("two\nthree\n", shown.stdout)
+    assert.equals("one\ntwo\nthree\nfour\n", read_bytes(cwd .. "/multi.txt"))
+  end)
+
+  it("stages a non-contiguous set of an untracked file's lines", function()
+    local cwd = make_repo()
+    vim.fn.writefile({ "one", "two", "three", "four" }, cwd .. "/multi.txt")
+    local file = untracked_hunk(cwd, "multi.txt")
+
+    local done = false
+    staging.stage_lines(cwd, file, file.hunks[1], keep_texts("one", "three"), keep_none, function()
+      done = true
+    end)
+    vim.wait(4000, function()
+      return done
+    end, 10)
+
+    local shown = vim.system({ "git", "show", ":multi.txt" }, { cwd = cwd, text = true }):wait()
+    assert.equals(0, shown.code, shown.stderr)
+    assert.equals("one\nthree\n", shown.stdout)
+  end)
+
+  it("discards a partial selection from an untracked file's worktree copy, leaving the rest", function()
+    local cwd = make_repo()
+    vim.fn.writefile({ "one", "two", "three", "four" }, cwd .. "/multi.txt")
+    local file = untracked_hunk(cwd, "multi.txt")
+
+    local done = false
+    staging.discard_lines(cwd, file, file.hunks[1], keep_texts("two"), keep_none, function()
+      done = true
+    end)
+    vim.wait(4000, function()
+      return done
+    end, 10)
+
+    assert.equals(1, vim.fn.filereadable(cwd .. "/multi.txt"))
+    assert.equals("one\nthree\nfour\n", read_bytes(cwd .. "/multi.txt"))
+  end)
+
+  it("keeps the final no-newline line of an untracked file byte-exact, dropping a middle line", function()
+    local cwd = make_repo()
+    -- writefile always terminates the last written line; write the bytes
+    -- directly so the fixture's missing trailing newline is exact.
+    local fh = assert(io.open(cwd .. "/eofnl.txt", "wb"))
+    fh:write("one\ntwo\nlast")
+    fh:close()
+    local file = untracked_hunk(cwd, "eofnl.txt")
+
+    local done = false
+    staging.stage_lines(cwd, file, file.hunks[1], keep_texts("one", "last"), keep_none, function()
+      done = true
+    end)
+    vim.wait(4000, function()
+      return done
+    end, 10)
+
+    local shown = vim.system({ "git", "show", ":eofnl.txt" }, { cwd = cwd }):wait()
+    assert.equals(0, shown.code, shown.stderr)
+    assert.equals("one\nlast", shown.stdout)
+  end)
+
+  it("drops an untracked file's no-newline final line entirely without corrupting the kept lines", function()
+    local cwd = make_repo()
+    local fh = assert(io.open(cwd .. "/eofnl.txt", "wb"))
+    fh:write("one\ntwo\nlast")
+    fh:close()
+    local file = untracked_hunk(cwd, "eofnl.txt")
+
+    local done = false
+    staging.stage_lines(cwd, file, file.hunks[1], keep_texts("one", "two"), keep_none, function()
+      done = true
+    end)
+    vim.wait(4000, function()
+      return done
+    end, 10)
+
+    local shown = vim.system({ "git", "show", ":eofnl.txt" }, { cwd = cwd, text = true }):wait()
+    assert.equals(0, shown.code, shown.stderr)
+    assert.equals("one\ntwo\n", shown.stdout)
+  end)
+
+  it("keeps an untracked executable file's real mode on a partial stage, not a hardcoded 644", function()
+    local cwd = make_repo()
+    vim.fn.writefile({ "#!/bin/sh", "echo one", "echo two" }, cwd .. "/run.sh")
+    vim.uv.fs_chmod(cwd .. "/run.sh", 493) -- 0755
+    local file = untracked_hunk(cwd, "run.sh")
+
+    local done = false
+    staging.stage_lines(cwd, file, file.hunks[1], keep_texts("#!/bin/sh", "echo one"), keep_none, function()
+      done = true
+    end)
+    vim.wait(4000, function()
+      return done
+    end, 10)
+
+    local shown = vim.system({ "git", "show", ":run.sh" }, { cwd = cwd, text = true }):wait()
+    assert.equals(0, shown.code, shown.stderr)
+    assert.equals("#!/bin/sh\necho one\n", shown.stdout)
+    local staged = vim.system({ "git", "ls-files", "--stage", "run.sh" }, { cwd = cwd, text = true }):wait()
+    assert.truthy(staged.stdout:match("^100755"), staged.stdout)
+  end)
+
+  it("staging the remaining lines of a partially staged untracked file reaches the same end state as staging it whole", function()
+    local cwd, run = make_repo()
+    vim.fn.writefile({ "one", "two", "three", "four" }, cwd .. "/multi.txt")
+    local file = untracked_hunk(cwd, "multi.txt")
+
+    local done1 = false
+    staging.stage_lines(cwd, file, file.hunks[1], keep_texts("one"), keep_none, function()
+      done1 = true
+    end)
+    vim.wait(4000, function()
+      return done1
+    end, 10)
+
+    -- Re-diff: "one" is now staged, so the remainder is an ordinary
+    -- index-vs-worktree diff (the index side is real now, three lines short).
+    file = unstaged_hunk(cwd, "multi.txt")
+    local done2 = false
+    local keep_all = function()
+      return true
+    end
+    staging.stage_lines(cwd, file, file.hunks[1], keep_all, keep_none, function()
+      done2 = true
+    end)
+    vim.wait(4000, function()
+      return done2
+    end, 10)
+
+    assert.equals("one\ntwo\nthree\nfour\n", run("show", ":multi.txt"))
+    local status = run("status", "--porcelain", "--", "multi.txt")
+    assert.equals("A  multi.txt", vim.trim(status))
+  end)
+
+  it("unstages one line of an already fully-staged Added file, leaving the rest staged", function()
+    local cwd, run = make_repo()
+    vim.fn.writefile({ "unrelated" }, cwd .. "/other.txt")
+    run("add", "other.txt")
+    run("commit", "-qm", "init")
+    vim.fn.writefile({ "one", "two", "three", "four" }, cwd .. "/added.txt")
+    run("add", "added.txt")
+    local file = staged_creation_hunk(cwd, "added.txt")
+
+    local done = false
+    staging.unstage_lines(cwd, file, file.hunks[1], keep_texts("two"), keep_none, function()
+      done = true
+    end)
+    vim.wait(4000, function()
+      return done
+    end, 10)
+
+    assert.equals("one\nthree\nfour\n", run("show", ":added.txt"))
+  end)
+end)

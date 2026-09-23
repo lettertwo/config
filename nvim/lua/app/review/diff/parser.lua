@@ -94,13 +94,22 @@ function M.parse(raw)
       goto continue
     end
 
-    -- Mode lines
-    if line:match("^new file mode") then
+    -- Mode lines. A creation only ever has a "new" mode (the old side never
+    -- existed to have one); a deletion only ever has an "old" one. Reusing
+    -- old_mode/new_mode for these single-sided values (rather than a
+    -- separate field) is what lets a synthesized patch's header decide
+    -- between the chmod pair and a from-scratch/to-nothing line from the
+    -- same two fields.
+    local new_file_mode = line:match("^new file mode (%d+)$")
+    if new_file_mode then
       current_file.status = "A"
+      current_file.new_mode = new_file_mode
       goto continue
     end
-    if line:match("^deleted file mode") then
+    local deleted_file_mode = line:match("^deleted file mode (%d+)$")
+    if deleted_file_mode then
       current_file.status = "D"
+      current_file.old_mode = deleted_file_mode
       goto continue
     end
     local old_mode = line:match("^old mode (%d+)$")
@@ -226,6 +235,14 @@ end
 -- Raw bytes are used for kept lines; converted lines are reconstructed with a
 -- " " prefix.  "\ No newline at end of file" markers are walked from hunk.raw
 -- in parallel and travel with their associated line (omitted lines drop theirs).
+--
+-- A from-scratch hunk (old_start 0) stays one-sided when the trim leaves no
+-- context behind it: the header keeps old_start/old_count at 0,0 and the
+-- result carries a `new file mode` / `--- /dev/null` header instead of the
+-- ordinary a/-b/ pair (the deletion mirror is symmetric on the new side).
+-- Under base="new" a partial trim can convert some of that hunk's adds to
+-- context, which makes the old side real again — the header's old_start
+-- moves off 0 to describe it.
 ---@param file Review.FileChange
 ---@param hunk Review.Hunk
 ---@param keep_add fun(entry: Review.HunkLine): boolean
@@ -340,14 +357,33 @@ function M.hunk_to_patch_lines(file, hunk, keep_add, keep_del, base)
     table.insert(out, eof_ctx.idx + eof_ctx.n_markers + 1, "+" .. eof_ctx.text)
   end
 
-  local header = ("@@ -%d,%d +%d,%d @@"):format(hunk.old_start, old_count, hunk.new_start, new_count)
+  -- Unified-diff convention: a side's start is 0 only when nothing of it
+  -- survives in this patch (old_count/new_count 0). A trimmed selection can
+  -- turn a from-scratch hunk's old side real again — some of its adds
+  -- dropped to context here rather than omitted (base="new") — and a side
+  -- that carries any line, kept or context, starts at line 1 at the least.
+  local old_start = old_count == 0 and hunk.old_start or math.max(hunk.old_start, 1)
+  local new_start = new_count == 0 and hunk.new_start or math.max(hunk.new_start, 1)
+  -- One-sided exactly when the corresponding count stayed at 0: the old
+  -- side is /dev/null (this selection is still a creation) or the new side
+  -- is (a to-nothing selection, the deletion mirror).
+  local old_missing = old_start == 0 and old_count == 0
+  local new_missing = new_start == 0 and new_count == 0
+
+  local header = ("@@ -%d,%d +%d,%d @@"):format(old_start, old_count, new_start, new_count)
   local result = { "diff --git a/" .. a_path .. " b/" .. b_path }
-  if file.old_mode and file.new_mode and file.old_mode ~= file.new_mode then
+  if old_missing then
+    table.insert(result, "new file mode " .. (file.new_mode or "100644"))
+    table.insert(result, "index 0000000..0000000")
+  elseif new_missing then
+    table.insert(result, "deleted file mode " .. (file.old_mode or "100644"))
+    table.insert(result, "index 0000000..0000000")
+  elseif file.old_mode and file.new_mode and file.old_mode ~= file.new_mode then
     table.insert(result, "old mode " .. file.old_mode)
     table.insert(result, "new mode " .. file.new_mode)
   end
-  table.insert(result, "--- a/" .. a_path)
-  table.insert(result, "+++ b/" .. b_path)
+  table.insert(result, old_missing and "--- /dev/null" or ("--- a/" .. a_path))
+  table.insert(result, new_missing and "+++ /dev/null" or ("+++ b/" .. b_path))
   table.insert(result, header)
   for _, l in ipairs(out) do
     table.insert(result, l)
