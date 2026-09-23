@@ -197,7 +197,7 @@ return function(H, fixture)
     return true
   end, 100), git_out("diff"))
 
-  -- 2×2 grid: sbs layout while the split zoom is active.
+  -- 2×2 grid: sbs layout while split view is active.
   focus_path("main.lua")
   vim.wait(8000, function()
     return #dk._rendered == 2 and dk.dv._rendered_file == dk._rendered[1].file

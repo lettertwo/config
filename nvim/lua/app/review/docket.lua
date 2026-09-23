@@ -13,14 +13,14 @@ local parser = require("app.review.diff.parser")
 ---@field cwd string
 ---@field title string
 ---@field win integer         row-1 primary window (dv)
----@field dv Review.DiffView  combined/unstaged role
+---@field dv Review.DiffView  whole/unstaged role
 ---@field dv2 Review.DiffView staged role (window created on demand)
 ---@field source Review.Source
 ---@field changesets Review.Changeset[]
 ---@field files Review.FileChange[]  flattened across changesets, in changeset order
 ---@field cs_idx_by_id table<string, integer>
 ---@field idx integer
----@field state {outline_mode: string, layout: "inline"|"sbs", zoom: "split"|"combined"|"unstaged"|"staged", stack_order: "head-first"|"base-first"}
+---@field state {outline_mode: string, layout: "inline"|"sbs", view: "split"|"whole", stack_order: "head-first"|"base-first"}
 ---@field outline table?  OutlineView (set by init.lua after construction)
 ---@field _win2 integer?  row-2 primary window (dv2), nil unless split is active
 ---@field _rendered {dv: Review.DiffView, file: Review.FileChange, role: string}[]
@@ -39,7 +39,10 @@ Docket.__index = Docket
 
 local M = {}
 
-local ZOOM_ORDER = { "split", "combined", "unstaged", "staged" }
+-- One string for the toggle's own binding and for any refusal that points
+-- at it, so the two can't drift apart. Refusal copy names what the action
+-- does, never the key it happens to be bound to.
+M.TOGGLE_VIEW_DESC = "toggle whole view"
 
 ---@param opts {kind: string, cwd: string, title: string, win: integer, dv: Review.DiffView, dv2: Review.DiffView, source: Review.Source}
 ---@return Review.Docket
@@ -59,7 +62,7 @@ function M.new(opts)
   self.state = {
     outline_mode = opts.source.default_outline_mode or "flat",
     layout = "inline",
-    zoom = "split",
+    view = "split",
     stack_order = opts.source.default_stack_order or "head-first",
   }
   self.outline = nil
@@ -85,43 +88,40 @@ function Docket:_watch_primary()
       self.dv, self.dv2 = self.dv2, self.dv
       self.win = self._win2
       self._win2 = nil
-      self.state.zoom = "combined"
       self:_watch_primary()
     end
   end)
 end
 
--- The adaptive zoom matrix: what actually renders for a file given the
--- requested zoom. Non-stageable files (source can't stage, or the file isn't
--- a worktree diff, or has no sub-diffs) always collapse to a plain combined
--- view; split keeps two rows only when both sub-diffs exist. Pure; exposed
--- for unit tests.
+-- What actually renders for a file given the requested view. Non-stageable
+-- files (source can't stage, the file isn't a worktree diff, or it has no
+-- sub-diffs) always collapse to a plain whole view, carrying `why` for
+-- refusal copy; a stageable file's split collapses to whichever side exists
+-- when only one does. Pure; exposed for unit tests.
 ---@param can_stage boolean
 ---@param file Review.FileChange?
----@param zoom string
+---@param view "split"|"whole"
 ---@return boolean stageable
----@return string zoom_eff
-function M._gate(can_stage, file, zoom)
-  if not can_stage or not file or file.head_ref ~= "WORKTREE" then
-    return false, "combined"
+---@return string view_eff
+---@return string? why  reason a non-split pane isn't available, for refusal copy
+function M._gate(can_stage, file, view)
+  if not can_stage then
+    return false, "whole", "unstageable"
+  end
+  if not file or file.head_ref ~= "WORKTREE" then
+    return false, "whole", "committed"
   end
   local u, s = file.unstaged ~= nil, file.staged_change ~= nil
   if not u and not s then
-    return false, "combined"
+    return false, "whole", "unstageable"
   end
-  if zoom == "split" then
-    if u and s then
-      return true, "split"
-    end
-    return true, u and "unstaged" or "staged"
+  if view == "whole" then
+    return true, "whole"
   end
-  if zoom == "unstaged" and not u then
-    return true, "combined"
+  if u and s then
+    return true, "split"
   end
-  if zoom == "staged" and not s then
-    return true, "combined"
-  end
-  return true, zoom
+  return true, u and "unstaged" or "staged"
 end
 
 -- Flatten changesets into the nav list (changeset order). The outline renders
@@ -183,7 +183,7 @@ end
 
 -- ── Window topology ─────────────────────────────────────────────────────────
 -- The docket owns all managed windows: self.win (row 1, dv), _win2 (row 2,
--- dv2, split zoom only), and each row's left pane (sbs layout). DiffViews
+-- dv2, split view only), and each row's left pane (sbs layout). DiffViews
 -- render into whatever they're bound to; binding teardown happens BEFORE
 -- windows close.
 
@@ -275,7 +275,6 @@ function Docket:_arrange(rows, opts)
       self.dv2:bind_primary(self._win2)
       self:_watch_close(self._win2, function()
         self._win2 = nil
-        self.state.zoom = "combined"
         -- The row's left pane has no primary anymore; drop it too.
         self:_drop_left(self.dv2, true)
       end)
@@ -370,8 +369,8 @@ function Docket:_schedule_collapse()
       if self._closed then
         return
       end
-      local _, zoom_eff = M._gate(self.source:can_stage(), self.files[self.idx], self.state.zoom)
-      if zoom_eff ~= "split" and self._win2 and vim.api.nvim_win_is_valid(self._win2) then
+      local _, view_eff = M._gate(self.source:can_stage(), self.files[self.idx], self.state.view)
+      if view_eff ~= "split" and self._win2 and vim.api.nvim_win_is_valid(self._win2) then
         self:_arrange(1)
         self:set_winbar()
       end
@@ -394,30 +393,27 @@ function Docket:toggle_layout()
   end
 end
 
--- Cycle the staging zoom: split → combined → unstaged → staged.
-function Docket:cycle_zoom()
+-- Toggle between split (both sub-diffs, when both exist) and the whole
+-- (HEAD→WORKTREE) view. Persists across file navigation and refresh like
+-- layout does.
+function Docket:toggle_view()
   if not self:_can_stage_or_notify() then
     return
   end
-  local prior = self.state.zoom
-  for i, z in ipairs(ZOOM_ORDER) do
-    if z == prior then
-      self.state.zoom = ZOOM_ORDER[(i % #ZOOM_ORDER) + 1]
-      break
-    end
-  end
+  local prior = self.state.view
+  self.state.view = prior == "split" and "whole" or "split"
   if not self:show_file() then
-    self.state.zoom = prior
+    self.state.view = prior
     return
   end
-  self:_notify("Review zoom: " .. self.state.zoom)
+  self:_notify("Review view: " .. self.state.view)
 end
 
--- Role plan builders keyed by the gate's already-collapsed zoom_eff: what
--- each active DiffView renders. The "combined" case (no entry here) is the
+-- Role plan builders keyed by the gate's already-collapsed view_eff: what
+-- each active DiffView renders. The "whole" case (no entry here) is the
 -- only one that depends on stageable, so it stays a fallback below rather
 -- than forcing every branch through that check.
-local ZOOM_PLANS = {
+local VIEW_PLANS = {
   split = function(self, file)
     return {
       { dv = self.dv, file = file.unstaged, role = "unstaged", mode = "plain" },
@@ -442,8 +438,8 @@ function Docket:show_file(view)
   if not file then
     return true
   end
-  local stageable, zoom_eff = M._gate(self.source:can_stage(), file, self.state.zoom)
-  if zoom_eff == "split" then
+  local stageable, view_eff = M._gate(self.source:can_stage(), file, self.state.view)
+  if view_eff == "split" then
     self:_cancel_collapse()
     if not self:_arrange(2) then
       return false
@@ -466,10 +462,10 @@ function Docket:show_file(view)
   end
 
   -- (When stageable, the gate guarantees at least one sub-diff exists, so
-  -- combined is attributed.)
-  local build_plan = ZOOM_PLANS[zoom_eff]
+  -- the whole view is attributed.)
+  local build_plan = VIEW_PLANS[view_eff]
   local plan = build_plan and build_plan(self, file)
-    or { { dv = self.dv, file = file, role = stageable and "combined" or "plain", mode = stageable and "attributed" or "plain" } }
+    or { { dv = self.dv, file = file, role = stageable and "whole" or "plain", mode = stageable and "attributed" or "plain" } }
   self._rendered = plan
 
   for _, r in ipairs(plan) do
@@ -631,9 +627,9 @@ end
 
 -- ── Staging actions ─────────────────────────────────────────────────────────
 -- Hunk ops are pane-scoped: they resolve the hunk under the cursor in the
--- pane's rendered sub-diff. The combined view mixes both sub-diffs' rows, so
--- hunk ops there point at split/zoom instead (the POC's combined-pane role
--- mapping indexed the wrong hunk list).
+-- pane's rendered sub-diff. The whole view mixes both sub-diffs' rows, so
+-- hunk ops there refuse and point at split view instead (indexing into the
+-- whole view's rows would pick the wrong hunk list).
 
 -- The rendered (dv, sub-file, role) entry for the current window, or nil.
 function Docket:_pane_at_cursor()
@@ -692,12 +688,21 @@ end
 -- Shared guard for cursor-scoped staging ops: the pane must have a staged/
 -- unstaged role, and its async render must have caught up with the plan —
 -- stale hunk objects belong to the previously rendered file. Notifies and
--- returns nil otherwise.
+-- returns nil otherwise. The refusal never names a key: it states why the
+-- gate withheld a split pane, and for a stageable file names the toggle by
+-- what it does rather than how it's bound.
 ---@param what string  op label for the role notify
 function Docket:_ready_pane(what)
   local r, cur = self:_pane_at_cursor()
   if not r or (r.role ~= "unstaged" and r.role ~= "staged") then
-    self:_notify("Review: " .. what .. " needs an unstaged/staged pane — cycle zoom (<leader>rz)")
+    local _, _, why = M._gate(self.source:can_stage(), self.files[self.idx], self.state.view)
+    if why == "committed" then
+      self:_notify("Review: " .. what .. " — this changeset is committed, nothing here can be staged")
+    elseif why == "unstageable" then
+      self:_notify("Review: " .. what .. " — this file isn't stageable")
+    else
+      self:_notify("Review: " .. what .. ' needs split view — "' .. M.TOGGLE_VIEW_DESC .. '"')
+    end
     return nil
   end
   if r.dv._rendered_file ~= r.file then

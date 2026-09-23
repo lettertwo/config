@@ -9,11 +9,11 @@ return function(H, fixture)
     return
   end
 
-  -- M5 opens on the staging split by default; this scenario asserts the
-  -- combined view (the staging scenario covers the split). Content is the
+  -- The docket opens on the split by default; this scenario asserts the
+  -- whole view (the staging scenario covers the split). Content is the
   -- same either way for gone.lua, so no re-render race here.
   local dk0 = require("app.review")._active_docket()
-  dk0.state.zoom = "combined"
+  dk0.state.view = "whole"
   dk0:show_file()
 
   -- Outline: flat mode, one item per file (proves the standalone snacks
