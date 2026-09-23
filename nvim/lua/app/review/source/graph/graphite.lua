@@ -5,6 +5,7 @@
 
 local M = {}
 local git = require("app.review.diff.git")
+local walk = require("app.review.source.graph.walk")
 
 -- Parse sqlite3's default |-separated output of
 --   SELECT branch_name,parent_branch_name,branch_revision,parent_branch_revision
@@ -27,83 +28,15 @@ function M._parse_metadata(stdout)
   return by_branch
 end
 
-local function node_for(row)
-  return {
-    id = row.branch,
-    branch = row.branch,
-    parent_branch = row.parent,
-    head_rev = row.head_rev ~= "" and row.head_rev or row.branch,
-    parent_rev = row.parent_rev ~= "" and row.parent_rev or (row.parent or "HEAD~1"),
-  }
-end
-
--- Walk the whole stack around the current branch: ancestors (via parent
--- links), the current branch, then descendants (via inverted child links,
--- depth-first with siblings sorted for determinism). Nodes come back in
--- base→head order with the current branch between its ancestors and
--- descendants. Cycle-guarded. Trunk gets a metadata row with an empty
--- parent_branch_name — stop there rather than emitting trunk as a changeset
--- with an empty base ref. Pure; exposed for unit tests.
----@param by_branch table<string, table>
----@param current string
----@return Review.StackNode[]
-function M._walk(by_branch, current)
-  -- On trunk itself (row with no parent — or no row at all, which is also
-  -- how a gt-untracked branch looks), every stack in the repo is a
-  -- "descendant" — that's not a reviewable stack. Return nothing and let the
-  -- factory fall back to the git graph (upstream-commits semantics).
-  local row0 = by_branch[current]
-  if not row0 or not row0.parent or row0.parent == "" then
-    return {}
-  end
-
-  local nodes = {}
-  local visited = {}
-
-  -- Ancestors + current, walking up.
-  local branch = current
-  while branch and by_branch[branch] and not visited[branch] do
-    visited[branch] = true
-    local row = by_branch[branch]
-    if not row.parent or row.parent == "" then
-      break
-    end
-    table.insert(nodes, 1, node_for(row))
-    branch = row.parent
-  end
-
-  -- Descendants, walking down from current. Stacks are almost always linear;
-  -- the rare fork flattens depth-first (M3's outline can render the tree).
-  local children = {}
-  for name, row in pairs(by_branch) do
-    if row.parent and row.parent ~= "" then
-      children[row.parent] = children[row.parent] or {}
-      table.insert(children[row.parent], name)
-    end
-  end
-  local function descend(from)
-    local kids = children[from] or {}
-    table.sort(kids)
-    for _, kid in ipairs(kids) do
-      if by_branch[kid] and not visited[kid] then
-        visited[kid] = true
-        table.insert(nodes, node_for(by_branch[kid]))
-        descend(kid)
-      end
-    end
-  end
-  descend(current)
-
-  return nodes
-end
-
 ---@param cwd string
 ---@param common_dir? string  common git dir (resolved by the factory; falls
 ---                           back to resolving it here)
+---@param branch? string  focus branch (defaults to the checked-out branch)
 ---@return Review.StackGraph
-function M.new(cwd, common_dir)
+function M.new(cwd, common_dir, branch)
   local self = {}
   common_dir = common_dir or git.common_dir_sync(cwd) or (cwd .. "/.git")
+  branch = branch or git.current_branch_sync(cwd)
   local db_path = common_dir .. "/.graphite_metadata.db"
   local pr_info_path = common_dir .. "/.graphite_pr_info"
 
@@ -128,7 +61,7 @@ function M.new(cwd, common_dir)
     "SELECT branch_name,parent_branch_name,branch_revision,parent_branch_revision FROM branch_metadata;",
   }, { text = true }):wait()
   local by_branch = M._parse_metadata(r.stdout or "")
-  local nodes = M._walk(by_branch, git.current_branch_sync(cwd))
+  local nodes = walk.walk(by_branch, branch)
 
   function self:nodes()
     return nodes
