@@ -365,7 +365,17 @@ function OutlineView:open()
       if cs.current then
         ret[#ret + 1] = { "● ", "DiagnosticOk" }
       end
+      -- A Pending or Failed changeset has no files, so this header mark and
+      -- the peek it opens are the only place its state shows.
+      if cs.status == "pending" then
+        ret[#ret + 1] = { "○ ", "Comment" }
+      elseif cs.status == "failed" then
+        ret[#ret + 1] = { "✗ ", "ErrorMsg" }
+      end
       ret[#ret + 1] = { label, "SnacksPickerDir" }
+      if cs.status == "failed" and cs.error then
+        ret[#ret + 1] = { "  " .. cs.error, "ErrorMsg" }
+      end
     elseif item.type == "dir" then
       local ok, icon, hl = pcall(Snacks.util.icon, item._name, "directory")
       local diricon = (ok and icon and icon ~= "") and (icon .. " ") or " "

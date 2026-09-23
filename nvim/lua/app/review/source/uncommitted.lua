@@ -10,8 +10,11 @@
 ---@field title string
 ---@field base_ref string
 ---@field head_ref string
----@field files Review.FileChange[]
----@field head_sha string
+---@field files Review.FileChange[]  empty for a Pending or Failed changeset
+---@field status "pending"|"ready"|"failed"
+---@field error? string  set when status is "failed"
+---@field base_sha? string  resolved sha for `base_ref`, when known
+---@field head_sha? string  resolved sha for `head_ref`, when known
 ---@field pr_number? integer
 ---@field current? boolean  the session's starting position (marked by the source)
 
@@ -133,7 +136,9 @@ function M.new(opts)
 
   ---@param callback fun(changesets: Review.Changeset[]?, err: string?)
   function self:load(callback)
-    git.head_sha(cwd, function(head_sha, err)
+    -- Resolved for the type's sake, not reuse: this source always re-diffs
+    -- (see the module comment), so nothing keys a lookup on it.
+    git.head_sha(cwd, function(base_sha, err)
       if err then
         callback(nil, err)
         return
@@ -157,7 +162,8 @@ function M.new(opts)
           base_ref = "HEAD",
           head_ref = "WORKTREE",
           files = files,
-          head_sha = head_sha or "",
+          base_sha = base_sha or "",
+          status = "ready",
         }
         callback({ changeset }, nil)
       end)

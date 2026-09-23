@@ -10,6 +10,11 @@ local changesets = require("app.review.source.changesets")
 -- Build from shas (or the empty-tree hash) already known good — no
 -- revalidation, since the empty tree isn't a commit and would fail the
 -- commit-ish check below.
+--
+-- changesets.build streams (a Pending skeleton, then the settled slot); this
+-- source stays single-shot, so the skeleton is swallowed and a Failed slot's
+-- error is surfaced the way every other failure here is — closing the tab,
+-- not a stack header mark (there's no stack).
 ---@param cwd string
 ---@param base_sha string
 ---@param head_sha string
@@ -18,7 +23,21 @@ local changesets = require("app.review.source.changesets")
 function M.build_resolved(cwd, base_sha, head_sha, title, callback)
   changesets.build(cwd, {
     { id = head_sha, title = title, base = base_sha, head = head_sha },
-  }, callback)
+  }, nil, function(result, err)
+    if err then
+      callback(nil, err)
+      return
+    end
+    local cs = result[1]
+    if not cs or cs.status == "pending" then
+      return
+    end
+    if cs.status == "failed" then
+      callback(nil, cs.error)
+      return
+    end
+    callback(result, nil)
+  end)
 end
 
 -- Build from ref text, validating both endpoints resolve to a commit first
