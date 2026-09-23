@@ -11,7 +11,7 @@ LINT="${CLAUDE_CONFIG_DIR:-$HOME/.config/claude}/bin/voice-lint"
 # Strip comment lines and anything after the verbose-diff scissors line.
 MSG=$(sed '/^# ------------------------ >8 /,$d' "$1" | grep -v '^#')
 
-printf '%s\n' "$MSG" | "$LINT" --ext=.md - || {
+printf '%s\n' "$MSG" | "$LINT" - || {
   echo ""
   echo "Commit message tripped the voice gate."
   echo "  skip once:       VOICE_LINT=0 git commit ..."
