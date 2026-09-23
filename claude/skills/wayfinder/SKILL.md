@@ -22,7 +22,7 @@ The map is `.scratch/<effort>/map.md` — the canonical artifact. Its tickets ar
 
 The map is an **index**, not a store. It lists the decisions made and points at the tickets that hold their detail; a decision lives in exactly one place — its ticket — so the map never restates it, only gists it and links.
 
-- **Child ticket**: `.scratch/<effort>/issues/NN-<slug>.md`, numbered from `01`, with the question in the body. A `Type:` line records the ticket type (`research`/`prototype`/`sparring`/`task`); a `Status:` line records `claimed`/`resolved`.
+- **Child ticket**: `.scratch/<effort>/issues/NN-<slug>.md`, numbered from `01`, with the question in the body. A `Type:` line records the ticket type (`research`/`prototype`/`sparring`/`task`); a `Status:` line records `claimed`, `resolved`, or `closed` (ruled out of scope).
 - **Blocking**: a `Blocked by: NN, NN` line near the top. A ticket is unblocked when every file it lists is `resolved`.
 - **Frontier**: scan `.scratch/<effort>/issues/` for files that are open, unblocked, and unclaimed; first by number wins.
 - **Claim**: set `Status: claimed` and save before any work.
@@ -43,9 +43,9 @@ The whole map at low resolution, loaded once per session. Open tickets are **not
 
 ## Decisions so far
 
-<!-- the index — one line per closed ticket: enough to judge relevance, then zoom the link for the detail the ticket holds -->
+<!-- the index — one line per resolved ticket: enough to judge relevance, then zoom the link for the detail the ticket holds -->
 
-- [<closed ticket title>](link) — <one-line gist of the answer>
+- [<resolved ticket title>](link) — <one-line gist of the answer>
 
 ## Not yet specified
 
@@ -102,7 +102,7 @@ Fog only ever gathers _toward_ the destination. The destination fixes the scope,
 
 Out-of-scope work never graduates — the frontier stops at the destination — so it returns only if the destination is redrawn, and then as a fresh effort, not a resumption.
 
-Ruling something out of scope is a scoping act, not a step on the route. When a ticket that already exists turns out to sit past the destination — mis-scoped in while charting, or exposed by a resolution — **close it** (a closed ticket is unambiguously off the frontier) and leave one line in the **Out of scope** section: the gist plus why it's out of scope, linking the closed ticket. It stays out of **Decisions so far**, which records the route actually walked — a scope boundary isn't a step on it.
+Ruling something out of scope is a scoping act, not a step on the route. When a ticket that already exists turns out to sit past the destination — mis-scoped in while charting, or exposed by a resolution — **close it** by setting `Status: closed` (a closed ticket is unambiguously off the frontier). Drop it from the `Blocked by` line of every ticket that lists it, since a closed blocker never resolves, and check whether each of those tickets still asks the right question. Then leave one line in the **Out of scope** section: the gist plus why it's out of scope, linking the closed ticket. It stays out of **Decisions so far**, which records the route actually walked — a scope boundary isn't a step on it.
 
 ## Invocation
 
@@ -125,7 +125,7 @@ User invokes with a map (its `.scratch/<effort>/` path). A ticket is **optional*
 
 1. Load the **map** — the low-res view, not every ticket body.
 2. Choose the ticket. If the user named one, use it. Otherwise take the first frontier ticket in order. **Claim it**: set `Status: claimed` and save, before any work.
-3. Resolve it — **zoom as needed**: fetch the full body of any related or closed ticket on demand; invoke the skills the `## Notes` block names. If in doubt, use `/spar` and `/domain-modeling`.
+3. Resolve it — **zoom as needed**: fetch the full body of any related or resolved ticket on demand; invoke the skills the `## Notes` block names. If in doubt, use `/spar` and `/domain-modeling`.
 4. Record the resolution: append the answer under an `## Answer` heading, set `Status: resolved`, and **append a context pointer** to the map's Decisions-so-far.
 5. Add newly-surfaced tickets (create-then-wire); graduate any fog the answer has made specifiable, clearing each graduated patch from **Not yet specified** so it lives only as its new ticket. If the answer reveals a ticket — this one or another — sits beyond the destination, **rule it out of scope** rather than resolving it on the route. If the decision invalidates other parts of the map, update or delete those tickets.
 
