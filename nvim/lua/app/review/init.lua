@@ -1,25 +1,28 @@
 -- Review app: code review for uncommitted changes, stacks, PRs, and refs.
 --
 -- Standalone:  fish function `review` → VIM_APP=review nvim ...
--- Embedded:    :Review [kind] from any nvim session, or :App review [kind]
+-- Embedded:    :Review [source] from any nvim session, or :App review [source]
 --
 -- run(args) is called by the framework at UIEnter (standalone) or after tabnew
--- (embedded). Both paths call open(kind, opts) which builds the docket in the
--- current tab — tab lifecycle is handled by the framework, not here.
+-- (embedded). It classifies the one source argument, then, unless
+-- classification names a failure, calls open(classified, opts) to build the
+-- docket in the current tab — tab lifecycle is handled by the framework, not
+-- here.
 --
--- Args resolution order:
---   args.kind  (embedded / :App review)
---   args[1]    (:App review uncommitted — positional from the command)
---   vim.g.review_kind
---   $REVIEW_KIND  (standalone fish wrapper; env var for the same quoting
---                  reasons as VIM_APP)
---   default "uncommitted"
+-- Source argument resolution order:
+--   args.source  (embedded / :App review)
+--   args[1]      (:App review main..feature — positional from the command)
+--   vim.g.review_source
+--   $REVIEW_SOURCE  (standalone fish wrapper; env var for the same quoting
+--                    reasons as VIM_APP)
+--   default ""  (classifies as "stack")
 
 local Statusline = require("config.mini.statusline")
 local nav_keymaps = require("app.review.keymaps")
+local classify = require("app.review.source.classify")
 
 ---@class ReviewApp: App
----@field open fun(kind: "uncommitted"|"stack"|"pr"|"ref", opts?: {cwd?: string, title?: string, ref?: string})
+---@field open fun(classified: table, opts?: {cwd?: string, title?: string})
 local ReviewApp = {
   name = "review",
 }
@@ -35,13 +38,21 @@ local function close_docket()
 end
 
 -- Close the review: quit in standalone (we own the process), close the tab
--- in embedded. Used by the diff-buffer q keymap and the outline's q/<Esc>.
-local function close_review()
+-- in embedded. Used by the diff-buffer q keymap, the outline's q/<Esc>, and
+-- a named classification/resolution failure (exit code 1, no fallback).
+local function close_review(code)
   if vim.g.app == "review" then
-    _G.App.quit(0)
+    _G.App.quit(code or 0)
   else
     pcall(vim.cmd, "tabclose")
   end
+end
+
+-- A named failure closes the review outright rather than falling back to
+-- another source.
+local function fail(reason)
+  vim.notify("Review: " .. reason, vim.log.levels.ERROR, { title = "Review" })
+  close_review(1)
 end
 
 local function set_keymaps(dk)
@@ -147,16 +158,34 @@ local function open_outline(dk)
   })
 end
 
+-- The window title and source-module constructor opts for a classified
+-- source. Only the "ref" module needs the classified table itself — stack
+-- and uncommitted take no source-specific opts.
+---@param classified table
+---@return string title, table source_opts
+local function dispatch(classified, cwd)
+  if classified.kind == "ref" then
+    if classified.shape == "range" then
+      local sep = classified.dots == 3 and "..." or ".."
+      return classified.base .. sep .. classified.head, { cwd = cwd, classified = classified }
+    end
+    return classified.ref, { cwd = cwd, classified = classified }
+  end
+  return classified.kind, { cwd = cwd }
+end
+
 -- Open a review docket in the current tab.
 --
 -- Does not create a tab — the caller is responsible. In standalone mode the
 -- process IS the review; in embedded mode _launch_embedded already ran tabnew.
----@param kind "uncommitted"|"stack"|"pr"|"ref"
----@param opts? { cwd?: string, title?: string, ref?: string }
-function ReviewApp.open(kind, opts)
+---@param classified table  source/classify.lua's result
+---@param opts? { cwd?: string, title?: string }
+function ReviewApp.open(classified, opts)
   opts = opts or {}
   local cwd = opts.cwd or Config.root("git") or vim.fn.getcwd()
-  local title = opts.title or kind
+  local default_title, source_opts = dispatch(classified, cwd)
+  local title = opts.title or default_title
+  local kind = classified.kind
 
   close_docket()
   require("app.review.ui.signs").setup()
@@ -171,12 +200,6 @@ function ReviewApp.open(kind, opts)
   local init_buf = vim.api.nvim_get_current_buf()
   if vim.api.nvim_buf_get_name(init_buf) == "" and not vim.bo[init_buf].modified then
     vim.bo[init_buf].bufhidden = "wipe"
-  end
-
-  local KINDS = { uncommitted = true, stack = true, ref = true }
-  if not KINDS[kind] then
-    vim.notify("Review: kind " .. kind .. " arrives in a later milestone", vim.log.levels.WARN, { title = "Review" })
-    return
   end
 
   local dv = require("app.review.ui.diff").new({ win = win })
@@ -195,7 +218,7 @@ function ReviewApp.open(kind, opts)
     win = win,
     dv = dv,
     dv2 = dv2,
-    source = require("app.review.source." .. kind).new({ cwd = cwd, ref = opts.ref }),
+    source = require("app.review.source." .. kind).new(source_opts),
   })
   set_keymaps(docket)
   dv:_render_placeholder("Loading " .. title .. "  —  " .. cwd .. " …")
@@ -206,19 +229,22 @@ end
 
 function ReviewApp:run(args)
   args = args or {}
-  local kind = args.kind or args[1] or vim.g.review_kind or vim.env.REVIEW_KIND or "uncommitted"
+  local text = args.source or args[1] or vim.g.review_source or vim.env.REVIEW_SOURCE or ""
   local cwd = args.cwd or vim.g.review_cwd or Config.root("git") or vim.fn.getcwd()
   local title = args.title or vim.g.review_title
-  -- `:App review ref abc` delivers the ref as args[2] (args[1] is the kind);
-  -- embedded/:Review callers may instead pass args.ref directly.
-  local ref = args.ref or (kind == "ref" and args[2]) or vim.g.review_ref or vim.env.REVIEW_REF
-  if ref == "" then
-    ref = nil
+
+  local classified, err = classify.classify(text)
+  if not classified then
+    fail(err)
+    return
   end
-  if kind == "ref" and not title then
-    title = ref or "HEAD"
+  -- The pr arm classifies here; resolving it against gh lands separately.
+  if classified.kind == "pr" then
+    fail("PR review is not implemented yet")
+    return
   end
-  ReviewApp.open(kind, { cwd = cwd, title = title, ref = ref })
+
+  ReviewApp.open(classified, { cwd = cwd, title = title })
 end
 
 function ReviewApp:teardown()

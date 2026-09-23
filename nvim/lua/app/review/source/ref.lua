@@ -1,105 +1,44 @@
--- Ref source: read-only review of a single commit/branch/tag (`<ref>^..<ref>`,
--- like `git show`) or a base..head range (per-commit changesets, reusing the
--- stack source's git-graph node builder). Never stages: can_stage() → false.
+-- Ref source: dispatches a classified argument by shape, over git.
 --
--- Asymmetry, deliberate: range reviews re-resolve base/head on every
--- refresh() (branch refs can move); single-ref reviews pin to the sha
--- resolved at load time, so a moving branch ref doesn't yank the diff out
--- from under the user mid-review.
+-- A range (`a..b`/`a...b`, already classified) opens one changeset via
+-- source/span.lua. A single token is ambiguous until git resolves it: a
+-- local branch hands off to the stack source, focused there — the same
+-- per-branch stack a bare `:Review` would open from that branch, with the
+-- uncommitted layer riding along only when it's the checked-out branch. A
+-- commit-ish (not a branch) opens one changeset, `parent..ref`; a root
+-- commit diffs against the empty tree.
+--
+-- Range reviews re-resolve their endpoints on refresh() (branch refs can
+-- move); single-ref reviews pin to the sha resolved at load time, so a
+-- moving branch ref doesn't yank the diff out from under the user mid-review.
 
 local M = {}
 local git = require("app.review.diff.git")
-local changesets = require("app.review.source.changesets")
-local graph_git = require("app.review.source.graph.git")
+local span = require("app.review.source.span")
+local stack = require("app.review.source.stack")
 
--- Pure; exposed for unit tests. Parses the `ref` argument into either a
--- single-ref or a range spec.
---   "" / nil        -> { kind = "single", ref = "HEAD" }
---   "foo"           -> { kind = "single", ref = "foo" }
---   "a..b"          -> { kind = "range", base = "a", head = "b" }
---   "a.."           -> { kind = "range", base = "a", head = "HEAD" }
---   "..b"           -> { kind = "range", base = "HEAD", head = "b" }
---   contains "..."  -> error (three-dot ranges aren't supported)
----@param arg string?
----@return {kind: "single", ref: string}|{kind: "range", base: string, head: string}|nil, string?
-function M._parse_ref(arg)
-  if arg and arg:find("...", 1, true) then
-    return nil, "three-dot ranges are not supported; use base..head"
-  end
-  if not arg or arg == "" then
-    return { kind = "single", ref = "HEAD" }
-  end
-  -- Refnames can't contain "..", so this pattern has no false positives.
-  local base, head = arg:match("^(.-)%.%.(.*)$")
-  if base then
-    return {
-      kind = "range",
-      base = base ~= "" and base or "HEAD",
-      head = head ~= "" and head or "HEAD",
-    }
-  end
-  return { kind = "single", ref = arg }
-end
-
--- Build the range changesets: resolve the first-parent commit list between
--- base and head, then either delegate to the stack graph's node builder (the
--- normal case) or — when base and head are the same commit — emit a single
--- empty-diff spec directly. `_build_nodes`'s empty-commit fallbacks (courtesy
--- HEAD node, whole-branch node) are stack semantics that don't apply here.
+-- Whether `name` is a local branch. Sync: this is resolution (post-classify,
+-- pre-diff), not the classification step itself, and every other shape
+-- decision the ref/stack sources make is already sync git.
 ---@param cwd string
----@param base string
----@param head string
----@param callback fun(changesets: Review.Changeset[]?, err: string?)
-local function load_range(cwd, base, head, callback)
-  git.log_first_parent(cwd, base, head, function(commits, err)
-    if err then
-      callback(nil, err)
-      return
-    end
-    if commits and #commits == 0 then
-      git.rev_parse(cwd, base, function(base_sha, base_err)
-        if base_err then
-          callback(nil, "not a commit: " .. base)
-          return
-        end
-        git.rev_parse(cwd, head, function(head_sha, head_err)
-          if head_err then
-            callback(nil, "not a commit: " .. head)
-            return
-          end
-          changesets.build(cwd, {
-            { id = head_sha, title = head, base = base_sha, head = head_sha },
-          }, callback)
-        end)
-      end)
-      return
-    end
-
-    local nodes = graph_git._build_nodes(base, head, commits)
-    local specs = {}
-    for _, node in ipairs(nodes) do
-      table.insert(specs, {
-        id = node.id,
-        title = node.title or node.branch or node.id,
-        base = node.parent_rev,
-        head = node.head_rev,
-      })
-    end
-    changesets.build(cwd, specs, callback)
-  end)
+---@param name string
+---@return boolean
+local function is_local_branch(cwd, name)
+  local r = vim.system({ "git", "-C", cwd, "show-ref", "--verify", "--quiet", "refs/heads/" .. name }, {}):wait()
+  return r.code == 0
 end
 
--- Build the single-ref changeset: `<ref>^..<ref>`. Root commits (no parent)
--- fall back to the empty tree as base. Title comes from the resolved
+-- Build the single-token changeset: `<ref>^..<ref>`, falling back to the
+-- empty tree when ref is a root commit. Title comes from the resolved
 -- commit's subject via a one-commit log_first_parent, falling back to the
 -- ref string itself if that lookup comes up empty.
 --
--- Comment the merge nuance: diffing a merge commit this way (`sha^..sha`)
--- shows only the first-parent diff, unlike `git show`'s combined format.
+-- Diffing a merge commit this way (`sha^..sha`) shows only the first-parent
+-- diff, unlike `git show`'s combined format.
 ---@param cwd string
 ---@param ref string
 ---@param callback fun(changesets: Review.Changeset[]?, err: string?)
-local function load_single(cwd, ref, callback)
+local function load_commit(cwd, ref, callback)
   git.rev_parse(cwd, ref, function(sha, err)
     if err then
       callback(nil, "not a commit: " .. ref)
@@ -109,9 +48,7 @@ local function load_single(cwd, ref, callback)
     local function build(base_sha)
       git.log_first_parent(cwd, base_sha, sha, function(commits)
         local title = (commits and commits[1] and commits[1].subject) or ref
-        changesets.build(cwd, {
-          { id = sha, title = title, base = base_sha, head = sha },
-        }, callback)
+        span.build_resolved(cwd, base_sha, sha, title, callback)
       end)
     end
 
@@ -128,50 +65,65 @@ local function load_single(cwd, ref, callback)
   end)
 end
 
----@param opts {cwd: string, ref: string?}
+---@param opts {cwd: string, classified: table}  classified: source/classify.lua's "ref" result
 ---@return Review.Source
 function M.new(opts)
   local cwd = opts.cwd or Config.root("git") or vim.fn.getcwd()
-  local ref = opts.ref
-
-  local parsed, parse_err = M._parse_ref(ref)
+  local classified = opts.classified
 
   local self = {
     kind = "ref",
     cwd = cwd,
-    default_outline_mode = parsed and parsed.kind == "range" and "stack" or "flat",
-    default_stack_order = "base-first", -- review reads oldest -> newest
+    default_outline_mode = "flat",
   }
 
   ---@param callback fun(changesets: Review.Changeset[]?, err: string?)
   function self:load(callback)
-    if not parsed then
-      callback(nil, parse_err)
-      return
-    end
     local function mark_current(changesets_result, load_err)
       if changesets_result and #changesets_result > 0 then
         changesets_result[1].current = true
       end
       callback(changesets_result, load_err)
     end
-    if parsed.kind == "range" then
-      load_range(cwd, parsed.base, parsed.head, mark_current)
+
+    if classified.shape == "range" then
+      if classified.dots == 3 then
+        git.merge_base(cwd, classified.base, classified.head, function(base_sha, err)
+          if err then
+            callback(nil, err)
+            return
+          end
+          span.build(cwd, base_sha, classified.head, classified.base .. "..." .. classified.head, mark_current)
+        end)
+      else
+        span.build(cwd, classified.base, classified.head, classified.base .. ".." .. classified.head, mark_current)
+      end
+      return
+    end
+
+    -- Single token: a local branch delegates entirely to the stack source
+    -- (this source object is only ever asked to load() once for that case).
+    if is_local_branch(cwd, classified.ref) then
+      self._delegate = stack.new({ cwd = cwd, focus_branch = classified.ref })
+      self.default_outline_mode = self._delegate.default_outline_mode
+      self.default_stack_order = self._delegate.default_stack_order
+      self._delegate:load(callback)
+      return
+    end
+
+    load_commit(cwd, classified.ref, mark_current)
+  end
+
+  function self:refresh(callback)
+    if self._delegate then
+      self._delegate:refresh(callback)
     else
-      load_single(cwd, parsed.ref, mark_current)
+      self:load(callback)
     end
   end
 
-  -- Range reviews re-resolve base/head refs on refresh (they may have moved);
-  -- single refs were already pinned to a sha at load, so re-running load is
-  -- consistent for both — the asymmetry lives in what `parsed.ref`/`base`/
-  -- `head` mean, not in this method.
-  function self:refresh(callback)
-    self:load(callback)
-  end
-
   function self:can_stage()
-    return false
+    return self._delegate ~= nil and self._delegate:can_stage()
   end
 
   return self

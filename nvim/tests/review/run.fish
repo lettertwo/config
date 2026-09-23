@@ -22,15 +22,21 @@ for scenario in standalone degraded embedded stack trunk-ahead staging outline-n
     if test $scenario != embedded
         set app_env VIM_APP=review
     end
+    if contains $scenario standalone degraded staging
+        # These test diff-rendering and staging mechanics against the
+        # uncommitted fixture, not the source grammar — name the source so
+        # they don't drift with whatever the bare default happens to be.
+        set -a app_env REVIEW_SOURCE=uncommitted
+    end
     if contains $scenario stack trunk-ahead outline-nodes
-        set -a app_env REVIEW_KIND=stack
+        set -a app_env REVIEW_SOURCE=stack
     end
     if test $scenario = ref
-        set -a app_env REVIEW_KIND=ref REVIEW_REF=main..feature
+        set -a app_env REVIEW_SOURCE=main..feature
     end
-    if test $scenario = ref-single
-        set -a app_env REVIEW_KIND=ref REVIEW_REF=feature
-    end
+    # ref-single supplies its own source (a commit sha computed against the
+    # fixture at runtime) rather than an env var, since a plain branch name
+    # now opens that branch's stack instead of a single commit.
     env $app_env REVIEW_E2E=$scenario timeout 90 \
         nvim --headless -c "lua dofile('$e2e')" 2>&1 | grep -aE "PASS|FAIL|E2E-RESULT"
     if test $pipestatus[1] -ne 0

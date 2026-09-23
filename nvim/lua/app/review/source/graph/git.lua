@@ -60,25 +60,30 @@ function M._build_nodes(base, current, commits)
 end
 
 ---@param cwd string
+---@param branch? string  branch to infer from (defaults to the checked-out branch)
 ---@return Review.StackGraph
-function M.new(cwd)
+function M.new(cwd, branch)
   local self = {}
   local nodes = nil
+  branch = branch or git.current_branch_sync(cwd)
 
-  -- Async load: walk git log --first-parent from the base to the current
+  -- Async load: walk git log --first-parent from the base to the focus
   -- branch. Off trunk the base is trunk; on trunk the base is the upstream
   -- tracking ref, so unpushed commits show up as one changeset each ("what's
-  -- in flight from this worktree").
+  -- in flight from this worktree"). Fails when trunk can't be resolved,
+  -- rather than guessing a branch that was never there.
   function self:load(callback)
     local function finish(base, commits)
-      nodes = M._build_nodes(base, git.current_branch_sync(cwd), commits)
+      nodes = M._build_nodes(base, branch, commits)
       callback(nodes)
     end
-    git.trunk_branch(cwd, function(trunk)
-      trunk = trunk or "main"
-      local current = git.current_branch_sync(cwd)
-      if current ~= trunk then
-        git.log_first_parent(cwd, trunk, current, function(commits, err)
+    git.trunk_branch(cwd, function(trunk, trunk_err)
+      if trunk_err then
+        callback(nil, trunk_err)
+        return
+      end
+      if branch ~= trunk then
+        git.log_first_parent(cwd, trunk, branch, function(commits, err)
           finish(trunk, not err and commits or nil)
         end)
         return

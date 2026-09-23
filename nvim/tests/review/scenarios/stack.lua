@@ -3,7 +3,7 @@ return function(H)
   local focus_diff, diff_win, diff_line1, wait_line1, wait_outline =
     H.focus_diff, H.diff_win, H.diff_line1, H.wait_line1, H.wait_outline
 
-  -- $REVIEW_KIND=stack is set by the runner; exercises run()'s env resolution.
+  -- $REVIEW_SOURCE=stack is set by the runner; exercises run()'s env resolution.
   _G.App.launch("review", { context = "standalone" })
   check("render completed", wait_line1())
   if H.failed() then
