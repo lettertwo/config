@@ -1,7 +1,7 @@
--- REVIEW_KIND=ref REVIEW_REF=main..feature over the stack fixture (base commit
--- on main, feature branch with two commits, plus a dirty uncommitted file).
--- Exercises the range path: one changeset per commit, read-only degradation,
--- and worktree exclusion (the dirty base.lua edit must never surface).
+-- main..feature over the stack fixture (base commit on main, feature branch
+-- with two commits, plus a dirty uncommitted file). Exercises the range
+-- path: one changeset spanning both endpoint trees, read-only, worktree
+-- excluded (the dirty base.lua edit must never surface).
 return function(H)
   local check, finish, feed = H.check, H.finish, H.feed
   local focus_diff, diff_win, diff_line1, wait_line1, wait_outline =
@@ -18,10 +18,17 @@ return function(H)
     return vim.wo[win].winbar or ""
   end
 
-  check("opens on the first commit's file (a1.lua)", wait_line1("a1"))
-  check("winbar shows changeset 1/2 with subject", winbar():find("[1/2 add a1]", 1, true) ~= nil, winbar())
+  check("opens on the first file (a1.lua)", wait_line1("a1"))
+  -- One changeset for the whole span: set_winbar (docket.lua:150) omits the
+  -- "[i/n title]" bracket entirely — only the title and file position show.
+  check(
+    "winbar shows the range title and file position, no changeset bracket",
+    winbar():find("main..feature", 1, true) ~= nil and winbar():find("a1.lua (1/2)", 1, true) ~= nil,
+    winbar()
+  )
 
   local dk = require("app.review")._active_docket()
+  check("exactly one changeset spanning both endpoints", #dk.changesets == 1, #dk.changesets)
   check("source is read-only (can_stage() == false)", dk.source:can_stage() == false)
   check("no split row2 window", dk._win2 == nil)
 
@@ -40,9 +47,9 @@ return function(H)
   end
 
   focus_diff()
-  feed("]c")
-  check("]c advances to the second changeset (b1.lua)", wait_line1("b1"))
-  check("winbar shows changeset 2/2 with subject", winbar():find("[2/2 add b1]", 1, true) ~= nil, winbar())
+  feed("]f")
+  check("]f advances to the second file (b1.lua)", wait_line1("b1"))
+  check("winbar shows file position 2/2", winbar():find("b1.lua (2/2)", 1, true) ~= nil, winbar())
 
   -- Staging keymaps must no-op: git diff --cached stays empty.
   feed("<leader>rs")

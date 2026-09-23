@@ -268,6 +268,10 @@ function M.current_branch_sync(cwd)
   return vim.trim(r.stdout or "HEAD")
 end
 
+-- Resolve the trunk branch: origin/HEAD when a remote is configured,
+-- otherwise whichever of main/master exists locally. Fails rather than
+-- guessing when neither is found — silently defaulting to "main" would
+-- diff against a branch that was never there.
 ---@param cwd string
 ---@param callback fun(branch: string?, err: string?)
 function M.trunk_branch(cwd, callback)
@@ -275,10 +279,35 @@ function M.trunk_branch(cwd, callback)
     if r.code == 0 then
       local branch = vim.trim(r.stdout):gsub("^origin/", "")
       callback(branch, nil)
-    else
-      run(cwd, { "git", "show-ref", "--verify", "--quiet", "refs/heads/main" }, function(r2)
-        callback(r2.code == 0 and "main" or "master", nil)
+      return
+    end
+    run(cwd, { "git", "show-ref", "--verify", "--quiet", "refs/heads/main" }, function(r2)
+      if r2.code == 0 then
+        callback("main", nil)
+        return
+      end
+      run(cwd, { "git", "show-ref", "--verify", "--quiet", "refs/heads/master" }, function(r3)
+        if r3.code == 0 then
+          callback("master", nil)
+        else
+          callback(nil, "no trunk branch found (no origin/HEAD, main, or master)")
+        end
       end)
+    end)
+  end)
+end
+
+-- The best common ancestor of two revisions, for three-dot ranges.
+---@param cwd string
+---@param a string
+---@param b string
+---@param callback fun(sha: string?, err: string?)
+function M.merge_base(cwd, a, b, callback)
+  run(cwd, { "git", "merge-base", a, b }, function(r)
+    if r.code ~= 0 then
+      callback(nil, r.stderr ~= "" and r.stderr or ("no common ancestor: " .. a .. " " .. b))
+    else
+      callback(vim.trim(r.stdout), nil)
     end
   end)
 end

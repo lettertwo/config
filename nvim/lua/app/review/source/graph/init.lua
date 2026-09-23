@@ -5,7 +5,7 @@
 
 ---@class Review.StackGraph
 ---@field nodes fun(self: Review.StackGraph): Review.StackNode[]
----@field load? fun(self: Review.StackGraph, callback: fun(nodes: Review.StackNode[]))
+---@field load? fun(self: Review.StackGraph, callback: fun(nodes: Review.StackNode[]?, err: string?))
 ---@field base_ref fun(self: Review.StackGraph, node: Review.StackNode): string
 ---@field head_ref fun(self: Review.StackGraph, node: Review.StackNode): string
 ---@field metadata fun(self: Review.StackGraph, node: Review.StackNode): {pr_number?: integer, title?: string, body?: string}
@@ -52,7 +52,7 @@ function M.create(cwd, branch)
       end
     end
   end
-  return require("app.review.source.graph.git").new(cwd)
+  return require("app.review.source.graph.git").new(cwd, branch)
 end
 
 return M

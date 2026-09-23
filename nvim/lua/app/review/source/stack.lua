@@ -8,7 +8,11 @@ local changesets = require("app.review.source.changesets")
 local graph_factory = require("app.review.source.graph")
 local uncommitted = require("app.review.source.uncommitted")
 
----@param opts {cwd: string}
+---@param opts {cwd: string, focus_branch?: string}  focus_branch defaults to
+---                                                   the checked-out branch;
+---                                                   the uncommitted layer
+---                                                   only rides along when it
+---                                                   IS the checked-out branch
 ---@return Review.Source
 function M.new(opts)
   local cwd = opts.cwd or Config.root("git") or vim.fn.getcwd()
@@ -21,7 +25,9 @@ function M.new(opts)
   }
 
   local current_branch = git.current_branch_sync(cwd)
-  local graph = graph_factory.create(cwd, current_branch)
+  local focus_branch = opts.focus_branch or current_branch
+  local include_uncommitted = focus_branch == current_branch
+  local graph = graph_factory.create(cwd, focus_branch)
 
   -- Adapt graph nodes to changesets.build's plain specs via the graph's own
   -- base_ref/head_ref/metadata accessors (Graphite db or git-log fallback).
@@ -45,19 +51,20 @@ function M.new(opts)
   ---@param nodes Review.StackNode[]
   ---@param callback fun(changesets: Review.Changeset[]?, err: string?)
   local function load_with_uncommitted(nodes, callback)
-    -- The current branch's position in the stack: uncommitted changes sit on
-    -- top of ITS commits (not at the head of the whole stack), and the
-    -- session opens focused here. Graphite node ids are branch names; the
-    -- git fallback has no descendants, so its position is the tip.
+    -- The focus branch's position in the stack: uncommitted changes (when
+    -- included) sit on top of ITS commits (not at the head of the whole
+    -- stack), and the session opens focused here. Graphite node ids are
+    -- branch names; the git fallback has no descendants, so its position is
+    -- the tip.
     local cur_idx = nil
     for i, n in ipairs(nodes) do
-      if n.id == current_branch then
+      if n.id == focus_branch then
         cur_idx = i
       end
     end
 
     local stack_result, uncommitted_cs, stale
-    local pending = 3
+    local pending = include_uncommitted and 3 or 2
 
     local function maybe_done()
       pending = pending - 1
@@ -86,11 +93,15 @@ function M.new(opts)
     end)
 
     -- The uncommitted source returns the same Changeset shape, with the
-    -- staged/unstaged attribution M5 staging wants.
-    uncommitted.new({ cwd = cwd }):load(function(changesets, _)
-      uncommitted_cs = changesets and changesets[1] or nil
-      maybe_done()
-    end)
+    -- staged/unstaged attribution M5 staging wants. Only fetched when the
+    -- focus branch is the checked-out one — a branch you aren't on has no
+    -- worktree state of its own to show.
+    if include_uncommitted then
+      uncommitted.new({ cwd = cwd }):load(function(changesets, _)
+        uncommitted_cs = changesets and changesets[1] or nil
+        maybe_done()
+      end)
+    end
 
     -- Descendants whose recorded parent_rev no longer matches the parent
     -- branch's actual head are pending a restack — their diffs describe
@@ -127,7 +138,11 @@ function M.new(opts)
 
   function self:load(callback)
     if graph.load then
-      graph:load(function(nodes)
+      graph:load(function(nodes, err)
+        if err then
+          callback(nil, err)
+          return
+        end
         load_with_uncommitted(nodes, callback)
       end)
     else
