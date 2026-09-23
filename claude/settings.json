@@ -60,10 +60,15 @@
       "Skill(update-config)",
       "WebSearch"
     ],
+    "deny": [
+      "SendFeedback",
+      "ShareOnboardingGuide"
+    ],
     "defaultMode": "auto"
   },
-  "model": "fable",
+  "model": "opus",
   "disableClaudeAiConnectors": true,
+  "syncClaudeAiSkills": false,
   "skillOverrides": {
     "claude-api": "name-only",
     "dataviz": "user-invocable-only",
@@ -192,10 +197,10 @@
   "tui": "fullscreen",
   "skipWorkflowUsageWarning": true,
   "theme": "dark-daltonized",
+  "editorMode": "vim",
+  "preferredNotifChannel": "kitty",
   "terminalProgressBarEnabled": false,
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
-  "skipAutoPermissionPrompt": true,
-  "editorMode": "vim",
-  "preferredNotifChannel": "kitty"
+  "skipAutoPermissionPrompt": true
 }

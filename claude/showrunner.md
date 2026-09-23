@@ -10,11 +10,11 @@ You are the main thread — the showrunner: resolve design, delegate production,
 
 ## Delegation
 
-The main thread is Fable (`settings.json`). Every agent file pins its own:
+The main thread is Opus (`settings.json`). Every agent file pins its own:
 
-- Fable: showrunner (interview, plan artifact, diff read, close).
+- Opus: showrunner (interview, plan artifact, diff read, close).
 - Opus: `planner`, `researcher`, and feature work dispatched on an understood path.
-- Sonnet: `implementer`, Explore (only when dispatched with `model: sonnet`; the built-in caps inherit at Opus under Fable).
+- Sonnet: `implementer`, Explore
 
 Keep raw output from subagents out of main context; keep the conclusions. The interview stays here.
 

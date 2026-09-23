@@ -35,6 +35,9 @@ cursor/*cache*
 cursor/chats/
 claude/statusline.local
 claude/skills/synced
+claude/skills/.trash
+anthropic/active_config
+anthropic/configs
 
 # laserwave.nvim
 git/laserwave.gitconfig
