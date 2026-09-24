@@ -121,3 +121,27 @@
 
 [includeIf "gitdir:~/Code/"]
 	path = ./work
+
+[workon "review"]
+	icons = nerd
+[workon "review.diff"]
+  layout = inline
+[workon "review.theme"]
+  base00 = "#27212e"
+  base01 = "#352d3d"
+  base02 = "#3f334a"
+  base03 = "#91889b"
+  base04 = "#7b6995"
+
+  base05 = "#f7f2f9"
+  base06 = "#fbf9fc"
+  base07 = "#ffffff"
+
+  base08 = "#ff3e7b"
+  base09 = "#ffe261"
+  base0a = "#b381c5"
+  base0b = "#b4dce7"
+  base0c = "#74dfc4"
+  base0d = "#eb64b9"
+  base0e = "#40b4c4"
+
