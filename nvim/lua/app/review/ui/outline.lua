@@ -214,7 +214,7 @@ function M._items_for(docket, mode, order)
         open = true,
         last = (ci == n),
         text = cs.title,
-        _cs_idx = ci,
+        _cs_idx = reversed and (n - ci + 1) or ci,
         _cs_total = n,
         idx = #items + 1,
       }
