@@ -59,6 +59,7 @@ M.defaults = {
       ["q"] = "close",
       ["a"] = "stage_all",
       ["i"] = "cycle_mode",
+      ["t"] = "toggle_tree",
       ["r"] = "toggle_stack_order",
       ["K"] = "peek",
     },

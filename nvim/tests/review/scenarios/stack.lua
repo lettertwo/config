@@ -89,16 +89,14 @@ return function(H)
   )
   check("uncommitted sits at the head (3/3)", winbar():find("[3/3 Uncommitted Changes]", 1, true) ~= nil, winbar())
 
-  -- Mode cycle: stack → stack-tree → flat (3 items) → tree → stack (6).
+  -- Mode cycle: stack → flat (3 items) → stack (6).
   if picker then
     picker:focus("list")
-    feed("i")
     feed("i")
     vim.wait(4000, function()
       return picker:count() == 3
     end, 50)
     check("mode cycle reaches flat (3 items)", picker:count() == 3, picker:count())
-    feed("i")
     feed("i") -- back to stack
     vim.wait(4000, function()
       return picker:count() == 6

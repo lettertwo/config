@@ -20,7 +20,7 @@ local parser = require("app.review.diff.parser")
 ---@field files Review.FileChange[]  flattened across changesets, in changeset order
 ---@field cs_idx_by_id table<string, integer>
 ---@field idx integer
----@field state {outline_mode: string, layout: "inline"|"sbs", view: "split"|"whole", stack_order: "head-first"|"base-first"}
+---@field state {outline_mode: "flat"|"stack", outline_tree: boolean, layout: "inline"|"sbs", view: "split"|"whole", stack_order: "head-first"|"base-first"}
 ---@field outline table?  OutlineView (set by init.lua after construction)
 ---@field _win2 integer?  row-2 primary window (dv2), nil unless split is active
 ---@field _rendered {dv: Review.DiffView, file: Review.FileChange, role: string}[]
@@ -54,8 +54,21 @@ function M.new(opts)
   self.files = {}
   self.cs_idx_by_id = {}
   self.idx = 1
+  -- Sources still declare a default_outline_mode in the old four-mode
+  -- vocabulary ("flat"|"tree"|"stack"|"stack-tree"); split it into the
+  -- mode/tree pair here so nothing downstream sees the retired names.
+  local default_mode = opts.source.default_outline_mode or "flat"
+  local outline_mode, outline_tree
+  if default_mode == "tree" then
+    outline_mode, outline_tree = "flat", true
+  elseif default_mode == "stack-tree" then
+    outline_mode, outline_tree = "stack", true
+  else
+    outline_mode, outline_tree = default_mode, false
+  end
   self.state = {
-    outline_mode = opts.source.default_outline_mode or "flat",
+    outline_mode = outline_mode,
+    outline_tree = outline_tree,
     layout = "inline",
     view = "split",
     stack_order = opts.source.default_stack_order or "head-first",
@@ -1026,14 +1039,14 @@ function Docket:_has_pending()
   return false
 end
 
--- A stack/stack-tree outline carries a Failed mark on the header row itself;
--- flat and tree modes have no header row for a fileless changeset to land
--- on, so the wave's first failure gets one notify instead. `notified` is an
--- upvalue owned by the caller's load/refresh call, so repeat snapshots for
--- the same wave notify at most once.
+-- A stack outline carries a Failed mark on the header row itself; flat mode
+-- has no header row for a fileless changeset to land on, so the wave's
+-- first failure gets one notify instead. `notified` is an upvalue owned by
+-- the caller's load/refresh call, so repeat snapshots for the same wave
+-- notify at most once.
 ---@param notified boolean[]  single-element flag, boxed so this can set it
 function Docket:_notify_wave_failure(notified)
-  if notified[1] or self.state.outline_mode == "stack" or self.state.outline_mode == "stack-tree" then
+  if notified[1] or self.state.outline_mode == "stack" then
     return
   end
   for _, cs in ipairs(self.changesets) do

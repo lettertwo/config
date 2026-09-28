@@ -153,8 +153,12 @@ M.list = {
     outline = { handler = function(ctx) ctx.docket:toggle_all() end },
   },
   cycle_mode = {
-    desc = "cycle outline mode",
+    desc = "flip flat/stack outline mode",
     outline = { handler = function(ctx) ctx.view:cycle_mode() end },
+  },
+  toggle_tree = {
+    desc = "toggle outline tree nesting",
+    outline = { handler = function(ctx) ctx.view:toggle_tree() end },
   },
   toggle_stack_order = {
     desc = "toggle stack order",
