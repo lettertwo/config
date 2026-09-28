@@ -299,6 +299,83 @@ describe("diff._sbs_annotations", function()
     assert_parity(ann, old_lines, new_lines)
     assert.same({ { row = 4, count = 3, above = false } }, ann.fillers_l)
   end)
+
+  it("unpaired add rows get a whole-line word mark; paired rows keep partial marks", function()
+    local old_lines = { "ctx1", "foo old bar", "ctx2" }
+    local new_lines = { "ctx1", "foo new bar", "added2", "ctx2" }
+    local hunks = {
+      {
+        old_start = 1,
+        old_count = 3,
+        new_start = 1,
+        new_count = 4,
+        lines = {
+          ctx("ctx1", 1, 1),
+          del("foo old bar", 2),
+          add("foo new bar", 2),
+          add("added2", 3),
+          ctx("ctx2", 3, 4),
+        },
+      },
+    }
+    local ann = diff._sbs_annotations(hunks, old_lines, new_lines)
+
+    local function word_marks(exts, row)
+      local out = {}
+      for _, e in ipairs(exts) do
+        if e.row == row and e.opts.priority == 1000 then
+          table.insert(out, e)
+        end
+      end
+      return out
+    end
+
+    -- "foo new bar" (row 1) is paired against "foo old bar": the word diff
+    -- covers only the changed word, not the whole 11-char line.
+    local paired_marks = word_marks(ann.exts_r, 1)
+    assert.is_true(#paired_marks > 0)
+    for _, m in ipairs(paired_marks) do
+      assert.is_true(m.opts.end_col - m.col < #"foo new bar")
+    end
+
+    -- "added2" (row 2) has no del counterpart: one mark spanning the whole line.
+    local unpaired_marks = word_marks(ann.exts_r, 2)
+    assert.equals(1, #unpaired_marks)
+    assert.equals(0, unpaired_marks[1].col)
+    assert.equals(#"added2", unpaired_marks[1].opts.end_col)
+  end)
+
+  it("a whole-file status suppresses the unpaired whole-line marks", function()
+    local old_lines = { "a", "b" }
+    local new_lines = {}
+    local hunks = {
+      {
+        old_start = 1,
+        old_count = 2,
+        new_start = 0,
+        new_count = 0,
+        lines = { del("a", 1), del("b", 2) },
+      },
+    }
+
+    local function count_word_marks(exts)
+      local c = 0
+      for _, e in ipairs(exts) do
+        if e.opts.priority == 1000 then
+          c = c + 1
+        end
+      end
+      return c
+    end
+
+    local deleted_file = diff._sbs_annotations(hunks, old_lines, new_lines, { status = "D" })
+    assert.equals(0, count_word_marks(deleted_file.exts_l))
+
+    -- Without the status guard, the same pure-del hunk gets whole-line marks
+    -- (a genuine unpaired del inside an otherwise-modified file).
+    local mid_file = diff._sbs_annotations(hunks, old_lines, new_lines)
+    assert.is_true(count_word_marks(mid_file.exts_l) > 0)
+  end)
 end)
 
 describe("diff._build_virt_chunks: innermost treesitter capture wins", function()
@@ -619,6 +696,117 @@ describe("diff._render_inline lnums (old/new statuscolumn data)", function()
     -- the mixed-hunk case above for the same nuance).
     assert.equals(0, #(lnums.virt_old[0] or {}))
     assert.equals(1, lnums.width) -- #tostring(2)
+    dv:destroy()
+  end)
+end)
+
+describe("diff._render_inline: unpaired-line word emphasis (real buffer)", function()
+  vim.cmd.packadd("codediff.nvim")
+  local diff = require("app.review.ui.diff")
+  local git = require("app.review.diff.git")
+
+  local function stub_show(old_content, new_content)
+    local orig = git.show
+    git.show = function(_, ref, _, cb)
+      cb(ref == "HEAD" and old_content or new_content, nil)
+    end
+    return function()
+      git.show = orig
+    end
+  end
+
+  local function render(file, old_content, new_content)
+    local restore = stub_show(old_content, new_content)
+    local dv = diff.new({ win = vim.api.nvim_get_current_win() })
+    local done = false
+    dv:render(file, "/tmp", function()
+      done = true
+    end)
+    restore()
+    assert.is_true(done)
+    return dv
+  end
+
+  local function word_marks(bufnr, row)
+    local marks =
+      vim.api.nvim_buf_get_extmarks(bufnr, require("app.review.ui.signs").ns, { row, 0 }, { row, -1 }, { details = true })
+    local out = {}
+    for _, m in ipairs(marks) do
+      if m[4].priority == 1000 then
+        table.insert(out, m[4])
+      end
+    end
+    return out
+  end
+
+  it("a pure-add run inside a modified file gets a whole-line word mark", function()
+    local hunks = {
+      {
+        old_start = 1,
+        old_count = 2,
+        new_start = 1,
+        new_count = 3,
+        lines = {
+          { kind = "ctx", text = "a", old_lnum = 1, new_lnum = 1 },
+          { kind = "add", text = "brand new", new_lnum = 2 },
+          { kind = "ctx", text = "b", old_lnum = 2, new_lnum = 3 },
+        },
+      },
+    }
+    local dv = render({ path = "f.txt", hunks = hunks }, "a\nb", "a\nbrand new\nb")
+    local marks = word_marks(dv.right.bufnr, 1)
+    assert.equals(1, #marks)
+    assert.equals(#"brand new", marks[1].end_col)
+    dv:destroy()
+  end)
+
+  it("an added file gets no whole-line word marks", function()
+    local hunks = {
+      {
+        old_start = 0,
+        old_count = 0,
+        new_start = 1,
+        new_count = 2,
+        lines = {
+          { kind = "add", text = "l1", new_lnum = 1 },
+          { kind = "add", text = "l2", new_lnum = 2 },
+        },
+      },
+    }
+    local dv = render({ path = "f.txt", status = "A", hunks = hunks }, "", "l1\nl2")
+    assert.equals(0, #word_marks(dv.right.bufnr, 0))
+    assert.equals(0, #word_marks(dv.right.bufnr, 1))
+    dv:destroy()
+  end)
+
+  it("a pure-del run's virt_line chunk is one whole-line word-tier segment", function()
+    local hunks = {
+      {
+        old_start = 1,
+        old_count = 2,
+        new_start = 1,
+        new_count = 1,
+        lines = {
+          { kind = "del", text = "gone entirely", old_lnum = 1 },
+          { kind = "ctx", text = "a", old_lnum = 2, new_lnum = 1 },
+        },
+      },
+    }
+    local dv = render({ path = "f.txt", hunks = hunks }, "gone entirely\na", "a")
+    local marks = vim.api.nvim_buf_get_extmarks(dv.right.bufnr, require("app.review.ui.signs").ns, { 0, 0 }, { 0, -1 }, { details = true })
+    local virt_lines
+    for _, m in ipairs(marks) do
+      if m[4].virt_lines then
+        virt_lines = m[4].virt_lines
+      end
+    end
+    assert.is_not_nil(virt_lines)
+    -- One text chunk for the whole 13-char line (word tier), plus the
+    -- padding chunk build_virt_chunks always appends.
+    local chunks = virt_lines[1]
+    assert.equals(2, #chunks)
+    assert.equals("gone entirely", chunks[1][1])
+    assert.equals("ReviewDiffDeleteWord", chunks[1][2])
     dv:destroy()
   end)
 end)
