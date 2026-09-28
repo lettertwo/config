@@ -160,6 +160,10 @@ M.list = {
     desc = "toggle outline tree nesting",
     outline = { handler = function(ctx) ctx.view:toggle_tree() end },
   },
+  toggle_commits = {
+    desc = "toggle changeset unit (branch/commit)",
+    outline = { handler = function(ctx) ctx.docket:toggle_commits(ctx.view) end },
+  },
   toggle_stack_order = {
     desc = "toggle stack order",
     outline = { handler = function(ctx) ctx.view:toggle_stack_order() end },

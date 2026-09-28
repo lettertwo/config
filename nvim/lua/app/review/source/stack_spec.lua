@@ -253,4 +253,165 @@ describe("changesets.build", function()
       { base = b_sha, head = c_sha },
     }, calls)
   end)
+
+  it("never runs more than the concurrency cap's worth of diffs at once, current spec first", function()
+    local cwd = make_repo()
+    -- `base` doubles as a per-spec tag (rev_parse_many resolves an
+    -- unresolvable ref to nil, which is fine — the stub below never reads
+    -- shas, only echoes base/head back).
+    local specs = {}
+    for i = 1, 12 do
+      specs[i] = { id = tostring(i), title = "cs" .. i, base = "b" .. i, head = "h" .. i, current = (i == 5) }
+    end
+
+    local started, inflight, max_seen, resolvers = {}, 0, 0, {}
+    local orig_diff = git.diff
+    git.diff = function(_, base, head, cb)
+      table.insert(started, base .. ".." .. head)
+      inflight = inflight + 1
+      max_seen = math.max(max_seen, inflight)
+      table.insert(resolvers, function()
+        inflight = inflight - 1
+        cb("", nil)
+      end)
+    end
+
+    local result
+    changesets.build(cwd, specs, nil, function(r)
+      result = r
+    end)
+    -- rev_parse_many is real (async git cat-file); wait for it to resolve
+    -- and the initial fan-out to fire before inspecting it.
+    vim.wait(2000, function()
+      return #started > 0
+    end, 10)
+    -- The initial fan-out already hit its ceiling, current spec (5) first.
+    assert.equals("b5..h5", started[1])
+    assert.is_true(max_seen <= 8, max_seen)
+    assert.is_true(max_seen > 0, max_seen)
+    assert.is_true(#resolvers <= 8, #resolvers)
+
+    -- Draining one at a time must never let the queue pop above the cap
+    -- either, however many specs are left to start.
+    local guard = 0
+    while #resolvers > 0 and guard < 100 do
+      guard = guard + 1
+      table.remove(resolvers, 1)()
+    end
+    git.diff = orig_diff
+
+    assert.is_true(max_seen <= 8, max_seen)
+    assert.equals(12, #result)
+    for _, cs in ipairs(result) do
+      assert.equals("ready", cs.status)
+    end
+  end)
+end)
+
+-- The stack source's commits unit: one changeset per first-parent commit
+-- instead of one per branch node, over a gh-stack-tracked repo (no sqlite3
+-- dependency, unlike the graphite integration test above).
+describe("stack source: commits unit (gh-stack)", function()
+  local cwd = vim.fn.tempname()
+  vim.fn.mkdir(cwd, "p")
+  local function run(...)
+    local r = vim.system({ "git", ... }, { cwd = cwd, text = true }):wait()
+    assert.equals(0, r.code, r.stderr)
+    return vim.trim(r.stdout or "")
+  end
+  run("init", "-q")
+  run("branch", "-M", "main")
+  run("config", "user.email", "t@t")
+  run("config", "user.name", "t")
+  vim.fn.writefile({ "base" }, cwd .. "/base.txt")
+  run("add", ".")
+  run("commit", "-qm", "init")
+
+  -- a1: two commits.
+  run("checkout", "-qb", "a1")
+  vim.fn.writefile({ "x" }, cwd .. "/a1x.txt")
+  run("add", ".")
+  run("commit", "-qm", "a1: add x")
+  vim.fn.writefile({ "y" }, cwd .. "/a1y.txt")
+  run("add", ".")
+  run("commit", "-qm", "a1: add y")
+
+  -- b1: tracked, but zero commits of its own — must contribute no specs.
+  run("checkout", "-qb", "b1")
+
+  -- c1: one commit, checked out (the focus branch), plus an uncommitted edit.
+  run("checkout", "-qb", "c1")
+  vim.fn.writefile({ "z" }, cwd .. "/c1z.txt")
+  run("add", ".")
+  run("commit", "-qm", "c1: add z")
+  vim.fn.writefile({ "dirty" }, cwd .. "/base.txt")
+
+  vim.fn.writefile({
+    vim.json.encode({
+      schemaVersion = 1,
+      stacks = {
+        {
+          trunk = { branch = "main" },
+          branches = { { branch = "a1" }, { branch = "b1" }, { branch = "c1" } },
+        },
+      },
+    }),
+  }, cwd .. "/.git/gh-stack")
+
+  local function settled(cs)
+    if not cs then
+      return false
+    end
+    for _, c in ipairs(cs) do
+      if c.status == "pending" then
+        return false
+      end
+    end
+    return true
+  end
+
+  local src = require("app.review.source.stack").new({ cwd = cwd })
+  src:set_unit("commit")
+  local changesets, err
+  src:load(function(cs, e)
+    if settled(cs) or e then
+      changesets, err = cs, e
+    end
+  end)
+  vim.wait(10000, function()
+    return changesets ~= nil or err ~= nil
+  end, 50)
+
+  it("loads without error", function()
+    assert.is_nil(err)
+    assert.is_table(changesets)
+  end)
+
+  it("chains one spec per commit, oldest first, skipping the zero-commit branch", function()
+    -- a1x, a1y, c1z, then uncommitted — b1 contributes nothing.
+    assert.same({ "a1x.txt" }, vim.tbl_map(function(f)
+      return f.path
+    end, changesets[1].files))
+    assert.same({ "a1y.txt" }, vim.tbl_map(function(f)
+      return f.path
+    end, changesets[2].files))
+    assert.same({ "c1z.txt" }, vim.tbl_map(function(f)
+      return f.path
+    end, changesets[3].files))
+    assert.equals("uncommitted", changesets[4].id)
+    assert.equals(4, #changesets)
+  end)
+
+  it("carries the owning branch on every commit header", function()
+    assert.equals("a1", changesets[1].branch)
+    assert.equals("a1", changesets[2].branch)
+    assert.equals("c1", changesets[3].branch)
+  end)
+
+  it("places uncommitted right after the focus branch's newest commit, marked current", function()
+    assert.is_true(changesets[4].current)
+    assert.is_nil(changesets[1].current)
+    assert.is_nil(changesets[2].current)
+    assert.is_nil(changesets[3].current)
+  end)
 end)

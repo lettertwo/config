@@ -345,3 +345,110 @@ describe("docket: changeset nav past a fileless changeset", function()
     dk:destroy()
   end)
 end)
+
+describe("docket._reposition: branch/commit unit flip fallback", function()
+  -- Pure: a plain table stands in for `self`, addressed via docket._reposition
+  -- (exposed alongside the Docket method for this).
+  local function state(files, cs_idx_by_id, changesets)
+    return { files = files, cs_idx_by_id = cs_idx_by_id, changesets = changesets }
+  end
+
+  local function pick_never()
+    error("pick should not run when the flip fallback finds a row")
+  end
+
+  it("to_commits lands on the newest commit that touched the pinned path", function()
+    -- self.files runs oldest→newest; two commits touched b.lua, the later
+    -- one must win.
+    local files = {
+      { path = "a.lua", changeset_id = "1" },
+      { path = "b.lua", changeset_id = "2" },
+      { path = "b.lua", changeset_id = "3" },
+    }
+    local s = state(files, { ["1"] = 1, ["2"] = 2, ["3"] = 3 }, {
+      { id = "1", current = false },
+      { id = "2", current = false },
+      { id = "3", current = true },
+    })
+    local idx = docket._reposition(s, nil, pick_never, { direction = "to_commits", prev_path = "b.lua" })
+    assert.equals(3, idx)
+  end)
+
+  it("to_commits falls back to the focus branch's newest (current) commit when no commit touched the path", function()
+    local files = {
+      { path = "a.lua", changeset_id = "1" },
+      { path = "c.lua", changeset_id = "2" },
+    }
+    local s = state(files, { ["1"] = 1, ["2"] = 2 }, {
+      { id = "1", current = false },
+      { id = "2", current = true },
+    })
+    local idx = docket._reposition(s, nil, pick_never, { direction = "to_commits", prev_path = "z.lua" })
+    assert.equals(2, idx)
+  end)
+
+  it("to_branch lands on the branch that owned the pinned commit, same path", function()
+    local files = {
+      { path = "a.lua", changeset_id = "branch-a" },
+      { path = "b.lua", changeset_id = "branch-b" },
+    }
+    local s = state(files, { ["branch-a"] = 1, ["branch-b"] = 2 }, {
+      { id = "branch-a" },
+      { id = "branch-b" },
+    })
+    local idx = docket._reposition(s, nil, pick_never, { direction = "to_branch", prev_path = "b.lua", prev_branch = "branch-b" })
+    assert.equals(2, idx)
+  end)
+
+  it("to_branch falls back to the branch alone when its path isn't in the new diff", function()
+    local files = {
+      { path = "a.lua", changeset_id = "branch-a" },
+      { path = "b.lua", changeset_id = "branch-b" },
+    }
+    local s = state(files, { ["branch-a"] = 1, ["branch-b"] = 2 }, {
+      { id = "branch-a" },
+      { id = "branch-b" },
+    })
+    local idx = docket._reposition(s, nil, pick_never, { direction = "to_branch", prev_path = "missing.lua", prev_branch = "branch-b" })
+    assert.equals(2, idx)
+  end)
+
+  it("falls through to pick() when the flip fallback finds nothing", function()
+    local files = { { path = "a.lua", changeset_id = "1" } }
+    local s = state(files, { ["1"] = 1 }, { { id = "1" } })
+    local idx = docket._reposition(s, nil, function()
+      return 1
+    end, { direction = "to_branch", prev_path = "missing.lua", prev_branch = "nowhere" })
+    assert.equals(1, idx)
+  end)
+end)
+
+describe("docket: toggle_commits refuses on a source without set_unit", function()
+  local function fake_dv()
+    return { right = { bufnr = vim.api.nvim_get_current_buf() }, destroy = function() end }
+  end
+
+  it("notifies and leaves state untouched", function()
+    local dk = docket.new({
+      kind = "test",
+      cwd = "/tmp",
+      title = "test",
+      win = vim.api.nvim_get_current_win(),
+      dv = fake_dv(),
+      dv2 = fake_dv(),
+      source = {
+        can_stage = function()
+          return false
+        end,
+      },
+    })
+    local notified
+    dk._notify = function(_, msg)
+      notified = msg
+    end
+    dk:toggle_commits(nil)
+    assert.equals("branch", dk.state.changeset_unit)
+    assert.truthy(notified and notified:find("only for stack reviews", 1, true))
+    dk:destroy()
+  end)
+end)

@@ -16,7 +16,7 @@ if test $status -ne 0
 end
 printf '%s\n' $spec_out | grep -aE "Testing:|Success: |Failed :|Errors :|^\s*Fail"
 
-for scenario in standalone degraded embedded stack trunk-ahead staging outline-nodes ref ref-single
+for scenario in standalone degraded embedded stack trunk-ahead staging outline-nodes ref ref-single commits
     echo "── e2e: $scenario ──────────────────────────────────────"
     set -l app_env
     if test $scenario != embedded
@@ -28,7 +28,7 @@ for scenario in standalone degraded embedded stack trunk-ahead staging outline-n
         # they don't drift with whatever the bare default happens to be.
         set -a app_env REVIEW_SOURCE=uncommitted
     end
-    if contains $scenario stack trunk-ahead outline-nodes
+    if contains $scenario stack trunk-ahead outline-nodes commits
         set -a app_env REVIEW_SOURCE=stack
     end
     if test $scenario = ref
