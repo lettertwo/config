@@ -18,6 +18,39 @@ local function hl_color(name, attr)
   return vim.api.nvim_get_hl(0, { name = name, link = false })[attr]
 end
 
+-- How far the word-emphasis tier blends its accent toward Normal's
+-- background. Laserwave's own line washes sit at accent:mix(bg, 90); a
+-- lower number here keeps the word tier visibly stronger than that
+-- surrounding line tint. Tune live: edit this and :colorscheme to reload.
+local WORD_BLEND_PCT = 75
+
+-- Background-only word-emphasis group: build_virt_chunks/emit_line_exts
+-- layer this under a syntax-colored foreground, so the group itself must
+-- carry no fg or it would blot out the code color it's laid over.
+-- diff_group is the line-tier group (DiffAdd/DiffDelete) whose foreground
+-- is normally the intended accent; alt_group/diag_group are same-valence
+-- fallbacks for colorschemes that leave DiffAdd/DiffDelete foregroundless.
+local function set_word_group(name, bg, diff_group, alt_group, diag_group, fallback_link)
+  local diff_fg = hl_color(diff_group, "fg")
+  local accent = diff_fg or hl_color(alt_group, "fg") or hl_color(diag_group, "fg")
+  local opts = { default = true }
+  if not bg or not accent then
+    opts.link = fallback_link
+  elseif diff_fg then
+    opts.bg = mix(accent, bg, WORD_BLEND_PCT)
+  else
+    -- diff_group has no foreground of its own (only a bg wash) — nudge that
+    -- wash toward the accent instead of blending the accent toward bg, so
+    -- the tier still reads as a step up from the line wash.
+    local diff_bg = hl_color(diff_group, "bg")
+    opts.bg = diff_bg and mix(diff_bg, accent, 100 - WORD_BLEND_PCT) or nil
+    if not opts.bg then
+      opts.link = fallback_link
+    end
+  end
+  vim.api.nvim_set_hl(0, name, opts)
+end
+
 -- Base groups are default=true links so colorschemes can override. Staged
 -- variants are computed: no builtin group reads as "dimmer diff", so blend
 -- the resolved base colors further toward Normal bg (lines/words) and toward
@@ -27,8 +60,6 @@ function M.setup()
   local defs = {
     ReviewDiffAdd        = { link = "DiffAdd" },
     ReviewDiffDelete     = { link = "DiffDelete" },
-    ReviewDiffAddWord    = { link = "DiffTextAdd" },
-    ReviewDiffDeleteWord = { link = "DiffText" },
     ReviewDiffFiller     = { link = "DiffDelete" },
     ReviewSignAdd        = { link = "DiffAdd" },
     ReviewSignDelete     = { link = "DiffDelete" },
@@ -42,6 +73,9 @@ function M.setup()
   -- staged read as MORE prominent — fall back to plain links instead.
   local bg = hl_color("Normal", "bg")
   local comment = hl_color("Comment", "fg")
+
+  set_word_group("ReviewDiffAddWord", bg, "DiffAdd", "Added", "DiagnosticOk", "DiffTextAdd")
+  set_word_group("ReviewDiffDeleteWord", bg, "DiffDelete", "Removed", "DiagnosticError", "DiffText")
   local staged = {
     ReviewDiffStagedAdd        = { base = "ReviewDiffAdd", attr = "bg", toward = bg, pct = 45 },
     ReviewDiffStagedDelete     = { base = "ReviewDiffDelete", attr = "bg", toward = bg, pct = 45 },
