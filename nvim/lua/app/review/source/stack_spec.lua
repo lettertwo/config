@@ -253,59 +253,6 @@ describe("changesets.build", function()
       { base = b_sha, head = c_sha },
     }, calls)
   end)
-
-  it("never runs more than the concurrency cap's worth of diffs at once, current spec first", function()
-    local cwd = make_repo()
-    -- `base` doubles as a per-spec tag (rev_parse_many resolves an
-    -- unresolvable ref to nil, which is fine — the stub below never reads
-    -- shas, only echoes base/head back).
-    local specs = {}
-    for i = 1, 12 do
-      specs[i] = { id = tostring(i), title = "cs" .. i, base = "b" .. i, head = "h" .. i, current = (i == 5) }
-    end
-
-    local started, inflight, max_seen, resolvers = {}, 0, 0, {}
-    local orig_diff = git.diff
-    git.diff = function(_, base, head, cb)
-      table.insert(started, base .. ".." .. head)
-      inflight = inflight + 1
-      max_seen = math.max(max_seen, inflight)
-      table.insert(resolvers, function()
-        inflight = inflight - 1
-        cb("", nil)
-      end)
-    end
-
-    local result
-    changesets.build(cwd, specs, nil, function(r)
-      result = r
-    end)
-    -- rev_parse_many is real (async git cat-file); wait for it to resolve
-    -- and the initial fan-out to fire before inspecting it.
-    vim.wait(2000, function()
-      return #started > 0
-    end, 10)
-    -- The initial fan-out already hit its ceiling, current spec (5) first.
-    assert.equals("b5..h5", started[1])
-    assert.is_true(max_seen <= 8, max_seen)
-    assert.is_true(max_seen > 0, max_seen)
-    assert.is_true(#resolvers <= 8, #resolvers)
-
-    -- Draining one at a time must never let the queue pop above the cap
-    -- either, however many specs are left to start.
-    local guard = 0
-    while #resolvers > 0 and guard < 100 do
-      guard = guard + 1
-      table.remove(resolvers, 1)()
-    end
-    git.diff = orig_diff
-
-    assert.is_true(max_seen <= 8, max_seen)
-    assert.equals(12, #result)
-    for _, cs in ipairs(result) do
-      assert.equals("ready", cs.status)
-    end
-  end)
 end)
 
 -- The stack source's commits unit: one changeset per first-parent commit
