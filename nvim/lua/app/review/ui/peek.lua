@@ -133,9 +133,9 @@ function M._changeset_lines(item, commits, stat)
 end
 
 -- Resolve dir peek content asynchronously: `git ls-tree` at the enclosing
--- changeset's head_ref when it names a real ref (stack/stack-tree — the
--- worktree would lie for mid-stack changesets), `fs_scandir` otherwise
--- (uncommitted, or no changeset parent at all — plain tree mode).
+-- changeset's head_ref when it names a real ref (stack mode — the worktree
+-- would lie for mid-stack changesets), `fs_scandir` otherwise (uncommitted,
+-- or no changeset parent at all — flat mode with the tree toggle on).
 ---@param item table  outline dir item
 ---@param docket Review.Docket
 ---@param callback fun(lines: string[], highlights: table[])

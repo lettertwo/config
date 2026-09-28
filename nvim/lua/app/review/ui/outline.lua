@@ -1,7 +1,8 @@
--- Outline sidebar: a snacks picker listing the docket's files, with four
--- modes — flat, tree (path trie), stack (grouped by changeset), stack-tree.
--- Ported from the POC's ui/outline_snacks.lua; staging/comments/layout
--- actions arrive with their owning milestones (M4/M5/stretch).
+-- Outline sidebar: a snacks picker listing the docket's files. Two modes —
+-- flat, stack (grouped by changeset) — crossed with an independent tree
+-- toggle (path trie instead of a bare list). Ported from the POC's
+-- ui/outline_snacks.lua; staging/comments/layout actions arrive with their
+-- owning milestones (M4/M5/stretch).
 --
 -- Refresh gotcha (POC-proven): render() must use picker:refresh(), which
 -- preserves cursor and filter across the item rebuild; picker:find() reseeds
@@ -150,7 +151,8 @@ function M._emit_tree_node(node, parent_item, items, prefix)
 end
 
 ---@class Review.OutlineView
----@field mode "flat"|"tree"|"stack"|"stack-tree"
+---@field mode "flat"|"stack"
+---@field tree boolean
 ---@field docket Review.Docket
 ---@field on_select fun(item: table)
 ---@field on_close fun()
@@ -167,6 +169,7 @@ function M.new(opts)
   self.on_select = opts.on_select
   self.on_close = opts.on_close
   self.mode = opts.docket.state.outline_mode or "flat"
+  self.tree = opts.docket.state.outline_tree or false
   self._picker = nil
   self._suppress_sync = false
 
@@ -177,42 +180,46 @@ end
 -- Build the picker item list for a docket in a given mode. Needs only
 -- docket.files/.changesets; exposed for unit tests.
 ---@param docket {files: Review.FileChange[], changesets: Review.Changeset[]}
----@param mode "flat"|"tree"|"stack"|"stack-tree"
----@param order "head-first"|"base-first"|nil display order for stack/stack-tree headers (default base-first)
+---@param mode "flat"|"stack"
+---@param tree boolean?  nest files under path-trie dir rows instead of a bare list
+---@param order "head-first"|"base-first"|nil display order for stack headers (default base-first)
 ---@return table[]
-function M._items_for(docket, mode, order)
+function M._items_for(docket, mode, tree, order)
   local items = {}
 
   if mode == "flat" then
-    -- A stack can touch the same path in several changesets; flat shows each
-    -- path once, bound to its newest occurrence (the tree modes' path tries
-    -- already collapse duplicates the same way — last write wins).
-    local by_path = {}
-    for _, file in ipairs(docket.files) do
-      local item = by_path[file.path]
-      if item then
-        item.change = file
-      else
-        item = {
-          type = "file",
-          change = file,
-          text = file.path,
-          idx = #items + 1,
-        }
-        by_path[file.path] = item
-        table.insert(items, item)
+    if tree then
+      local changed = {}
+      for _, f in ipairs(docket.files) do
+        changed[f.path] = f
+      end
+      local paths = vim.tbl_map(function(f)
+        return f.path
+      end, docket.files)
+      M._emit_tree_node(M._build_path_tree(paths, changed), nil, items)
+    else
+      -- A stack can touch the same path in several changesets; flat shows
+      -- each path once, bound to its newest occurrence (the tree toggle's
+      -- path trie already collapses duplicates the same way — last write
+      -- wins).
+      local by_path = {}
+      for _, file in ipairs(docket.files) do
+        local item = by_path[file.path]
+        if item then
+          item.change = file
+        else
+          item = {
+            type = "file",
+            change = file,
+            text = file.path,
+            idx = #items + 1,
+          }
+          by_path[file.path] = item
+          table.insert(items, item)
+        end
       end
     end
-  elseif mode == "tree" then
-    local changed = {}
-    for _, f in ipairs(docket.files) do
-      changed[f.path] = f
-    end
-    local paths = vim.tbl_map(function(f)
-      return f.path
-    end, docket.files)
-    M._emit_tree_node(M._build_path_tree(paths, changed), nil, items)
-  elseif mode == "stack" or mode == "stack-tree" then
+  elseif mode == "stack" then
     local n = #docket.changesets
     -- docket.changesets is always base->head; head-first only flips display order.
     local reversed = order == "head-first"
@@ -230,7 +237,7 @@ function M._items_for(docket, mode, order)
         idx = #items + 1,
       }
       table.insert(items, header)
-      if mode == "stack-tree" then
+      if tree then
         local changed = {}
         for _, f in ipairs(cs.files) do
           changed[f.path] = f
@@ -264,22 +271,24 @@ function M._items_for(docket, mode, order)
 end
 
 function OutlineView:_build_items()
-  return M._items_for(self.docket, self.mode, self.docket.state.stack_order)
+  return M._items_for(self.docket, self.mode, self.tree, self.docket.state.stack_order)
 end
 
--- Locate the outline row for a docket's current file. Stack/stack-tree items
--- keep one entry per changeset occurrence, so identity match is exact; flat
--- and tree modes dedupe a path to its newest changeset's object (see
--- _items_for), so match by path instead. Pure; exposed for unit tests.
+-- Locate the outline row for a docket's current file. Stack items keep one
+-- entry per changeset occurrence, so identity match is exact; flat items
+-- dedupe a path to its newest changeset's object (see _items_for) whether
+-- or not the tree toggle is on — a changeset's own file list has no
+-- cross-changeset duplicates for the tree toggle to collapse — so match by
+-- path instead. Pure; exposed for unit tests.
 ---@param items table[]
 ---@param file Review.FileChange?
----@param mode "flat"|"tree"|"stack"|"stack-tree"
+---@param mode "flat"|"stack"
 ---@return integer?
 function M._find_row(items, file, mode)
   if not file then
     return nil
   end
-  local by_identity = mode == "stack" or mode == "stack-tree"
+  local by_identity = mode == "stack"
   for i, item in ipairs(items) do
     if item.change then
       if by_identity and item.change == file then
@@ -573,17 +582,19 @@ function OutlineView:sync_to_current(file)
 end
 
 function OutlineView:cycle_mode()
-  local modes = { "flat", "tree", "stack", "stack-tree" }
-  for i, m in ipairs(modes) do
-    if m == self.mode then
-      self.mode = modes[(i % #modes) + 1]
-      self.docket.state.outline_mode = self.mode
-      break
-    end
-  end
+  self.mode = self.mode == "flat" and "stack" or "flat"
+  self.docket.state.outline_mode = self.mode
   self:render()
   self:sync_to_current(self.docket:current_file())
   vim.notify("Outline: " .. self.mode, vim.log.levels.INFO, { title = "Review" })
+end
+
+function OutlineView:toggle_tree()
+  self.tree = not self.tree
+  self.docket.state.outline_tree = self.tree
+  self:render()
+  self:sync_to_current(self.docket:current_file())
+  vim.notify("Outline tree: " .. (self.tree and "on" or "off"), vim.log.levels.INFO, { title = "Review" })
 end
 
 function OutlineView:toggle_stack_order()

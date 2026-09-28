@@ -62,13 +62,13 @@ return function(H, fixture)
     )
   end
 
-  -- ── Switch to stack-tree so dir rows exist ───────────────────────────────
+  -- ── Toggle tree nesting on so dir rows exist ─────────────────────────────
   picker:focus("list")
-  feed("i") -- stack -> stack-tree
+  feed("t") -- stack -> stack+tree
   vim.wait(4000, function()
     return picker:count() > 7
   end, 50)
-  check("stack-tree mode nests src/ dirs under each header", picker:count() > 7, picker:count())
+  check("stack+tree mode nests src/ dirs under each header", picker:count() > 7, picker:count())
   -- The picker's item order settles asynchronously after a mode switch
   -- (matcher/topk reprocessing) — `count()` can already read the new total
   -- while `items()`'s index-to-item mapping is still shifting underneath
