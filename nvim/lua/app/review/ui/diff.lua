@@ -225,24 +225,21 @@ local function build_virt_chunks(text, ts_hl, wd_hl, grp)
           break
         end
       end
-      if covered_by_word then
-        table.insert(chunks, { seg, grp.del_word })
-      else
-        -- Several captures can cover the same segment (nested nodes); pick
-        -- the one Neovim's highlighter would draw last: highest priority,
-        -- ties broken by whichever came later in iteration order.
-        local ts_group, ts_pri
-        for _, h in ipairs(ts_hl or {}) do
-          if h.col <= s and h.end_col >= e then
-            local pri = h.priority or TS_DEFAULT_PRIORITY
-            if not ts_group or pri >= ts_pri then
-              ts_group, ts_pri = h.hl_group, pri
-            end
+      -- Several captures can cover the same segment (nested nodes); pick
+      -- the one Neovim's highlighter would draw last: highest priority,
+      -- ties broken by whichever came later in iteration order.
+      local ts_group, ts_pri
+      for _, h in ipairs(ts_hl or {}) do
+        if h.col <= s and h.end_col >= e then
+          local pri = h.priority or TS_DEFAULT_PRIORITY
+          if not ts_group or pri >= ts_pri then
+            ts_group, ts_pri = h.hl_group, pri
           end
         end
-        -- Combine bg (background) with ts_group (foreground) via multi-group chunk.
-        table.insert(chunks, { seg, ts_group and { grp.del, ts_group } or grp.del })
       end
+      local bg = covered_by_word and grp.del_word or grp.del
+      -- Combine bg (background) with ts_group (foreground) via multi-group chunk.
+      table.insert(chunks, { seg, ts_group and { bg, ts_group } or bg })
     end
   end
   if #chunks == 0 then
