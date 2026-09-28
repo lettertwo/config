@@ -35,6 +35,17 @@ local Y_STATUS = {
 -- glyph/highlight mapping instead of re-deriving it.
 M.Y_STATUS = Y_STATUS
 
+local function setup_hl()
+  vim.api.nvim_set_hl(0, "ReviewOutlineTitle", { link = "Title", default = true })
+  vim.api.nvim_set_hl(0, "ReviewOutlineCounter", { link = "Comment", default = true })
+  vim.api.nvim_set_hl(0, "ReviewOutlineDir", { link = "Comment", default = true })
+end
+
+vim.api.nvim_create_autocmd("ColorScheme", {
+  group = vim.api.nvim_create_augroup("ReviewOutlineHl", { clear = true }),
+  callback = setup_hl,
+})
+
 local function filetype_icon(path)
   local ok, icon, hl = pcall(Snacks.util.icon, path, "file")
   if ok and icon and icon ~= "" then
@@ -281,12 +292,88 @@ function M._find_row(items, file, mode)
   return nil
 end
 
+-- Render a single outline row's highlighted chunks. `can_stage` comes from
+-- docket.source:can_stage() (whether XY git-short columns apply) and is
+-- threaded in rather than read off the docket, so this stays callable
+-- without a live picker/docket. Exposed for unit tests.
+---@param item table
+---@param picker snacks.Picker
+---@param can_stage boolean
+---@return snacks.picker.Highlight[]
+function M._format_item(item, picker, can_stage)
+  local ret = require("snacks.picker.format").tree(item, picker)
+
+  if item.type == "changeset" then
+    local cs = item.changeset
+    -- Mark the docket's current position in the stack.
+    if cs.current then
+      ret[#ret + 1] = { "● ", "DiagnosticOk" }
+    end
+    -- A Pending or Failed changeset has no files, so this header mark and
+    -- the peek it opens are the only place its state shows.
+    if cs.status == "pending" then
+      ret[#ret + 1] = { "○ ", "Comment" }
+    elseif cs.status == "failed" then
+      ret[#ret + 1] = { "✗ ", "ErrorMsg" }
+    end
+    ret[#ret + 1] = { "\u{f418} ", "ReviewOutlineCounter" }
+    ret[#ret + 1] = { string.format("[%d/%d] ", item._cs_idx, item._cs_total), "ReviewOutlineCounter" }
+    ret[#ret + 1] = { cs.title, "ReviewOutlineTitle" }
+    if cs.pr_number then
+      ret[#ret + 1] = { "  #" .. cs.pr_number, "ReviewOutlineCounter" }
+    end
+    if cs.status == "failed" and cs.error then
+      ret[#ret + 1] = { "  " .. cs.error, "ErrorMsg" }
+    end
+  elseif item.type == "dir" then
+    local ok, icon, hl = pcall(Snacks.util.icon, item._name, "directory")
+    local diricon = (ok and icon and icon ~= "") and (icon .. " ") or " "
+    local dirhl = (ok and hl) or "SnacksPickerDir"
+    ret[#ret + 1] = { diricon, dirhl }
+    ret[#ret + 1] = { item._name .. "/", item.has_changes and nil or "SnacksPickerDir" }
+  elseif item.type == "file" then
+    local file = item.change
+    local x = X_STATUS[file.status] or { "?", "Comment" }
+    local y = Y_STATUS[file.status] or { "?", "Comment" }
+    local fticon, fthl = filetype_icon(file.path)
+    local name = file.old_path
+        and (vim.fn.fnamemodify(file.old_path, ":t") .. " → " .. vim.fn.fnamemodify(file.path, ":t"))
+      or vim.fn.fnamemodify(file.path, ":t")
+    if can_stage then
+      -- git --short XY format: X=index, Y=worktree, then a space gap
+      if file.status == "U" then
+        ret[#ret + 1] = { x[1], x[2] }
+        ret[#ret + 1] = { y[1] .. " ", y[2] }
+      elseif file.staged then
+        ret[#ret + 1] = { x[1], x[2] }
+        ret[#ret + 1] = { "  " }
+      elseif file.staged_hunks and #file.staged_hunks > 0 then
+        ret[#ret + 1] = { x[1], x[2] }
+        ret[#ret + 1] = { y[1] .. " ", y[2] }
+      else
+        ret[#ret + 1] = { " " }
+        ret[#ret + 1] = { y[1] .. " ", y[2] }
+      end
+    else
+      ret[#ret + 1] = { y[1] .. " ", y[2] }
+    end
+    ret[#ret + 1] = { fticon, fthl }
+    ret[#ret + 1] = { name }
+  elseif item.type == "empty" then
+    ret[#ret + 1] = { item.text, "Comment" }
+  end
+
+  return ret
+end
+
 -- (Re)open the picker sidebar. No-op when already open.
 function OutlineView:open()
   if self:is_open() then
     self._picker:focus("list")
     return
   end
+
+  setup_hl()
 
   local view = self
   local docket = self.docket
@@ -349,72 +436,8 @@ function OutlineView:open()
   -- <Esc> always runs the peek → close cascade; config can't rebind it.
   list_keys["<Esc>"] = { "<Esc>", "review_close", desc = actions.review_close.desc }
 
-  ---@param item table
-  ---@param picker snacks.Picker
-  ---@return snacks.picker.Highlight[]
   local function format_item(item, picker)
-    local ret = require("snacks.picker.format").tree(item, picker)
-
-    if item.type == "changeset" then
-      local cs = item.changeset
-      local label = string.format("[%d/%d] %s", item._cs_idx, item._cs_total, cs.title)
-      if cs.pr_number then
-        label = label .. "  #" .. cs.pr_number
-      end
-      -- Mark the docket's current position in the stack.
-      if cs.current then
-        ret[#ret + 1] = { "● ", "DiagnosticOk" }
-      end
-      -- A Pending or Failed changeset has no files, so this header mark and
-      -- the peek it opens are the only place its state shows.
-      if cs.status == "pending" then
-        ret[#ret + 1] = { "○ ", "Comment" }
-      elseif cs.status == "failed" then
-        ret[#ret + 1] = { "✗ ", "ErrorMsg" }
-      end
-      ret[#ret + 1] = { label, "SnacksPickerDir" }
-      if cs.status == "failed" and cs.error then
-        ret[#ret + 1] = { "  " .. cs.error, "ErrorMsg" }
-      end
-    elseif item.type == "dir" then
-      local ok, icon, hl = pcall(Snacks.util.icon, item._name, "directory")
-      local diricon = (ok and icon and icon ~= "") and (icon .. " ") or " "
-      local dirhl = (ok and hl) or "SnacksPickerDir"
-      ret[#ret + 1] = { diricon, dirhl }
-      ret[#ret + 1] = { item._name .. "/", item.has_changes and nil or "SnacksPickerDir" }
-    elseif item.type == "file" then
-      local file = item.change
-      local x = X_STATUS[file.status] or { "?", "Comment" }
-      local y = Y_STATUS[file.status] or { "?", "Comment" }
-      local fticon, fthl = filetype_icon(file.path)
-      local name = file.old_path
-          and (vim.fn.fnamemodify(file.old_path, ":t") .. " → " .. vim.fn.fnamemodify(file.path, ":t"))
-        or vim.fn.fnamemodify(file.path, ":t")
-      if can_stage then
-        -- git --short XY format: X=index, Y=worktree, then a space gap
-        if file.status == "U" then
-          ret[#ret + 1] = { x[1], x[2] }
-          ret[#ret + 1] = { y[1] .. " ", y[2] }
-        elseif file.staged then
-          ret[#ret + 1] = { x[1], x[2] }
-          ret[#ret + 1] = { "  " }
-        elseif file.staged_hunks and #file.staged_hunks > 0 then
-          ret[#ret + 1] = { x[1], x[2] }
-          ret[#ret + 1] = { y[1] .. " ", y[2] }
-        else
-          ret[#ret + 1] = { " " }
-          ret[#ret + 1] = { y[1] .. " ", y[2] }
-        end
-      else
-        ret[#ret + 1] = { y[1] .. " ", y[2] }
-      end
-      ret[#ret + 1] = { fticon, fthl }
-      ret[#ret + 1] = { name }
-    elseif item.type == "empty" then
-      ret[#ret + 1] = { item.text, "Comment" }
-    end
-
-    return ret
+    return M._format_item(item, picker, can_stage)
   end
 
   self._picker = Snacks.picker.pick({
