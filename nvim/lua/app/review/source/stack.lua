@@ -28,6 +28,15 @@ function M.new(opts)
   local focus_branch = opts.focus_branch or current_branch
   local include_uncommitted = focus_branch == current_branch
   local graph = graph_factory.create(cwd, focus_branch)
+  -- commit_unit_noop: the git-log fallback's nodes are already one per
+  -- commit, so switching the unit to "commit" changes nothing about spec
+  -- building; the toggle handler reads this to word its notify accordingly.
+  self.commit_unit_noop = graph.is_commit_graph == true
+
+  local unit = "branch"
+  function self:set_unit(new_unit)
+    unit = new_unit
+  end
 
   -- The last changesets.build result, handed back in as `prev` so a refresh
   -- reuses any changeset whose resolved shas didn't move. Persists across
@@ -35,13 +44,9 @@ function M.new(opts)
   -- unlike everything inside load_with_uncommitted, which is per-call.
   local prev_result = {}
 
-  -- Adapt graph nodes to changesets.build's plain specs via the graph's own
-  -- base_ref/head_ref/metadata accessors (Graphite db or git-log fallback).
-  -- Streams: `callback` may run more than once, always with the full list in
-  -- spec order (see changesets.build).
   ---@param nodes Review.StackNode[]
-  ---@param callback fun(changesets: Review.Changeset[])
-  local function build_changesets(nodes, callback)
+  ---@return Review.ChangesetSpec[]
+  local function branch_specs(nodes)
     local specs = {}
     for _, node in ipairs(nodes) do
       local meta = graph:metadata(node)
@@ -54,10 +59,75 @@ function M.new(opts)
         current = node.id == focus_branch,
       })
     end
-    changesets.build(cwd, specs, prev_result, function(result)
-      prev_result = result
-      callback(result)
-    end)
+    return specs
+  end
+
+  -- One spec per first-parent commit across every branch node, oldest to
+  -- newest within a branch and branch order across the stack (base→head
+  -- throughout, same as branch_specs). A commit's base chains to the
+  -- next-older commit's sha, and the oldest commit's base to the branch's
+  -- own base_ref — mirrors graph/git.lua's _build_nodes chaining, minus its
+  -- zero-commit fallback nodes: a branch with no commits contributes
+  -- nothing here. `callback` runs once, after every node's `git log` has
+  -- answered (log_first_parent is per-branch async; nodes settle in any
+  -- order, so specs are assembled only once all have).
+  ---@param nodes Review.StackNode[]
+  ---@param callback fun(specs: Review.ChangesetSpec[])
+  local function commit_specs(nodes, callback)
+    if #nodes == 0 then
+      callback({})
+      return
+    end
+    local per_node = {}
+    local remaining = #nodes
+    for ni, node in ipairs(nodes) do
+      git.log_first_parent(cwd, graph:base_ref(node), graph:head_ref(node), function(commits, err)
+        per_node[ni] = (not err and commits) or {}
+        remaining = remaining - 1
+        if remaining == 0 then
+          local specs = {}
+          for i, n in ipairs(nodes) do
+            local list = per_node[i]
+            if #list > 0 then
+              local node_base = graph:base_ref(n)
+              for ci = #list, 1, -1 do
+                local commit = list[ci]
+                local parent = ci < #list and list[ci + 1].sha or node_base
+                table.insert(specs, {
+                  id = commit.sha,
+                  title = commit.subject,
+                  base = parent,
+                  head = commit.sha,
+                  branch = n.branch,
+                  current = n.id == focus_branch and ci == 1,
+                })
+              end
+            end
+          end
+          callback(specs)
+        end
+      end)
+    end
+  end
+
+  -- Adapt graph nodes to changesets.build's plain specs, one changeset per
+  -- branch node or, with the commits unit on, one per commit. Streams:
+  -- `callback` may run more than once, always with the full list in spec
+  -- order (see changesets.build).
+  ---@param nodes Review.StackNode[]
+  ---@param callback fun(changesets: Review.Changeset[])
+  local function build_changesets(nodes, callback)
+    local function with_specs(specs)
+      changesets.build(cwd, specs, prev_result, function(result)
+        prev_result = result
+        callback(result)
+      end)
+    end
+    if unit == "commit" then
+      commit_specs(nodes, with_specs)
+    else
+      with_specs(branch_specs(nodes))
+    end
   end
 
   ---@param nodes Review.StackNode[]
@@ -98,6 +168,11 @@ function M.new(opts)
       end
       local all = {}
       for _, cs in ipairs(stack_result) do
+        -- stale keys are node (branch) ids; a commit spec's id is a sha, so
+        -- this never matches with the commits unit on — the simpler of the
+        -- plan's two options (append to the branch label, or skip), since a
+        -- restacked branch's own commit shas already differ from what a
+        -- stale reuse would have matched anyway.
         if stale and stale[cs.id] and cs.status == "ready" then
           -- A view, not a mutation: stack_result is also handed back to
           -- build_changesets as `prev` next time, and the raw title is what
@@ -107,15 +182,29 @@ function M.new(opts)
           table.insert(all, cs)
         end
       end
+      -- With the commits unit on, stack_result has more entries than nodes
+      -- and cur_idx (a nodes-index) doesn't address it; each commit spec
+      -- already carries its own `current` flag (set on the focus branch's
+      -- newest commit by commit_specs), so find that position instead.
+      local focus_idx = cur_idx
+      if unit == "commit" then
+        focus_idx = nil
+        for i, cs in ipairs(all) do
+          if cs.current then
+            focus_idx = i
+          end
+        end
+      end
       if uncommitted_cs and #uncommitted_cs.files > 0 then
-        -- stack_result may not have caught up to cur_idx yet (uncommitted is
-        -- fetched first and can settle before it); clamp so an early emit
-        -- inserts within bounds rather than erroring, and land at cur_idx's
-        -- true position once the stack side has enough entries to hold it.
-        local pos = math.min((cur_idx or #all) + 1, #all + 1)
+        -- stack_result may not have caught up to focus_idx yet (uncommitted
+        -- is fetched first and can settle before it); clamp so an early
+        -- emit inserts within bounds rather than erroring, and land at
+        -- focus_idx's true position once the stack side has enough entries
+        -- to hold it.
+        local pos = math.min((focus_idx or #all) + 1, #all + 1)
         table.insert(all, pos, vim.tbl_extend("force", {}, uncommitted_cs, { current = true }))
-      elseif cur_idx and all[cur_idx] then
-        all[cur_idx] = vim.tbl_extend("force", {}, all[cur_idx], { current = true })
+      elseif focus_idx and all[focus_idx] then
+        all[focus_idx] = vim.tbl_extend("force", {}, all[focus_idx], { current = true })
       elseif #all > 0 then
         all[#all] = vim.tbl_extend("force", {}, all[#all], { current = true })
       end

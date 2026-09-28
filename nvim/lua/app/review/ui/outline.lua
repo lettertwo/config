@@ -327,7 +327,16 @@ function M._format_item(item, picker, can_stage)
     end
     ret[#ret + 1] = { "\u{f418} ", "ReviewOutlineCounter" }
     ret[#ret + 1] = { string.format("[%d/%d] ", item._cs_idx, item._cs_total), "ReviewOutlineCounter" }
+    -- cs.branch is only set on commit-unit specs (source/stack.lua); a
+    -- branch header has no sha of its own to show.
+    if cs.branch then
+      local sha = (cs.head_sha or cs.id or ""):sub(1, 8)
+      ret[#ret + 1] = { sha .. " ", "ReviewOutlineCounter" }
+    end
     ret[#ret + 1] = { cs.title, "ReviewOutlineTitle" }
+    if cs.branch then
+      ret[#ret + 1] = { "  " .. cs.branch, "ReviewOutlineCounter" }
+    end
     if cs.pr_number then
       ret[#ret + 1] = { "  #" .. cs.pr_number, "ReviewOutlineCounter" }
     end

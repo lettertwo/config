@@ -169,6 +169,61 @@ function M.build_stack_dirs_fixture()
   return cwd
 end
 
+-- gh-stack-tracked fixture: main, then two tracked branches (a1 on main,
+-- b1 on a1), each with two commits — so the commits toggle has more than
+-- one commit per branch to expand into, and more than one branch to carry
+-- distinct labels. tests/review/harness.lua's other fixtures leave no
+-- .git/gh-stack file, which routes the stack source to the git-log fallback
+-- graph (one node per commit already, so the toggle would be a no-op);
+-- writing one here (same shape as source/graph/factory_spec.lua's
+-- write_gh_stack) exercises the branch-graph path instead.
+function M.build_gh_stack_fixture()
+  local cwd = vim.fn.tempname()
+  vim.fn.mkdir(cwd, "p")
+  local function git(...)
+    local r = vim.system({ "git", ... }, { cwd = cwd, text = true }):wait()
+    assert(r.code == 0, r.stderr)
+  end
+  git("init", "-q")
+  git("branch", "-M", "main")
+  git("config", "user.email", "t@t")
+  git("config", "user.name", "t")
+
+  vim.fn.writefile({ "local base = 1" }, cwd .. "/base.lua")
+  git("add", ".")
+  git("commit", "-qm", "init")
+
+  git("checkout", "-qb", "a1")
+  vim.fn.writefile({ "local a1a = 1" }, cwd .. "/a1a.lua")
+  git("add", ".")
+  git("commit", "-qm", "a1: add a1a")
+  vim.fn.writefile({ "local a1b = 1" }, cwd .. "/a1b.lua")
+  git("add", ".")
+  git("commit", "-qm", "a1: add a1b")
+
+  git("checkout", "-qb", "b1")
+  vim.fn.writefile({ "local b1a = 1" }, cwd .. "/b1a.lua")
+  git("add", ".")
+  git("commit", "-qm", "b1: add b1a")
+  vim.fn.writefile({ "local b1b = 1" }, cwd .. "/b1b.lua")
+  git("add", ".")
+  git("commit", "-qm", "b1: add b1b")
+
+  vim.fn.writefile({
+    vim.json.encode({
+      schemaVersion = 1,
+      stacks = {
+        {
+          trunk = { branch = "main" },
+          branches = { { branch = "a1" }, { branch = "b1" } },
+        },
+      },
+    }),
+  }, cwd .. "/.git/gh-stack")
+
+  return cwd
+end
+
 -- ── Polling helpers ──────────────────────────────────────────────────────────
 
 function M.feed(keys)

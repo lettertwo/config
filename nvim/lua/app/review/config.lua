@@ -60,6 +60,7 @@ M.defaults = {
       ["a"] = "stage_all",
       ["i"] = "cycle_mode",
       ["t"] = "toggle_tree",
+      ["c"] = "toggle_commits",
       ["r"] = "toggle_stack_order",
       ["K"] = "peek",
     },

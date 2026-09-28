@@ -12,12 +12,19 @@ local M = {}
 local git = require("app.review.diff.git")
 local parser = require("app.review.diff.parser")
 
+-- Cap on diffs in flight at once. The commits unit can hand this dozens of
+-- specs (a branch's full first-parent history); firing them all at once
+-- floods libuv's bounded threadpool and every other pending diff queues
+-- behind them. Harmless at branch-mode's usual handful of specs.
+local MAX_INFLIGHT = 8
+
 ---@class Review.ChangesetSpec
 ---@field id string
 ---@field title string
 ---@field base string
 ---@field head string
 ---@field pr_number? integer
+---@field branch? string  commit-unit specs only: the owning branch, for the outline's header label
 ---@field current? boolean  fetch this spec's diff before its siblings (the
 ---                          changeset the caller expects to land on)
 
@@ -36,6 +43,7 @@ local function make_slot(spec, shas, status, files, err)
     base_sha = shas[spec.base],
     head_sha = shas[spec.head],
     pr_number = spec.pr_number,
+    branch = spec.branch,
     files = files,
     status = status,
     error = err,
@@ -107,23 +115,34 @@ function M.build(cwd, specs, prev, callback)
       table.insert(kickoff, 1, current_i)
     end
 
-    for _, i in ipairs(kickoff) do
-      local spec = specs[i]
-      git.diff(cwd, spec.base, spec.head, function(raw, err)
-        if err then
-          slots[i] = make_slot(spec, shas, "failed", {}, err)
-        else
-          local files = parser.parse(raw or "")
-          for _, f in ipairs(files) do
-            f.changeset_id = spec.id
-            f.base_ref = spec.base
-            f.head_ref = spec.head
+    -- Feed the queue MAX_INFLIGHT at a time, in kickoff order (current
+    -- first); each settle starts the next queued spec.
+    local next_pos, inflight = 1, 0
+    local function start_more()
+      while inflight < MAX_INFLIGHT and next_pos <= #kickoff do
+        local i = kickoff[next_pos]
+        next_pos = next_pos + 1
+        inflight = inflight + 1
+        local spec = specs[i]
+        git.diff(cwd, spec.base, spec.head, function(raw, err)
+          inflight = inflight - 1
+          if err then
+            slots[i] = make_slot(spec, shas, "failed", {}, err)
+          else
+            local files = parser.parse(raw or "")
+            for _, f in ipairs(files) do
+              f.changeset_id = spec.id
+              f.base_ref = spec.base
+              f.head_ref = spec.head
+            end
+            slots[i] = make_slot(spec, shas, "ready", files)
           end
-          slots[i] = make_slot(spec, shas, "ready", files)
-        end
-        snapshot()
-      end)
+          snapshot()
+          start_more()
+        end)
+      end
     end
+    start_more()
   end)
 end
 
