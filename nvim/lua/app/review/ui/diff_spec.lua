@@ -384,3 +384,195 @@ describe("diff.render alignment re-acquire", function()
     dv:destroy()
   end)
 end)
+
+describe("diff._render_inline lnums (old/new statuscolumn data)", function()
+  vim.cmd.packadd("codediff.nvim")
+  local diff = require("app.review.ui.diff")
+  local git = require("app.review.diff.git")
+
+  -- One-shot git.show stub: HEAD answers with old_content, anything else
+  -- (WORKTREE) with new_content. No retry simulation — every fixture here
+  -- gives old/new lengths that exactly cover their hunks, so the
+  -- tail-length re-acquire in DiffView:render never triggers.
+  local function stub_show(old_content, new_content)
+    local orig = git.show
+    git.show = function(_, ref, _, cb)
+      cb(ref == "HEAD" and old_content or new_content, nil)
+    end
+    return function()
+      git.show = orig
+    end
+  end
+
+  local function make_view()
+    return diff.new({ win = vim.api.nvim_get_current_win() })
+  end
+
+  local function render(file, old_content, new_content)
+    local restore = stub_show(old_content, new_content)
+    local dv = make_view()
+    local done = false
+    dv:render(file, "/tmp", function()
+      done = true
+    end)
+    restore()
+    assert.is_true(done)
+    return dv
+  end
+
+  it("mixed hunk: context, paired change, pure del, pure add", function()
+    local hunks = {
+      {
+        old_start = 1,
+        old_count = 10,
+        new_start = 1,
+        new_count = 10,
+        lines = {
+          { kind = "ctx", text = "a", old_lnum = 1, new_lnum = 1 },
+          { kind = "ctx", text = "b", old_lnum = 2, new_lnum = 2 },
+          { kind = "del", text = "OLD1", old_lnum = 3 },
+          { kind = "add", text = "NEW1", new_lnum = 3 },
+          { kind = "ctx", text = "c", old_lnum = 4, new_lnum = 4 },
+          { kind = "ctx", text = "d", old_lnum = 5, new_lnum = 5 },
+          { kind = "del", text = "OLDX", old_lnum = 6 },
+          { kind = "ctx", text = "e", old_lnum = 7, new_lnum = 6 },
+          { kind = "add", text = "ADDED", new_lnum = 7 },
+          { kind = "ctx", text = "f", old_lnum = 8, new_lnum = 8 },
+          { kind = "ctx", text = "g", old_lnum = 9, new_lnum = 9 },
+          { kind = "ctx", text = "h", old_lnum = 10, new_lnum = 10 },
+        },
+      },
+    }
+    local dv = render(
+      { path = "f.txt", hunks = hunks },
+      "a\nb\nOLD1\nc\nd\nOLDX\ne\nf\ng\nh",
+      "a\nb\nNEW1\nc\nd\ne\nADDED\nf\ng\nh"
+    )
+    local lnums = dv.right.lnums
+    assert.is_false(lnums.deleted)
+    assert.equals(2, lnums.width) -- max(10, 10) → "10"
+
+    -- Context rows carry the old number; add rows (NEW1@3, ADDED@7) don't.
+    assert.same({ [1] = 1, [2] = 2, [4] = 4, [5] = 5, [6] = 7, [8] = 8, [9] = 9, [10] = 10 }, lnums.old_of)
+
+    -- Paired change: OLD1's del virt anchors above row 2 (NEW1's row).
+    assert.equals(1, #lnums.virt_old[2])
+    assert.equals(3, lnums.virt_old[2][1].lnum)
+    -- Pure del: OLDX anchors above row 5 (ctx "e"'s row, the next segment).
+    assert.equals(1, #lnums.virt_old[5])
+    assert.equals(6, lnums.virt_old[5][1].lnum)
+    -- Pure add (ADDED) contributes no del entries. del_virts[anchor] is
+    -- unconditionally created per change segment (see _render_inline), so
+    -- virt_old[6] may exist as an empty list rather than nil — either way,
+    -- an empty virt_lines extmark never renders, so v:virtnum never goes
+    -- negative on that row and the statuscolumn never looks it up.
+    assert.equals(0, #(lnums.virt_old[6] or {}))
+
+    dv:destroy()
+  end)
+
+  it("del-only hunk at top of file", function()
+    local hunks = {
+      {
+        old_start = 1,
+        old_count = 3,
+        new_start = 1,
+        new_count = 2,
+        lines = {
+          { kind = "del", text = "x", old_lnum = 1 },
+          { kind = "ctx", text = "a", old_lnum = 2, new_lnum = 1 },
+          { kind = "ctx", text = "b", old_lnum = 3, new_lnum = 2 },
+        },
+      },
+    }
+    local dv = render({ path = "f.txt", hunks = hunks }, "x\na\nb", "a\nb")
+    local lnums = dv.right.lnums
+    assert.same({ [1] = 2, [2] = 3 }, lnums.old_of)
+    -- Anchor is the next ctx line ("a", new_lnum 1) → row 0, above the
+    -- first real row.
+    assert.equals(1, #lnums.virt_old[0])
+    assert.equals(1, lnums.virt_old[0][1].lnum)
+    dv:destroy()
+  end)
+
+  it("trailing dels plus above-dels on the last row: visual order (above then below)", function()
+    local hunks = {
+      {
+        old_start = 1,
+        old_count = 5,
+        new_start = 1,
+        new_count = 3,
+        lines = {
+          { kind = "ctx", text = "a", old_lnum = 1, new_lnum = 1 },
+          { kind = "ctx", text = "b", old_lnum = 2, new_lnum = 2 },
+          { kind = "del", text = "OLDLAST", old_lnum = 3 },
+          { kind = "add", text = "NEWLAST", new_lnum = 3 },
+          { kind = "del", text = "TAIL1", old_lnum = 4 },
+          { kind = "del", text = "TAIL2", old_lnum = 5 },
+        },
+      },
+    }
+    local dv = render(
+      { path = "f.txt", hunks = hunks },
+      "a\nb\nOLDLAST\nTAIL1\nTAIL2",
+      "a\nb\nNEWLAST"
+    )
+    local lnums = dv.right.lnums
+    local last_row = 2 -- #new_lines - 1
+    assert.equals(3, #lnums.virt_old[last_row])
+    -- Above-anchored OLDLAST first, then the trailing TAIL1/TAIL2 in file order.
+    assert.equals(3, lnums.virt_old[last_row][1].lnum)
+    assert.equals(4, lnums.virt_old[last_row][2].lnum)
+    assert.equals(5, lnums.virt_old[last_row][3].lnum)
+    dv:destroy()
+  end)
+
+  it("deleted file: buffer holds the old file, lnums flags it and carries no old_of/virt_old", function()
+    local hunks = {
+      {
+        old_start = 1,
+        old_count = 3,
+        new_start = 0,
+        new_count = 0,
+        lines = {
+          { kind = "del", text = "a", old_lnum = 1 },
+          { kind = "del", text = "b", old_lnum = 2 },
+          { kind = "del", text = "c", old_lnum = 3 },
+        },
+      },
+    }
+    local dv = render({ path = "f.txt", status = "D", hunks = hunks }, "a\nb\nc", "")
+    local lnums = dv.right.lnums
+    assert.is_true(lnums.deleted)
+    assert.same({}, lnums.old_of)
+    assert.same({}, lnums.virt_old)
+    assert.equals(1, lnums.width) -- #tostring(3)
+    dv:destroy()
+  end)
+
+  it("added file: old_of stays empty so the old column blanks throughout", function()
+    local hunks = {
+      {
+        old_start = 0,
+        old_count = 0,
+        new_start = 1,
+        new_count = 2,
+        lines = {
+          { kind = "add", text = "l1", new_lnum = 1 },
+          { kind = "add", text = "l2", new_lnum = 2 },
+        },
+      },
+    }
+    local dv = render({ path = "f.txt", status = "A", hunks = hunks }, "", "l1\nl2")
+    local lnums = dv.right.lnums
+    assert.is_false(lnums.deleted)
+    assert.same({}, lnums.old_of)
+    -- The whole-file add is one change segment anchored at new_lnum 1, so
+    -- del_virts[1] (and virt_old[0]) exists as an empty list rather than
+    -- nil — harmless, since an empty virt_lines extmark never renders (see
+    -- the mixed-hunk case above for the same nuance).
+    assert.equals(0, #(lnums.virt_old[0] or {}))
+    assert.equals(1, lnums.width) -- #tostring(2)
+    dv:destroy()
+  end)
+end)

@@ -6,6 +6,7 @@
 -- here.
 
 local signs = require("app.review.ui.signs")
+local statuscolumn = require("app.review.ui.statuscolumn")
 
 local M = {}
 
@@ -22,12 +23,19 @@ local fold_ns = vim.api.nvim_create_namespace("review_fold_gutter")
 ---@field first_diff integer -- first row that is an add or a del anchor
 ---@field last_diff integer
 
+---@class Review.Lnums
+---@field old_of table<integer, integer>  new_lnum → old_lnum (nil for added rows)
+---@field virt_old table<integer, {lnum: integer, hl: string}[]>  row → visual-order old numbers for its virt_lines
+---@field width integer  digits to right-align old/new numbers to
+---@field deleted boolean  true for a "D" status pane: the buffer holds the old file, so v:lnum is the old number and the new column stays blank
+
 ---@class Review.Pane
 ---@field bufnr integer
 ---@field win integer?  bound window; nil while unshown (left pane outside sbs)
 ---@field hunk_rows Review.HunkRows[]  ordered top-to-bottom; nav anchors
 ---@field row_map table<integer, Review.RowInfo>
 ---@field fold_ranges {s:integer,e:integer}[]
+---@field lnums Review.Lnums?  inline old/new line-number data; nil routes the statuscolumn through Snacks
 local Pane = {}
 Pane.__index = Pane
 
@@ -38,6 +46,7 @@ function M.new()
   self.hunk_rows = {}
   self.row_map = {}
   self.fold_ranges = {}
+  self.lnums = nil
 
   local bufnr = vim.api.nvim_create_buf(false, true)
   vim.bo[bufnr].buftype = "nofile"
@@ -46,6 +55,7 @@ function M.new()
   vim.bo[bufnr].modifiable = false
   vim.bo[bufnr].filetype = "review-diff"
   self.bufnr = bufnr
+  statuscolumn.register(bufnr, self)
 
   return self
 end
@@ -66,6 +76,10 @@ function Pane:bind(win)
     vim.wo[win].foldcolumn = "1"
     vim.wo[win].conceallevel = 0
     vim.wo[win].wrap = false
+    -- number/signcolumn/foldcolumn above still key the column width and
+    -- v:relnum; the function itself picks old/new-number vs. plain Snacks
+    -- per buffer, so no layout switch has to toggle this option.
+    vim.wo[win].statuscolumn = "%!v:lua.require'app.review.ui.statuscolumn'.get()"
   end
 end
 
@@ -102,6 +116,7 @@ function Pane:clear()
   self.hunk_rows = {}
   self.row_map = {}
   self.fold_ranges = {}
+  self.lnums = nil
 end
 
 -- Returns the complement of `visible` within [0, total-1] as sorted fold ranges.
@@ -186,6 +201,7 @@ function Pane:refold()
 end
 
 function Pane:destroy()
+  statuscolumn.unregister(self.bufnr)
   if vim.api.nvim_buf_is_valid(self.bufnr) then
     pcall(vim.api.nvim_buf_delete, self.bufnr, { force = true })
   end

@@ -701,7 +701,9 @@ function DiffView:_render_inline(file, old_lines, new_lines)
   local pick_add, pick_del = group_pickers(self._render_mode, file)
 
   if file.status == "D" then
-    -- Deleted file: show the old content, every line marked deleted.
+    -- Deleted file: show the old content, every line marked deleted. The
+    -- buffer holds the old file, so v:lnum already is the old number; the
+    -- statuscolumn blanks the new column for every row.
     self.right:write(old_lines)
     self.right:set_ft(file.old_path or file.path)
     for i = 1, #old_lines do
@@ -715,6 +717,7 @@ function DiffView:_render_inline(file, old_lines, new_lines)
     local last = math.max(0, #old_lines - 1)
     self.right.hunk_rows = { { s = 0, e = last, first_diff = 0, last_diff = last } }
     self._sorted_hunks = file.hunks
+    self.right.lnums = { old_of = {}, virt_old = {}, width = #tostring(math.max(1, #old_lines)), deleted = true }
     self:_show()
     self:_apply_folds()
     self._rendered_file = file
@@ -740,6 +743,32 @@ function DiffView:_render_inline(file, old_lines, new_lines)
   local add_word = {}     -- new_lnum → [{col,end_col,hl_group}]
   local del_virts = {}    -- anchor new_lnum → list of virt_line chunk lists
   local del_sign_hl = {}  -- anchor new_lnum → sign group for the pure-del marker
+  local del_lnum_hl = {}  -- anchor new_lnum → list of {lnum = old_lnum, hl}, parallel to del_virts
+
+  -- old_of[new_lnum]: the old line number for context rows, nil for added
+  -- rows. Outside a hunk, old = new + offset; the offset is the hunk's
+  -- old/new start-count delta, carried forward from the last hunk seen.
+  -- Inside a hunk, ctx lines carry old_lnum straight from the parser.
+  local old_of = {}
+  do
+    local offset = 0
+    local cur_new = 1
+    for _, hunk in ipairs(sorted) do
+      for lnum = cur_new, hunk.new_start - 1 do
+        old_of[lnum] = lnum + offset
+      end
+      for _, line in ipairs(hunk.lines) do
+        if line.kind == "ctx" then
+          old_of[line.new_lnum] = line.old_lnum
+        end
+      end
+      offset = (hunk.old_start + hunk.old_count) - (hunk.new_start + hunk.new_count)
+      cur_new = hunk.new_start + hunk.new_count
+    end
+    for lnum = cur_new, #new_lines do
+      old_of[lnum] = lnum + offset
+    end
+  end
 
   for _, hunk in ipairs(sorted) do
     local segs = pair.segments(hunk.lines)
@@ -768,6 +797,7 @@ function DiffView:_render_inline(file, old_lines, new_lines)
         end
 
         del_virts[anchor_lnum] = del_virts[anchor_lnum] or {}
+        del_lnum_hl[anchor_lnum] = del_lnum_hl[anchor_lnum] or {}
         for j, dl in ipairs(seg.dels) do
           local wd = wdiffs[j]
           local grp = pick_del(dl.old_lnum)
@@ -778,6 +808,7 @@ function DiffView:_render_inline(file, old_lines, new_lines)
             del_virts[anchor_lnum],
             build_virt_chunks(dl.text, ts_hl_map[dl.old_lnum - 1], wd and wd.removed, grp)
           )
+          table.insert(del_lnum_hl[anchor_lnum], { lnum = dl.old_lnum, hl = grp.sign_del })
         end
 
         for j, al in ipairs(seg.adds) do
@@ -798,6 +829,11 @@ function DiffView:_render_inline(file, old_lines, new_lines)
   self.right:write(new_lines)
   self.right:set_ft(file.path)
 
+  -- virt_old[row]: the statuscolumn's flat, visual-order list of old-side
+  -- numbers for a row's virt_lines (above-dels first, then below/trailing —
+  -- the same order the del virt_lines themselves render in).
+  local virt_old = {}
+
   for lnum = 1, #new_lines do
     local row = lnum - 1
     row_map[row] = { lnum = lnum, side = "RIGHT", text = new_lines[lnum] }
@@ -807,6 +843,10 @@ function DiffView:_render_inline(file, old_lines, new_lines)
         virt_lines = del_virts[lnum],
         virt_lines_above = true,
       } })
+      virt_old[row] = virt_old[row] or {}
+      for _, e in ipairs(del_lnum_hl[lnum]) do
+        table.insert(virt_old[row], e)
+      end
       -- Pure-del anchor (context line): mark the line above the virt dels,
       -- which is the visual top (virt_lines_above renders above the anchor).
       if not add_set[lnum] and row > 0 then
@@ -826,18 +866,30 @@ function DiffView:_render_inline(file, old_lines, new_lines)
     end
   end
 
-  -- Trailing del virts (anchor beyond the last line).
+  -- Trailing del virts (anchor beyond the last line): visually below the
+  -- last real row, so their old numbers append after any above-dels already
+  -- queued on that same row.
   local trailing_anchor = #new_lines + 1
+  local last_row = math.max(0, #new_lines - 1)
   if del_virts[trailing_anchor] then
-    local last_row = math.max(0, #new_lines - 1)
     table.insert(exts, { row = last_row, col = 0, opts = {
       virt_lines = del_virts[trailing_anchor],
       virt_lines_above = false,
     } })
+    virt_old[last_row] = virt_old[last_row] or {}
+    for _, e in ipairs(del_lnum_hl[trailing_anchor]) do
+      table.insert(virt_old[last_row], e)
+    end
   end
 
   apply_exts(self.right.bufnr, signs.ns, exts)
   self.right.row_map = row_map
+  self.right.lnums = {
+    old_of = old_of,
+    virt_old = virt_old,
+    width = #tostring(math.max(1, #old_lines, #new_lines)),
+    deleted = false,
+  }
 
   -- Hunk row ranges (row = new_lnum - 1). first_diff/last_diff: first/last
   -- row that is an add or a del anchor — nav targets.
@@ -1018,6 +1070,10 @@ end
 ---@param old_lines string[]
 ---@param new_lines string[]
 function DiffView:_render_sbs(file, old_lines, new_lines)
+  -- sbs keeps its single Snacks-drawn number column; leaving lnums nil on
+  -- both panes is what routes the statuscolumn back through Snacks.
+  self.right.lnums = nil
+  self.left.lnums = nil
   self.right:write(new_lines)
   self.left:write(old_lines)
   self.right:set_ft(file.path)
