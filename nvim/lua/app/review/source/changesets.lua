@@ -12,12 +12,6 @@ local M = {}
 local git = require("app.review.diff.git")
 local parser = require("app.review.diff.parser")
 
--- Cap on diffs in flight at once. The commits unit can hand this dozens of
--- specs (a branch's full first-parent history); firing them all at once
--- floods libuv's bounded threadpool and every other pending diff queues
--- behind them. Harmless at branch-mode's usual handful of specs.
-local MAX_INFLIGHT = 8
-
 ---@class Review.ChangesetSpec
 ---@field id string
 ---@field title string
@@ -115,34 +109,23 @@ function M.build(cwd, specs, prev, callback)
       table.insert(kickoff, 1, current_i)
     end
 
-    -- Feed the queue MAX_INFLIGHT at a time, in kickoff order (current
-    -- first); each settle starts the next queued spec.
-    local next_pos, inflight = 1, 0
-    local function start_more()
-      while inflight < MAX_INFLIGHT and next_pos <= #kickoff do
-        local i = kickoff[next_pos]
-        next_pos = next_pos + 1
-        inflight = inflight + 1
-        local spec = specs[i]
-        git.diff(cwd, spec.base, spec.head, function(raw, err)
-          inflight = inflight - 1
-          if err then
-            slots[i] = make_slot(spec, shas, "failed", {}, err)
-          else
-            local files = parser.parse(raw or "")
-            for _, f in ipairs(files) do
-              f.changeset_id = spec.id
-              f.base_ref = spec.base
-              f.head_ref = spec.head
-            end
-            slots[i] = make_slot(spec, shas, "ready", files)
+    for _, i in ipairs(kickoff) do
+      local spec = specs[i]
+      git.diff(cwd, spec.base, spec.head, function(raw, err)
+        if err then
+          slots[i] = make_slot(spec, shas, "failed", {}, err)
+        else
+          local files = parser.parse(raw or "")
+          for _, f in ipairs(files) do
+            f.changeset_id = spec.id
+            f.base_ref = spec.base
+            f.head_ref = spec.head
           end
-          snapshot()
-          start_more()
-        end)
-      end
+          slots[i] = make_slot(spec, shas, "ready", files)
+        end
+        snapshot()
+      end)
     end
-    start_more()
   end)
 end
 

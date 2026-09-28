@@ -168,11 +168,9 @@ function M.new(opts)
       end
       local all = {}
       for _, cs in ipairs(stack_result) do
-        -- stale keys are node (branch) ids; a commit spec's id is a sha, so
-        -- this never matches with the commits unit on — the simpler of the
-        -- plan's two options (append to the branch label, or skip), since a
-        -- restacked branch's own commit shas already differ from what a
-        -- stale reuse would have matched anyway.
+        -- stale keys are node (branch) ids and a commit spec's id is a sha,
+        -- so with the commits unit on no header gets the restack mark; the
+        -- mark describes a branch, and commit headers don't stand for one.
         if stale and stale[cs.id] and cs.status == "ready" then
           -- A view, not a mutation: stack_result is also handed back to
           -- build_changesets as `prev` next time, and the raw title is what
