@@ -301,6 +301,35 @@ describe("diff._sbs_annotations", function()
   end)
 end)
 
+describe("diff._build_virt_chunks: innermost treesitter capture wins", function()
+  local diff = require("app.review.ui.diff")
+
+  it("a call name and a string escape both pick the last, most specific capture", function()
+    local text = 'let s = Foo::new("a\\n");'
+    local per_line = diff._ts_highlights_for_lines({ text }, "rust")
+    local chunks = diff._build_virt_chunks(text, per_line[0], nil, nil)
+
+    local function group_for(seg_text)
+      for _, c in ipairs(chunks) do
+        if c[1] == seg_text then
+          return c[2]
+        end
+      end
+    end
+
+    -- The call name overlaps a plain @variable capture and a @function.call
+    -- one at the same span; the highlighter draws the latter last.
+    local new_grp = group_for("new")
+    assert.is_table(new_grp)
+    assert.equals("@function.call.rust", new_grp[2])
+
+    -- The escape sequence nests inside the wider @string capture.
+    local esc_grp = group_for("\\n")
+    assert.is_table(esc_grp)
+    assert.equals("@string.escape.rust", esc_grp[2])
+  end)
+end)
+
 describe("diff.render alignment re-acquire", function()
   vim.cmd.packadd("codediff.nvim")
   local diff = require("app.review.ui.diff")

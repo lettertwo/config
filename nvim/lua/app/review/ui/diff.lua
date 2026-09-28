@@ -122,8 +122,14 @@ local function apply_exts(bufnr, ns, exts)
   end
 end
 
+-- Neovim's real highlighter resolves overlapping captures by extmark
+-- priority (ties go to the extmark drawn last); mirror that here so a
+-- deleted line's virt_line rendering picks the same group the buffer would
+-- have shown. Query directives set this per match via `(#set! "priority" n)`.
+local TS_DEFAULT_PRIORITY = vim.highlight.priorities.treesitter
+
 -- Compute treesitter highlights for a list of lines with the given filetype.
--- Returns per_line_hl[0-indexed-row] = [{col, end_col, hl_group}].
+-- Returns per_line_hl[0-indexed-row] = [{col, end_col, hl_group, priority}].
 -- Silently returns {} when no parser is available for ft.
 local function ts_highlights_for_lines(lines, ft)
   if not ft or ft == "" or #lines == 0 then
@@ -157,8 +163,9 @@ local function ts_highlights_for_lines(lines, ft)
     return group
   end
   local per_line = {}
-  for id, node in query:iter_captures(trees[1]:root(), bufnr, 0, -1) do
+  for id, node, metadata in query:iter_captures(trees[1]:root(), bufnr, 0, -1) do
     local hl_group = resolve_hl(query.captures[id])
+    local priority = (metadata and tonumber(metadata.priority)) or TS_DEFAULT_PRIORITY
     local sr, sc, er, ec = node:range()
     for row = sr, er do
       local line = lines[row + 1] or ""
@@ -166,13 +173,16 @@ local function ts_highlights_for_lines(lines, ft)
       local col_e = (row == er) and ec or #line
       if col_s < col_e then
         per_line[row] = per_line[row] or {}
-        table.insert(per_line[row], { col = col_s, end_col = col_e, hl_group = hl_group })
+        table.insert(per_line[row], { col = col_s, end_col = col_e, hl_group = hl_group, priority = priority })
       end
     end
   end
   vim.api.nvim_buf_delete(bufnr, { force = true })
   return per_line
 end
+
+-- Exposed for unit tests.
+M._ts_highlights_for_lines = ts_highlights_for_lines
 
 -- Build virt_line chunks for a deleted line with treesitter and word-diff
 -- highlight layers. Extmarks cannot attach to virt_lines, so both layers must
@@ -218,11 +228,16 @@ local function build_virt_chunks(text, ts_hl, wd_hl, grp)
       if covered_by_word then
         table.insert(chunks, { seg, grp.del_word })
       else
-        local ts_group
+        -- Several captures can cover the same segment (nested nodes); pick
+        -- the one Neovim's highlighter would draw last: highest priority,
+        -- ties broken by whichever came later in iteration order.
+        local ts_group, ts_pri
         for _, h in ipairs(ts_hl or {}) do
           if h.col <= s and h.end_col >= e then
-            ts_group = h.hl_group
-            break
+            local pri = h.priority or TS_DEFAULT_PRIORITY
+            if not ts_group or pri >= ts_pri then
+              ts_group, ts_pri = h.hl_group, pri
+            end
           end
         end
         -- Combine bg (background) with ts_group (foreground) via multi-group chunk.
@@ -237,6 +252,9 @@ local function build_virt_chunks(text, ts_hl, wd_hl, grp)
   table.insert(chunks, { string.rep(" ", fill), grp.del })
   return chunks
 end
+
+-- Exposed for unit tests.
+M._build_virt_chunks = build_virt_chunks
 
 -- Emit the extmarks for one real changed line (add or full-file del):
 -- char-level background at priority 100 (word-diff overlays at 1000 override
@@ -733,9 +751,10 @@ function DiffView:_render_inline(file, old_lines, new_lines)
     return a.new_start < b.new_start
   end)
 
-  local ft = vim.filetype.match({ filename = file.path }) or ""
   -- Treesitter highlights for old_lines (syntax-colors the del virt_lines).
-  local ts_hl_map = ts_highlights_for_lines(old_lines, ft)
+  -- A rename's old content is filetyped by old_path, matching _render_sbs.
+  local old_ft = vim.filetype.match({ filename = file.old_path or file.path }) or ""
+  local ts_hl_map = ts_highlights_for_lines(old_lines, old_ft)
 
   -- Per-lnum annotation maps built from hunk segments.
   local add_set = {}      -- new_lnum → true
