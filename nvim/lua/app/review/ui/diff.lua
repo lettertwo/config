@@ -761,6 +761,12 @@ function DiffView:_render_inline(file, old_lines, new_lines)
   local del_sign_hl = {}  -- anchor new_lnum → sign group for the pure-del marker
   local del_lnum_hl = {}  -- anchor new_lnum → list of {lnum = old_lnum, hl}, parallel to del_virts
 
+  -- An added or untracked file has no old side to word-diff against, and
+  -- every one of its lines is a pure-add segment (status == "D" never
+  -- reaches here — it returns from the whole-file branch above): whole-line
+  -- emphasis would light up the entire buffer rather than marking anything.
+  local whole_file_unpaired = file.status == "A" or file.status == "U"
+
   -- old_of[new_lnum]: the old line number for context rows, nil for added
   -- rows. Outside a hunk, old = new + offset; the offset is the hunk's
   -- old/new start-count delta, carried forward from the last hunk seen.
@@ -820,9 +826,15 @@ function DiffView:_render_inline(file, old_lines, new_lines)
           if not del_sign_hl[anchor_lnum] then
             del_sign_hl[anchor_lnum] = grp.sign_del
           end
+          local wd_removed = wd and wd.removed
+          if not wd_removed and j > n_pair and not whole_file_unpaired then
+            -- Unpaired del: nothing to word-diff against, so emphasize the
+            -- whole line rather than leaving it on the line wash alone.
+            wd_removed = { { col = 0, end_col = #dl.text } }
+          end
           table.insert(
             del_virts[anchor_lnum],
-            build_virt_chunks(dl.text, ts_hl_map[dl.old_lnum - 1], wd and wd.removed, grp)
+            build_virt_chunks(dl.text, ts_hl_map[dl.old_lnum - 1], wd_removed, grp)
           )
           table.insert(del_lnum_hl[anchor_lnum], { lnum = dl.old_lnum, hl = grp.sign_del })
         end
@@ -835,6 +847,8 @@ function DiffView:_render_inline(file, old_lines, new_lines)
           local wd = wdiffs[j]
           if wd then
             add_word[al.new_lnum] = wd.added
+          elseif j > n_pair and not whole_file_unpaired then
+            add_word[al.new_lnum] = { { col = 0, end_col = #al.text } }
           end
         end
       end
@@ -979,7 +993,7 @@ end
 ---@param hunks Review.Hunk[]  sorted by old_start
 ---@param old_lines string[]
 ---@param new_lines string[]
----@param pickers? {pick_add: fun(new_lnum: integer): table, pick_del: fun(old_lnum: integer): table}
+---@param pickers? {pick_add: fun(new_lnum: integer): table, pick_del: fun(old_lnum: integer): table, status: string?}
 ---@return {exts_l: table[], exts_r: table[], fillers_l: {row:integer,count:integer,above:boolean}[], fillers_r: {row:integer,count:integer,above:boolean}[], hunk_rows_l: Review.HunkRows[], hunk_rows_r: Review.HunkRows[]}
 function M._sbs_annotations(hunks, old_lines, new_lines, pickers)
   local plain = function(_)
@@ -987,6 +1001,11 @@ function M._sbs_annotations(hunks, old_lines, new_lines, pickers)
   end
   local pick_add = pickers and pickers.pick_add or plain
   local pick_del = pickers and pickers.pick_del or plain
+  -- A whole added/untracked/deleted file is entirely unpaired content on
+  -- one side; whole-line emphasis would light up every row rather than
+  -- marking anything, so it's suppressed by status, not by hunk shape.
+  local status = pickers and pickers.status
+  local whole_file_unpaired = status == "A" or status == "U" or status == "D"
   local exts_l, exts_r = {}, {}
   local fillers_l, fillers_r = {}, {}
   local hunk_rows_l, hunk_rows_r = {}, {}
@@ -1034,7 +1053,13 @@ function M._sbs_annotations(hunks, old_lines, new_lines, pickers)
           local wd = wdiffs[j]
           local grp = pick_del(dl.old_lnum)
           local sign = j <= n_pair and grp.sign_change or grp.sign_del
-          emit_line_exts(exts_l, row, dl.text, grp.del, sign, wd and wd.removed, grp.del_word)
+          local word_ranges = wd and wd.removed
+          if not word_ranges and j > n_pair and not whole_file_unpaired then
+            -- Unpaired del: nothing to word-diff against, so emphasize the
+            -- whole line rather than leaving it on the line wash alone.
+            word_ranges = { { col = 0, end_col = #dl.text } }
+          end
+          emit_line_exts(exts_l, row, dl.text, grp.del, sign, word_ranges, grp.del_word)
           fd_l = fd_l or row
           ld_l = row
         end
@@ -1043,7 +1068,11 @@ function M._sbs_annotations(hunks, old_lines, new_lines, pickers)
           local wd = wdiffs[j]
           local grp = pick_add(al.new_lnum)
           local sign = j <= n_pair and grp.sign_change or grp.sign_add
-          emit_line_exts(exts_r, row, al.text, grp.add, sign, wd and wd.added, grp.add_word)
+          local word_ranges = wd and wd.added
+          if not word_ranges and j > n_pair and not whole_file_unpaired then
+            word_ranges = { { col = 0, end_col = #al.text } }
+          end
+          emit_line_exts(exts_r, row, al.text, grp.add, sign, word_ranges, grp.add_word)
           fd_r = fd_r or row
           ld_r = row
         end
@@ -1105,7 +1134,8 @@ function DiffView:_render_sbs(file, old_lines, new_lines)
   end)
   self._sorted_hunks = sorted
   local pick_add, pick_del = group_pickers(self._render_mode, file)
-  local ann = M._sbs_annotations(sorted, old_lines, new_lines, { pick_add = pick_add, pick_del = pick_del })
+  local ann =
+    M._sbs_annotations(sorted, old_lines, new_lines, { pick_add = pick_add, pick_del = pick_del, status = file.status })
 
   local function add_filler_exts(exts, fillers)
     for _, f in ipairs(fillers) do
