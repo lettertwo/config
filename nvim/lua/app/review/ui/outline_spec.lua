@@ -227,3 +227,48 @@ describe("outline._find_row", function()
     assert.is_nil(outline._find_row(items, fc("missing.lua", { changeset_id = "aaa" }), "flat"))
   end)
 end)
+
+describe("outline._format_item", function()
+  local picker = { opts = { icons = { tree = { vertical = "│ ", middle = "├╴", last = "└╴" } } } }
+
+  local function chunk(ret, hl)
+    for _, c in ipairs(ret) do
+      if c[2] == hl then
+        return c[1]
+      end
+    end
+  end
+
+  local function chunks(ret, hl)
+    local text = ""
+    for _, c in ipairs(ret) do
+      if c[2] == hl then
+        text = text .. c[1]
+      end
+    end
+    return text
+  end
+
+  it("changeset header carries the branch icon, an [i/n] counter, and a titled name", function()
+    local cs = { title = "add b", id = "x" }
+    local item = { type = "changeset", changeset = cs, _cs_idx = 2, _cs_total = 3 }
+    local ret = outline._format_item(item, picker, false)
+    local counter = chunks(ret, "ReviewOutlineCounter")
+    assert.is_true(counter:find("\u{f418}", 1, true) ~= nil, counter)
+    assert.is_true(counter:find("[2/3]", 1, true) ~= nil, counter)
+    assert.equals("add b", chunk(ret, "ReviewOutlineTitle"))
+  end)
+
+  it("changeset header appends the PR number in ReviewOutlineCounter", function()
+    local cs = { title = "add b", id = "x", pr_number = 42 }
+    local item = { type = "changeset", changeset = cs, _cs_idx = 1, _cs_total = 1 }
+    local ret = outline._format_item(item, picker, false)
+    local found = false
+    for _, c in ipairs(ret) do
+      if c[2] == "ReviewOutlineCounter" and c[1] == "  #42" then
+        found = true
+      end
+    end
+    assert.is_true(found)
+  end)
+end)
