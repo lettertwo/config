@@ -271,4 +271,41 @@ describe("outline._format_item", function()
     end
     assert.is_true(found)
   end)
+
+  it("a nested flat-mode file row (no parent) renders the basename then a dim dirname", function()
+    local item = { type = "file", change = fc("lua/app/a.lua") }
+    local ret = outline._format_item(item, picker, false)
+    assert.equals("  lua/app", chunk(ret, "ReviewOutlineDir"))
+  end)
+
+  it("a nested stack-mode file row (parented to a changeset header) renders a dim dirname", function()
+    local item = { type = "file", change = fc("lua/app/a.lua"), parent = { type = "changeset" } }
+    local ret = outline._format_item(item, picker, false)
+    assert.equals("  lua/app", chunk(ret, "ReviewOutlineDir"))
+  end)
+
+  it("a root-level file has no dirname chunk", function()
+    local item = { type = "file", change = fc("README.md") }
+    local ret = outline._format_item(item, picker, false)
+    assert.is_nil(chunk(ret, "ReviewOutlineDir"))
+  end)
+
+  it("a tree-mode file row (parented to a dir item) has no dirname chunk", function()
+    local item = { type = "file", change = fc("lua/app/a.lua"), parent = { type = "dir" } }
+    local ret = outline._format_item(item, picker, false)
+    assert.is_nil(chunk(ret, "ReviewOutlineDir"))
+  end)
+
+  it("a rename keeps old -> new basenames and appends the new path's dirname", function()
+    local item = { type = "file", change = fc("lua/app/b.lua", { old_path = "lua/old/a.lua" }) }
+    local ret = outline._format_item(item, picker, false)
+    local name = nil
+    for _, c in ipairs(ret) do
+      if c[1]:find("→", 1, true) then
+        name = c[1]
+      end
+    end
+    assert.equals("a.lua → b.lua", name)
+    assert.equals("  lua/app", chunk(ret, "ReviewOutlineDir"))
+  end)
 end)

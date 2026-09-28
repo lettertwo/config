@@ -359,6 +359,17 @@ function M._format_item(item, picker, can_stage)
     end
     ret[#ret + 1] = { fticon, fthl }
     ret[#ret + 1] = { name }
+    -- Flat and stack rows have no directory row above them (tree and
+    -- stack-tree file items are parented to one, which already carries the
+    -- path), so truncation would otherwise eat the dirname before whatever
+    -- part of it is being scanned for.
+    local nested_in_tree = item.parent and item.parent.type == "dir"
+    if not nested_in_tree then
+      local dirname = vim.fn.fnamemodify(file.path, ":h")
+      if dirname ~= "." then
+        ret[#ret + 1] = { "  " .. dirname, "ReviewOutlineDir" }
+      end
+    end
   elseif item.type == "empty" then
     ret[#ret + 1] = { item.text, "Comment" }
   end
