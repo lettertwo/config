@@ -60,5 +60,32 @@ return function(H)
   local staged = vim.system({ "git", "diff", "--cached" }, { cwd = cwd, text = true }):wait().stdout
   check("<leader>rs no-ops: git diff --cached stays empty", staged == "")
 
+  -- Unit cycle: combined (header + 2 files) → commit (2 headers + 2 files),
+  -- one changeset per commit on the range, newest current.
+  if picker then
+    picker:focus("list")
+    feed("i")
+    vim.wait(4000, function()
+      return picker:count() == 4
+    end, 50)
+    check("commit unit has 4 items (2 headers + 2 files)", picker:count() == 4, picker:count())
+    local headers = {}
+    for _, it in ipairs(picker:items()) do
+      if it.type == "changeset" then
+        table.insert(headers, it.changeset)
+      end
+    end
+    check("commit unit has a header per commit", #headers == 2, #headers)
+    if #headers == 2 then
+      -- Headers display head-first, so the newest commit is first.
+      check("newest commit is marked current", headers[1].current == true and not headers[2].current, vim.inspect(headers[1]))
+    end
+    feed("i")
+    vim.wait(4000, function()
+      return picker:count() == 3
+    end, 50)
+    check("cycling again returns to combined (3 items)", picker:count() == 3, picker:count())
+  end
+
   finish()
 end

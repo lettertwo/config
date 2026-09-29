@@ -129,4 +129,56 @@ function M.build(cwd, specs, prev, callback)
   end)
 end
 
+-- One spec per first-parent commit in base..head, oldest to newest. By
+-- default a commit's base chains to the next-older commit's sha and the
+-- oldest commit's base is `base` itself, so the specs tile base..head
+-- exactly (the stack source's shape). With `opts.parent_bases`, each commit
+-- diffs against its own `sha^` (the empty tree for a root commit) instead,
+-- which stays correct when `base` isn't a first-parent ancestor of `head`
+-- (a 2-dot range across diverged branches). `callback` runs once; a failed
+-- `git log` reports its error.
+---@param cwd string
+---@param base string
+---@param head string
+---@param opts {parent_bases?: boolean}
+---@param callback fun(specs: Review.ChangesetSpec[]?, err: string?)
+function M.commit_specs(cwd, base, head, opts, callback)
+  git.log_first_parent(cwd, base, head, function(commits, err)
+    if err then
+      callback(nil, err)
+      return
+    end
+    local function assemble(bases)
+      local specs = {}
+      for ci = #commits, 1, -1 do
+        local commit = commits[ci]
+        table.insert(specs, {
+          id = commit.sha,
+          title = commit.subject,
+          base = bases and bases[commit.sha] or (ci < #commits and commits[ci + 1].sha or base),
+          head = commit.sha,
+        })
+      end
+      callback(specs, nil)
+    end
+    if not opts.parent_bases or #commits == 0 then
+      assemble(nil)
+      return
+    end
+    local refs = {}
+    for _, commit in ipairs(commits) do
+      table.insert(refs, commit.sha .. "^")
+    end
+    git.rev_parse_many(cwd, refs, function(shas)
+      git.empty_tree(cwd, function(empty_sha)
+        local bases = {}
+        for _, commit in ipairs(commits) do
+          bases[commit.sha] = shas[commit.sha .. "^"] or empty_sha
+        end
+        assemble(bases)
+      end)
+    end)
+  end)
+end
+
 return M

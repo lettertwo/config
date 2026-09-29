@@ -96,7 +96,7 @@ describe("ref source (temp repo)", function()
       cwd = cwd,
       classified = { kind = "ref", shape = "range", dots = 2, base = "main", head = "feature" },
     })
-    assert.same({ "combined" }, src.units)
+    assert.same({ "combined", "commit" }, src.units)
     assert.equals("combined", src.default_unit)
     local changesets, err = load(src)
     assert.is_nil(err)
@@ -186,5 +186,41 @@ describe("ref source (temp repo)", function()
     assert.is_nil(err)
     assert.equals(1, #changesets)
     assert.same({}, changesets[1].files)
+  end)
+
+  it("a range offers the commit unit: one changeset per commit, each against its own parent", function()
+    local cwd, _, _, a_sha, b_sha = make_repo()
+    local src = ref.new({
+      cwd = cwd,
+      classified = { kind = "ref", shape = "range", dots = 2, base = "main", head = "feature" },
+    })
+    assert.same({ "combined", "commit" }, src.units)
+    assert.equals("combined", src.default_unit)
+    src:set_unit("commit")
+    local settled, err
+    src:load(function(cs, e)
+      if e then
+        err = e
+        return
+      end
+      for _, c in ipairs(cs) do
+        if c.status == "pending" then
+          return
+        end
+      end
+      settled = cs
+    end)
+    vim.wait(10000, function()
+      return settled ~= nil or err ~= nil
+    end, 50)
+    assert.is_nil(err)
+    assert.equals(2, #settled)
+    assert.equals(a_sha, settled[1].head_ref)
+    assert.equals(a_sha, settled[2].base_ref)
+    assert.equals(b_sha, settled[2].head_ref)
+    assert.is_true(settled[2].current)
+    assert.same({ "b.lua" }, vim.tbl_map(function(f)
+      return f.path
+    end, settled[2].files))
   end)
 end)
