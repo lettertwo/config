@@ -86,13 +86,13 @@ describe("diff._sbs_annotations", function()
     end) > 0)
     -- Paired change gets the change sign on both sides; unpaired adds don't.
     assert.equals(1, count(ann.exts_l, function(e)
-      return e.opts.sign_hl_group == "ReviewSignChange"
+      return e.opts.sign_hl_group == "ReviewSignGutterDeleteChange"
     end))
     assert.equals(1, count(ann.exts_r, function(e)
-      return e.opts.sign_hl_group == "ReviewSignChange"
+      return e.opts.sign_hl_group == "ReviewSignGutterAddChange"
     end))
     assert.equals(2, count(ann.exts_r, function(e)
-      return e.opts.sign_hl_group == "ReviewSignAdd"
+      return e.opts.sign_hl_group == "ReviewSignGutterAdd"
     end))
   end)
 

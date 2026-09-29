@@ -72,18 +72,6 @@ local function sign_slot(Snacks, win, buf, lnum, types)
   return "  "
 end
 
----@param entries {lnum: integer, hl: string}[]
----@param idx integer
----@param width integer
----@return string
-local function virt_number(entries, idx, width)
-  local e = entries[idx]
-  if not e then
-    return string.rep(" ", width)
-  end
-  return "%#" .. e.hl .. "#" .. pad(tostring(e.lnum), width) .. "%*"
-end
-
 -- Virtual line (del above/below its anchor, or a wrapped continuation): no
 -- signs to draw, so each sign slot is blank padding in the same position as
 -- on a real row (left slot, old, new, right slot). Padding both slots up
@@ -101,6 +89,16 @@ function M.get()
   local buf = vim.api.nvim_win_get_buf(win)
   local pane = panes[buf]
   local lnums = pane and pane.lnums
+  local virtnum = vim.v.virtnum
+
+  -- Virtual rows stack on their anchor's number_hl_group (the add row's
+  -- gutter, for dels above a change; the previous row's, for virt_lines
+  -- below it). Each branch below opens with the row's own gutter group and
+  -- never resets it, so the trailing fill to the column width takes it too.
+  -- A pane without lnums (sbs) has only filler virt rows.
+  if pane and not lnums and virtnum < 0 then
+    return "%#ReviewSignGutterFiller#"
+  end
 
   local Snacks = snacks_statuscolumn()
   if not lnums then
@@ -111,16 +109,16 @@ function M.get()
   end
 
   local width = lnums.width
-  local virtnum = vim.v.virtnum
   local lnum = vim.v.lnum
 
-  if virtnum ~= 0 then
-    local old_str = nil
-    if virtnum < 0 then
-      local entries = lnums.virt_old[lnum - 1] or {}
-      old_str = virt_number(entries, -virtnum, width)
+  if virtnum < 0 then
+    local e = (lnums.virt_old[lnum - 1] or {})[-virtnum]
+    if e then
+      return "%#" .. e.hl .. "#" .. M._virt_row(pad(tostring(e.lnum), width), width)
     end
-    return M._virt_row(old_str, width)
+    return "%#ReviewSignGutterFiller#" .. M._virt_row(nil, width)
+  elseif virtnum > 0 then
+    return M._virt_row(nil, width)
   end
 
   local left, right = "  ", "  "

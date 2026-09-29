@@ -28,18 +28,22 @@ local GROUPS_PLAIN = {
   del = "ReviewDiffDelete",
   add_word = "ReviewDiffAddWord",
   del_word = "ReviewDiffDeleteWord",
-  sign_add = "ReviewSignAdd",
-  sign_del = "ReviewSignDelete",
-  sign_change = "ReviewSignChange",
+  sign_add = "ReviewSignGutterAdd",
+  sign_del = "ReviewSignGutterDelete",
+  sign_change = "ReviewSignGutterAddChange",
+  sign_del_change = "ReviewSignGutterDeleteChange",
+  sign_marker = "ReviewSignGutterMarker",
 }
 local GROUPS_STAGED = {
   add = "ReviewDiffStagedAdd",
   del = "ReviewDiffStagedDelete",
   add_word = "ReviewDiffStagedAddWord",
   del_word = "ReviewDiffStagedDeleteWord",
-  sign_add = "ReviewSignStagedAdd",
-  sign_del = "ReviewSignStagedDelete",
-  sign_change = "ReviewSignStagedChange",
+  sign_add = "ReviewSignGutterStagedAdd",
+  sign_del = "ReviewSignGutterStagedDelete",
+  sign_change = "ReviewSignGutterStagedAddChange",
+  sign_del_change = "ReviewSignGutterStagedDeleteChange",
+  sign_marker = "ReviewSignGutterStagedMarker",
 }
 
 -- Per-line group pickers for a render mode. Attribution rests on coordinate
@@ -824,7 +828,7 @@ function DiffView:_render_inline(file, old_lines, new_lines)
           local wd = wdiffs[j]
           local grp = pick_del(dl.old_lnum)
           if not del_sign_hl[anchor_lnum] then
-            del_sign_hl[anchor_lnum] = grp.sign_del
+            del_sign_hl[anchor_lnum] = grp.sign_marker
           end
           local wd_removed = wd and wd.removed
           if not wd_removed and j > n_pair and not whole_file_unpaired then
@@ -880,7 +884,7 @@ function DiffView:_render_inline(file, old_lines, new_lines)
       -- Pure-del anchor (context line): mark the line above the virt dels,
       -- which is the visual top (virt_lines_above renders above the anchor).
       if not add_set[lnum] and row > 0 then
-        local sign = del_sign_hl[lnum] or "ReviewSignDelete"
+        local sign = del_sign_hl[lnum] or "ReviewSignGutterMarker"
         table.insert(exts, { row = row - 1, col = 0, opts = {
           sign_text = "▾",
           sign_hl_group = sign,
@@ -1052,7 +1056,7 @@ function M._sbs_annotations(hunks, old_lines, new_lines, pickers)
           local row = dl.old_lnum - 1
           local wd = wdiffs[j]
           local grp = pick_del(dl.old_lnum)
-          local sign = j <= n_pair and grp.sign_change or grp.sign_del
+          local sign = j <= n_pair and grp.sign_del_change or grp.sign_del
           local word_ranges = wd and wd.removed
           if not word_ranges and j > n_pair and not whole_file_unpaired then
             -- Unpaired del: nothing to word-diff against, so emphasize the
