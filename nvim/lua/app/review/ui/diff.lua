@@ -487,6 +487,9 @@ end
 -- to land over the blank.
 function DiffView:_clear_content()
   self:_clear_fold_sync()
+  for _, p in ipairs(self:panes()) do
+    p:defer_ft()
+  end
   self.right:write({})
   self.right:clear()
   if self.layout == "sbs" then
@@ -733,7 +736,8 @@ function DiffView:render(file, cwd, on_done, mode, on_blank)
   -- render is latest when it fires; a per-render timer would be superseded
   -- by the next step of a scan before it ever fired. Refreshes of the same
   -- file keep their content up instead.
-  if not same_file(prev, file) then
+  local switched = not same_file(prev, file)
+  if switched then
     self._on_blank = on_blank
     if self._rendered_file == nil and on_blank then
       -- Already blank: keep the label on the file being scanned to.
@@ -766,6 +770,13 @@ function DiffView:render(file, cwd, on_done, mode, on_blank)
       if tail_old ~= tail_new and retries_left > 0 then
         attempt(retries_left - 1)
         return
+      end
+      -- A switch away from a shown file writes without a filetype (see
+      -- Pane:defer_ft); the first render has nothing to hold back for.
+      if switched and prev then
+        for _, p in ipairs(self:panes()) do
+          p:defer_ft()
+        end
       end
       -- Fall back to inline when the left window vanished out-of-band (:q in
       -- the pane); the next toggle re-syncs the docket's layout state.

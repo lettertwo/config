@@ -956,3 +956,43 @@ describe("DiffView:render pending blank", function()
     dv:destroy()
   end)
 end)
+
+describe("Pane deferred filetype", function()
+  local pane = require("app.review.ui.pane")
+
+  local function past_delay()
+    vim.wait(pane.FT_DEFER_MS + 100, function()
+      return false
+    end)
+  end
+
+  it("applies set_ft at once until a switch defers it", function()
+    local p = pane.new()
+    p:set_ft("a.lua")
+    assert.equals("lua", vim.bo[p.bufnr].filetype)
+    p:destroy()
+  end)
+
+  it("drops the filetype on defer and applies the last set_ft once switches stop", function()
+    local p = pane.new()
+    p:set_ft("a.lua")
+    p:defer_ft()
+    assert.equals("", vim.bo[p.bufnr].filetype)
+    p:set_ft("a.rs")
+    -- A further switch inside the window restarts the wait.
+    vim.wait(math.floor(pane.FT_DEFER_MS / 2), function()
+      return false
+    end)
+    p:set_ft("b.lua")
+    vim.wait(math.floor(pane.FT_DEFER_MS / 2) + 10, function()
+      return false
+    end)
+    assert.equals("", vim.bo[p.bufnr].filetype)
+    past_delay()
+    assert.equals("lua", vim.bo[p.bufnr].filetype)
+    -- Settled: the next set_ft applies at once again.
+    p:set_ft("c.rs")
+    assert.equals("rust", vim.bo[p.bufnr].filetype)
+    p:destroy()
+  end)
+end)
