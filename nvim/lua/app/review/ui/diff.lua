@@ -135,8 +135,14 @@ local TS_DEFAULT_PRIORITY = vim.highlight.priorities.treesitter
 -- Compute treesitter highlights for a list of lines with the given filetype.
 -- Returns per_line_hl[0-indexed-row] = [{col, end_col, hl_group, priority}].
 -- Silently returns {} when no parser is available for ft.
-local function ts_highlights_for_lines(lines, ft)
-  if not ft or ft == "" or #lines == 0 then
+--
+-- rows (sorted, 0-indexed) limits the result to those rows. The whole file
+-- still parses, so a row inside a multi-line string or comment gets its
+-- context, but captures are only iterated over the runs of wanted rows:
+-- iterating a large file's captures costs several times its parse.
+---@param rows? integer[]
+local function ts_highlights_for_lines(lines, ft, rows)
+  if not ft or ft == "" or #lines == 0 or (rows and #rows == 0) then
     return {}
   end
   local bufnr = vim.api.nvim_create_buf(false, true)
@@ -166,18 +172,37 @@ local function ts_highlights_for_lines(lines, ft)
     hl_cache[name] = group
     return group
   end
+  -- Runs of consecutive wanted rows, {first, last} inclusive.
+  local runs = {}
+  if rows then
+    for _, r in ipairs(rows) do
+      local last = runs[#runs]
+      if last and r <= last[2] + 1 then
+        last[2] = math.max(last[2], r)
+      else
+        table.insert(runs, { r, r })
+      end
+    end
+  else
+    runs[1] = { 0, #lines - 1 }
+  end
   local per_line = {}
-  for id, node, metadata in query:iter_captures(trees[1]:root(), bufnr, 0, -1) do
-    local hl_group = resolve_hl(query.captures[id])
-    local priority = (metadata and tonumber(metadata.priority)) or TS_DEFAULT_PRIORITY
-    local sr, sc, er, ec = node:range()
-    for row = sr, er do
-      local line = lines[row + 1] or ""
-      local col_s = (row == sr) and sc or 0
-      local col_e = (row == er) and ec or #line
-      if col_s < col_e then
-        per_line[row] = per_line[row] or {}
-        table.insert(per_line[row], { col = col_s, end_col = col_e, hl_group = hl_group, priority = priority })
+  local root = trees[1]:root()
+  for _, run in ipairs(runs) do
+    -- A capture spanning several runs comes back once per run; clamping
+    -- its rows to the run keeps each row's entries single.
+    for id, node, metadata in query:iter_captures(root, bufnr, run[1], run[2] + 1) do
+      local hl_group = resolve_hl(query.captures[id])
+      local priority = (metadata and tonumber(metadata.priority)) or TS_DEFAULT_PRIORITY
+      local sr, sc, er, ec = node:range()
+      for row = math.max(sr, run[1]), math.min(er, run[2]) do
+        local line = lines[row + 1] or ""
+        local col_s = (row == sr) and sc or 0
+        local col_e = (row == er) and ec or #line
+        if col_s < col_e then
+          per_line[row] = per_line[row] or {}
+          table.insert(per_line[row], { col = col_s, end_col = col_e, hl_group = hl_group, priority = priority })
+        end
       end
     end
   end
@@ -803,7 +828,16 @@ function DiffView:_render_inline(file, old_lines, new_lines)
   -- Treesitter highlights for old_lines (syntax-colors the del virt_lines).
   -- A rename's old content is filetyped by old_path, matching _render_sbs.
   local old_ft = vim.filetype.match({ filename = file.old_path or file.path }) or ""
-  local ts_hl_map = ts_highlights_for_lines(old_lines, old_ft)
+  local del_rows = {}
+  for _, hunk in ipairs(file.hunks) do
+    for _, line in ipairs(hunk.lines) do
+      if line.kind == "del" and line.old_lnum then
+        table.insert(del_rows, line.old_lnum - 1)
+      end
+    end
+  end
+  table.sort(del_rows)
+  local ts_hl_map = ts_highlights_for_lines(old_lines, old_ft, del_rows)
 
   -- Per-lnum annotation maps built from hunk segments.
   local add_set = {}      -- new_lnum → true
