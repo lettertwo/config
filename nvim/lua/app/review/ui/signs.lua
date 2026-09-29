@@ -60,10 +60,10 @@ function M.setup()
   local defs = {
     ReviewDiffAdd        = { link = "DiffAdd" },
     ReviewDiffDelete     = { link = "DiffDelete" },
-    ReviewDiffFiller     = { link = "DiffDelete" },
+    ReviewDiffFiller     = { link = "NonText" },
     ReviewSignAdd        = { link = "DiffAdd" },
     ReviewSignDelete     = { link = "DiffDelete" },
-    ReviewSignChange     = { link = "DiffText" },
+    ReviewSignChange     = { link = "DiffChange" },
   }
   for name, opts in pairs(defs) do
     vim.api.nvim_set_hl(0, name, vim.tbl_extend("keep", opts, { default = true }))
@@ -95,6 +95,45 @@ function M.setup()
     end
     vim.api.nvim_set_hl(0, name, opts)
   end
+
+  -- Gutter groups, used as both sign_hl_group and number_hl_group. Nvim
+  -- draws the number column and every statuscolumn segment stacked on the
+  -- row's number_hl_group, so the group has to carry the line wash's bg or
+  -- the gutter reads as a stripe apart from its line. The bg comes from the
+  -- line group, the fg from the sign group; a bg-only sign group lends its
+  -- bg as the fg unless that would vanish into the line wash. Marker rows
+  -- are context lines, so they take no bg at all. Filler rows are virtual
+  -- and would otherwise inherit their anchor's gutter, so they pin the plain
+  -- LineNr bg explicitly. Names keep the ReviewSign prefix so Snacks still
+  -- classifies these as git signs.
+  local gutters = {
+    ReviewSignGutterAdd               = { "ReviewDiffAdd", "ReviewSignAdd" },
+    ReviewSignGutterAddChange         = { "ReviewDiffAdd", "ReviewSignChange" },
+    ReviewSignGutterDelete            = { "ReviewDiffDelete", "ReviewSignDelete" },
+    ReviewSignGutterDeleteChange      = { "ReviewDiffDelete", "ReviewSignChange" },
+    ReviewSignGutterMarker            = { nil, "ReviewSignDelete" },
+    ReviewSignGutterStagedAdd         = { "ReviewDiffStagedAdd", "ReviewSignStagedAdd" },
+    ReviewSignGutterStagedAddChange   = { "ReviewDiffStagedAdd", "ReviewSignStagedChange" },
+    ReviewSignGutterStagedDelete      = { "ReviewDiffStagedDelete", "ReviewSignStagedDelete" },
+    ReviewSignGutterStagedDeleteChange = { "ReviewDiffStagedDelete", "ReviewSignStagedChange" },
+    ReviewSignGutterStagedMarker      = { nil, "ReviewSignStagedDelete" },
+  }
+  for name, g in pairs(gutters) do
+    local line, sign = g[1], g[2]
+    local line_bg = line and hl_color(line, "bg")
+    local fg = hl_color(sign, "fg")
+    if not fg then
+      local sign_bg = hl_color(sign, "bg")
+      if sign_bg ~= line_bg then
+        fg = sign_bg
+      end
+    end
+    vim.api.nvim_set_hl(0, name, { default = true, fg = fg, bg = line_bg })
+  end
+  vim.api.nvim_set_hl(0, "ReviewSignGutterFiller", {
+    default = true,
+    bg = hl_color("LineNr", "bg") or bg,
+  })
 
   -- :colorscheme runs `hi clear`, wiping the computed groups; recompute.
   -- (default=true set_hl is a no-op only while a definition exists — after
