@@ -1,9 +1,10 @@
 -- Ref source: dispatches a classified argument by shape, over git.
 --
 -- A range (`a..b`/`a...b`, already classified) opens one changeset via
--- source/span.lua, or one per first-parent commit in the commit unit. A single token is ambiguous until git resolves it: a
--- local branch hands off to the stack source, focused there (decided in
--- `new`, since the docket reads a source's units before load) — the same
+-- source/span.lua, or one per first-parent commit in the commit unit. A
+-- single token is ambiguous until git resolves it: a local branch hands off
+-- to the stack source, focused there (decided in `new`, since the docket
+-- reads a source's units before load) — the same
 -- per-branch stack a bare `:Review` would open from that branch, with the
 -- uncommitted layer riding along only when it's the checked-out branch. A
 -- commit-ish (not a branch) opens one changeset, `parent..ref`; a root
