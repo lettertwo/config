@@ -406,6 +406,28 @@ describe("diff._build_virt_chunks: innermost treesitter capture wins", function(
     assert.equals("@string.escape.rust", esc_grp[2])
   end)
 
+  it("limiting to rows matches the whole-file result on those rows", function()
+    local lines = {
+      "fn a() {",
+      "    /* a comment",
+      "       spanning rows */",
+      '    let s = "x";',
+      "}",
+      "fn b() -> u8 { 1 }",
+    }
+    local full = diff._ts_highlights_for_lines(lines, "rust")
+    -- Row 2 sits inside a comment that starts above it; rows 3 and 5 are
+    -- separate runs.
+    local rows = { 2, 3, 5 }
+    local limited = diff._ts_highlights_for_lines(lines, "rust", rows)
+    for _, r in ipairs(rows) do
+      assert.same(full[r], limited[r])
+    end
+    assert.is_nil(limited[0])
+    assert.is_nil(limited[4])
+    assert.same({}, diff._ts_highlights_for_lines(lines, "rust", {}))
+  end)
+
   it("a word-diff segment keeps its syntax group alongside the word group", function()
     local text = 'let s = Foo::new("a\\n");'
     local per_line = diff._ts_highlights_for_lines({ text }, "rust")
