@@ -810,3 +810,127 @@ describe("diff._render_inline: unpaired-line word emphasis (real buffer)", funct
     dv:destroy()
   end)
 end)
+
+describe("DiffView:render pending blank", function()
+  vim.cmd.packadd("codediff.nvim")
+  local diff = require("app.review.ui.diff")
+  local git = require("app.review.diff.git")
+
+  local hunks = {
+    {
+      old_start = 1,
+      old_count = 1,
+      new_start = 1,
+      new_count = 1,
+      lines = {
+        { kind = "del", text = "a", old_lnum = 1 },
+        { kind = "add", text = "A", new_lnum = 1 },
+      },
+    },
+  }
+
+  -- git.show stub that answers immediately while `hold` is false and parks
+  -- the callbacks otherwise, standing in for a slow load.
+  local hold = false
+  local parked = {}
+  local orig
+  before_each(function()
+    orig = git.show
+    hold, parked = false, {}
+    git.show = function(_, ref, _, cb)
+      local content = ref == "HEAD" and "a" or "A"
+      if hold then
+        table.insert(parked, function()
+          cb(content, nil)
+        end)
+      else
+        cb(content, nil)
+      end
+    end
+  end)
+  after_each(function()
+    git.show = orig
+  end)
+
+  local function lines(dv)
+    return vim.api.nvim_buf_get_lines(dv.right.bufnr, 0, -1, false)
+  end
+
+  local function past_delay()
+    vim.wait(diff.PENDING_BLANK_MS + 100, function()
+      return false
+    end)
+  end
+
+  it("blanks a slow file switch after the delay, then lands over the blank", function()
+    local dv = diff.new({ win = vim.api.nvim_get_current_win() })
+    dv:render({ path = "a.txt", hunks = hunks }, "/tmp")
+    assert.same({ "A" }, lines(dv))
+
+    hold = true
+    local blanked = false
+    dv:render({ path = "b.txt", hunks = hunks }, "/tmp", nil, nil, function()
+      blanked = true
+    end)
+    assert.same({ "A" }, lines(dv))
+    past_delay()
+    assert.is_true(blanked)
+    assert.same({ "" }, lines(dv))
+
+    for _, f in ipairs(parked) do
+      f()
+    end
+    assert.same({ "A" }, lines(dv))
+    dv:destroy()
+  end)
+
+  it("blanks during a scan whose every step supersedes the last", function()
+    local dv = diff.new({ win = vim.api.nvim_get_current_win() })
+    dv:render({ path = "a.txt", hunks = hunks }, "/tmp")
+    hold = true
+    local labels = {}
+    -- Steps closer together than the delay, as the outline's throttled
+    -- on_change produces while a key repeats.
+    local step = math.floor(diff.PENDING_BLANK_MS / 2)
+    for i = 1, 6 do
+      local path = "f" .. i .. ".txt"
+      dv:render({ path = path, hunks = hunks }, "/tmp", nil, nil, function()
+        table.insert(labels, path)
+      end)
+      vim.wait(step, function()
+        return false
+      end)
+    end
+    assert.same({ "" }, lines(dv))
+    -- The blank labels the file under the cursor at each step after it.
+    assert.equals("f6.txt", labels[#labels])
+    dv:destroy()
+  end)
+
+  it("leaves a quick file switch alone", function()
+    local dv = diff.new({ win = vim.api.nvim_get_current_win() })
+    dv:render({ path = "a.txt", hunks = hunks }, "/tmp")
+    local blanked = false
+    dv:render({ path = "b.txt", hunks = hunks }, "/tmp", nil, nil, function()
+      blanked = true
+    end)
+    past_delay()
+    assert.is_false(blanked)
+    assert.same({ "A" }, lines(dv))
+    dv:destroy()
+  end)
+
+  it("keeps the content up while a refresh of the same file loads", function()
+    local dv = diff.new({ win = vim.api.nvim_get_current_win() })
+    dv:render({ path = "a.txt", hunks = hunks }, "/tmp")
+    hold = true
+    local blanked = false
+    dv:render({ path = "a.txt", hunks = hunks }, "/tmp", nil, nil, function()
+      blanked = true
+    end)
+    past_delay()
+    assert.is_false(blanked)
+    assert.same({ "A" }, lines(dv))
+    dv:destroy()
+  end)
+end)

@@ -519,7 +519,12 @@ function Docket:show_file(view)
             vim.cmd("syncbind")
           end
         end)
-      end, r.mode)
+      end, r.mode, function()
+        -- The blank no longer shows the previous file, so label the target.
+        if not self._closed then
+          self:set_winbar()
+        end
+      end)
     else
       -- Non-primary render: no winbar/cursor here (the primary owns those),
       -- but re-anchor its left pane once settled so completion is a
