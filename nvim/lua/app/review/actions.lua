@@ -77,9 +77,13 @@ M.list = {
         if item.type == "file" then
           ctx.docket:toggle_stage_file(item.change)
         elseif item.type == "dir" then
-          ctx.docket:toggle_stage_tree(item.path)
+          local owner = item.parent
+          while owner and owner.type ~= "changeset" do
+            owner = owner.parent
+          end
+          ctx.docket:toggle_stage_tree(item.path, owner and owner.changeset)
         elseif item.type == "changeset" then
-          ctx.docket:toggle_all()
+          ctx.docket:toggle_all(item.changeset)
         end
       end,
     },

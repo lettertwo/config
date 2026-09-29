@@ -452,3 +452,71 @@ describe("docket: toggle_commits refuses on a source without set_unit", function
     dk:destroy()
   end)
 end)
+
+describe("docket: outline staging ops refuse committed rows", function()
+  local function fake_dv()
+    return { right = { bufnr = vim.api.nvim_get_current_buf() }, destroy = function() end }
+  end
+
+  local dk, notified, calls, saved
+
+  before_each(function()
+    dk = docket.new({
+      kind = "test",
+      cwd = "/tmp",
+      title = "test",
+      win = vim.api.nvim_get_current_win(),
+      dv = fake_dv(),
+      dv2 = fake_dv(),
+      source = {
+        can_stage = function()
+          return true
+        end,
+      },
+    })
+    notified = {}
+    calls = {}
+    dk._notify = function(_, msg)
+      table.insert(notified, msg)
+    end
+    dk._confirm = function()
+      return true
+    end
+    saved = {}
+    for _, name in ipairs({ "toggle_file", "toggle_tree", "toggle_all", "discard_file", "delete_untracked" }) do
+      saved[name] = staging[name]
+      staging[name] = function()
+        table.insert(calls, name)
+      end
+    end
+  end)
+
+  after_each(function()
+    for name, fn in pairs(saved) do
+      staging[name] = fn
+    end
+    dk:destroy()
+  end)
+
+  local committed = { path = "a.lua", status = "M", head_ref = "abc123" }
+  local worktree = { path = "a.lua", status = "M", head_ref = "WORKTREE" }
+
+  it("refuses stage, discard, tree, and all on a committed changeset", function()
+    dk:toggle_stage_file(committed)
+    dk:discard_file(committed)
+    dk:toggle_stage_tree("src", { head_ref = "abc123" })
+    dk:toggle_all({ head_ref = "abc123" })
+    assert.same({}, calls)
+    assert.equals(4, #notified)
+    assert.truthy(notified[1]:find("this changeset is committed", 1, true))
+  end)
+
+  it("still runs every op on the uncommitted changeset", function()
+    dk:toggle_stage_file(worktree)
+    dk:discard_file(worktree)
+    dk:toggle_stage_tree("src", { head_ref = "WORKTREE" })
+    dk:toggle_all({ head_ref = "WORKTREE" })
+    assert.same({ "toggle_file", "discard_file", "toggle_tree", "toggle_all" }, calls)
+    assert.same({}, notified)
+  end)
+end)

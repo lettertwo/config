@@ -72,6 +72,25 @@ return function(H)
     )
     feed("[c")
     feed("[c")
+
+    -- Outline staging refuses a committed row: <Space> on a committed file
+    -- and on a committed header must leave the worktree/index untouched.
+    local function porcelain()
+      return vim.fn.system({ "git", "-C", dk_nav.cwd, "status", "--porcelain" })
+    end
+    local before = porcelain()
+    picker:focus("list")
+    feed("gg")
+    feed("jjj") -- item 4 = b1.lua (a committed file row)
+    local row = picker:current()
+    check("cursor is on a committed file row", row and row.change and row.change.head_ref ~= "WORKTREE")
+    feed("<Space>")
+    feed("k") -- item 3 = the b1 changeset header
+    feed("<Space>")
+    vim.wait(500, function()
+      return false
+    end, 100)
+    check("<Space> on committed rows leaves git status unchanged", porcelain() == before, porcelain())
   end
 
   -- Diff-window nav still works with the outline open. (Nav checks run
