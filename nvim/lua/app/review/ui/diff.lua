@@ -303,10 +303,15 @@ end
 ---@field _render_mode "plain"|"staged"|"attributed"
 ---@field _sorted_hunks Review.Hunk[]?  hunks in render order (hunk_at targets)
 ---@field _rendered_file Review.FileChange?  set when an async render completes; staging ops require it to match the plan
+---@field _blank_pending boolean?  a pending-blank timer is armed
+---@field _on_blank fun()?  the latest file switch's on_blank
 ---@field _fold_aug integer?
 ---@field _fold_sync fun(win: integer)?  set while sbs fold sync is active
 local DiffView = {}
 DiffView.__index = DiffView
+
+-- How long a file switch waits on its content before blanking the panes.
+M.PENDING_BLANK_MS = 100
 
 ---@param opts {win: integer}
 ---@return Review.DiffView
@@ -450,6 +455,12 @@ end
 -- collapse should actually happen.
 function DiffView:blank()
   self._render_seq = self._render_seq + 1
+  self:_clear_content()
+end
+
+-- Empty the panes and forget the rendered file, leaving any render in flight
+-- to land over the blank.
+function DiffView:_clear_content()
   self:_clear_fold_sync()
   self.right:write({})
   self.right:clear()
@@ -662,11 +673,21 @@ local function load_both(file, cwd, cb)
   finish()
 end
 
+-- Whether two FileChanges show the same content: a refresh rebuilds the
+-- FileChange objects, so identity alone would read every refresh as a switch.
+---@param a Review.FileChange?
+---@param b Review.FileChange?
+local function same_file(a, b)
+  return a ~= nil and b ~= nil and a.path == b.path and a.changeset_id == b.changeset_id
+end
+
 ---@param file Review.FileChange
 ---@param cwd string
 ---@param on_done? fun()  called after the buffer is rendered and folds applied
 ---@param mode? "plain"|"staged"|"attributed"  highlight attribution (default "plain")
-function DiffView:render(file, cwd, on_done, mode)
+---@param on_blank? fun()  called if a file switch's content is slow enough that the panes blank while it loads
+function DiffView:render(file, cwd, on_done, mode, on_blank)
+  local prev = self.file
   self.file = file
   self._cwd = cwd
   self._render_mode = mode or "plain"
@@ -677,6 +698,33 @@ function DiffView:render(file, cwd, on_done, mode)
     self:_render_placeholder("[Binary file: " .. file.path .. "]")
     if on_done then on_done() end
     return
+  end
+
+  -- Each newer render drops the one in flight, so while the user scans
+  -- files faster than their content loads, nothing lands and the previous
+  -- file would stay on screen. Blank the panes if nothing has landed a short
+  -- delay after the scan began, which keeps a quick load from flashing
+  -- blank. The timer starts once per pending stretch and checks whichever
+  -- render is latest when it fires; a per-render timer would be superseded
+  -- by the next step of a scan before it ever fired. Refreshes of the same
+  -- file keep their content up instead.
+  if not same_file(prev, file) then
+    self._on_blank = on_blank
+    if self._rendered_file == nil and on_blank then
+      -- Already blank: keep the label on the file being scanned to.
+      on_blank()
+    end
+    if not self._blank_pending then
+      self._blank_pending = true
+      vim.defer_fn(function()
+        self._blank_pending = false
+        if same_file(self._rendered_file, self.file) or not vim.api.nvim_buf_is_valid(self.right.bufnr) then
+          return
+        end
+        self:_clear_content()
+        if self._on_blank then self._on_blank() end
+      end, M.PENDING_BLANK_MS)
+    end
   end
 
   -- retries_left bounds the re-acquire to one extra attempt: a file under a
