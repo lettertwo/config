@@ -84,6 +84,18 @@ local function virt_number(entries, idx, width)
   return "%#" .. e.hl .. "#" .. pad(tostring(e.lnum), width) .. "%*"
 end
 
+-- Virtual line (del above/below its anchor, or a wrapped continuation): no
+-- signs to draw, so each sign slot is blank padding in the same position as
+-- on a real row (left slot, old, new, right slot). Padding both slots up
+-- front shifts the old number two columns right, off its column.
+---@param old_str string?  the rendered old number, nil for none
+---@param width integer
+---@return string
+function M._virt_row(old_str, width)
+  local blank = string.rep(" ", width)
+  return "  " .. (old_str or blank) .. " " .. blank .. "   "
+end
+
 function M.get()
   local win = vim.g.statusline_winid
   local buf = vim.api.nvim_win_get_buf(win)
@@ -103,15 +115,12 @@ function M.get()
   local lnum = vim.v.lnum
 
   if virtnum ~= 0 then
-    -- Virtual line (del above/below its anchor, or a wrapped continuation):
-    -- no signs to draw, so the sign slots are just blank padding sized to
-    -- match the real-row left+right icon width.
-    local old_str = string.rep(" ", width)
+    local old_str = nil
     if virtnum < 0 then
       local entries = lnums.virt_old[lnum - 1] or {}
       old_str = virt_number(entries, -virtnum, width)
     end
-    return "    " .. old_str .. " " .. string.rep(" ", width) .. " "
+    return M._virt_row(old_str, width)
   end
 
   local left, right = "  ", "  "
