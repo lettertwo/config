@@ -106,27 +106,16 @@ function M.new(opts)
     local per_node = {}
     local remaining = #nodes
     for ni, node in ipairs(nodes) do
-      git.log_first_parent(cwd, graph:base_ref(node), graph:head_ref(node), function(commits, err)
-        per_node[ni] = (not err and commits) or {}
+      changesets.commit_specs(cwd, graph:base_ref(node), graph:head_ref(node), {}, function(list)
+        per_node[ni] = list or {}
         remaining = remaining - 1
         if remaining == 0 then
           local specs = {}
           for i, n in ipairs(nodes) do
-            local list = per_node[i]
-            if #list > 0 then
-              local node_base = graph:base_ref(n)
-              for ci = #list, 1, -1 do
-                local commit = list[ci]
-                local parent = ci < #list and list[ci + 1].sha or node_base
-                table.insert(specs, {
-                  id = commit.sha,
-                  title = commit.subject,
-                  base = parent,
-                  head = commit.sha,
-                  branch = n.branch,
-                  current = n.id == focus_branch and ci == 1,
-                })
-              end
+            for si, spec in ipairs(per_node[i]) do
+              spec.branch = n.branch
+              spec.current = n.id == focus_branch and si == #per_node[i]
+              table.insert(specs, spec)
             end
           end
           callback(specs)

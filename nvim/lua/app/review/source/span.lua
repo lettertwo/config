@@ -40,6 +40,39 @@ function M.build_resolved(cwd, base_sha, head_sha, title, callback)
   end)
 end
 
+-- One changeset per first-parent commit in base_sha..head_sha, each diffed
+-- against its own parent. Streams like changesets.build: `callback` runs
+-- with a Pending skeleton and again as each commit's diff settles, always
+-- with the full list, and a commit whose diff failed stays in the list as a
+-- Failed changeset (the outline shows it as a header mark) instead of
+-- failing the whole build. Only a failed `git log` reports an error. The
+-- newest commit is marked `current`.
+---@param cwd string
+---@param base_sha string
+---@param head_sha string
+---@param prev Review.Changeset[]?  the last build's result, for reuse of unchanged commits
+---@param callback fun(changesets: Review.Changeset[]?, err: string?)
+function M.build_commits(cwd, base_sha, head_sha, prev, callback)
+  changesets.commit_specs(cwd, base_sha, head_sha, { parent_bases = true }, function(specs, err)
+    if err then
+      callback(nil, err)
+      return
+    end
+    if #specs > 0 then
+      specs[#specs].current = true
+    end
+    changesets.build(cwd, specs, prev, function(result)
+      -- Slots don't carry `current` (only the spec does, for fetch order),
+      -- so mark the newest on a copy: `result` is handed back as `prev`.
+      local marked = { unpack(result) }
+      if #marked > 0 then
+        marked[#marked] = vim.tbl_extend("force", {}, marked[#marked], { current = true })
+      end
+      callback(marked, nil)
+    end)
+  end)
+end
+
 -- Build from ref text, validating both endpoints resolve to a commit first
 -- so a bad endpoint fails with a clean message before any diff runs.
 ---@param cwd string

@@ -123,12 +123,51 @@ function M.new(opts)
   local self = {
     kind = "pr",
     cwd = cwd,
-    units = { "combined" },
+    units = { "combined", "commit" },
     default_unit = "combined",
   }
 
   local label = "PR #" .. tostring(classified.number)
   local last_changesets = nil
+  -- The resolved endpoints and title, cached at load so a unit change
+  -- rebuilds from them without another gh or fetch round trip.
+  local resolved = nil
+  local unit = self.default_unit
+  local built_unit = nil
+
+  function self:set_unit(new_unit)
+    unit = new_unit
+  end
+
+  -- Build the changesets for the current unit from the cached endpoints.
+  -- `built_unit` records what `last_changesets` holds, and only once every
+  -- slot has settled: a streamed commit build hands back Pending snapshots
+  -- first, and refresh() must not return one of those as the final answer.
+  ---@param callback fun(changesets: Review.Changeset[]?, err: string?)
+  local function build(callback)
+    local target = unit
+    local function done(changesets, err)
+      if changesets and #changesets > 0 and target == "combined" then
+        changesets[1].current = true
+      end
+      last_changesets = changesets
+      local settled = changesets ~= nil
+      for _, cs in ipairs(changesets or {}) do
+        if cs.status == "pending" then
+          settled = false
+        end
+      end
+      if settled then
+        built_unit = target
+      end
+      callback(changesets, err)
+    end
+    if target == "commit" then
+      span.build_commits(cwd, resolved.base_sha, resolved.head_sha, last_changesets, done)
+    else
+      span.build_resolved(cwd, resolved.base_sha, resolved.head_sha, resolved.title, done)
+    end
+  end
 
   local function view_pr(callback)
     local args = { "gh", "pr", "view", tostring(classified.number), "--json", GH_FIELDS }
@@ -183,13 +222,8 @@ function M.new(opts)
                   callback(nil, label .. ": not a commit: " .. head_tip)
                   return
                 end
-                span.build_resolved(cwd, base_sha, head_sha, metadata.title, function(changesets, build_err)
-                  if changesets and #changesets > 0 then
-                    changesets[1].current = true
-                  end
-                  last_changesets = changesets
-                  callback(changesets, build_err)
-                end)
+                resolved = { base_sha = base_sha, head_sha = head_sha, title = metadata.title }
+                build(callback)
               end)
             end)
           end)
@@ -200,8 +234,14 @@ function M.new(opts)
 
   -- Re-resolving would hit the network on every tick-driven refresh, and
   -- nothing a PR renders depends on index or worktree state -- a relaunch,
-  -- not a refresh, picks up new remote commits.
+  -- not a refresh, picks up new remote commits. A unit change is the one
+  -- exception: it rebuilds from the endpoints cached at load, still with no
+  -- network.
   function self:refresh(callback)
+    if resolved and built_unit ~= unit then
+      build(callback)
+      return
+    end
     callback(last_changesets, nil)
   end
 

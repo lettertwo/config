@@ -1,7 +1,7 @@
 -- Ref source: dispatches a classified argument by shape, over git.
 --
 -- A range (`a..b`/`a...b`, already classified) opens one changeset via
--- source/span.lua. A single token is ambiguous until git resolves it: a
+-- source/span.lua, or one per first-parent commit in the commit unit. A single token is ambiguous until git resolves it: a
 -- local branch hands off to the stack source, focused there (decided in
 -- `new`, since the docket reads a source's units before load) — the same
 -- per-branch stack a bare `:Review` would open from that branch, with the
@@ -79,6 +79,8 @@ function M.new(opts)
     default_unit = "combined",
   }
 
+  local range_unit = self.default_unit
+
   -- Single token: a local branch delegates entirely to the stack source.
   -- Resolved here rather than in load() because Docket.new reads `units` and
   -- `default_unit` before load() runs.
@@ -89,6 +91,47 @@ function M.new(opts)
     self.default_stack_order = self._delegate.default_stack_order
     function self:set_unit(unit)
       self._delegate:set_unit(unit)
+    end
+  elseif classified.shape == "range" then
+    -- A range can be reviewed as one changeset or one per first-parent
+    -- commit. A single commit-ish is already one commit, so it stays
+    -- combined-only.
+    self.units = { "combined", "commit" }
+    function self:set_unit(new_unit)
+      range_unit = new_unit
+    end
+  end
+
+  -- Resolve a range's endpoints to shas: the merge-base for `a...b`, the
+  -- left side itself for `a..b`. The commit unit needs the shas up front
+  -- (span.build validates and resolves them itself for the combined unit).
+  ---@param callback fun(base_sha: string?, head_sha: string?, err: string?)
+  local function resolve_range(callback)
+    local function with_base(base_sha)
+      git.rev_parse(cwd, classified.head, function(head_sha, head_err)
+        if head_err then
+          callback(nil, nil, "not a commit: " .. classified.head)
+          return
+        end
+        callback(base_sha, head_sha, nil)
+      end)
+    end
+    if classified.dots == 3 then
+      git.merge_base(cwd, classified.base, classified.head, function(base_sha, err)
+        if err then
+          callback(nil, nil, err)
+          return
+        end
+        with_base(base_sha)
+      end)
+    else
+      git.rev_parse(cwd, classified.base, function(base_sha, base_err)
+        if base_err then
+          callback(nil, nil, "not a commit: " .. classified.base)
+          return
+        end
+        with_base(base_sha)
+      end)
     end
   end
 
@@ -102,6 +145,16 @@ function M.new(opts)
     end
 
     if classified.shape == "range" then
+      if range_unit == "commit" then
+        resolve_range(function(base_sha, head_sha, err)
+          if err then
+            callback(nil, err)
+            return
+          end
+          span.build_commits(cwd, base_sha, head_sha, nil, callback)
+        end)
+        return
+      end
       if classified.dots == 3 then
         git.merge_base(cwd, classified.base, classified.head, function(base_sha, err)
           if err then

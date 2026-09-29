@@ -81,7 +81,7 @@ describe("pr source (temp repo, gh mocked)", function()
     local src = pr.new({ cwd = cwd, classified = { kind = "pr", number = 42 }, run = run })
 
     assert.is_false(src:can_stage())
-    assert.same({ "combined" }, src.units)
+    assert.same({ "combined", "commit" }, src.units)
     assert.equals("combined", src.default_unit)
 
     local changesets, err = load(src)
@@ -179,6 +179,60 @@ describe("pr source (temp repo, gh mocked)", function()
     local changesets, err = load(src)
     assert.is_nil(changesets)
     assert.matches("failed to fetch does%-not%-exist", err)
+  end)
+
+  it("a unit flip rebuilds from the cached endpoints with no second gh call", function()
+    local cwd = make_repo()
+    local function run(...)
+      local r = vim.system({ "git", ... }, { cwd = cwd, text = true }):wait()
+      assert.equals(0, r.code, r.stderr)
+    end
+    run("checkout", "-q", "feature")
+    vim.fn.writefile({ "b" }, cwd .. "/b.lua")
+    run("add", ".")
+    run("commit", "-qm", "add b")
+    run("push", "origin", "feature")
+    run("checkout", "-q", "main")
+
+    local calls = 0
+    local run_gh = function(args, callback)
+      calls = calls + 1
+      gh_view({ number = 42, title = "Add a and b", headRefName = "feature", baseRefName = "main" })(args, callback)
+    end
+    local src = pr.new({ cwd = cwd, classified = { kind = "pr", number = 42 }, run = run_gh })
+    assert.same({ "combined", "commit" }, src.units)
+
+    local combined = load(src)
+    assert.equals(1, #combined)
+    assert.equals(1, calls)
+
+    src:set_unit("commit")
+    local per_commit
+    src:refresh(function(cs)
+      for _, c in ipairs(cs or {}) do
+        if c.status == "pending" then
+          return
+        end
+      end
+      per_commit = cs
+    end)
+    vim.wait(10000, function()
+      return per_commit ~= nil
+    end, 50)
+    assert.equals(2, #per_commit)
+    assert.equals("add a", per_commit[1].title)
+    assert.equals("add b", per_commit[2].title)
+    assert.is_true(per_commit[2].current)
+    assert.equals(1, calls)
+
+    -- Same unit again: the cached answer, not another build.
+    local again = load(src, "refresh")
+    assert.same(per_commit, again)
+
+    src:set_unit("combined")
+    local back = load(src, "refresh")
+    assert.equals(1, #back)
+    assert.equals(1, calls)
   end)
 
   it("refresh is a no-op: no second gh call, same changesets returned", function()
