@@ -49,7 +49,7 @@ end
 ---@field files Review.FileChange[]  flattened across changesets, in changeset order
 ---@field cs_idx_by_id table<string, integer>
 ---@field idx integer
----@field state {outline_mode: "flat"|"stack", outline_tree: boolean, layout: "inline"|"sbs", view: "split"|"whole", stack_order: "head-first"|"base-first", changeset_unit: "branch"|"commit"}
+---@field state {outline_tree: boolean, layout: "inline"|"sbs", view: "split"|"whole", stack_order: "head-first"|"base-first", changeset_unit: "combined"|"branch"|"commit"}
 ---@field outline table?  OutlineView (set by init.lua after construction)
 ---@field _win2 integer?  row-2 primary window (dv2), nil unless split is active
 ---@field _rendered {dv: Review.DiffView, file: Review.FileChange, role: string}[]
@@ -83,25 +83,12 @@ function M.new(opts)
   self.files = {}
   self.cs_idx_by_id = {}
   self.idx = 1
-  -- Sources still declare a default_outline_mode in the old four-mode
-  -- vocabulary ("flat"|"tree"|"stack"|"stack-tree"); split it into the
-  -- mode/tree pair here so nothing downstream sees the retired names.
-  local default_mode = opts.source.default_outline_mode or "flat"
-  local outline_mode, outline_tree
-  if default_mode == "tree" then
-    outline_mode, outline_tree = "flat", true
-  elseif default_mode == "stack-tree" then
-    outline_mode, outline_tree = "stack", true
-  else
-    outline_mode, outline_tree = default_mode, false
-  end
   self.state = {
-    outline_mode = outline_mode,
-    outline_tree = outline_tree,
+    outline_tree = false,
     layout = "inline",
     view = "split",
     stack_order = opts.source.default_stack_order or "head-first",
-    changeset_unit = "branch",
+    changeset_unit = opts.source.default_unit or "combined",
   }
   self.outline = nil
   self._win2 = nil
@@ -1085,14 +1072,14 @@ function Docket:_has_pending()
   return false
 end
 
--- A stack outline carries a Failed mark on the header row itself; flat mode
--- has no header row for a fileless changeset to land on, so the wave's
--- first failure gets one notify instead. `notified` is an upvalue owned by
--- the caller's load/refresh call, so repeat snapshots for the same wave
--- notify at most once.
+-- An open outline carries a Failed mark on the header row itself; with no
+-- outline (or a closed one) nothing shows the failure, so the wave's first
+-- failure gets one notify instead. `notified` is an upvalue owned by the
+-- caller's load/refresh call, so repeat snapshots for the same wave notify
+-- at most once.
 ---@param notified boolean[]  single-element flag, boxed so this can set it
 function Docket:_notify_wave_failure(notified)
-  if notified[1] or self.state.outline_mode == "stack" then
+  if notified[1] or (self.outline and self.outline:is_open()) then
     return
   end
   for _, cs in ipairs(self.changesets) do
@@ -1104,60 +1091,46 @@ function Docket:_notify_wave_failure(notified)
   end
 end
 
--- Flip the changeset unit between branch and commit. Only sources that
--- implement set_unit (the stack source) support this; everything else
--- refuses, naming why. `view` is the outline view, if open, so its cached
--- mode field (a copy of state.outline_mode, not read fresh) stays in sync
--- when commits-on also forces stack mode.
----@param view table?  OutlineView
-function Docket:toggle_commits(view)
-  if not self.source.set_unit then
-    self:_notify("Commits: only for stack reviews", vim.log.levels.WARN)
+-- Advance the changeset unit to the next one the source offers, wrapping.
+-- A source with a single unit has nothing to cycle and says so. The flip
+-- payload tells _reposition where the old position lands in the new slicing.
+function Docket:cycle_unit()
+  local units = self.source.units or { "combined" }
+  local from = self.state.changeset_unit
+  local at = 1
+  for i, u in ipairs(units) do
+    if u == from then
+      at = i
+    end
+  end
+  local to = units[at % #units + 1]
+  if to == from or not self.source.set_unit then
+    self:_notify("Unit: " .. from .. " (only unit for this review)", vim.log.levels.INFO)
     return
   end
   local prev_file = self.files[self.idx]
   local prev_cs = prev_file and self.changesets[self.cs_idx_by_id[prev_file.changeset_id]]
-  local unit = self.state.changeset_unit == "commit" and "branch" or "commit"
-  self.state.changeset_unit = unit
-  self.source:set_unit(unit)
+  self.state.changeset_unit = to
+  self.source:set_unit(to)
 
   local flip = nil
   if prev_file then
-    if unit == "commit" then
-      flip = { direction = "to_commits", prev_path = prev_file.path }
-    else
-      flip = { direction = "to_branch", prev_path = prev_file.path, prev_branch = prev_cs and prev_cs.branch }
-    end
+    flip = { from = from, to = to, prev_path = prev_file.path, prev_branch = prev_cs and prev_cs.branch }
   end
-
-  if unit == "commit" and self.state.outline_mode == "flat" then
-    self.state.outline_mode = "stack"
-    if view then
-      view.mode = "stack"
-    end
-  end
-
   self:refresh({ flip = flip })
-
-  local msg
-  if unit == "commit" then
-    msg = self.source.commit_unit_noop and "Commits: on (stack is already per-commit)" or "Commits: on"
-  else
-    msg = "Commits: off"
-  end
-  self:_notify(msg, vim.log.levels.INFO)
+  self:_notify("Unit: " .. to, vim.log.levels.INFO)
 end
 
 -- Where to land after a changeset snapshot lands: the same (path, changeset)
 -- pair as `pin` if it's still there (a changeset's files can move around in
 -- `self.files` as siblings settle around it), otherwise `flip`'s fallback
--- when this snapshot is the result of a branch/commit unit toggle (`pin`
--- never survives that flip — branch names vs shas — so it always misses),
+-- when this snapshot is the result of a unit change (`pin` never survives a
+-- branch/commit flip — branch names vs shas — so it usually misses),
 -- otherwise wherever `pick` computes. Returns nil when there's nothing to
 -- show yet (every changeset is still Pending, or there really is nothing).
 ---@param pin {path: string, changeset_id: string}?
 ---@param pick fun(): integer
----@param flip {direction: "to_commits"|"to_branch", prev_path: string, prev_branch: string?}?
+---@param flip {from: string, to: string, prev_path: string, prev_branch: string?}?
 ---@return integer?
 function Docket:_reposition(pin, pick, flip)
   if #self.files == 0 then
@@ -1171,27 +1144,7 @@ function Docket:_reposition(pin, pick, flip)
     end
   end
   if flip then
-    if flip.direction == "to_commits" then
-      -- self.files runs oldest→newest across the stack; the last match is
-      -- the newest commit that touched the path.
-      local last
-      for i, f in ipairs(self.files) do
-        if f.path == flip.prev_path then
-          last = i
-        end
-      end
-      if last then
-        return last
-      end
-      -- No commit touched the path at all: the focus branch's newest
-      -- commit, which build_commit_specs marks current on the new list.
-      for i = #self.files, 1, -1 do
-        local ci = self.cs_idx_by_id[self.files[i].changeset_id]
-        if ci and self.changesets[ci].current then
-          return i
-        end
-      end
-    elseif flip.direction == "to_branch" then
+    if flip.from == "commit" and flip.to == "branch" then
       for i, f in ipairs(self.files) do
         local ci = self.cs_idx_by_id[f.changeset_id]
         local cs = ci and self.changesets[ci]
@@ -1203,6 +1156,39 @@ function Docket:_reposition(pin, pick, flip)
         local ci = self.cs_idx_by_id[f.changeset_id]
         local cs = ci and self.changesets[ci]
         if cs and cs.id == flip.prev_branch then
+          return i
+        end
+      end
+    elseif flip.to == "combined" then
+      local first
+      for i, f in ipairs(self.files) do
+        if f.changeset_id == "combined" then
+          first = first or i
+          if f.path == flip.prev_path then
+            return i
+          end
+        end
+      end
+      if first then
+        return first
+      end
+    else
+      -- self.files runs oldest→newest across the stack; the last match is
+      -- the newest changeset that touched the path.
+      local last
+      for i, f in ipairs(self.files) do
+        if f.path == flip.prev_path then
+          last = i
+        end
+      end
+      if last then
+        return last
+      end
+      -- Nothing touched the path at all: the first file of the changeset
+      -- the source marked current on the new list.
+      for i, f in ipairs(self.files) do
+        local ci = self.cs_idx_by_id[f.changeset_id]
+        if ci and self.changesets[ci].current then
           return i
         end
       end
@@ -1259,7 +1245,7 @@ function Docket:load()
   end))
 end
 
----@param opts {flip: {direction: "to_commits"|"to_branch", prev_path: string, prev_branch: string?}}?
+---@param opts {flip: {from: string, to: string, prev_path: string, prev_branch: string?}}?
 function Docket:refresh(opts)
   local current = self.files[self.idx]
   local pin = current and { path = current.path, changeset_id = current.changeset_id }

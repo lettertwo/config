@@ -2,7 +2,8 @@
 --
 -- A range (`a..b`/`a...b`, already classified) opens one changeset via
 -- source/span.lua. A single token is ambiguous until git resolves it: a
--- local branch hands off to the stack source, focused there — the same
+-- local branch hands off to the stack source, focused there (decided in
+-- `new`, since the docket reads a source's units before load) — the same
 -- per-branch stack a bare `:Review` would open from that branch, with the
 -- uncommitted layer riding along only when it's the checked-out branch. A
 -- commit-ish (not a branch) opens one changeset, `parent..ref`; a root
@@ -74,8 +75,22 @@ function M.new(opts)
   local self = {
     kind = "ref",
     cwd = cwd,
-    default_outline_mode = "flat",
+    units = { "combined" },
+    default_unit = "combined",
   }
+
+  -- Single token: a local branch delegates entirely to the stack source.
+  -- Resolved here rather than in load() because Docket.new reads `units` and
+  -- `default_unit` before load() runs.
+  if classified.shape ~= "range" and is_local_branch(cwd, classified.ref) then
+    self._delegate = stack.new({ cwd = cwd, focus_branch = classified.ref })
+    self.units = self._delegate.units
+    self.default_unit = self._delegate.default_unit
+    self.default_stack_order = self._delegate.default_stack_order
+    function self:set_unit(unit)
+      self._delegate:set_unit(unit)
+    end
+  end
 
   ---@param callback fun(changesets: Review.Changeset[]?, err: string?)
   function self:load(callback)
@@ -101,12 +116,7 @@ function M.new(opts)
       return
     end
 
-    -- Single token: a local branch delegates entirely to the stack source
-    -- (this source object is only ever asked to load() once for that case).
-    if is_local_branch(cwd, classified.ref) then
-      self._delegate = stack.new({ cwd = cwd, focus_branch = classified.ref })
-      self.default_outline_mode = self._delegate.default_outline_mode
-      self.default_stack_order = self._delegate.default_stack_order
+    if self._delegate then
       self._delegate:load(callback)
       return
     end

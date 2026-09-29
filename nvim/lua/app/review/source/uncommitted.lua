@@ -24,6 +24,9 @@
 ---@field load fun(self: Review.Source, callback: fun(changesets: Review.Changeset[]?, err: string?))
 ---@field refresh fun(self: Review.Source, callback: fun(changesets: Review.Changeset[]?, err: string?))
 ---@field can_stage fun(self: Review.Source): boolean
+---@field units string[]  changeset units the source offers, `default_unit` among them ("combined"|"branch"|"commit")
+---@field default_unit string  the unit a fresh review opens on
+---@field set_unit? fun(self: Review.Source, unit: string)  present when `units` has more than one entry
 
 local M = {}
 local git = require("app.review.diff.git")
@@ -131,7 +134,8 @@ function M.new(opts)
   local self = {
     kind = "uncommitted",
     cwd = cwd,
-    default_outline_mode = "flat",
+    units = { "combined" },
+    default_unit = "combined",
   }
 
   ---@param callback fun(changesets: Review.Changeset[]?, err: string?)

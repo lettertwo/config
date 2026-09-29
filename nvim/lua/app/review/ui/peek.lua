@@ -13,8 +13,7 @@ local FOCUS_ID = "review_peek"
 local NS = vim.api.nvim_create_namespace("review_peek")
 
 -- Walk an outline item's parent chain to the enclosing changeset header, if
--- any. flat/tree-mode dirs have no changeset parent (the whole docket is
--- shown as one tree there).
+-- any.
 ---@param item table
 ---@return table? -- the changeset outline item, if any
 local function enclosing_changeset_item(item)
@@ -133,16 +132,15 @@ function M._changeset_lines(item, commits, stat)
 end
 
 -- Resolve dir peek content asynchronously: `git ls-tree` at the enclosing
--- changeset's head_ref when it names a real ref (stack mode — the worktree
--- would lie for mid-stack changesets), `fs_scandir` otherwise (uncommitted,
--- or no changeset parent at all — flat mode with the tree toggle on).
+-- changeset's head_ref when it names a real ref (the worktree would lie for
+-- mid-stack changesets), `fs_scandir` otherwise (uncommitted).
 ---@param item table  outline dir item
 ---@param docket Review.Docket
 ---@param callback fun(lines: string[], highlights: table[])
 local function dir_content(item, docket, callback)
   local cs_item = enclosing_changeset_item(item)
   local cs = cs_item and cs_item.changeset
-  local files = (cs and cs.files) or docket.files
+  local files = (cs and cs.files) or {}
   local changed = {}
   for _, f in ipairs(files) do
     changed[f.path] = f

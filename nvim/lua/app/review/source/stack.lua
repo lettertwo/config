@@ -1,6 +1,9 @@
--- Stack source: one changeset per stack node (Graphite branch or first-parent
--- commit via the graph fallback), base→head order, with the uncommitted
--- changeset prepended when it has files.
+-- Stack source: the review is sliced by a changeset unit. `combined` is one
+-- cumulative changeset from the bottom node's base to the top node's head,
+-- `branch` is one per stack node (Graphite branch or first-parent commit via
+-- the graph fallback), and `commit` is one per first-parent commit. All are
+-- base→head order, with the uncommitted changeset riding along when it has
+-- files.
 
 local M = {}
 local git = require("app.review.diff.git")
@@ -20,7 +23,6 @@ function M.new(opts)
   local self = {
     kind = "stack",
     cwd = cwd,
-    default_outline_mode = "stack", -- consumed by the M3 outline
     default_stack_order = "head-first", -- consumed by the outline's stack rendering
   }
 
@@ -28,12 +30,14 @@ function M.new(opts)
   local focus_branch = opts.focus_branch or current_branch
   local include_uncommitted = focus_branch == current_branch
   local graph = graph_factory.create(cwd, focus_branch)
-  -- commit_unit_noop: the git-log fallback's nodes are already one per
-  -- commit, so switching the unit to "commit" changes nothing about spec
-  -- building; the toggle handler reads this to word its notify accordingly.
-  self.commit_unit_noop = graph.is_commit_graph == true
+  -- The git-log fallback's nodes are already one per commit, so it has no
+  -- separate branch unit: its commit unit is built from the node specs.
+  local is_commit_graph = graph.is_commit_graph == true
 
-  local unit = "branch"
+  self.units = is_commit_graph and { "combined", "commit" } or { "combined", "branch", "commit" }
+  self.default_unit = is_commit_graph and "commit" or "branch"
+
+  local unit = self.default_unit
   function self:set_unit(new_unit)
     unit = new_unit
   end
@@ -60,6 +64,27 @@ function M.new(opts)
       })
     end
     return specs
+  end
+
+  -- One spec spanning the whole stack, bottom node's base to top node's
+  -- head, regardless of focus. The id is a literal rather than a sha so the
+  -- docket's position pin can't match a real commit's files on the fallback
+  -- graph, and the stale/restack lookup (keyed by node id) never hits it.
+  ---@param nodes Review.StackNode[]
+  ---@return Review.ChangesetSpec[]
+  local function combined_specs(nodes)
+    if #nodes == 0 then
+      return {}
+    end
+    local noun = is_commit_graph and "commits" or "branches"
+    return {
+      {
+        id = "combined",
+        title = ("Combined (%d %s)"):format(#nodes, noun),
+        base = graph:base_ref(nodes[1]),
+        head = graph:head_ref(nodes[#nodes]),
+      },
+    }
   end
 
   -- One spec per first-parent commit across every branch node, oldest to
@@ -111,7 +136,7 @@ function M.new(opts)
   end
 
   -- Adapt graph nodes to changesets.build's plain specs, one changeset per
-  -- branch node or, with the commits unit on, one per commit. Streams:
+  -- branch node, one per commit, or one for the whole stack, by unit. Streams:
   -- `callback` may run more than once, always with the full list in spec
   -- order (see changesets.build).
   ---@param nodes Review.StackNode[]
@@ -123,7 +148,9 @@ function M.new(opts)
         callback(result)
       end)
     end
-    if unit == "commit" then
+    if unit == "combined" then
+      with_specs(combined_specs(nodes))
+    elseif unit == "commit" and not is_commit_graph then
       commit_specs(nodes, with_specs)
     else
       with_specs(branch_specs(nodes))
@@ -168,9 +195,10 @@ function M.new(opts)
       end
       local all = {}
       for _, cs in ipairs(stack_result) do
-        -- stale keys are node (branch) ids and a commit spec's id is a sha,
-        -- so with the commits unit on no header gets the restack mark; the
-        -- mark describes a branch, and commit headers don't stand for one.
+        -- stale keys are node (branch) ids and a commit spec's id is a sha
+        -- (the combined spec's is a literal), so with the commit or combined
+        -- unit on no header gets the restack mark; the mark describes a
+        -- branch, and those headers don't stand for one.
         if stale and stale[cs.id] and cs.status == "ready" then
           -- A view, not a mutation: stack_result is also handed back to
           -- build_changesets as `prev` next time, and the raw title is what
@@ -180,12 +208,14 @@ function M.new(opts)
           table.insert(all, cs)
         end
       end
-      -- With the commits unit on, stack_result has more entries than nodes
+      -- With the commit unit on, stack_result has more entries than nodes
       -- and cur_idx (a nodes-index) doesn't address it; each commit spec
       -- already carries its own `current` flag (set on the focus branch's
       -- newest commit by commit_specs), so find that position instead.
       local focus_idx = cur_idx
-      if unit == "commit" then
+      if unit == "combined" then
+        focus_idx = 1
+      elseif unit == "commit" then
         focus_idx = nil
         for i, cs in ipairs(all) do
           if cs.current then

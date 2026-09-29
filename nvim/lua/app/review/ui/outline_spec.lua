@@ -96,32 +96,8 @@ describe("outline._items_for", function()
     files = { cs1.files[1], cs2.files[1], cs2.files[2] },
   }
 
-  it("flat mode lists files in docket order", function()
-    local items = outline._items_for(docket, "flat", false)
-    assert.same({ "a.lua", "b.lua", "c/d.lua" }, vim.tbl_map(function(it)
-      return it.change.path
-    end, items))
-  end)
-
-  it("flat mode dedupes a path touched by several changesets, keeping the newest", function()
-    local early = fc("a.lua", { changeset_id = "aaa" })
-    local late = fc("a.lua", { changeset_id = "uncommitted" })
-    local d = {
-      changesets = {
-        { id = "aaa", title = "feat a", files = { early } },
-        { id = "uncommitted", title = "Uncommitted Changes", files = { late, fc("b.lua", { changeset_id = "uncommitted" }) } },
-      },
-      files = { early, late, fc("b.lua", { changeset_id = "uncommitted" }) },
-    }
-    local items = outline._items_for(d, "flat", false)
-    assert.same({ "a.lua", "b.lua" }, vim.tbl_map(function(it)
-      return it.change.path
-    end, items))
-    assert.equals(late, items[1].change)
-  end)
-
-  it("stack mode emits changeset headers with [i/n] context and scoped files", function()
-    local items = outline._items_for(docket, "stack", false)
+  it("emits changeset headers with [i/n] context and scoped files", function()
+    local items = outline._items_for(docket, false)
     assert.equals("changeset", items[1].type)
     assert.equals(1, items[1]._cs_idx)
     assert.equals(2, items[1]._cs_total)
@@ -135,14 +111,14 @@ describe("outline._items_for", function()
     assert.equals(5, #items)
   end)
 
-  it("stack mode defaults to base-first order when no order is given", function()
-    local items = outline._items_for(docket, "stack", false)
+  it("defaults to base-first order when no order is given", function()
+    local items = outline._items_for(docket, false)
     assert.equals(cs1, items[1].changeset)
     assert.equals(cs2, items[3].changeset)
   end)
 
-  it("stack mode reverses display order to head-first but keeps _cs_idx as stack position", function()
-    local items = outline._items_for(docket, "stack", false, "head-first")
+  it("reverses display order to head-first but keeps _cs_idx as stack position", function()
+    local items = outline._items_for(docket, false, "head-first")
     assert.equals("changeset", items[1].type)
     assert.equals(cs2, items[1].changeset)
     assert.equals(2, items[1]._cs_idx)
@@ -155,20 +131,20 @@ describe("outline._items_for", function()
     assert.equals(5, #items)
   end)
 
-  it("stack mode keeps base-first order when order is explicitly base-first", function()
-    local items = outline._items_for(docket, "stack", false, "base-first")
+  it("keeps base-first order when order is explicitly base-first", function()
+    local items = outline._items_for(docket, false, "base-first")
     assert.equals(cs1, items[1].changeset)
     assert.equals(cs2, items[3].changeset)
   end)
 
-  it("stack-tree mode also reverses display order to head-first, keeping _cs_idx as stack position", function()
-    local items = outline._items_for(docket, "stack", true, "head-first")
+  it("tree also reverses display order to head-first, keeping _cs_idx as stack position", function()
+    local items = outline._items_for(docket, true, "head-first")
     assert.equals(cs2, items[1].changeset)
     assert.equals(2, items[1]._cs_idx)
   end)
 
-  it("stack-tree mode nests each changeset's files as a tree", function()
-    local items = outline._items_for(docket, "stack", true)
+  it("tree nests each changeset's files as a tree", function()
+    local items = outline._items_for(docket, true)
     -- cs2: header, then dir c/ before file b.lua? dirs sort before files:
     -- header(cs1), a.lua, header(cs2), dir c, d.lua, b.lua
     assert.same(
@@ -182,7 +158,7 @@ describe("outline._items_for", function()
   end)
 
   it("returns an empty placeholder when there is nothing", function()
-    local items = outline._items_for({ changesets = {}, files = {} }, "flat", false)
+    local items = outline._items_for({ changesets = {}, files = {} }, false)
     assert.equals(1, #items)
     assert.equals("empty", items[1].type)
   end)
@@ -200,31 +176,23 @@ describe("outline._find_row", function()
   }
 
   it("returns nil for a nil file", function()
-    assert.is_nil(outline._find_row(outline._items_for(docket, "flat", false), nil, "flat"))
+    assert.is_nil(outline._find_row(outline._items_for(docket, false), nil))
   end)
 
-  it("flat mode matches by path, even when current file is a superseded duplicate", function()
-    local items = outline._items_for(docket, "flat", false)
-    -- flat dedupes a.lua to `late`; `early` is a different object for the same path.
-    assert.equals(1, outline._find_row(items, early, "flat"))
-    assert.equals(1, outline._find_row(items, late, "flat"))
+  it("matches by object identity, not just path", function()
+    local items = outline._items_for(docket, false)
+    assert.equals(2, outline._find_row(items, early))
+    assert.equals(4, outline._find_row(items, late))
   end)
 
-  it("tree mode matches by path", function()
-    local items = outline._items_for(docket, "flat", true)
-    local row = outline._find_row(items, early, "flat")
-    assert.equals("a.lua", items[row].change.path)
-  end)
-
-  it("stack mode matches by object identity, not just path", function()
-    local items = outline._items_for(docket, "stack", false)
-    assert.equals(2, outline._find_row(items, early, "stack"))
-    assert.equals(4, outline._find_row(items, late, "stack"))
+  it("finds a file nested under tree dir rows", function()
+    local items = outline._items_for(docket, true)
+    assert.equals("a.lua", items[outline._find_row(items, early)].change.path)
   end)
 
   it("returns nil when the file isn't among the displayed items", function()
-    local items = outline._items_for(docket, "flat", false)
-    assert.is_nil(outline._find_row(items, fc("missing.lua", { changeset_id = "aaa" }), "flat"))
+    local items = outline._items_for(docket, false)
+    assert.is_nil(outline._find_row(items, fc("missing.lua", { changeset_id = "aaa" })))
   end)
 end)
 
@@ -272,13 +240,13 @@ describe("outline._format_item", function()
     assert.is_true(found)
   end)
 
-  it("a nested flat-mode file row (no parent) renders the basename then a dim dirname", function()
+  it("a file row with no parent renders the basename then a dim dirname", function()
     local item = { type = "file", change = fc("lua/app/a.lua") }
     local ret = outline._format_item(item, picker, false)
     assert.equals("  lua/app", chunk(ret, "ReviewOutlineDir"))
   end)
 
-  it("a nested stack-mode file row (parented to a changeset header) renders a dim dirname", function()
+  it("a file row (parented to a changeset header) renders a dim dirname", function()
     local item = { type = "file", change = fc("lua/app/a.lua"), parent = { type = "changeset" } }
     local ret = outline._format_item(item, picker, false)
     assert.equals("  lua/app", chunk(ret, "ReviewOutlineDir"))

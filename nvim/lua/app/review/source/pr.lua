@@ -123,7 +123,8 @@ function M.new(opts)
   local self = {
     kind = "pr",
     cwd = cwd,
-    default_outline_mode = "flat",
+    units = { "combined" },
+    default_unit = "combined",
   }
 
   local label = "PR #" .. tostring(classified.number)

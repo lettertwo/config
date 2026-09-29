@@ -52,7 +52,9 @@ describe("ref source (temp repo)", function()
     local cwd, _, _, a_sha, b_sha = make_repo()
     local src = ref.new({ cwd = cwd, classified = { kind = "ref", shape = "single", ref = b_sha } })
     assert.is_false(src:can_stage())
-    assert.equals("flat", src.default_outline_mode)
+    assert.same({ "combined" }, src.units)
+    assert.equals("combined", src.default_unit)
+    assert.is_nil(src.set_unit)
     local changesets, err = load(src)
     assert.is_nil(err)
     assert.equals(1, #changesets)
@@ -70,6 +72,12 @@ describe("ref source (temp repo)", function()
   it("a branch token delegates to the stack source, focused there", function()
     local cwd = make_repo() -- checked out on "feature"
     local src = ref.new({ cwd = cwd, classified = { kind = "ref", shape = "single", ref = "feature" } })
+    -- Decided in new(): the docket reads units before load() runs. This repo
+    -- has no gh-stack metadata, so the git-log fallback's unit set applies.
+    assert.same({ "combined", "commit" }, src.units)
+    assert.equals("commit", src.default_unit)
+    assert.equals("head-first", src.default_stack_order)
+    assert.is_function(src.set_unit)
     local changesets, err = load(src)
     assert.is_nil(err)
     -- Identical to the bare :Review shape from that branch: the git-log
@@ -88,7 +96,8 @@ describe("ref source (temp repo)", function()
       cwd = cwd,
       classified = { kind = "ref", shape = "range", dots = 2, base = "main", head = "feature" },
     })
-    assert.equals("flat", src.default_outline_mode)
+    assert.same({ "combined" }, src.units)
+    assert.equals("combined", src.default_unit)
     local changesets, err = load(src)
     assert.is_nil(err)
     assert.equals(1, #changesets)

@@ -346,7 +346,7 @@ describe("docket: changeset nav past a fileless changeset", function()
   end)
 end)
 
-describe("docket._reposition: branch/commit unit flip fallback", function()
+describe("docket._reposition: unit flip fallback", function()
   -- Pure: a plain table stands in for `self`, addressed via docket._reposition
   -- (exposed alongside the Docket method for this).
   local function state(files, cs_idx_by_id, changesets)
@@ -357,7 +357,7 @@ describe("docket._reposition: branch/commit unit flip fallback", function()
     error("pick should not run when the flip fallback finds a row")
   end
 
-  it("to_commits lands on the newest commit that touched the pinned path", function()
+  it("branch to commit lands on the newest commit that touched the pinned path", function()
     -- self.files runs oldest→newest; two commits touched b.lua, the later
     -- one must win.
     local files = {
@@ -370,11 +370,11 @@ describe("docket._reposition: branch/commit unit flip fallback", function()
       { id = "2", current = false },
       { id = "3", current = true },
     })
-    local idx = docket._reposition(s, nil, pick_never, { direction = "to_commits", prev_path = "b.lua" })
+    local idx = docket._reposition(s, nil, pick_never, { from = "branch", to = "commit", prev_path = "b.lua" })
     assert.equals(3, idx)
   end)
 
-  it("to_commits falls back to the focus branch's newest (current) commit when no commit touched the path", function()
+  it("branch to commit falls back to the current changeset when no commit touched the path", function()
     local files = {
       { path = "a.lua", changeset_id = "1" },
       { path = "c.lua", changeset_id = "2" },
@@ -383,11 +383,11 @@ describe("docket._reposition: branch/commit unit flip fallback", function()
       { id = "1", current = false },
       { id = "2", current = true },
     })
-    local idx = docket._reposition(s, nil, pick_never, { direction = "to_commits", prev_path = "z.lua" })
+    local idx = docket._reposition(s, nil, pick_never, { from = "branch", to = "commit", prev_path = "z.lua" })
     assert.equals(2, idx)
   end)
 
-  it("to_branch lands on the branch that owned the pinned commit, same path", function()
+  it("commit to branch lands on the branch that owned the pinned commit, same path", function()
     local files = {
       { path = "a.lua", changeset_id = "branch-a" },
       { path = "b.lua", changeset_id = "branch-b" },
@@ -396,11 +396,11 @@ describe("docket._reposition: branch/commit unit flip fallback", function()
       { id = "branch-a" },
       { id = "branch-b" },
     })
-    local idx = docket._reposition(s, nil, pick_never, { direction = "to_branch", prev_path = "b.lua", prev_branch = "branch-b" })
+    local idx = docket._reposition(s, nil, pick_never, { from = "commit", to = "branch", prev_path = "b.lua", prev_branch = "branch-b" })
     assert.equals(2, idx)
   end)
 
-  it("to_branch falls back to the branch alone when its path isn't in the new diff", function()
+  it("commit to branch falls back to the branch alone when its path isn't in the new diff", function()
     local files = {
       { path = "a.lua", changeset_id = "branch-a" },
       { path = "b.lua", changeset_id = "branch-b" },
@@ -409,8 +409,39 @@ describe("docket._reposition: branch/commit unit flip fallback", function()
       { id = "branch-a" },
       { id = "branch-b" },
     })
-    local idx = docket._reposition(s, nil, pick_never, { direction = "to_branch", prev_path = "missing.lua", prev_branch = "branch-b" })
+    local idx = docket._reposition(s, nil, pick_never, { from = "commit", to = "branch", prev_path = "missing.lua", prev_branch = "branch-b" })
     assert.equals(2, idx)
+  end)
+
+  it("combined to branch lands on the newest changeset that touched the path", function()
+    local files = {
+      { path = "a.lua", changeset_id = "branch-a" },
+      { path = "a.lua", changeset_id = "branch-b" },
+    }
+    local s = state(files, { ["branch-a"] = 1, ["branch-b"] = 2 }, { { id = "branch-a" }, { id = "branch-b" } })
+    local idx = docket._reposition(s, nil, pick_never, { from = "combined", to = "branch", prev_path = "a.lua" })
+    assert.equals(2, idx)
+  end)
+
+  it("to combined lands on the combined changeset's file with the pinned path", function()
+    local files = {
+      { path = "a.lua", changeset_id = "combined" },
+      { path = "b.lua", changeset_id = "combined" },
+    }
+    local s = state(files, { combined = 1 }, { { id = "combined" } })
+    local idx = docket._reposition(s, nil, pick_never, { from = "branch", to = "combined", prev_path = "b.lua" })
+    assert.equals(2, idx)
+  end)
+
+  it("to combined falls back to the combined changeset's first file", function()
+    local files = {
+      { path = "a.lua", changeset_id = "combined" },
+      { path = "b.lua", changeset_id = "combined" },
+      { path = "z.lua", changeset_id = "uncommitted" },
+    }
+    local s = state(files, { combined = 1, uncommitted = 2 }, { { id = "combined" }, { id = "uncommitted" } })
+    local idx = docket._reposition(s, nil, pick_never, { from = "commit", to = "combined", prev_path = "missing.lua" })
+    assert.equals(1, idx)
   end)
 
   it("falls through to pick() when the flip fallback finds nothing", function()
@@ -418,17 +449,20 @@ describe("docket._reposition: branch/commit unit flip fallback", function()
     local s = state(files, { ["1"] = 1 }, { { id = "1" } })
     local idx = docket._reposition(s, nil, function()
       return 1
-    end, { direction = "to_branch", prev_path = "missing.lua", prev_branch = "nowhere" })
+    end, { from = "commit", to = "branch", prev_path = "missing.lua", prev_branch = "nowhere" })
     assert.equals(1, idx)
   end)
 end)
 
-describe("docket: toggle_commits refuses on a source without set_unit", function()
+describe("docket: cycle_unit", function()
   local function fake_dv()
     return { right = { bufnr = vim.api.nvim_get_current_buf() }, destroy = function() end }
   end
 
-  it("notifies and leaves state untouched", function()
+  local function make(source)
+    source.can_stage = function()
+      return false
+    end
     local dk = docket.new({
       kind = "test",
       cwd = "/tmp",
@@ -436,19 +470,74 @@ describe("docket: toggle_commits refuses on a source without set_unit", function
       win = vim.api.nvim_get_current_win(),
       dv = fake_dv(),
       dv2 = fake_dv(),
-      source = {
-        can_stage = function()
-          return false
-        end,
-      },
+      source = source,
     })
-    local notified
+    local notes, flips, set = {}, {}, {}
     dk._notify = function(_, msg)
-      notified = msg
+      table.insert(notes, msg)
     end
-    dk:toggle_commits(nil)
+    dk.refresh = function(_, opts)
+      table.insert(flips, opts and opts.flip)
+    end
+    return dk, notes, flips, set
+  end
+
+  it("starts on the source's default unit", function()
+    local dk = make({ units = { "combined", "commit" }, default_unit = "commit" })
+    assert.equals("commit", dk.state.changeset_unit)
+    dk:destroy()
+  end)
+
+  it("defaults to combined for a source that declares no units", function()
+    local dk = make({})
+    assert.equals("combined", dk.state.changeset_unit)
+    dk:destroy()
+  end)
+
+  it("cycles through the source's units in order and wraps", function()
+    local set = {}
+    local dk, notes, flips = make({
+      units = { "combined", "branch", "commit" },
+      default_unit = "branch",
+      set_unit = function(_, u)
+        table.insert(set, u)
+      end,
+    })
+    dk.files = { { path = "a.lua", changeset_id = "x" } }
+    dk.cs_idx_by_id = { x = 1 }
+    dk.changesets = { { id = "x", branch = "x" } }
+    dk.idx = 1
+    dk:cycle_unit()
+    dk:cycle_unit()
+    dk:cycle_unit()
+    assert.same({ "commit", "combined", "branch" }, set)
+    assert.same({ "Unit: commit", "Unit: combined", "Unit: branch" }, notes)
+    assert.same({ from = "branch", to = "commit", prev_path = "a.lua", prev_branch = "x" }, flips[1])
     assert.equals("branch", dk.state.changeset_unit)
-    assert.truthy(notified and notified:find("only for stack reviews", 1, true))
+    dk:destroy()
+  end)
+
+  it("skips units the source doesn't offer", function()
+    local set = {}
+    local dk = make({
+      units = { "combined", "commit" },
+      default_unit = "commit",
+      set_unit = function(_, u)
+        table.insert(set, u)
+      end,
+    })
+    dk:cycle_unit()
+    dk:cycle_unit()
+    assert.same({ "combined", "commit" }, set)
+    dk:destroy()
+  end)
+
+  it("notifies and leaves state untouched when there is one unit", function()
+    local dk, notes, flips = make({ units = { "combined" }, default_unit = "combined" })
+    dk:cycle_unit()
+    assert.same({ "Unit: combined (only unit for this review)" }, notes)
+    assert.same({}, flips)
+    assert.equals("combined", dk.state.changeset_unit)
     dk:destroy()
   end)
 end)

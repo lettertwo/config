@@ -2,15 +2,15 @@ return function(H, fixture)
   local check, finish, feed, wait_outline = H.check, H.finish, H.feed, H.wait_outline
 
   -- gh-stack tracks two branches (a1 on main, b1 on a1), two commits each —
-  -- exercises the commits toggle's branch-graph path (the git-log fallback
-  -- used by tests/review/scenarios/stack.lua is already one node per commit,
-  -- so toggling there would be a no-op).
+  -- exercises the unit cycle's branch-graph path (the git-log fallback used
+  -- by tests/review/scenarios/stack.lua is already one node per commit, so it
+  -- has no separate branch unit).
   _G.App.launch("review", { context = "standalone" })
 
   -- Branch mode, head-first display (stack.lua's default_stack_order): 2
   -- headers (b1, a1) + 4 files (each branch's own two-commit diff). Focus is
   -- b1 (checked out), whose diff lists b1a.lua before b1b.lua, so the docket
-  -- opens on b1a.lua — the toggle below pins to that path, not the branch's
+  -- opens on b1a.lua — the cycle below pins to that path, not the branch's
   -- newest commit.
   local picker = wait_outline(6)
   check("outline picker open (branch mode)", picker ~= nil)
@@ -38,9 +38,9 @@ return function(H, fixture)
   H.focus_diff()
   check("opens on b1's first file (b1a.lua)", H.wait_line1("b1a"))
 
-  -- ── Toggle commits on ────────────────────────────────────────────────────
+  -- ── Cycle to the commit unit ─────────────────────────────────────────────
   picker:focus("list")
-  feed("c")
+  feed("i")
   vim.wait(4000, function()
     return picker:count() == 8
   end, 50)
@@ -74,9 +74,9 @@ return function(H, fixture)
     check("b1's newest commit is marked current", headers[1].current == true, vim.inspect(headers[1]))
   end
 
-  -- Turning commits on pinned to the path the docket was showing (b1a.lua),
+  -- Cycling to commits pinned to the path the docket was showing (b1a.lua),
   -- landing on the one commit that touched it, not on `current`.
-  check("commits-on lands on the commit that added b1a.lua", H.wait_line1("b1a"))
+  check("commit unit lands on the commit that added b1a.lua", H.wait_line1("b1a"))
 
   -- ── [c steps commit by commit, oldest-ward, across the branch boundary ──
   feed("[c")
@@ -84,21 +84,36 @@ return function(H, fixture)
   feed("[c")
   check("[c steps to a1's oldest commit (a1a.lua)", H.wait_line1("a1a"))
 
-  -- ── Toggle commits off restores branch headers ───────────────────────────
+  -- ── Next unit is combined: one cumulative changeset over both branches ───
   picker:focus("list")
-  feed("c")
+  feed("i")
+  vim.wait(4000, function()
+    return picker:count() == 5
+  end, 50)
+  check("combined unit has 5 items (1 header + 4 files)", picker:count() == 5, picker:count())
+  check(
+    "combined header spans both branches",
+    vim.deep_equal(header_titles(), { "Combined (2 branches)" }),
+    table.concat(header_titles(), ",")
+  )
+  -- The pre-cycle file was a1a.lua; combined holds it once.
+  check("combined lands on the pinned path (a1a.lua)", H.wait_line1("a1a"))
+
+  -- ── And back around to the branch unit ───────────────────────────────────
+  picker:focus("list")
+  feed("i")
   vim.wait(4000, function()
     return picker:count() == 6
   end, 50)
-  check("toggling off restores branch mode (6 items)", picker:count() == 6, picker:count())
+  check("cycling past combined restores branch mode (6 items)", picker:count() == 6, picker:count())
   check(
     "branch headers are back, head-first",
     vim.deep_equal(header_titles(), { "b1", "a1" }),
     table.concat(header_titles(), ",")
   )
-  -- The pre-toggle file was a1a.lua (this direction's flip fallback lands on
-  -- the branch containing it, same path).
-  check("commits-off lands back on a1 (a1a.lua)", H.wait_line1("a1a"))
+  -- The pre-cycle file was a1a.lua; only a1 touched it, so the newest
+  -- changeset with that path is a1.
+  check("branch unit lands back on a1 (a1a.lua)", H.wait_line1("a1a"))
 
   finish()
 end
