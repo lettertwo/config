@@ -36,8 +36,13 @@ local fold_ns = vim.api.nvim_create_namespace("review_fold_gutter")
 ---@field row_map table<integer, Review.RowInfo>
 ---@field fold_ranges {s:integer,e:integer}[]
 ---@field lnums Review.Lnums?  inline old/new line-number data; nil routes the statuscolumn through Snacks
+---@field _ft_deferred boolean?  set_ft records instead of applying (see defer_ft)
+---@field _ft_timer userdata?
 local Pane = {}
 Pane.__index = Pane
+
+-- How long a pane waits after its last deferred set_ft before applying it.
+M.FT_DEFER_MS = 60
 
 ---@return Review.Pane
 function M.new()
@@ -102,12 +107,46 @@ function Pane:write(lines)
   signs.clear(self.bufnr)
 end
 
+-- Writing into a buffer with a live treesitter highlighter reparses it on
+-- the spot, and the filetype's syntax and highlighter parse again on first
+-- paint. A file the user is only passing through needs neither, so a file
+-- switch drops the filetype before its write, and set_ft then waits until
+-- the switches stop for FT_DEFER_MS before applying one. Clearing the
+-- filetype before stopping the highlighter keeps the highlighter's teardown
+-- from reloading the old filetype's regex syntax.
+function Pane:defer_ft()
+  self._ft_deferred = true
+  if self._ft_timer then
+    self._ft_timer:stop()
+  end
+  if vim.bo[self.bufnr].filetype ~= "" then
+    vim.bo[self.bufnr].filetype = ""
+  end
+  vim.treesitter.stop(self.bufnr)
+end
+
 function Pane:set_ft(path)
   local ft = vim.filetype.match({ filename = path }) or ""
+  if self._ft_deferred then
+    self._ft_timer = self._ft_timer or vim.uv.new_timer()
+    self._ft_timer:start(M.FT_DEFER_MS, 0, vim.schedule_wrap(function()
+      if not self._ft_deferred or not vim.api.nvim_buf_is_valid(self.bufnr) then
+        return
+      end
+      self._ft_deferred = false
+      self:_apply_ft(ft)
+    end))
+    return ft
+  end
+  self:_apply_ft(ft)
+  return ft
+end
+
+---@param ft string
+function Pane:_apply_ft(ft)
   if ft ~= "" and ft ~= vim.bo[self.bufnr].filetype then
     vim.bo[self.bufnr].filetype = ft
   end
-  return ft
 end
 
 -- Drop the render products (buffer content stays) — placeholder/reset paths,
@@ -201,6 +240,10 @@ function Pane:refold()
 end
 
 function Pane:destroy()
+  if self._ft_timer then
+    self._ft_timer:close()
+    self._ft_timer = nil
+  end
   statuscolumn.unregister(self.bufnr)
   if vim.api.nvim_buf_is_valid(self.bufnr) then
     pcall(vim.api.nvim_buf_delete, self.bufnr, { force = true })

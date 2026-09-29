@@ -33,6 +33,10 @@ return function(H, fixture)
 
   feed("]f")
   check("]f renders main.lua, header deletion shifts line 1", wait_line1("fn_1"))
+  -- A file switch applies the filetype once switching stops (Pane:defer_ft).
+  vim.wait(1000, function()
+    return vim.bo[buf].filetype == "lua"
+  end, 10)
   check("filetype set", vim.bo[buf].filetype == "lua", vim.bo[buf].filetype)
 
   local marks = vim.api.nvim_buf_get_extmarks(buf, signs.ns, 0, -1, { details = true })
