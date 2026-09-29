@@ -726,6 +726,20 @@ function Docket:_stageable_file()
   return file
 end
 
+-- Outline staging ops act on paths, not on a diff pane, so `_gate` never sees
+-- them. A committed changeset's rows would otherwise stage or discard the
+-- same path in the worktree. Notifies and returns true when the target is
+-- committed.
+---@param head_ref string?
+---@return boolean refused
+function Docket:_refuse_committed(head_ref)
+  if head_ref == nil or head_ref == "WORKTREE" then
+    return false
+  end
+  self:_notify("Review: this changeset is committed, nothing here can be staged")
+  return true
+end
+
 -- Post-op refresh, once per queue drain: rapid staging enqueues N git ops
 -- but only the last one's completion triggers the (expensive) refresh.
 function Docket:_after_stage_op()
@@ -1012,7 +1026,7 @@ end
 -- File-object-driven variants for the outline (no diff-cursor dependency).
 ---@param change Review.FileChange
 function Docket:toggle_stage_file(change)
-  if not self:_can_stage_or_notify() then
+  if not self:_can_stage_or_notify() or self:_refuse_committed(change.head_ref) then
     return
   end
   -- Direction comes from the live index inside the queued op, not from
@@ -1024,8 +1038,9 @@ end
 -- Stage/unstage a whole directory subtree (outline dir rows), same
 -- live-state toggle convention as toggle_stage_file/toggle_all.
 ---@param dir string
-function Docket:toggle_stage_tree(dir)
-  if not self:_can_stage_or_notify() then
+---@param cs Review.Changeset?  the changeset the dir row sits under, when the outline groups by changeset
+function Docket:toggle_stage_tree(dir, cs)
+  if not self:_can_stage_or_notify() or self:_refuse_committed(cs and cs.head_ref) then
     return
   end
   staging.toggle_tree(self.cwd, dir, self:_after_stage_op())
@@ -1033,7 +1048,7 @@ end
 
 ---@param change Review.FileChange
 function Docket:discard_file(change)
-  if not self:_can_stage_or_notify() then
+  if not self:_can_stage_or_notify() or self:_refuse_committed(change.head_ref) then
     return
   end
   local verb = change.status == "U" and "Delete untracked" or "Discard all worktree changes to"
@@ -1050,8 +1065,9 @@ function Docket:discard_file(change)
 end
 
 -- Stage everything if anything is unstaged, otherwise unstage everything.
-function Docket:toggle_all()
-  if not self:_can_stage_or_notify() then
+---@param cs Review.Changeset?  the header row's changeset, when invoked from the outline
+function Docket:toggle_all(cs)
+  if not self:_can_stage_or_notify() or self:_refuse_committed(cs and cs.head_ref) then
     return
   end
   staging.toggle_all(self.cwd, self:_after_stage_op())
