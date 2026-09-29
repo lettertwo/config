@@ -156,17 +156,13 @@ M.list = {
     desc = "stage/unstage all",
     outline = { handler = function(ctx) ctx.docket:toggle_all() end },
   },
-  cycle_mode = {
-    desc = "flip flat/stack outline mode",
-    outline = { handler = function(ctx) ctx.view:cycle_mode() end },
-  },
   toggle_tree = {
     desc = "toggle outline tree nesting",
     outline = { handler = function(ctx) ctx.view:toggle_tree() end },
   },
-  toggle_commits = {
-    desc = "toggle changeset unit (branch/commit)",
-    outline = { handler = function(ctx) ctx.docket:toggle_commits(ctx.view) end },
+  cycle_unit = {
+    desc = "cycle changeset unit (combined/branch/commit)",
+    outline = { handler = function(ctx) ctx.docket:cycle_unit() end },
   },
   toggle_stack_order = {
     desc = "toggle stack order",

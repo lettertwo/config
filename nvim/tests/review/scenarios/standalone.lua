@@ -16,11 +16,11 @@ return function(H, fixture)
   dk0.state.view = "whole"
   dk0:show_file()
 
-  -- Outline: flat mode, one item per file (proves the standalone snacks
+  -- Outline: a header row plus one item per file (proves the standalone snacks
   -- bootstrap — this scenario runs without the default app's snacks).
-  local picker = wait_outline(3)
+  local picker = wait_outline(4)
   check("outline picker open", picker ~= nil)
-  check("outline lists 3 files (flat)", picker and picker:count() == 3, picker and picker:count())
+  check("outline lists a header and 3 files", picker and picker:count() == 4, picker and picker:count())
 
   local signs = require("app.review.ui.signs")
   local win, buf = focus_diff()

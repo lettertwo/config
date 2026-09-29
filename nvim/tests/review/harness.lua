@@ -170,11 +170,11 @@ function M.build_stack_dirs_fixture()
 end
 
 -- gh-stack-tracked fixture: main, then two tracked branches (a1 on main,
--- b1 on a1), each with two commits — so the commits toggle has more than
+-- b1 on a1), each with two commits — so the unit cycle has more than
 -- one commit per branch to expand into, and more than one branch to carry
 -- distinct labels. tests/review/harness.lua's other fixtures leave no
 -- .git/gh-stack file, which routes the stack source to the git-log fallback
--- graph (one node per commit already, so the toggle would be a no-op);
+-- graph (one node per commit already, so it has no separate branch unit);
 -- writing one here (same shape as source/graph/factory_spec.lua's
 -- write_gh_stack) exercises the branch-graph path instead.
 function M.build_gh_stack_fixture()

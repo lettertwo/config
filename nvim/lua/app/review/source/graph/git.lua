@@ -63,9 +63,9 @@ end
 ---@param branch? string  branch to infer from (defaults to the checked-out branch)
 ---@return Review.StackGraph
 function M.new(cwd, branch)
-  -- is_commit_graph: an explicit field rather than duck-typing (this
-  -- provider's nodes are already one per commit, so the stack source's
-  -- commits toggle has nothing to change and says so in its notify).
+  -- is_commit_graph: an explicit field rather than duck-typing. This
+  -- provider's nodes are already one per commit, so the stack source offers
+  -- only the combined and commit units for it (no separate branch unit).
   local self = { is_commit_graph = true }
   local nodes = nil
   branch = branch or git.current_branch_sync(cwd)

@@ -32,9 +32,9 @@ return function(H)
   check("source is read-only (can_stage() == false)", dk.source:can_stage() == false)
   check("no split row2 window", dk._win2 == nil)
 
-  -- Flat outline: only the two committed files, never the dirty worktree one.
+  -- Outline: only the two committed files, never the dirty worktree one.
   local picker = wait_outline(2)
-  check("outline picker open (flat mode)", picker ~= nil)
+  check("outline picker open", picker ~= nil)
   if picker then
     local paths = {}
     for _, it in ipairs(picker:items()) do
@@ -43,7 +43,7 @@ return function(H)
       end
     end
     table.sort(paths)
-    check("flat outline lists only the 2 committed files", vim.deep_equal(paths, { "a1.lua", "b1.lua" }), paths)
+    check("outline lists only the 2 committed files", vim.deep_equal(paths, { "a1.lua", "b1.lua" }), paths)
   end
 
   focus_diff()

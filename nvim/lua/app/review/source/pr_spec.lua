@@ -81,7 +81,8 @@ describe("pr source (temp repo, gh mocked)", function()
     local src = pr.new({ cwd = cwd, classified = { kind = "pr", number = 42 }, run = run })
 
     assert.is_false(src:can_stage())
-    assert.equals("flat", src.default_outline_mode)
+    assert.same({ "combined" }, src.units)
+    assert.equals("combined", src.default_unit)
 
     local changesets, err = load(src)
     assert.is_nil(err)

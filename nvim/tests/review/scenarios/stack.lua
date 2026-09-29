@@ -15,10 +15,11 @@ return function(H)
     return vim.wo[win].winbar or ""
   end
 
-  -- Outline: stack source defaults to stack mode → 3 changeset headers +
-  -- 3 files, with the current-position marker on the uncommitted header.
+  -- Outline: the fallback graph defaults to the commit unit → 3 changeset
+  -- headers + 3 files, with the current-position marker on the uncommitted
+  -- header.
   local picker = wait_outline(6)
-  check("outline picker open (stack mode)", picker ~= nil)
+  check("outline picker open", picker ~= nil)
   check("outline has 6 items (3 headers + 3 files)", picker and picker:count() == 6, picker and picker:count())
   if picker then
     local current_headers = 0
@@ -94,7 +95,7 @@ return function(H)
   end
 
   -- Diff-window nav still works with the outline open. (Nav checks run
-  -- before the mode-cycle checks: picker:refresh() defers a focus-restore
+  -- before the unit-cycle checks: picker:refresh() defers a focus-restore
   -- that would otherwise steal focus mid-chain.)
   focus_diff()
   check("diff shows a1.lua after focus-follow", wait_line1("a1"))
@@ -108,19 +109,20 @@ return function(H)
   )
   check("uncommitted sits at the head (3/3)", winbar():find("[3/3 Uncommitted Changes]", 1, true) ~= nil, winbar())
 
-  -- Mode cycle: stack → flat (3 items) → stack (6).
+  -- Unit cycle: commit → combined (combined header + a1, b1; uncommitted
+  -- header + base.lua = 5 items) → commit (6).
   if picker then
     picker:focus("list")
     feed("i")
     vim.wait(4000, function()
-      return picker:count() == 3
+      return picker:count() == 5
     end, 50)
-    check("mode cycle reaches flat (3 items)", picker:count() == 3, picker:count())
-    feed("i") -- back to stack
+    check("unit cycle reaches combined (5 items)", picker:count() == 5, picker:count())
+    feed("i") -- back to commit
     vim.wait(4000, function()
       return picker:count() == 6
     end, 50)
-    check("mode cycle returns to stack (6 items)", picker:count() == 6, picker:count())
+    check("unit cycle returns to commit (6 items)", picker:count() == 6, picker:count())
   end
 
   -- Let the picker's deferred focus-restore land, then reset the position to

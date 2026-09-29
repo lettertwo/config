@@ -123,7 +123,13 @@ local function open_outline(dk)
       if not change and item.type == "changeset" then
         change = item.changeset.files[1]
       elseif not change and item.type == "dir" then
-        for _, f in ipairs(dk.files) do
+        -- Scoped to the dir's own changeset: the same path prefix can hold
+        -- different files in other changesets.
+        local owner = item.parent
+        while owner and owner.type ~= "changeset" do
+          owner = owner.parent
+        end
+        for _, f in ipairs(owner and owner.changeset.files or {}) do
           if f.path:sub(1, #item.path + 1) == item.path .. "/" then
             change = f
             break

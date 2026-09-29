@@ -362,3 +362,134 @@ describe("stack source: commits unit (gh-stack)", function()
     assert.is_nil(changesets[3].current)
   end)
 end)
+
+-- The combined unit: one cumulative changeset over the whole stack, with the
+-- uncommitted layer as its own changeset after it.
+describe("stack source: combined unit", function()
+  local function make_repo(commit_fixture)
+    local cwd = vim.fn.tempname()
+    vim.fn.mkdir(cwd, "p")
+    local function run(...)
+      local r = vim.system({ "git", ... }, { cwd = cwd, text = true }):wait()
+      assert.equals(0, r.code, r.stderr)
+      return vim.trim(r.stdout or "")
+    end
+    run("init", "-q")
+    run("branch", "-M", "main")
+    run("config", "user.email", "t@t")
+    run("config", "user.name", "t")
+    vim.fn.writefile({ "base" }, cwd .. "/base.txt")
+    run("add", ".")
+    run("commit", "-qm", "init")
+    commit_fixture(cwd, run)
+    return cwd
+  end
+
+  local function commit_file(cwd, run, name, subject)
+    vim.fn.writefile({ name }, cwd .. "/" .. name)
+    run("add", ".")
+    run("commit", "-qm", subject)
+  end
+
+  local function settled(cs)
+    if not cs then
+      return false
+    end
+    for _, c in ipairs(cs) do
+      if c.status == "pending" then
+        return false
+      end
+    end
+    return true
+  end
+
+  local function load_settled(src)
+    local changesets, err
+    src:load(function(cs, e)
+      if settled(cs) or e then
+        changesets, err = cs, e
+      end
+    end)
+    vim.wait(10000, function()
+      return changesets ~= nil or err ~= nil
+    end, 50)
+    assert.is_nil(err)
+    return changesets
+  end
+
+  local function paths(cs)
+    return vim.tbl_map(function(f)
+      return f.path
+    end, cs.files)
+  end
+
+  local function gh_stack_repo()
+    return make_repo(function(cwd, run)
+      run("checkout", "-qb", "a1")
+      commit_file(cwd, run, "a1x.txt", "a1: add x")
+      commit_file(cwd, run, "a1y.txt", "a1: add y")
+      run("checkout", "-qb", "c1")
+      commit_file(cwd, run, "c1z.txt", "c1: add z")
+      vim.fn.writefile({ "dirty" }, cwd .. "/base.txt")
+      vim.fn.writefile({
+        vim.json.encode({
+          schemaVersion = 1,
+          stacks = { { trunk = { branch = "main" }, branches = { { branch = "a1" }, { branch = "c1" } } } },
+        }),
+      }, cwd .. "/.git/gh-stack")
+    end)
+  end
+
+  it("gh-stack offers combined, branch, commit and opens on branch", function()
+    local src = require("app.review.source.stack").new({ cwd = gh_stack_repo() })
+    assert.same({ "combined", "branch", "commit" }, src.units)
+    assert.equals("branch", src.default_unit)
+  end)
+
+  it("spans the bottom node's base to the top node's head, uncommitted after it and current", function()
+    local src = require("app.review.source.stack").new({ cwd = gh_stack_repo() })
+    src:set_unit("combined")
+    local changesets = load_settled(src)
+    assert.equals(2, #changesets)
+    assert.equals("combined", changesets[1].id)
+    assert.equals("Combined (2 branches)", changesets[1].title)
+    assert.same({ "a1x.txt", "a1y.txt", "c1z.txt" }, paths(changesets[1]))
+    assert.is_nil(changesets[1].current)
+    assert.equals("uncommitted", changesets[2].id)
+    assert.is_true(changesets[2].current)
+  end)
+
+  it("covers the whole stack regardless of focus, and is current when there is no uncommitted layer", function()
+    local src = require("app.review.source.stack").new({ cwd = gh_stack_repo(), focus_branch = "a1" })
+    src:set_unit("combined")
+    local changesets = load_settled(src)
+    assert.equals(1, #changesets)
+    assert.equals("combined", changesets[1].id)
+    assert.same({ "a1x.txt", "a1y.txt", "c1z.txt" }, paths(changesets[1]))
+    assert.is_true(changesets[1].current)
+  end)
+
+  it("the git-log fallback offers combined and commit, opens on commit, and builds commit from node specs", function()
+    local cwd = make_repo(function(c, run)
+      run("checkout", "-qb", "feature")
+      commit_file(c, run, "f1.txt", "feature: one")
+      commit_file(c, run, "f2.txt", "feature: two")
+    end)
+    local src = require("app.review.source.stack").new({ cwd = cwd })
+    assert.same({ "combined", "commit" }, src.units)
+    assert.equals("commit", src.default_unit)
+
+    local per_commit = load_settled(src)
+    assert.equals(2, #per_commit)
+    assert.is_nil(per_commit[1].branch)
+    assert.is_nil(per_commit[2].branch)
+    assert.same({ "f1.txt" }, paths(per_commit[1]))
+    assert.same({ "f2.txt" }, paths(per_commit[2]))
+
+    src:set_unit("combined")
+    local combined = load_settled(src)
+    assert.equals(1, #combined)
+    assert.equals("Combined (2 commits)", combined[1].title)
+    assert.same({ "f1.txt", "f2.txt" }, paths(combined[1]))
+  end)
+end)
