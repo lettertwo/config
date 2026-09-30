@@ -12,6 +12,18 @@ local M = {}
 
 local fold_ns = vim.api.nvim_create_namespace("review_fold_gutter")
 
+-- Collapsed context reads as dim text on the editor bg: a Folded bg fill would
+-- make the fold line look like one more diff row.
+local function setup_hl()
+  vim.api.nvim_set_hl(0, "ReviewFold", { link = "Comment", default = true })
+end
+
+setup_hl()
+vim.api.nvim_create_autocmd("ColorScheme", {
+  group = vim.api.nvim_create_augroup("ReviewFoldHl", { clear = true }),
+  callback = setup_hl,
+})
+
 ---@class Review.RowInfo
 ---@field lnum integer
 ---@field side "LEFT"|"RIGHT"
@@ -81,6 +93,12 @@ function Pane:bind(win)
     vim.wo[win].foldcolumn = "1"
     vim.wo[win].conceallevel = 0
     vim.wo[win].wrap = false
+    -- Neovim fills the rest of a closed fold's line with the fold fillchar in
+    -- Folded, so remap Folded and blank the fill for the label to stand alone.
+    vim.wo[win].winhighlight = "Folded:ReviewFold"
+    vim.api.nvim_win_call(win, function()
+      vim.opt_local.fillchars:append({ fold = " " })
+    end)
     -- number/signcolumn/foldcolumn above still key the column width and
     -- v:relnum; the function itself picks old/new-number vs. plain Snacks
     -- per buffer, so no layout switch has to toggle this option.
@@ -209,7 +227,9 @@ end
 -- Foldtext for collapsed context regions (called via v:lua in the foldtext option).
 function M._foldtext()
   local n = vim.v.foldend - vim.v.foldstart + 1
-  return { { string.format("  ┄ %d lines ┄", n), "Folded" } }
+  return {
+    { string.format("··· %d unchanged %s (zo to expand) ···", n, n == 1 and "line" or "lines"), "ReviewFold" },
+  }
 end
 
 -- Recompute this pane's fold ranges from its hunk rows and apply them to the
@@ -231,7 +251,7 @@ function Pane:refold()
     for _, r in ipairs(self.fold_ranges) do
       if r.s <= r.e then
         vim.api.nvim_buf_set_extmark(bufnr, fold_ns, r.s, 0, {
-          number_hl_group = "Folded",
+          number_hl_group = "ReviewFold",
         })
         vim.cmd(string.format("%d,%dfold", r.s + 1, r.e + 1))
       end
