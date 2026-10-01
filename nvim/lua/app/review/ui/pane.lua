@@ -12,18 +12,6 @@ local M = {}
 
 local fold_ns = vim.api.nvim_create_namespace("review_fold_gutter")
 
--- Collapsed context reads as dim text on the editor bg: a Folded bg fill would
--- make the fold line look like one more diff row.
-local function setup_hl()
-  vim.api.nvim_set_hl(0, "ReviewFold", { link = "Comment", default = true })
-end
-
-setup_hl()
-vim.api.nvim_create_autocmd("ColorScheme", {
-  group = vim.api.nvim_create_augroup("ReviewFoldHl", { clear = true }),
-  callback = setup_hl,
-})
-
 ---@class Review.RowInfo
 ---@field lnum integer
 ---@field side "LEFT"|"RIGHT"

@@ -47,7 +47,7 @@ describe("peek._dir_lines", function()
     local lines, hl = peek._dir_lines(entries, changed)
     assert.equals("M  a.lua", lines[1])
     assert.equals("   b.lua", lines[2])
-    assert.equals("DiffChange", hl[1].hl_group)
+    assert.equals("ReviewStatusChanged", hl[1].hl_group)
     assert.equals("Comment", hl[2].hl_group)
   end)
 
@@ -99,8 +99,8 @@ describe("peek._changeset_lines", function()
     for _, h in ipairs(hl) do
       groups[h.hl_group] = (groups[h.hl_group] or 0) + 1
     end
-    assert.equals(1, groups["DiffAdd"])
-    assert.equals(2, groups["DiffDelete"])
+    assert.equals(1, groups["ReviewStatusAdded"])
+    assert.equals(2, groups["ReviewStatusRemoved"])
   end)
 end)
 

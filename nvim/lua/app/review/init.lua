@@ -187,7 +187,7 @@ function ReviewApp.open(classified, opts)
   local config = require("app.review.config")
 
   close_docket()
-  require("app.review.ui.signs").setup()
+  require("app.review.ui.hl").setup()
   Statusline.setup_highlights()
 
   local win = vim.api.nvim_get_current_win()
