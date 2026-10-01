@@ -213,6 +213,11 @@ local WINBAR_CONTENT = "%{%(nvim_get_current_win()==#g:actual_curwin)"
 
 local function winbar_update()
   local win = vim.api.nvim_get_current_win()
+  -- Leave alone a winbar some other owner set (an embedded app's panes).
+  local current = vim.wo[win].winbar
+  if current ~= "" and current ~= WINBAR_CONTENT then
+    return
+  end
   vim.wo[win].winbar = winbar_is_eligible(win) and WINBAR_CONTENT or ""
 end
 
