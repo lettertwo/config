@@ -22,6 +22,17 @@ return function(H, fixture)
       end
     end
   end
+  -- A refresh racing a staging op can land a torn read (`git diff HEAD` before
+  -- the op, `ls-files --others` after) that drops a file until the op's own
+  -- refresh lands, so lookups after staging ops poll rather than read once.
+  local function await_path(path)
+    local f
+    vim.wait(8000, function()
+      f = focus_path(path)
+      return f ~= nil
+    end, 50)
+    return f
+  end
   local function rendered_roles()
     local roles = {}
     for _, r in ipairs(dk._rendered) do
@@ -228,7 +239,7 @@ return function(H, fixture)
   -- Hunk-op fallbacks on whole-file statuses: an untracked file's "hunk"
   -- stages the file; a staged deletion's "hunk" unstages the file (plain
   -- hunk_to_patch headers can't express creations/deletions).
-  local uf = focus_path("untracked.lua")
+  local uf = await_path("untracked.lua")
   check("untracked file present", uf ~= nil)
   if uf then
     vim.wait(8000, function()
@@ -250,7 +261,7 @@ return function(H, fixture)
     end
   end
 
-  local gf = focus_path("gone.lua")
+  local gf = await_path("gone.lua")
   check("staged deletion present", gf ~= nil)
   if gf then
     local settled = vim.wait(8000, function()
@@ -281,7 +292,7 @@ return function(H, fixture)
   -- FileChange snapshot (refresh in flight) must not matter. The wait above
   -- for ls-files after the undo toggle guarantees it is unstaged here.
   local review_staging = require("app.review.staging")
-  local uf2 = focus_path("untracked.lua")
+  local uf2 = await_path("untracked.lua")
   if uf2 then
     dk:toggle_stage_file(uf2)
     check("toggle stages the untracked file", vim.wait(8000, function()
