@@ -332,6 +332,8 @@ end
 ---@field _on_blank fun()?  the latest file switch's on_blank
 ---@field _fold_aug integer?
 ---@field _fold_sync fun(win: integer)?  set while sbs fold sync is active
+---@field _scroll_bound boolean  this row's panes carry 'scrollbind' (see set_scroll_bound)
+---@field _scroll_aug integer?  WinScrolled clamp for tall fillers, live while sbs
 local DiffView = {}
 DiffView.__index = DiffView
 
@@ -347,6 +349,7 @@ function M.new(opts)
   self._cwd = ""
   self._render_seq = 0
   self._render_mode = "plain"
+  self._scroll_bound = true
 
   self.right = pane.new()
   self.left = pane.new()
@@ -457,13 +460,176 @@ function DiffView:set_layout(layout, win_left)
     self.left:write({})
     self.left:bind(win_left)
     self.left:show()
+    self:_setup_scroll_clamp()
   else
+    self:_clear_scroll_clamp()
     for _, p in ipairs({ self.right, self.left }) do
       if p:win_valid() then
         vim.wo[p.win].scrollbind = false
       end
     end
     self.left:unbind()
+  end
+end
+
+-- ── Scroll binding ──────────────────────────────────────────────────────────
+-- Native 'scrollbind' binds every scrollbind window in the tabpage, with no
+-- grouping, so with two sbs rows only one row may carry it at a time or the
+-- staged row scrolls along with the unstaged one. The docket decides which
+-- row is bound (the one last focused); an unbound row's panes are aligned
+-- once by hand and otherwise scroll independently.
+
+-- Screen rows from the top of the buffer through the end of line `lnum`,
+-- counting closed folds as one row and filler above each line (the measure
+-- nvim's scrollbind syncs on, there called the virtual topline).
+local function rows_through(win, lnum)
+  return vim.api.nvim_win_text_height(win, { start_row = 0, end_row = lnum - 1 }).all
+end
+
+---@param win integer
+---@return integer
+local function vtopline(win)
+  local v = vim.api.nvim_win_call(win, vim.fn.winsaveview)
+  return rows_through(win, v.topline) - v.topfill
+end
+
+-- The view of `win` whose virtual topline is closest to `target`. nvim
+-- keeps a topline on screen, so filler above it can show at most
+-- height - 1 rows; inside a filler block taller than that the exact target
+-- has no view, and the nearest one either sits on the line above the block
+-- or shows the block's anchor line at the bottom.
+---@param win integer
+---@param target integer
+---@return {topline: integer, topfill: integer}? view  nil when target is past the end of the buffer
+function M._nearest_view(win, target)
+  local n = vim.api.nvim_buf_line_count(vim.api.nvim_win_get_buf(win))
+  if rows_through(win, n) < target then
+    return nil
+  end
+  -- First line whose rows reach the target.
+  local lo, hi = 1, n
+  while lo < hi do
+    local mid = math.floor((lo + hi) / 2)
+    if rows_through(win, mid) >= target then
+      hi = mid
+    else
+      lo = mid + 1
+    end
+  end
+  local t = lo
+  local fill = rows_through(win, t) - target
+  local max_fill = math.max(vim.api.nvim_win_get_height(win) - (vim.wo[win].winbar ~= "" and 1 or 0) - 1, 0)
+  if fill <= max_fill then
+    return { topline = t, topfill = fill }
+  end
+  local below = { topline = t, topfill = max_fill }
+  local prev = t - 1
+  local closed = vim.api.nvim_win_call(win, function()
+    return vim.fn.foldclosed(prev)
+  end)
+  if closed ~= -1 then
+    prev = closed
+  end
+  local above = { topline = prev, topfill = 0 }
+  local d_below = rows_through(win, t) - max_fill - target
+  local d_above = target - rows_through(win, prev)
+  return d_above <= d_below and above or below
+end
+
+---@param win integer
+---@param view {topline: integer, topfill: integer}
+local function set_view(win, view)
+  vim.api.nvim_win_call(win, function()
+    local cur = vim.fn.winsaveview()
+    if cur.topline == view.topline and cur.topfill == view.topfill then
+      return
+    end
+    -- Keep the cursor inside the new view so a later redraw has no reason
+    -- to scroll the window back to it.
+    vim.fn.winrestview({ topline = view.topline, topfill = view.topfill })
+    local last = vim.fn.line("w$")
+    local lnum = math.min(math.max(cur.lnum, view.topline), last)
+    if lnum ~= cur.lnum then
+      vim.fn.winrestview({ topline = view.topline, topfill = view.topfill, lnum = lnum, col = 0 })
+    end
+  end)
+end
+
+-- Whether this row's panes carry 'scrollbind'. Binding re-anchors the left
+-- pane on the right one, since the panes may have drifted while unbound.
+---@param on boolean
+function DiffView:set_scroll_bound(on)
+  self._scroll_bound = on
+  if self.layout ~= "sbs" then
+    return
+  end
+  for _, p in ipairs({ self.right, self.left }) do
+    if p:win_valid() then
+      vim.wo[p.win].scrollbind = on
+    end
+  end
+  self:resync()
+end
+
+-- Re-anchor the left pane on the right one after an API view change
+-- (winrestview, cursor set), which native scrollbind doesn't follow.
+function DiffView:resync()
+  if self.layout ~= "sbs" or not (self.left:win_valid() and self.right:win_valid()) then
+    return
+  end
+  if self._scroll_bound then
+    -- :syncbind measures from the current window and, run from a window
+    -- without 'scrollbind', sends every bound window to the top; anchor it.
+    vim.api.nvim_win_call(self.right.win, function()
+      vim.cmd("syncbind")
+    end)
+  end
+  -- :syncbind can't reach a view inside a tall filler either, and an
+  -- unbound row has nothing else aligning it.
+  local view = M._nearest_view(self.left.win, vtopline(self.right.win))
+  if view then
+    set_view(self.left.win, view)
+  end
+end
+
+-- Native scrollbind tracks the follower's target position correctly but
+-- scrolls toward an unreachable one (inside a filler block taller than the
+-- window) by a relative step from wherever the last step landed, so the
+-- follower lurches between the block's ends on every scroll, and the first
+-- step after the target becomes reachable again still lands off it.
+-- WinScrolled runs before the redraw, so snapping the follower to the
+-- nearest view there hides both. A target past the end of the buffer has
+-- no view and stays nvim's to clamp.
+function DiffView:_setup_scroll_clamp()
+  self:_clear_scroll_clamp()
+  self._scroll_aug = vim.api.nvim_create_augroup("ReviewScrollClamp_" .. self.right.bufnr, { clear = true })
+  vim.api.nvim_create_autocmd("WinScrolled", {
+    group = self._scroll_aug,
+    callback = function()
+      if not self._scroll_bound or not (self.left:win_valid() and self.right:win_valid()) then
+        return
+      end
+      local cur = vim.api.nvim_get_current_win()
+      local follower = cur == self.right.win and self.left.win or cur == self.left.win and self.right.win or nil
+      if not follower then
+        return
+      end
+      local target = vtopline(cur)
+      if vtopline(follower) == target then
+        return
+      end
+      local view = M._nearest_view(follower, target)
+      if view then
+        set_view(follower, view)
+      end
+    end,
+  })
+end
+
+function DiffView:_clear_scroll_clamp()
+  if self._scroll_aug then
+    pcall(vim.api.nvim_del_augroup_by_id, self._scroll_aug)
+    self._scroll_aug = nil
   end
 end
 
@@ -1261,26 +1427,22 @@ function DiffView:_render_sbs(file, old_lines, new_lines)
 
   self:_show()
   self:_apply_folds()
-  -- Bind, align both panes at the top, and capture the scrollbind offset (0).
+  -- Bind (when this row holds the binding), align both panes at the top,
+  -- and capture the scrollbind offset (0).
   for _, p in ipairs(self:panes()) do
     if p:win_valid() then
-      vim.wo[p.win].scrollbind = true
+      vim.wo[p.win].scrollbind = self._scroll_bound
       vim.api.nvim_win_set_cursor(p.win, { 1, 0 })
     end
   end
-  -- syncbind is relative to the current window, which may be the outline or
-  -- another tab entirely (async render off the save watcher) — anchor it.
-  if vim.api.nvim_win_is_valid(self.right.win) then
-    vim.api.nvim_win_call(self.right.win, function()
-      vim.cmd("syncbind")
-    end)
-  end
+  self:resync()
   self._rendered_file = file
 end
 
 function DiffView:destroy()
   word.clear_cache()
   self:_clear_fold_sync()
+  self:_clear_scroll_clamp()
   -- Close the sbs split so a re-opened review doesn't inherit a dead pane.
   -- pcall: closing can throw when it is the last window in the tab.
   if self.left:win_valid() then

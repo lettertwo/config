@@ -996,3 +996,63 @@ describe("Pane deferred filetype", function()
     p:destroy()
   end)
 end)
+
+describe("diff._nearest_view", function()
+  local diff = require("app.review.ui.diff")
+  local ns = vim.api.nvim_create_namespace("nearest_view_spec")
+  local win, buf
+
+  -- 40 lines, 30 filler rows above line 21: taller than the 10-row window,
+  -- so the views 21/10..21/30 don't exist (topfill caps at height - 1 = 9).
+  before_each(function()
+    vim.cmd("new")
+    win = vim.api.nvim_get_current_win()
+    buf = vim.api.nvim_get_current_buf()
+    vim.bo[buf].buftype = "nofile"
+    vim.wo[win].winbar = ""
+    vim.api.nvim_win_set_height(win, 10)
+    local lines = {}
+    for i = 1, 40 do
+      lines[i] = "line " .. i
+    end
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+    local filler = {}
+    for i = 1, 30 do
+      filler[i] = { { "~" } }
+    end
+    vim.api.nvim_buf_set_extmark(buf, ns, 20, 0, { virt_lines = filler, virt_lines_above = true })
+  end)
+
+  after_each(function()
+    vim.api.nvim_win_close(win, true)
+  end)
+
+  -- Virtual topline as nvim's scrollbind counts it: screen rows through the
+  -- topline, minus the filler hidden above the top of the window.
+  local function vt(view)
+    return vim.api.nvim_win_text_height(win, { start_row = 0, end_row = view.topline - 1 }).all - view.topfill
+  end
+
+  it("lands exactly on a target above the filler", function()
+    assert.same({ topline = 5, topfill = 0 }, diff._nearest_view(win, 5))
+  end)
+
+  it("lands exactly inside the filler while the anchor line stays on screen", function()
+    -- line 21 sits at row 20 + 30 + 1 = 51; 9 filler rows above it is vt 42.
+    local view = diff._nearest_view(win, 42)
+    assert.same({ topline = 21, topfill = 9 }, view)
+    assert.equals(42, vt(view))
+  end)
+
+  it("holds on the line above the block for the first half of the gap", function()
+    assert.same({ topline = 20, topfill = 0 }, diff._nearest_view(win, 25))
+  end)
+
+  it("shows the anchor at the bottom for the second half of the gap", function()
+    assert.same({ topline = 21, topfill = 9 }, diff._nearest_view(win, 35))
+  end)
+
+  it("returns nil past the end of the buffer", function()
+    assert.is_nil(diff._nearest_view(win, 1000))
+  end)
+end)

@@ -530,6 +530,23 @@ return function(H, fixture)
       dk.dv2.left.win and dk.dv.left.win and col(dk.dv2.left.win) == col(dk.dv.left.win),
       dk.dv2.left.win and dk.dv.left.win and (col(dk.dv2.left.win) .. " vs " .. col(dk.dv.left.win)) or "missing left pane"
     )
+
+    -- 'scrollbind' is tabpage-wide, so only the focused row may carry it or
+    -- scrolling one row drags the other.
+    local function bound(dv)
+      return vim.wo[dv.right.win].scrollbind and vim.wo[dv.left.win].scrollbind
+    end
+    local function unbound(dv)
+      return not vim.wo[dv.right.win].scrollbind and not vim.wo[dv.left.win].scrollbind
+    end
+    -- Entering sbs blanks each left pane until its row's render lands.
+    vim.wait(8000, function()
+      return vim.api.nvim_buf_line_count(dk.dv.left.bufnr) > 1 and vim.api.nvim_buf_line_count(dk.dv2.left.bufnr) > 1
+    end, 50)
+    vim.api.nvim_set_current_win(dk.win)
+    check("only the focused row carries scrollbind", bound(dk.dv) and unbound(dk.dv2))
+    vim.api.nvim_set_current_win(dk.dv2.left.win)
+    check("focusing row 2 moves the binding", bound(dk.dv2) and unbound(dk.dv))
   end
 
   finish()

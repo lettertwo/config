@@ -54,6 +54,7 @@ end
 ---@field _win2 integer?  row-2 primary window (dv2), nil unless split is active
 ---@field _rendered {dv: Review.DiffView, file: Review.FileChange, role: string}[]
 ---@field _arranging boolean  suppresses WinClosed handlers during owned closes
+---@field _scroll_dv Review.DiffView  the row whose panes carry 'scrollbind' (the last one focused)
 ---@field _win_aug integer    WinClosed handlers live here (cleared in destroy)
 ---@field _aug integer?     save-watcher augroup
 ---@field _timer userdata?  save-watcher debounce timer
@@ -98,7 +99,41 @@ function M.new(opts)
   self._collapse_timer = nil
   self._win_aug = vim.api.nvim_create_augroup("ReviewDocketWins_" .. opts.dv.right.bufnr, { clear = true })
   self:_watch_primary()
+  self:_bind_scroll(self.dv)
+  -- Owned window surgery passes focus through the rows and restores it;
+  -- only a real focus change moves the binding.
+  vim.api.nvim_create_autocmd("WinEnter", {
+    group = self._win_aug,
+    callback = function()
+      if not (self._closed or self._arranging) then
+        self:_follow_focus()
+      end
+    end,
+  })
   return self
+end
+
+-- Give one row the scroll binding (see DiffView:set_scroll_bound). The other
+-- row lets go first so the newly bound row re-anchors among its own panes.
+---@param dv Review.DiffView
+function Docket:_bind_scroll(dv)
+  self._scroll_dv = dv
+  local other = dv == self.dv and self.dv2 or self.dv
+  other:set_scroll_bound(false)
+  dv:set_scroll_bound(true)
+end
+
+-- Move the scroll binding to the focused row, or back to row 1 once row 2
+-- has closed under it.
+function Docket:_follow_focus()
+  local win = vim.api.nvim_get_current_win()
+  local target = self.dv:pane_for_win(win) and self.dv or self.dv2:pane_for_win(win) and self.dv2 or nil
+  if not target and self._scroll_dv == self.dv2 and not (self._win2 and vim.api.nvim_win_is_valid(self._win2)) then
+    target = self.dv
+  end
+  if target and target ~= self._scroll_dv then
+    self:_bind_scroll(target)
+  end
 end
 
 -- Watch the row-1 primary for out-of-band closes: promote the staged row to
@@ -114,6 +149,7 @@ function Docket:_watch_primary()
       self.win = self._win2
       self._win2 = nil
       self:_watch_primary()
+      self:_bind_scroll(self.dv)
     end
   end)
 end
@@ -363,6 +399,8 @@ function Docket:_arrange(rows, opts)
     vim.api.nvim_set_current_win(self.win)
   end
   self._arranging = false
+  -- Focus changes made under _arranging didn't move the binding.
+  self:_follow_focus()
   if not ok then
     self:_notify("Review: window arrange failed: " .. tostring(err), vim.log.levels.WARN)
   end
@@ -513,12 +551,10 @@ function Docket:show_file(view)
               self.dv:reveal(self.win, hr.first_diff + 1)
             end
           end
-          -- API cursor/view changes don't run scrollbind; re-anchor the left
-          -- pane so both panes show the same region after a restore.
-          if self.dv.left:win_valid() then
-            vim.cmd("syncbind")
-          end
         end)
+        -- API cursor/view changes don't run scrollbind; re-anchor the left
+        -- pane so both panes show the same region after a restore.
+        self.dv:resync()
       end, r.mode, function()
         -- The blank no longer shows the previous file, so label the target.
         if not self._closed then
@@ -534,11 +570,7 @@ function Docket:show_file(view)
         if self._closed or not r.dv.right:win_valid() then
           return
         end
-        if r.dv.left:win_valid() then
-          vim.api.nvim_win_call(r.dv.right.win, function()
-            vim.cmd("syncbind")
-          end)
-        end
+        r.dv:resync()
       end, r.mode)
     end
   end

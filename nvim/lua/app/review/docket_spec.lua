@@ -93,6 +93,7 @@ describe("docket: cursor-scoped staging ops (fake pane)", function()
       hunks_in_range = function()
         return hunk and { hunk } or {}
       end,
+      set_scroll_bound = function() end,
       destroy = function() end,
     }
   end
@@ -291,7 +292,11 @@ describe("docket: changeset nav past a fileless changeset", function()
   -- Bare enough for next_changeset/prev_changeset and set_changesets, which
   -- is all this exercises; render never runs.
   local function fake_dv()
-    return { right = { bufnr = vim.api.nvim_get_current_buf() }, destroy = function() end }
+    return {
+      right = { bufnr = vim.api.nvim_get_current_buf() },
+      set_scroll_bound = function() end,
+      destroy = function() end,
+    }
   end
 
   local function fake_docket()
@@ -456,7 +461,11 @@ end)
 
 describe("docket: cycle_unit", function()
   local function fake_dv()
-    return { right = { bufnr = vim.api.nvim_get_current_buf() }, destroy = function() end }
+    return {
+      right = { bufnr = vim.api.nvim_get_current_buf() },
+      set_scroll_bound = function() end,
+      destroy = function() end,
+    }
   end
 
   local function make(source)
@@ -544,7 +553,11 @@ end)
 
 describe("docket: outline staging ops refuse committed rows", function()
   local function fake_dv()
-    return { right = { bufnr = vim.api.nvim_get_current_buf() }, destroy = function() end }
+    return {
+      right = { bufnr = vim.api.nvim_get_current_buf() },
+      set_scroll_bound = function() end,
+      destroy = function() end,
+    }
   end
 
   local dk, notified, calls, saved
