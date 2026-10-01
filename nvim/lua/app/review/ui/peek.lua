@@ -50,7 +50,7 @@ function M._dir_lines(entries, changed)
     local file = changed[e.path]
     local row = #lines
     if file then
-      local y = Y_STATUS[file.status] or { "?", "Comment" }
+      local y = Y_STATUS[file.status] or { "?", "ReviewStatusOther" }
       table.insert(lines, ("%s  %s%s"):format(y[1], e.name, suffix))
       table.insert(hl, { line = row, col = 0, end_col = 1, hl_group = y[2] })
     else
@@ -120,10 +120,10 @@ function M._changeset_lines(item, commits, stat)
       local row = #lines
       table.insert(lines, l)
       for col in l:gmatch("()%+") do
-        table.insert(hl, { line = row, col = col - 1, end_col = col, hl_group = "DiffAdd" })
+        table.insert(hl, { line = row, col = col - 1, end_col = col, hl_group = "ReviewStatusAdded" })
       end
       for col in l:gmatch("()%-") do
-        table.insert(hl, { line = row, col = col - 1, end_col = col, hl_group = "DiffDelete" })
+        table.insert(hl, { line = row, col = col - 1, end_col = col, hl_group = "ReviewStatusRemoved" })
       end
     end
   end

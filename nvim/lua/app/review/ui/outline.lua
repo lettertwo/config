@@ -14,38 +14,27 @@ local M = {}
 
 -- XY git-short format: X = staged/index column, Y = worktree/unstaged column
 local X_STATUS = {
-  M = { "M", "WarningMsg" },
-  A = { "A", "String" },
-  D = { "D", "ErrorMsg" },
-  R = { "R", "WarningMsg" },
-  C = { "C", "WarningMsg" },
-  B = { "B", "Comment" },
-  U = { "?", "Comment" },
+  M = { "M", "ReviewStatusStagedChanged" },
+  A = { "A", "ReviewStatusStagedAdded" },
+  D = { "D", "ReviewStatusStagedRemoved" },
+  R = { "R", "ReviewStatusStagedChanged" },
+  C = { "C", "ReviewStatusStagedChanged" },
+  B = { "B", "ReviewStatusOther" },
+  U = { "?", "ReviewStatusOther" },
 }
 local Y_STATUS = {
-  M = { "M", "DiffChange" },
-  A = { "A", "DiffAdd" },
-  D = { "D", "DiffDelete" },
-  R = { "R", "DiffChange" },
-  C = { "C", "DiffChange" },
-  B = { "B", "Comment" },
-  U = { "?", "Comment" },
+  M = { "M", "ReviewStatusChanged" },
+  A = { "A", "ReviewStatusAdded" },
+  D = { "D", "ReviewStatusRemoved" },
+  R = { "R", "ReviewStatusChanged" },
+  C = { "C", "ReviewStatusChanged" },
+  B = { "B", "ReviewStatusOther" },
+  U = { "?", "ReviewStatusOther" },
 }
 
 -- Exposed so ui/peek.lua's dir listing can reuse the same worktree-column
 -- glyph/highlight mapping instead of re-deriving it.
 M.Y_STATUS = Y_STATUS
-
-local function setup_hl()
-  vim.api.nvim_set_hl(0, "ReviewOutlineTitle", { link = "Title", default = true })
-  vim.api.nvim_set_hl(0, "ReviewOutlineCounter", { link = "Comment", default = true })
-  vim.api.nvim_set_hl(0, "ReviewOutlineDir", { link = "Comment", default = true })
-end
-
-vim.api.nvim_create_autocmd("ColorScheme", {
-  group = vim.api.nvim_create_augroup("ReviewOutlineHl", { clear = true }),
-  callback = setup_hl,
-})
 
 local function filetype_icon(path)
   local ok, icon, hl = pcall(Snacks.util.icon, path, "file")
@@ -270,14 +259,14 @@ function M._format_item(item, picker, can_stage)
     local cs = item.changeset
     -- Mark the docket's current position in the stack.
     if cs.current then
-      ret[#ret + 1] = { "● ", "DiagnosticOk" }
+      ret[#ret + 1] = { "● ", "ReviewOutlineCurrent" }
     end
     -- A Pending or Failed changeset has no files, so this header mark and
     -- the peek it opens are the only place its state shows.
     if cs.status == "pending" then
-      ret[#ret + 1] = { "○ ", "Comment" }
+      ret[#ret + 1] = { "○ ", "ReviewOutlinePending" }
     elseif cs.status == "failed" then
-      ret[#ret + 1] = { "✗ ", "ErrorMsg" }
+      ret[#ret + 1] = { "✗ ", "ReviewOutlineFailed" }
     end
     ret[#ret + 1] = { "\u{f418} ", "ReviewOutlineCounter" }
     ret[#ret + 1] = { string.format("[%d/%d] ", item._cs_idx, item._cs_total), "ReviewOutlineCounter" }
@@ -295,7 +284,7 @@ function M._format_item(item, picker, can_stage)
       ret[#ret + 1] = { "  #" .. cs.pr_number, "ReviewOutlineCounter" }
     end
     if cs.status == "failed" and cs.error then
-      ret[#ret + 1] = { "  " .. cs.error, "ErrorMsg" }
+      ret[#ret + 1] = { "  " .. cs.error, "ReviewOutlineFailed" }
     end
   elseif item.type == "dir" then
     local ok, icon, hl = pcall(Snacks.util.icon, item._name, "directory")
@@ -305,8 +294,8 @@ function M._format_item(item, picker, can_stage)
     ret[#ret + 1] = { item._name .. "/", item.has_changes and nil or "SnacksPickerDir" }
   elseif item.type == "file" then
     local file = item.change
-    local x = X_STATUS[file.status] or { "?", "Comment" }
-    local y = Y_STATUS[file.status] or { "?", "Comment" }
+    local x = X_STATUS[file.status] or { "?", "ReviewStatusOther" }
+    local y = Y_STATUS[file.status] or { "?", "ReviewStatusOther" }
     local fticon, fthl = filetype_icon(file.path)
     local name = file.old_path
         and (vim.fn.fnamemodify(file.old_path, ":t") .. " → " .. vim.fn.fnamemodify(file.path, ":t"))
@@ -355,8 +344,6 @@ function OutlineView:open()
     self._picker:focus("list")
     return
   end
-
-  setup_hl()
 
   local view = self
   local docket = self.docket
