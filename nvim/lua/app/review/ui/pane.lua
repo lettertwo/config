@@ -123,6 +123,13 @@ function Pane:write(lines)
   vim.api.nvim_buf_set_lines(self.bufnr, 0, -1, false, lines)
   vim.bo[self.bufnr].modifiable = false
   signs.clear(self.bufnr)
+  -- Neovim only grows a window's statuscolumn width, re-estimating it when
+  -- the line count changes or the option is set. Without the reset, an
+  -- inline render's old/new columns leave their width behind in an sbs (or
+  -- narrower inline) render of the same line count.
+  if self:win_valid() then
+    vim.wo[self.win].statuscolumn = vim.wo[self.win].statuscolumn
+  end
 end
 
 -- Writing into a buffer with a live treesitter highlighter reparses it on
