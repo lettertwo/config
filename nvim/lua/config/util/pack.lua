@@ -6,6 +6,10 @@ local PackUtil = {}
 ---@field count integer? nil = never checked; number = updates available
 ---@field last_checked integer? vim.uv.now() of last completion
 
+---@class Config.PackUtil.AddOpts: vim.pack.Spec
+---@field private src nil
+---@field private name nil
+
 ---@type Config.PackUtil.UpdateState
 local update_state = { pending = false, count = nil, last_checked = nil }
 
@@ -129,8 +133,11 @@ end
 -- Add a plugin to the current session (via `vim.pack.add()`).
 -- The plugin name can be specified either in "user/repo" format or as a full GitHub URL.
 ---@param name string Plugin name, either in "user/repo" or "https://github.com/user/repo"
-function PackUtil.add(name)
-  vim.pack.add({ PackUtil.resolve_plugin_url(name) })
+---@param opts? Config.PackUtil.AddOpts Optional table of options to pass to `vim.pack.add()`
+function PackUtil.add(name, opts)
+  vim.pack.add({ vim.tbl_extend("force", opts or {}, {
+    src = PackUtil.resolve_plugin_url(name),
+  }) })
 end
 
 -- Link a local plugin at the specified directory into the local pack directory.
