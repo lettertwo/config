@@ -1,33 +1,20 @@
 local map = vim.keymap.set
 
-Config.on("PackChanged", function(ev)
-  local name, kind = ev.data.spec.name, ev.data.kind
-  if name == "smart-splits.nvim" and kind ~= "delete" then
-    if not ev.data.active then
-      vim.cmd.packadd("smart-splits.nvim")
-    end
-
-    local function resolve(filepath)
-      return vim.fs.normalize(vim.fs.joinpath(ev.data.path, filepath))
-    end
-
-    local function link(filepath)
-      local filename = vim.fs.basename(filepath)
-      return vim.fn.system(string.format("ln -sf %s $XDG_CONFIG_HOME/kitty/%s", resolve(filepath), filename))
-    end
-
-    link("kitty/neighboring_window.py")
-    link("kitty/relative_resize.py")
-    link("kitty/split_window.py")
-  end
-end)
-
 vim.schedule(function()
-  Config.add("mrjones2014/smart-splits.nvim")
+  Config.add("smart-splits-nvim/smart-splits.nvim", { version = "v3" })
+  Config.add("smart-splits-nvim/backend-kitty")
+  Config.add("smart-splits-nvim/backend-ghostty")
 
   ---@diagnostic disable-next-line: missing-fields
   require("smart-splits").setup({
-    at_edge = "stop", -- 'wrap' | 'split' | 'stop'
+    mux = {
+      backend = { "smart-splits-backend-kitty", "smart-splits-backend-ghostty" },
+      warn_if_unusable = false,
+    },
+    move = {
+      at_edge = "stop", -- 'wrap' | 'split' | 'stop'
+      same_row = true,
+    },
   })
 
   -- stylua: ignore start

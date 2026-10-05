@@ -1,5 +1,13 @@
 {
   "plugins": {
+    "backend-ghostty": {
+      "rev": "6f5198018c417b88a9a9001c566f07795d48074f",
+      "src": "https://github.com/smart-splits-nvim/backend-ghostty"
+    },
+    "backend-kitty": {
+      "rev": "f892244d69727b8634dd5c085fb041f4e6cc9ef3",
+      "src": "https://github.com/smart-splits-nvim/backend-kitty"
+    },
     "bufjump.nvim": {
       "rev": "ae2728a77defbd27e9e5ef64c854fb0813ffba01",
       "src": "https://github.com/kwkarlwang/bufjump.nvim"
@@ -89,8 +97,9 @@
       "src": "https://github.com/b0o/schemastore.nvim"
     },
     "smart-splits.nvim": {
-      "rev": "0ab2e4928dc867dfea3ff1da186e69f289d8a532",
-      "src": "https://github.com/mrjones2014/smart-splits.nvim"
+      "rev": "d51cb48af626948452f0f00c41dfe67b8ad0e24c",
+      "src": "https://github.com/smart-splits-nvim/smart-splits.nvim",
+      "version": "'v3'"
     },
     "snacks.nvim": {
       "rev": "882c996cf28183f4d63640de0b4c02ec886d01f2",
