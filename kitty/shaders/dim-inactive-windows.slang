@@ -3,13 +3,13 @@
 import kitty_custom_shader_types;
 
 // Fraction of the original color retained outside the active window (1.0 = unchanged, 0.0 = blend target).
-static const float INACTIVE_DIM = 0.85;
+static const float INACTIVE_DIM = 0.9;
 // Blend target in linear RGB; black preserves the original dimming behavior.
 static const float3 INACTIVE_DIM_COLOR = float3(0.0);
 // Fraction of the way inactive pixels move toward the background color before
 // dimming, like inactive_text_alpha: text loses contrast while the background
 // keeps its brightness.
-static const float INACTIVE_TEXT_FADE = 0.15;
+static const float INACTIVE_TEXT_FADE = 0.4;
 // Progress at or above this counts as a finished fade, so APPLY shows the
 // target directly and layout changes between fades still dim correctly.
 static const float FADE_DONE = 0.95;
