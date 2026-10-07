@@ -50,6 +50,25 @@ local function filetype_for(toplevel, file)
   return vim.filetype.match({ filename = file }) or ""
 end
 
+-- A rev-keyed record's context comes from that revision's content, not the
+-- worktree file its line numbers don't index into.
+---@param toplevel string
+---@param file string
+---@param rev string "index" or a commit sha
+---@return string[]
+local function read_lines_at(toplevel, file, rev)
+  local spec = (rev == "index" and "" or rev) .. ":" .. file
+  local result = vim.system({ "git", "show", spec }, { cwd = toplevel, text = true }):wait()
+  if result.code ~= 0 then
+    return {}
+  end
+  local lines = vim.split(result.stdout or "", "\n", { plain = true })
+  if lines[#lines] == "" then
+    table.remove(lines)
+  end
+  return lines
+end
+
 ---@param toplevel string
 ---@return string?
 local function git_dir_for(toplevel)
@@ -89,7 +108,7 @@ end
 ---@param toplevel string
 ---@return string
 local function render_one(rec, toplevel)
-  local lines = read_lines(toplevel, rec.file)
+  local lines = rec.rev and read_lines_at(toplevel, rec.file, rec.rev) or read_lines(toplevel, rec.file)
   local ft = filetype_for(toplevel, rec.file)
   local end_lnum = rec.end_lnum or rec.lnum
 
@@ -99,6 +118,9 @@ local function render_one(rec, toplevel)
   local loc = rec.file .. ":" .. rec.lnum
   if end_lnum ~= rec.lnum then
     loc = loc .. "-" .. end_lnum
+  end
+  if rec.rev then
+    loc = loc .. " @ " .. (rec.rev == "index" and "index" or rec.rev:sub(1, 7))
   end
 
   local out = { string.format("## %s  (id: %s)", loc, rec.id), "" }

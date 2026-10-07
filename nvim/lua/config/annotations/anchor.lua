@@ -426,6 +426,11 @@ end
 ---@param patches table<string, table> id -> patch, appended to on a find
 ---@return Config.Annotations.Record
 local function resolve_drift(buf, rec, line_count, patches)
+  -- A sha-keyed record indexes into immutable commit content, which no edit
+  -- to this buffer can move.
+  if rec.rev and rec.rev ~= "index" then
+    return rec
+  end
   local end_lnum = rec.end_lnum or rec.lnum
   local height = math.max(end_lnum - rec.lnum + 1, 1)
   if lines_at(buf, rec.lnum, end_lnum, line_count) == rec.anchor_text then
@@ -474,7 +479,7 @@ function Anchor.render(buf)
   local line_count = vim.api.nvim_buf_line_count(buf)
   local patches = {}
   local resolved = {}
-  for _, rec in ipairs(Store.for_file(file)) do
+  for _, rec in ipairs(Store.for_file(file, nil)) do
     table.insert(resolved, resolve_drift(buf, rec, line_count, patches))
   end
 
@@ -599,6 +604,9 @@ function Anchor.toggle_background()
     Anchor.render(buf)
   end
 end
+
+-- Test-only: the drift check, so a spec can feed it a record directly.
+Anchor._resolve_drift = resolve_drift
 
 -- Test-only: the namespace extmarks are drawn in, so a spec can inspect them
 -- directly with `nvim_buf_get_extmarks`.

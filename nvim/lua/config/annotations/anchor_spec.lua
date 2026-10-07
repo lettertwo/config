@@ -492,3 +492,57 @@ describe("Config.Annotations.Anchor gutter", function()
     assert.is_true(found)
   end)
 end)
+
+describe("Config.Annotations.Anchor rev-keyed records", function()
+  local dir, prev_cwd
+  local sha = string.rep("b", 40)
+
+  before_each(function()
+    prev_cwd = vim.uv.cwd()
+    dir = vim.fn.tempname()
+    vim.fn.mkdir(dir, "p")
+    vim.system({ "git", "init", "-q" }, { cwd = dir }):wait()
+    vim.uv.chdir(dir)
+    Store._reset_cache()
+  end)
+
+  after_each(function()
+    vim.uv.chdir(prev_cwd)
+    vim.fn.delete(dir, "rf")
+  end)
+
+  it("skips drift for a sha-keyed record and still checks a worktree one", function()
+    local buf = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "x", "y", "z", "line 4" })
+    local rec = { id = "r", file = "f.lua", lnum = 4, end_lnum = 4, anchor_text = "elsewhere", body = "b" }
+
+    local patches = {}
+    local out = Anchor._resolve_drift(buf, vim.tbl_extend("force", rec, { rev = sha }), 4, patches)
+    assert.is_nil(out._stale)
+    assert.is_nil(next(patches))
+
+    out = Anchor._resolve_drift(buf, rec, 4, patches)
+    assert.is_true(out._stale)
+  end)
+
+  it("does not draw a rev-keyed record in a real file buffer", function()
+    local abs = vim.fs.joinpath(dir, "f.lua")
+    local buf = vim.api.nvim_create_buf(true, false)
+    vim.api.nvim_buf_set_name(buf, abs)
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "line 1", "line 2" })
+    Store.add({ id = "w", file = "f.lua", lnum = 1, end_lnum = 1, anchor_text = "line 1", body = "b", created_at = 1 })
+    Store.add({
+      id = "s", file = "f.lua", lnum = 2, end_lnum = 2, anchor_text = "line 2", body = "b", created_at = 1, rev = sha,
+    })
+
+    Anchor.render(buf)
+
+    local rows = {}
+    for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(buf, Anchor._ns(), 0, -1, { details = true })) do
+      if mark[4].sign_text then
+        table.insert(rows, mark[2])
+      end
+    end
+    assert.same({ 0 }, rows)
+  end)
+end)

@@ -262,4 +262,28 @@ describe("Config.Annotations.Store", function()
 
     assert.equals(0, #vim.fn.readfile(resolutions_path()))
   end)
+
+  it("loads a record without rev as a worktree record and round-trips rev", function()
+    local sha = string.rep("a", 40)
+    Store.add({ id = "1", file = "a.lua", lnum = 1, end_lnum = 1, anchor_text = "a", body = "b", created_at = 1 })
+    Store.add({
+      id = "2", file = "a.lua", lnum = 1, end_lnum = 1, anchor_text = "a", body = "b", created_at = 1, rev = sha,
+    })
+    Store.add({
+      id = "3", file = "a.lua", lnum = 1, end_lnum = 1, anchor_text = "a", body = "b", created_at = 1, rev = "index",
+    })
+
+    Store._reset_cache()
+    local by_id = {}
+    for _, rec in ipairs(Store.load()) do
+      by_id[rec.id] = rec
+    end
+    assert.is_nil(by_id["1"].rev)
+    assert.equals(sha, by_id["2"].rev)
+    assert.equals("index", by_id["3"].rev)
+
+    assert.same({ "1" }, vim.tbl_map(function(r) return r.id end, Store.for_file("a.lua")))
+    assert.same({ "2" }, vim.tbl_map(function(r) return r.id end, Store.for_file("a.lua", sha)))
+    assert.same({ "3" }, vim.tbl_map(function(r) return r.id end, Store.for_file("a.lua", "index")))
+  end)
 end)

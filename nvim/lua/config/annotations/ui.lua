@@ -258,6 +258,13 @@ function UI.prev()
   jump(-1)
 end
 
+-- A rev for display: "index", or a sha cut to seven characters.
+---@param rev string
+---@return string
+local function rev_label(rev)
+  return rev == "index" and "index" or rev:sub(1, 7)
+end
+
 -- Lists every annotation in the current worktree via a picker; confirming an
 -- item jumps to it, `annotation_delete` removes it, `annotation_resolve`
 -- toggles it resolved by hand or back to pending. The preview is the file
@@ -279,7 +286,14 @@ function UI.list()
         prefix = glyph .. " "
       end
       table.insert(items, {
-        text = string.format("%s%s:%d %s", prefix, rec.file, rec.lnum, rec.body:gsub("\n", " ")),
+        text = string.format(
+          "%s%s:%d%s %s",
+          prefix,
+          rec.file,
+          rec.lnum,
+          rec.rev and (" @ " .. rev_label(rec.rev)) or "",
+          rec.body:gsub("\n", " ")
+        ),
         file = rec.file,
         -- `file` is repo-relative; snacks resolves it against `cwd` for the
         -- preview, and nvim's cwd is not always the toplevel.
@@ -309,11 +323,21 @@ function UI.list()
     -- its neighbours.
     preview = function(ctx)
       Snacks.picker.preview.file(ctx)
-      Anchor.render_records(ctx.buf, { ctx.item.annotation })
+      -- A rev-keyed record's line numbers index into another version of the
+      -- file than the one previewed here.
+      if not ctx.item.annotation.rev then
+        Anchor.render_records(ctx.buf, { ctx.item.annotation })
+      end
     end,
     confirm = function(picker, item)
       picker:close()
-      if item then
+      if item and item.annotation.rev then
+        vim.notify(
+          string.format("%s:%d lives at %s, not the worktree", item.file, item.pos[1], rev_label(item.annotation.rev)),
+          vim.log.levels.INFO,
+          { title = "Annotations" }
+        )
+      elseif item then
         -- item.file is repo-relative; `:edit` resolves relative to nvim's
         -- cwd, which is not always the toplevel (e.g. cwd'd into a subdir).
         local target = toplevel and vim.fs.joinpath(toplevel, item.file) or item.file

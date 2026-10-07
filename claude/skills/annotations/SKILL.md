@@ -11,7 +11,7 @@ Resolve the feedback file: if `path` is given, use it; otherwise take the newest
 That file is feedback exported by `nvim/lua/config/annotations/export.lua`: a header (repo, `HEAD`, branch, batch id, and the `Resolutions:` path to write to) followed by one section per annotation:
 
 ```
-## <file>:<lnum>[-<end_lnum>]  (id: <id>)
+## <file>:<lnum>[-<end_lnum>][ @ <rev>]  (id: <id>)
 ```<ft>
 <context lines, the annotated ones marked with `>`>
 ```
@@ -21,6 +21,9 @@ That file is feedback exported by `nvim/lua/config/annotations/export.lua`: a he
 For each section:
 
 1. Open `<file>` at `<lnum>` (or `<lnum>`-`<end_lnum>`) and make the change `<body>` asks for.
+   A heading with `@ <rev>` was left on an older version of the file, so its line numbers and
+   context refer to `git show <rev>:<file>` (or the staged content, for `@ index`), not the
+   worktree file. Find the same code in the worktree and make the change there.
 2. If a section doesn't call for a code change (a question, or something already fine as
    written), leave the code alone: that's `status: "unchanged"`, not a skipped section, and its
    `note` says why nothing changed.

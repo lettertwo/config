@@ -24,6 +24,7 @@
 ---@class Config.Annotations.Record
 ---@field id string
 ---@field file string repo-relative path
+---@field rev? string what the line numbers index into: nil is the worktree file, "index" is the staged content, and a full commit sha is that commit's version of the file. Never a branch name, since those move.
 ---@field lnum integer
 ---@field end_lnum integer
 ---@field anchor_text string the annotated line(s), for drift detection
@@ -242,12 +243,16 @@ function AnnotationStore.remove(id)
   end
 end
 
+-- Records for one file at one revision. `rev` follows the record field: nil
+-- (the default) is the worktree, so a real file buffer never picks up
+-- annotations that belong to some other version of the file.
 ---@param file string repo-relative path
+---@param rev? string
 ---@return Config.Annotations.Record[]
-function AnnotationStore.for_file(file)
+function AnnotationStore.for_file(file, rev)
   local out = {}
   for _, rec in ipairs(AnnotationStore.load()) do
-    if rec.file == file then
+    if rec.file == file and rec.rev == rev then
       table.insert(out, rec)
     end
   end
