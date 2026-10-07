@@ -92,6 +92,13 @@ function Annotations.setup(opts)
   end
 end
 
+-- Lets a module that owns scratch buffers show and create annotations in
+-- them. See `provider.lua` for the contract.
+---@param provider Config.Annotations.Provider
+function Annotations.register_provider(provider)
+  require("config.annotations.provider").register(provider)
+end
+
 -- Test-only: lets a spec call `setup` again with different options.
 function Annotations._reset()
   started = false

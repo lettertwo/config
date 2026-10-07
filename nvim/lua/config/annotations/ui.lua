@@ -7,6 +7,7 @@
 local Store = require("config.annotations.store")
 local Anchor = require("config.annotations.anchor")
 local Send = require("config.annotations.send")
+local Provider = require("config.annotations.provider")
 
 local UI = {}
 
@@ -68,17 +69,39 @@ local function prompt_body(initial, on_submit)
   Config.on("WinLeave", buf, close, "Cancel the annotation prompt on focus loss")
 end
 
+-- The record fields for buffer lines [line1, line2]: from the buffer's
+-- provider when one claims it (a buffer that isn't the file itself), else
+-- from the file the buffer holds. Nil when the lines belong to no file; the
+-- provider says why, and a plain buffer is reported here.
+---@param buf integer
+---@param line1 integer
+---@param line2 integer
+---@param quiet? boolean skip the notification for a plain buffer outside a worktree
+---@return Config.Annotations.Target?
+local function target_at(buf, line1, line2, quiet)
+  local provider = Provider.for_buf(buf)
+  if provider then
+    return provider.resolve(buf, line1, line2)
+  end
+  local file = Store.relative_path(vim.api.nvim_buf_get_name(buf))
+  if not file then
+    if not quiet then
+      vim.notify("Buffer is not inside a git worktree", vim.log.levels.ERROR, { title = "Annotations" })
+    end
+    return nil
+  end
+  return {
+    file = file,
+    lnum = line1,
+    end_lnum = line2,
+    anchor_text = table.concat(vim.api.nvim_buf_get_lines(buf, line1 - 1, line2, false), "\n"),
+  }
+end
+
 -- Adds an annotation at the cursor line, or over the given visual range.
 ---@param opts? { line1: integer, line2: integer }
 function UI.add(opts)
   local buf = vim.api.nvim_get_current_buf()
-  local name = vim.api.nvim_buf_get_name(buf)
-  local file = Store.relative_path(name)
-  if not file then
-    vim.notify("Buffer is not inside a git worktree", vim.log.levels.ERROR, { title = "Annotations" })
-    return
-  end
-
   local line1, line2
   if opts then
     line1, line2 = opts.line1, opts.line2
@@ -86,15 +109,19 @@ function UI.add(opts)
     local lnum = vim.api.nvim_win_get_cursor(0)[1]
     line1, line2 = lnum, lnum
   end
-  local anchor_text = table.concat(vim.api.nvim_buf_get_lines(buf, line1 - 1, line2, false), "\n")
+  local target = target_at(buf, line1, line2)
+  if not target then
+    return
+  end
 
   prompt_body(nil, function(body)
     Store.add({
       id = new_id(),
-      file = file,
-      lnum = line1,
-      end_lnum = line2,
-      anchor_text = anchor_text,
+      file = target.file,
+      rev = target.rev,
+      lnum = target.lnum,
+      end_lnum = target.end_lnum,
+      anchor_text = target.anchor_text,
       body = body,
       created_at = os.time(),
     })
@@ -105,16 +132,14 @@ end
 -- created first.
 ---@return Config.Annotations.Record[]
 local function annotations_at_cursor()
-  local buf = vim.api.nvim_get_current_buf()
-  local name = vim.api.nvim_buf_get_name(buf)
-  local file = Store.relative_path(name)
-  if not file then
+  local lnum = vim.api.nvim_win_get_cursor(0)[1]
+  local target = target_at(vim.api.nvim_get_current_buf(), lnum, lnum, true)
+  if not target then
     return {}
   end
-  local lnum = vim.api.nvim_win_get_cursor(0)[1]
   local matches = {}
-  for _, rec in ipairs(Store.for_file(file)) do
-    if lnum >= rec.lnum and lnum <= (rec.end_lnum or rec.lnum) then
+  for _, rec in ipairs(Store.for_file(target.file, target.rev)) do
+    if target.lnum >= rec.lnum and target.lnum <= (rec.end_lnum or rec.lnum) then
       table.insert(matches, rec)
     end
   end

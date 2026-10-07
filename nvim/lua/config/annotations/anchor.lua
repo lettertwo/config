@@ -11,6 +11,7 @@
 -- and carries no identity of its own.
 
 local Store = require("config.annotations.store")
+local Provider = require("config.annotations.provider")
 
 local Anchor = {}
 
@@ -94,6 +95,12 @@ Config.on("ColorScheme", register_highlights, "Recompute annotation block colors
 
 ---@type table<integer, table<integer, { id: string, role: "start"|"end" }>> buf -> extmark id -> { record id, role }
 local marks_by_buf = {}
+
+-- Buffers a provider draws into. Kept apart from `marks_by_buf` because
+-- their rows aren't file lines: `sync` must never read their extmark
+-- positions back into the store.
+---@type table<integer, true>
+local provider_bufs = {}
 
 -- Ordinary file buffers only: a non-empty `buftype` covers terminals,
 -- oil/fugitive-style fake-file buffers, and the annotation body prompt
@@ -464,6 +471,25 @@ function Anchor.render(buf)
     return
   end
   vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
+
+  local provider = Provider.for_buf(buf)
+  if provider then
+    marks_by_buf[buf] = nil
+    provider_bufs[buf] = true
+    local drawn = {}
+    for _, rec in ipairs(Store.load()) do
+      local first, last = provider.rows(buf, rec)
+      if first then
+        local placed = vim.tbl_extend("force", {}, rec)
+        placed.lnum = first
+        placed.end_lnum = last or first
+        table.insert(drawn, placed)
+      end
+    end
+    Anchor.render_records(buf, drawn)
+    return
+  end
+  provider_bufs[buf] = nil
   marks_by_buf[buf] = {}
 
   local file = buf_file(buf)
@@ -643,10 +669,24 @@ function Anchor.setup()
     for buf in pairs(marks_by_buf) do
       Anchor.render(buf)
     end
+    for buf in pairs(provider_bufs) do
+      Anchor.render(buf)
+    end
   end, "Re-render annotations after a store mutation")
+
+  -- A provider's buffer is rewritten wholesale whenever its content changes,
+  -- which leaves extmarks piled on the surviving rows; the provider says
+  -- when it has finished a rewrite.
+  Config.on("User", "ReviewPaneRendered", function(ev)
+    local buf = ev.data and ev.data.buf
+    if buf and vim.api.nvim_buf_is_valid(buf) then
+      Anchor.render(buf)
+    end
+  end, "Re-draw annotations once a review pane has been refilled")
 
   Config.on("BufDelete", function(ev)
     marks_by_buf[ev.buf] = nil
+    provider_bufs[ev.buf] = nil
   end, "Drop annotation extmark bookkeeping for the closed buffer")
 
   -- The gutter segment's width tracks the window's textoff, which none of

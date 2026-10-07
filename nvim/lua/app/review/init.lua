@@ -187,6 +187,7 @@ function ReviewApp.open(classified, opts)
   local config = require("app.review.config")
 
   close_docket()
+  require("app.review.annotations").register()
   require("app.review.ui.hl").setup()
   Statusline.setup_highlights()
 

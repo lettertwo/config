@@ -639,6 +639,15 @@ function DiffView:_show()
   end
 end
 
+-- Tell annotation providers each pane's buffer was just rewritten: the write
+-- leaves their extmarks piled on whichever rows survive, so they redraw from
+-- the fresh row map.
+function DiffView:_announce()
+  for _, p in ipairs(self:panes()) do
+    vim.api.nvim_exec_autocmds("User", { pattern = "ReviewPaneRendered", data = { buf = p.bufnr }, modeline = false })
+  end
+end
+
 -- Clear this pane's content without tearing down its window(s). Used by the
 -- docket's deferred row-2 collapse (see Docket:_schedule_collapse): row 2
 -- stays open across a scan of clean files, but must not keep showing the
@@ -663,6 +672,7 @@ function DiffView:_clear_content()
     self.left:clear()
   end
   self._rendered_file = nil
+  self:_announce()
 end
 
 function DiffView:_render_placeholder(msg)
@@ -676,6 +686,7 @@ function DiffView:_render_placeholder(msg)
     self.left:clear()
   end
   self:_show()
+  self:_announce()
 end
 
 -- Resolve the source line info under a window's 0-indexed buffer row
@@ -990,6 +1001,7 @@ function DiffView:_render_inline(file, old_lines, new_lines)
     self:_show()
     self:_apply_folds()
     self._rendered_file = file
+    self:_announce()
     return
   end
 
@@ -1215,6 +1227,7 @@ function DiffView:_render_inline(file, old_lines, new_lines)
   self:_show()
   self:_apply_folds()
   self._rendered_file = file
+  self:_announce()
 end
 
 -- The hunk under a 0-indexed buffer row in the given window, in the same
@@ -1437,6 +1450,7 @@ function DiffView:_render_sbs(file, old_lines, new_lines)
   end
   self:resync()
   self._rendered_file = file
+  self:_announce()
 end
 
 function DiffView:destroy()
