@@ -26,6 +26,8 @@
 ---@field staged_change? Review.FileChange -- index↔HEAD sub-diff (base_ref="HEAD", head_ref="INDEX")
 ---@field old_mode? string  -- "old mode NNNNNN" header, when the diff carries a chmod
 ---@field new_mode? string  -- "new mode NNNNNN" header, when the diff carries a chmod
+---@field old_blob? string  -- full blob id of the old side ("index <old>..<new>" header); all zeros when the side doesn't exist
+---@field new_blob? string  -- full blob id of the new side; all zeros for a deletion, or a worktree side git didn't hash
 
 local M = {}
 
@@ -121,6 +123,17 @@ function M.parse(raw)
     if new_mode then
       current_file.new_mode = new_mode
       goto continue
+    end
+
+    -- Blob ids key a file's diff content (e.g. reviewed marks). They are only
+    -- full-length when the diff ran with --full-index.
+    if not current_hunk then
+      local old_blob, new_blob = line:match("^index (%x+)%.%.(%x+)")
+      if old_blob then
+        current_file.old_blob = old_blob
+        current_file.new_blob = new_blob
+        goto continue
+      end
     end
 
     -- Skip file-level header lines. Guard on current_hunk==nil so that deleted

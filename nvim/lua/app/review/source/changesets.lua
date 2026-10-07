@@ -121,6 +121,13 @@ function M.build(cwd, specs, prev, callback)
             f.base_ref = spec.base
             f.head_ref = spec.head
           end
+          if spec.head == "WORKTREE" then
+            git.fill_worktree_blobs(cwd, files, function()
+              slots[i] = make_slot(spec, shas, "ready", files)
+              snapshot()
+            end)
+            return
+          end
           slots[i] = make_slot(spec, shas, "ready", files)
         end
         snapshot()

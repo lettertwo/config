@@ -159,17 +159,19 @@ function M.new(opts)
           f.base_ref = "HEAD"
           f.head_ref = "WORKTREE"
         end
-        ---@type Review.Changeset
-        local changeset = {
-          id = changeset_id,
-          title = "Uncommitted Changes",
-          base_ref = "HEAD",
-          head_ref = "WORKTREE",
-          files = files,
-          base_sha = base_sha or "",
-          status = "ready",
-        }
-        callback({ changeset }, nil)
+        git.fill_worktree_blobs(cwd, files, function()
+          ---@type Review.Changeset
+          local changeset = {
+            id = changeset_id,
+            title = "Uncommitted Changes",
+            base_ref = "HEAD",
+            head_ref = "WORKTREE",
+            files = files,
+            base_sha = base_sha or "",
+            status = "ready",
+          }
+          callback({ changeset }, nil)
+        end)
       end)
     end)
   end

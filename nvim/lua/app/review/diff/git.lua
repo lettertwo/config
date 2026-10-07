@@ -156,7 +156,7 @@ function M.diff_uncommitted(cwd, callback)
 
   -- COMBINED: worktree vs HEAD. The untracked fan-out is chained inside this
   -- callback so untracked_parts are fully populated before join() fires.
-  run(cwd, { "git", "diff", "--no-color", "--unified=3", "HEAD" }, function(r)
+  run(cwd, { "git", "diff", "--no-color", "--full-index", "--unified=3", "HEAD" }, function(r)
     combined_base = r.stdout
     run(cwd, { "git", "ls-files", "--others", "--exclude-standard" }, function(lr)
       local paths = {}
@@ -170,7 +170,7 @@ function M.diff_uncommitted(cwd, callback)
       end
       local upending = #paths
       for i, path in ipairs(paths) do
-        run(cwd, { "git", "diff", "--no-color", "--unified=3", "--no-index", "--", "/dev/null", path }, function(ur)
+        run(cwd, { "git", "diff", "--no-color", "--full-index", "--unified=3", "--no-index", "--", "/dev/null", path }, function(ur)
           local fixed = ur.stdout:gsub("diff %-%-git a/dev/null b/([^\n]+)", function(p)
             return "diff --git a/" .. p .. " b/" .. p
           end)
@@ -185,16 +185,61 @@ function M.diff_uncommitted(cwd, callback)
   end)
 
   -- STAGED: index vs HEAD
-  run(cwd, { "git", "diff", "--no-color", "--unified=3", "--cached", "HEAD" }, function(r)
+  run(cwd, { "git", "diff", "--no-color", "--full-index", "--unified=3", "--cached", "HEAD" }, function(r)
     staged_out = r.stdout
     join()
   end)
 
   -- UNSTAGED_ONLY: worktree vs index
-  run(cwd, { "git", "diff", "--no-color", "--unified=3" }, function(r)
+  run(cwd, { "git", "diff", "--no-color", "--full-index", "--unified=3" }, function(r)
     unstaged_only_base = r.stdout
     join()
   end)
+end
+
+local ZERO_BLOB = "^0+$"
+
+-- Fill a worktree-side `new_blob` that git left as all zeros (it doesn't
+-- always hash a dirty worktree file) with the file's real blob id, in one
+-- `git hash-object --stdin-paths` call. Deleted files keep their zero id,
+-- which is a valid key for "no new side". Every FileChange in `files` is
+-- visited, along with its `unstaged` sub-diff (the only worktree-headed one).
+---@param cwd string
+---@param files Review.FileChange[]
+---@param callback fun()
+function M.fill_worktree_blobs(cwd, files, callback)
+  local targets = {}
+  local function consider(f)
+    if f.status ~= "D" and f.new_blob and f.new_blob:match(ZERO_BLOB) then
+      table.insert(targets, f)
+    end
+  end
+  for _, f in ipairs(files) do
+    consider(f)
+    if f.unstaged then
+      consider(f.unstaged)
+    end
+  end
+  if #targets == 0 then
+    callback()
+    return
+  end
+  local paths = {}
+  for i, f in ipairs(targets) do
+    paths[i] = f.path
+  end
+  run(cwd, { "git", "hash-object", "--stdin-paths" }, function(r)
+    if r.code == 0 then
+      local i = 0
+      for id in r.stdout:gmatch("[^\n]+") do
+        i = i + 1
+        if targets[i] then
+          targets[i].new_blob = id
+        end
+      end
+    end
+    callback()
+  end, table.concat(paths, "\n") .. "\n")
 end
 
 -- Ranged diff between two refs. head omitted when nil or "WORKTREE"
@@ -205,7 +250,7 @@ end
 ---@param head string?
 ---@param callback fun(diff: string?, err: string?)
 function M.diff(cwd, base, head, callback)
-  local args = { "git", "diff", "--no-color", "--unified=3", base }
+  local args = { "git", "diff", "--no-color", "--full-index", "--unified=3", base }
   if head and head ~= "WORKTREE" then
     table.insert(args, head)
   end

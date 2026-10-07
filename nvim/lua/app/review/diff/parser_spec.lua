@@ -102,6 +102,55 @@ describe("parser.parse", function()
     assert.equals(0, files[2].hunks[1].new_count)
   end)
 
+  it("records blob ids for add, modify, delete, rename and mode change", function()
+    local z = string.rep("0", 40)
+    local a, b, c = string.rep("a", 40), string.rep("b", 40), string.rep("c", 40)
+    local files = parser.parse(diff({
+      "diff --git a/new.lua b/new.lua",
+      "new file mode 100644",
+      "index " .. z .. ".." .. a,
+      "--- /dev/null",
+      "+++ b/new.lua",
+      "@@ -0,0 +1 @@",
+      "+x",
+      "diff --git a/mod.lua b/mod.lua",
+      "index " .. a .. ".." .. b .. " 100644",
+      "--- a/mod.lua",
+      "+++ b/mod.lua",
+      "@@ -1 +1 @@",
+      "-index " .. a .. ".." .. b,
+      "+y",
+      "diff --git a/old.lua b/old.lua",
+      "deleted file mode 100644",
+      "index " .. c .. ".." .. z,
+      "--- a/old.lua",
+      "+++ /dev/null",
+      "@@ -1 +0,0 @@",
+      "-x",
+      "diff --git a/before.lua b/after.lua",
+      "similarity index 90%",
+      "rename from before.lua",
+      "rename to after.lua",
+      "index " .. b .. ".." .. c,
+      "diff --git a/run.sh b/run.sh",
+      "old mode 100644",
+      "new mode 100755",
+      "index " .. a .. ".." .. a,
+    }))
+    assert.equals(z, files[1].old_blob)
+    assert.equals(a, files[1].new_blob)
+    assert.equals(a, files[2].old_blob)
+    assert.equals(b, files[2].new_blob)
+    -- A deleted line shaped like an index header stays a hunk line.
+    assert.equals("del", files[2].hunks[1].lines[1].kind)
+    assert.equals(c, files[3].old_blob)
+    assert.equals(z, files[3].new_blob)
+    assert.equals(b, files[4].old_blob)
+    assert.equals(c, files[4].new_blob)
+    assert.equals(a, files[5].old_blob)
+    assert.equals(a, files[5].new_blob)
+  end)
+
   it("parses renames", function()
     local files = parser.parse(diff({
       "diff --git a/before.lua b/after.lua",
