@@ -1,6 +1,6 @@
 local assert = require("luassert")
 
-describe("diff._sbs_annotations", function()
+describe("diff._sbs_highlights", function()
   -- Plenary's child nvim runs --noplugin; word.compute needs codediff.
   vim.cmd.packadd("codediff.nvim")
   local diff = require("app.review.ui.diff")
@@ -52,7 +52,7 @@ describe("diff._sbs_annotations", function()
         },
       },
     }
-    local ann = diff._sbs_annotations(hunks, old_lines, new_lines)
+    local ann = diff._sbs_highlights(hunks, old_lines, new_lines)
 
     assert.same({ { row = 2, count = 2, above = false } }, ann.fillers_l)
     assert.same({}, ann.fillers_r)
@@ -108,7 +108,7 @@ describe("diff._sbs_annotations", function()
         lines = { del("x", 1), ctx("a", 2, 1), ctx("b", 3, 2), ctx("c", 4, 3) },
       },
     }
-    local ann = diff._sbs_annotations(hunks, old_lines, new_lines)
+    local ann = diff._sbs_highlights(hunks, old_lines, new_lines)
     assert.same({ { row = 0, count = 1, above = true } }, ann.fillers_r)
     assert.same({}, ann.fillers_l)
     assert_parity(ann, old_lines, new_lines)
@@ -126,7 +126,7 @@ describe("diff._sbs_annotations", function()
         lines = { add("l1", 1), add("l2", 2) },
       },
     }
-    local ann = diff._sbs_annotations(hunks, old_lines, new_lines)
+    local ann = diff._sbs_highlights(hunks, old_lines, new_lines)
     assert.same({ { row = 0, count = 2, above = false } }, ann.fillers_l)
     assert.same({ { s = 0, e = 0, first_diff = 0, last_diff = 0 } }, ann.hunk_rows_l)
     assert.same({ { s = 0, e = 1, first_diff = 0, last_diff = 1 } }, ann.hunk_rows_r)
@@ -145,7 +145,7 @@ describe("diff._sbs_annotations", function()
         lines = { ctx("a", 1, 1), ctx("b", 2, 2), ctx("c", 3, 3), del("d", 4), del("e", 5) },
       },
     }
-    local ann = diff._sbs_annotations(hunks, old_lines, new_lines)
+    local ann = diff._sbs_highlights(hunks, old_lines, new_lines)
     assert.same({ { row = 2, count = 2, above = false } }, ann.fillers_r)
     assert_parity(ann, old_lines, new_lines)
     assert.same({ { s = 0, e = 4, first_diff = 3, last_diff = 4 } }, ann.hunk_rows_l)
@@ -194,7 +194,7 @@ describe("diff._sbs_annotations", function()
       },
     }
     local staged_grp = { add = "SA", del = "SD", add_word = "SAW", del_word = "SDW", sign_add = "sa", sign_del = "sd", sign_change = "sc" }
-    local ann = diff._sbs_annotations(hunks, old_lines, new_lines, {
+    local ann = diff._sbs_highlights(hunks, old_lines, new_lines, {
       pick_add = function()
         return staged_grp
       end,
@@ -265,7 +265,7 @@ describe("diff._sbs_annotations", function()
         },
       },
     }
-    local ann = diff._sbs_annotations(hunks, old_lines, new_lines)
+    local ann = diff._sbs_highlights(hunks, old_lines, new_lines)
     assert.equals(#ann.hunk_rows_l, #ann.hunk_rows_r)
     -- Leading gap and each inter-hunk gap have equal line counts per side —
     -- the invariant the index-paired fold sync relies on.
@@ -295,7 +295,7 @@ describe("diff._sbs_annotations", function()
         lines = { ctx("a", 1, 1), del("b", 2), add("B", 2), ctx("c", 3, 3) },
       },
     }
-    local ann = diff._sbs_annotations(hunks, old_lines, new_lines)
+    local ann = diff._sbs_highlights(hunks, old_lines, new_lines)
     assert_parity(ann, old_lines, new_lines)
     assert.same({ { row = 4, count = 3, above = false } }, ann.fillers_l)
   end)
@@ -318,7 +318,7 @@ describe("diff._sbs_annotations", function()
         },
       },
     }
-    local ann = diff._sbs_annotations(hunks, old_lines, new_lines)
+    local ann = diff._sbs_highlights(hunks, old_lines, new_lines)
 
     local function word_marks(exts, row)
       local out = {}
@@ -368,12 +368,12 @@ describe("diff._sbs_annotations", function()
       return c
     end
 
-    local deleted_file = diff._sbs_annotations(hunks, old_lines, new_lines, { status = "D" })
+    local deleted_file = diff._sbs_highlights(hunks, old_lines, new_lines, { status = "D" })
     assert.equals(0, count_word_marks(deleted_file.exts_l))
 
     -- Without the status guard, the same pure-del hunk gets whole-line marks
     -- (a genuine unpaired del inside an otherwise-modified file).
-    local mid_file = diff._sbs_annotations(hunks, old_lines, new_lines)
+    local mid_file = diff._sbs_highlights(hunks, old_lines, new_lines)
     assert.is_true(count_word_marks(mid_file.exts_l) > 0)
   end)
 end)

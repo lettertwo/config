@@ -62,7 +62,8 @@ function SnacksPickerConfig.config(opts)
   -- stylua: ignore end
 
   -- stylua: ignore start
-  map("n", "<leader>fr", function() Snacks.picker.pick("recent", { scope = "workspace" }) end, { desc = "Recent (workspace)" })
+  -- Recent (workspace) is awaiting a new key; <leader>fr now holds the cwd switcher.
+  -- map("n", "<leader>fr", function() Snacks.picker.pick("recent", { scope = "workspace" }) end, { desc = "Recent (workspace)" })
   map("n", "<leader>fR", function() Snacks.picker.pick("recent", { scope = "root" }) end, { desc = "Recent (root)" })
   -- stylua: ignore end
 
@@ -76,7 +77,7 @@ function SnacksPickerConfig.config(opts)
   -- stylua: ignore start
   map("n", "<leader><space>", function() Snacks.picker.pick("switch", { scope = "workspace" }) end, { desc = "Switch (workspace)" })
   map("n", "<leader>R",       function() Snacks.picker.pick("switch", { scope = "root" }) end, { desc = "Switch (root)" })
-  map("n", "<leader>r",       function() Snacks.picker.pick("switch", { scope = "cwd" }) end, { desc = "Switch (cwd)" })
+  map("n", "<leader>fr",      function() Snacks.picker.pick("switch", { scope = "cwd" }) end, { desc = "Switch (cwd)" })
   -- stylua: ignore end
 
   -- stylua: ignore start

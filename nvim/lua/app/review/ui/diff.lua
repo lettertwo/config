@@ -1258,7 +1258,7 @@ end
 ---@param new_lines string[]
 ---@param pickers? {pick_add: fun(new_lnum: integer): table, pick_del: fun(old_lnum: integer): table, status: string?}
 ---@return {exts_l: table[], exts_r: table[], fillers_l: {row:integer,count:integer,above:boolean}[], fillers_r: {row:integer,count:integer,above:boolean}[], hunk_rows_l: Review.HunkRows[], hunk_rows_r: Review.HunkRows[]}
-function M._sbs_annotations(hunks, old_lines, new_lines, pickers)
+function M._sbs_highlights(hunks, old_lines, new_lines, pickers)
   local plain = function(_)
     return GROUPS_PLAIN
   end
@@ -1398,7 +1398,7 @@ function DiffView:_render_sbs(file, old_lines, new_lines)
   self._sorted_hunks = sorted
   local pick_add, pick_del = group_pickers(self._render_mode, file)
   local ann =
-    M._sbs_annotations(sorted, old_lines, new_lines, { pick_add = pick_add, pick_del = pick_del, status = file.status })
+    M._sbs_highlights(sorted, old_lines, new_lines, { pick_add = pick_add, pick_del = pick_del, status = file.status })
 
   local function add_filler_exts(exts, fillers)
     for _, f in ipairs(fillers) do
