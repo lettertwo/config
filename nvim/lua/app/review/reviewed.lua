@@ -23,11 +23,19 @@ function M.use(cwd)
   cache = { path = nil, stamp = nil, set = {} }
 end
 
+-- cwd -> store path (false when cwd has no git dir). The outline asks once
+-- per row on every render, so the `git rev-parse` behind it runs once per cwd.
+---@type table<string, string|false>
+local path_by_cwd = {}
+
 ---@return string?
 local function store_path()
   local cwd = cwd_override or Config.root("git") or vim.fn.getcwd()
-  local dir = require("app.review.diff.git").common_dir_sync(cwd)
-  return dir and (dir .. "/review/reviewed.json") or nil
+  if path_by_cwd[cwd] == nil then
+    local dir = require("app.review.diff.git").common_dir_sync(cwd)
+    path_by_cwd[cwd] = dir and (dir .. "/review/reviewed.json") or false
+  end
+  return path_by_cwd[cwd] or nil
 end
 
 ---@param file Review.FileChange
