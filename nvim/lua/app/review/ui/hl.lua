@@ -75,6 +75,8 @@ function M.setup()
     ReviewOutlineTitle   = { link = "Title" },
     ReviewOutlineCounter = { link = "Comment" },
     ReviewOutlineDir     = { link = "Comment" },
+    ReviewOutlineReviewed     = { link = "Comment" },
+    ReviewOutlineReviewedMark = { link = "DiagnosticOk" },
     -- Collapsed context reads as dim text on the editor bg: a Folded bg fill
     -- would make the fold line look like one more diff row.
     ReviewFold           = { link = "Comment" },

@@ -286,6 +286,12 @@ function M._format_item(item, picker, can_stage)
     if cs.status == "failed" and cs.error then
       ret[#ret + 1] = { "  " .. cs.error, "ReviewOutlineFailed" }
     end
+    if cs.files and #cs.files > 0 then
+      ret[#ret + 1] = {
+        string.format("  %d/%d reviewed", require("app.review.reviewed").count(cs.files), #cs.files),
+        "ReviewOutlineCounter",
+      }
+    end
   elseif item.type == "dir" then
     local ok, icon, hl = pcall(Snacks.util.icon, item._name, "directory")
     local diricon = (ok and icon and icon ~= "") and (icon .. " ") or " "
@@ -318,8 +324,12 @@ function M._format_item(item, picker, can_stage)
     else
       ret[#ret + 1] = { y[1] .. " ", y[2] }
     end
+    local is_reviewed = require("app.review.reviewed").is_reviewed(file)
     ret[#ret + 1] = { fticon, fthl }
-    ret[#ret + 1] = { name }
+    ret[#ret + 1] = { name, is_reviewed and "ReviewOutlineReviewed" or nil }
+    if is_reviewed then
+      ret[#ret + 1] = { " ✓", "ReviewOutlineReviewedMark" }
+    end
     -- Rows directly under a changeset header have no directory row above
     -- them (tree file items are parented to one, which already carries the
     -- path), so truncation would otherwise eat the dirname before whatever
@@ -405,6 +415,20 @@ function OutlineView:open()
   end
   -- <Esc> always runs the peek → close cascade; config can't rebind it.
   list_keys["<Esc>"] = { "<Esc>", "review_close", desc = actions.review_close.desc }
+
+  -- Marks change from the diff panes or another nvim; redraw the rows. The
+  -- autocmd retires itself once the picker is gone.
+  local aug = vim.api.nvim_create_augroup("ReviewOutlineReviewed_" .. tostring(self), { clear = true })
+  vim.api.nvim_create_autocmd("User", {
+    group = aug,
+    pattern = "ReviewReviewedChanged",
+    callback = function()
+      if not view:is_open() then
+        return true
+      end
+      view:render()
+    end,
+  })
 
   local function format_item(item, picker)
     return M._format_item(item, picker, can_stage)

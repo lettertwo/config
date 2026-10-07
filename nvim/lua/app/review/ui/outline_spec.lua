@@ -276,4 +276,42 @@ describe("outline._format_item", function()
     assert.equals("a.lua → b.lua", name)
     assert.equals("  lua/app", chunk(ret, "ReviewOutlineDir"))
   end)
+
+  describe("reviewed marks", function()
+    local reviewed = require("app.review.reviewed")
+    local cwd
+
+    before_each(function()
+      cwd = vim.fn.tempname()
+      vim.fn.mkdir(cwd, "p")
+      assert.equals(0, vim.system({ "git", "init", "-q" }, { cwd = cwd }):wait().code)
+      reviewed.use(cwd)
+    end)
+
+    after_each(function()
+      reviewed.use(nil)
+    end)
+
+    it("a reviewed file row has the check chunk and a dim name", function()
+      local file = fc("lua/a.lua", { old_blob = "1", new_blob = "2" })
+      local item = { type = "file", change = file }
+      local before = outline._format_item(item, picker, false)
+      assert.is_nil(chunk(before, "ReviewOutlineReviewedMark"))
+      assert.is_nil(chunk(before, "ReviewOutlineReviewed"))
+      reviewed.toggle(file)
+      local ret = outline._format_item(item, picker, false)
+      assert.equals(" ✓", chunk(ret, "ReviewOutlineReviewedMark"))
+      assert.equals("a.lua", chunk(ret, "ReviewOutlineReviewed"))
+    end)
+
+    it("a changeset header counts reviewed files as n/m", function()
+      local a = fc("a.lua", { old_blob = "1", new_blob = "2" })
+      local b = fc("b.lua", { old_blob = "1", new_blob = "2" })
+      reviewed.toggle(a)
+      local cs = { title = "t", id = "x", files = { a, b } }
+      local item = { type = "changeset", changeset = cs, _cs_idx = 1, _cs_total = 1 }
+      local counter = chunks(outline._format_item(item, picker, false), "ReviewOutlineCounter")
+      assert.is_true(counter:find("1/2 reviewed", 1, true) ~= nil, counter)
+    end)
+  end)
 end)

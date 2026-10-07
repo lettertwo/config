@@ -97,6 +97,7 @@ function M.new(opts)
   self._arranging = false
   self._closed = false
   self._collapse_timer = nil
+  require("app.review.reviewed").use(opts.cwd)
   self._win_aug = vim.api.nvim_create_augroup("ReviewDocketWins_" .. opts.dv.right.bufnr, { clear = true })
   self:_watch_primary()
   self:_bind_scroll(self.dv)
@@ -611,6 +612,63 @@ function Docket:prev_file()
   if self.idx > 1 then
     self.idx = self.idx - 1
     self:show_file()
+  end
+end
+
+-- Files in the order the outline lists them (tree nesting and stack order
+-- included), which differs from `self.files` when the stack shows head-first.
+---@return Review.FileChange[]
+function Docket:_display_files()
+  local items = require("app.review.ui.outline")._items_for(self, self.state.outline_tree, self.state.stack_order)
+  local files = {}
+  for _, item in ipairs(items) do
+    if item.type == "file" then
+      files[#files + 1] = item.change
+    end
+  end
+  return files
+end
+
+-- Move to the nearest unreviewed file after (dir = 1) or before (dir = -1)
+-- the current one in outline order, wrapping at the ends. Stays put and says
+-- so when every other file is reviewed.
+---@param dir 1|-1
+---@return boolean moved
+function Docket:step_unreviewed(dir)
+  local reviewed = require("app.review.reviewed")
+  local order = self:_display_files()
+  local at = 0
+  for i, f in ipairs(order) do
+    if f == self:current_file() then
+      at = i
+      break
+    end
+  end
+  for step = 1, #order - 1 do
+    local f = order[(at - 1 + dir * step) % #order + 1]
+    if not reviewed.is_reviewed(f) then
+      self:focus_file(f)
+      return true
+    end
+  end
+  self:_notify("No other unreviewed files")
+  return false
+end
+
+-- Flip a file's reviewed mark (default: the current file). After marking
+-- one reviewed with `advance`, move on to the next unreviewed file.
+---@param file Review.FileChange?
+---@param advance boolean?
+function Docket:toggle_reviewed(file, advance)
+  file = file or self:current_file()
+  if not file then
+    return
+  end
+  local now_reviewed = require("app.review.reviewed").toggle(file)
+  if now_reviewed == nil then
+    self:_notify("No git directory to store reviewed marks in", vim.log.levels.WARN)
+  elseif now_reviewed and advance then
+    self:step_unreviewed(1)
   end
 end
 

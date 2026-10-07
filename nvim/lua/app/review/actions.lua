@@ -53,6 +53,28 @@ M.list = {
     outline = { handler = function(ctx) ctx.docket:prev_changeset() end },
   },
 
+  toggle_reviewed = {
+    desc = "toggle reviewed",
+    diff = { handler = function(ctx) ctx.docket:toggle_reviewed(nil, true) end },
+    outline = {
+      handler = function(ctx)
+        local item = ctx.picker:current()
+        if item and item.type == "file" then
+          ctx.docket:toggle_reviewed(item.change, false)
+        end
+      end,
+    },
+  },
+  next_unreviewed = {
+    desc = "next unreviewed file",
+    diff = { refocus = true, handler = function(ctx) ctx.docket:step_unreviewed(1) end },
+    outline = { handler = function(ctx) ctx.docket:step_unreviewed(1) end },
+  },
+  prev_unreviewed = {
+    desc = "previous unreviewed file",
+    outline = { handler = function(ctx) ctx.docket:step_unreviewed(-1) end },
+  },
+
   toggle_layout = {
     desc = "toggle side-by-side layout",
     diff = { handler = function(ctx) ctx.docket:toggle_layout() end },
