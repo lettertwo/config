@@ -104,7 +104,7 @@ describe("Config.Annotations.Export", function()
 
     assert.is_not_nil(path)
     assert.equals(1, vim.fn.filereadable(path))
-    assert.matches("claude%-annotations/feedback%-" .. batch .. "%.md$", path)
+    assert.matches("claude%-annotations/feedback%-" .. batch:gsub("%-", "%%-") .. "%.md$", path)
     assert.matches("## f%.lua:2  %(id: 1%)", table.concat(vim.fn.readfile(path), "\n"))
   end)
 
