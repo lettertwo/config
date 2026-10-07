@@ -271,6 +271,19 @@ function AnnotationStore.pending()
   return out
 end
 
+-- Records with no resolution row, sent or not. A pull exports these, so a
+-- push that died partway and annotations never sent both get picked up.
+---@return Config.Annotations.Record[]
+function AnnotationStore.unanswered()
+  local out = {}
+  for _, rec in ipairs(AnnotationStore.load()) do
+    if rec.resolution == nil then
+      table.insert(out, rec)
+    end
+  end
+  return out
+end
+
 ---@param ids string[]
 ---@param batch string
 function AnnotationStore.mark_sent(ids, batch)

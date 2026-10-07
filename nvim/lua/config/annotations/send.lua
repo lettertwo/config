@@ -1,8 +1,6 @@
 -- Sends pending annotations to the Claude Code session running in another
 -- kitty window: writes the feedback file, finds the window, and types
--- `/annotations` into it. The skill on the Claude side finds the file itself
--- (newest under `claude-annotations/` in its own repo), so no path travels
--- over the wire.
+-- `/annotations <feedback path>` into it.
 
 local Store = require("config.annotations.store")
 local Export = require("config.annotations.export")
@@ -89,7 +87,7 @@ local function find_claude_windows(toplevel)
 end
 
 -- Exports pending annotations, finds the Claude window for this repo, and
--- types `/annotations` into it. Leaves the feedback file and does not mark
+-- types `/annotations <path>` into it. Leaves the feedback file and does not mark
 -- anything sent if no window is found, or if more than one is ambiguous and
 -- the user cancels the picker.
 function Send.send()
@@ -106,17 +104,11 @@ function Send.send()
 
   local cwd = vim.uv.cwd()
   local toplevel = Store.toplevel(cwd)
-  local git_dir = Store.git_dir(cwd)
-  if not toplevel or not git_dir then
-    vim.notify("Not inside a git worktree", vim.log.levels.ERROR, { title = "Annotations" })
+  local feedback_path, batch = Export.write(pending, cwd)
+  if not toplevel or not feedback_path then
+    vim.notify(batch or "Not inside a git worktree", vim.log.levels.ERROR, { title = "Annotations" })
     return
   end
-
-  local batch = os.date("%Y%m%d-%H%M%S")
-  local feedback_dir = vim.fs.joinpath(git_dir, "claude-annotations")
-  vim.fn.mkdir(feedback_dir, "p")
-  local feedback_path = vim.fs.joinpath(feedback_dir, "feedback-" .. batch .. ".md")
-  vim.fn.writefile(vim.split(Export.render(pending, toplevel, batch), "\n"), feedback_path)
 
   local windows, err = find_claude_windows(toplevel)
   if err then
@@ -137,7 +129,7 @@ function Send.send()
       "send-text",
       "--match",
       "id:" .. win.id,
-      "/annotations\r",
+      "/annotations " .. feedback_path .. "\r",
     })
     if send_result.code ~= 0 then
       vim.notify("kitty send-text failed: " .. (send_result.stderr or ""), vim.log.levels.ERROR, { title = "Annotations" })

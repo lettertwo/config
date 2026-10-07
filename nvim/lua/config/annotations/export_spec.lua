@@ -95,4 +95,25 @@ describe("Config.Annotations.Export", function()
     assert.matches("> new 2", out)
     assert.is_nil(out:find("tree 2", 1, true))
   end)
+
+  it("write() renders the records into a feedback file under the git dir and returns its path", function()
+    write_file(dir, "f.lua", { "one", "two", "three" })
+    local rec = { id = "1", file = "f.lua", lnum = 2, end_lnum = 2, anchor_text = "two", body = "fix", created_at = 0 }
+
+    local path, batch = Export.write({ rec }, dir)
+
+    assert.is_not_nil(path)
+    assert.equals(1, vim.fn.filereadable(path))
+    assert.matches("claude%-annotations/feedback%-" .. batch .. "%.md$", path)
+    assert.matches("## f%.lua:2  %(id: 1%)", table.concat(vim.fn.readfile(path), "\n"))
+  end)
+
+  it("write() reports an error outside a git worktree", function()
+    local outside = vim.fn.tempname()
+    vim.fn.mkdir(outside, "p")
+    local path, err = Export.write({}, outside)
+    vim.fn.delete(outside, "rf")
+    assert.is_nil(path)
+    assert.is_string(err)
+  end)
 end)

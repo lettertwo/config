@@ -1,6 +1,8 @@
 -- Builds the feedback markdown sent to Claude: one section per annotation,
 -- with the code context it was left on and the annotation body underneath.
 
+local Store = require("config.annotations.store")
+
 local Export = {}
 
 local CONTEXT = 3
@@ -148,6 +150,28 @@ function Export.render(records, toplevel, batch)
     table.insert(sections, render_one(rec, toplevel))
   end
   return table.concat(sections, "\n")
+end
+
+-- Renders `records` into a new `feedback-<batch>.md` under the worktree's
+-- `claude-annotations/` directory. Marking the records sent is the caller's
+-- call: a push waits until the text reaches Claude, a pull is read by its
+-- caller directly.
+---@param records Config.Annotations.Record[]
+---@param cwd string any directory inside the worktree
+---@return string? feedback_path, string? batch_or_err the batch id on success, the error otherwise
+function Export.write(records, cwd)
+  local toplevel = Store.toplevel(cwd)
+  local git_dir = Store.git_dir(cwd)
+  if not toplevel or not git_dir then
+    return nil, "Not inside a git worktree"
+  end
+
+  local batch = os.date("%Y%m%d-%H%M%S")
+  local feedback_dir = vim.fs.joinpath(git_dir, "claude-annotations")
+  vim.fn.mkdir(feedback_dir, "p")
+  local feedback_path = vim.fs.joinpath(feedback_dir, "feedback-" .. batch .. ".md")
+  vim.fn.writefile(vim.split(Export.render(records, toplevel, batch), "\n"), feedback_path)
+  return feedback_path, batch
 end
 
 return Export

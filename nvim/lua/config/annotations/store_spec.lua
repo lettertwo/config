@@ -130,6 +130,21 @@ describe("Config.Annotations.Store", function()
     assert.equals("0007", rec.resolution.turn_seq)
   end)
 
+  it("unanswered() includes sent records without a resolution and excludes resolved ones", function()
+    Store.add({ id = "1", file = "f.lua", lnum = 1, end_lnum = 1, anchor_text = "a", body = "b", created_at = 1 })
+    Store.add({ id = "2", file = "f.lua", lnum = 2, end_lnum = 2, anchor_text = "c", body = "d", created_at = 2 })
+    Store.add({ id = "3", file = "f.lua", lnum = 3, end_lnum = 3, anchor_text = "e", body = "f", created_at = 3 })
+    Store.mark_sent({ "1", "2" }, "batch-1")
+    write_resolution({ id = "2", status = "changed", note = "done", ts = 100 })
+    Store._reset_cache()
+
+    local ids = vim.tbl_map(function(rec)
+      return rec.id
+    end, Store.unanswered())
+    table.sort(ids)
+    assert.same({ "1", "3" }, ids)
+  end)
+
   it("resolved() returns only records with a merged resolution", function()
     Store.add({ id = "1", file = "a.lua", lnum = 1, end_lnum = 1, anchor_text = "a", body = "b", created_at = 1 })
     Store.add({ id = "2", file = "a.lua", lnum = 2, end_lnum = 2, anchor_text = "c", body = "d", created_at = 2 })
