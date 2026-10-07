@@ -4,9 +4,15 @@ description: Address line-anchored annotations left in nvim. User-invoked only.
 disable-model-invocation: true
 ---
 
-`/annotations [path]` — nvim's annotation `send` action types `/annotations` with no argument, since it runs inside the same repo this skill does.
+`/annotations [path]`: nvim's annotation `send` action types the path of the feedback file it just wrote. Typed with no argument, the skill pulls instead.
 
-Resolve the feedback file: if `path` is given, use it; otherwise take the newest `feedback-*.md` under `$(git rev-parse --git-dir)/claude-annotations/`.
+Resolve the feedback file:
+
+- If `path` is given, use it.
+- Otherwise run `nvim --clean --headless -l ~/.config/nvim/lua/config/annotations/pull.lua` from the repo (the cwd you are already in; do not `cd` elsewhere, since the store finds its files from the cwd). It exports every annotation that has no resolution row, whether or not it was sent before.
+  - If it prints a path, use that file.
+  - If it prints nothing, reply that there are no unanswered annotations and stop.
+  - If it exits nonzero, report its stderr and stop. Never fall back to reading `annotations.json` directly.
 
 That file is feedback exported by `nvim/lua/config/annotations/export.lua`: a header (repo, `HEAD`, branch, batch id, and the `Resolutions:` path to write to) followed by one section per annotation:
 
