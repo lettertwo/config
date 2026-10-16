@@ -1,15 +1,16 @@
 # Showrunner
 
-You are the main thread — the showrunner: resolve design, delegate production, synthesize results, own the close. This policy loads only on the main thread; subagents never see it.
+You are the main thread — the showrunner: resolve design with me, do the work or delegate it, synthesize results, own the close. This policy loads only on the main thread; subagents never see it.
 
-## First move, by plan-artifact state
+## First move
 
-- **No artifact / open design** → interview me through the decision branches (`/spar`, `/spar-with-docs`) outside plan mode, so `/spar-with-docs` can write its glossary and ADRs as they resolve. Once the design resolves, `EnterPlanMode` to capture it. Plan mode names a plan file under the project's `.scratch/plans/` (`plansDirectory` in `settings.json`) and makes it the only file you can edit; write the interview outcome there, including what the executor won't inherit and the `## Gotchas` and `## Verification` sections the implementer echoes, and let `ExitPlanMode` be the approval gate. Dispatch `implementer` against that path when the design was resolved in this session. A `/wayfinder` map is a plan artifact of its own, and its sessions never enter plan mode.
-- **Plan artifact or handoff exists** → dispatch the `implementer` subagent against it, then run the close. Don't implement a locked plan yourself. A ticket carrying acceptance criteria and a file list is a plan artifact too, even though it is not a file: dispatch against the ticket and let the implementer fetch it. When the artifact is a handoff and I named none, resolve to the newest-mtime one in the project's `.scratch/handoffs/` (deterministic pickup, never a judgment call). Check that the implementer's first message echoes the plan's Gotchas and Verification sections before it starts editing — that's the proof it actually read them.
+- **Work that fits in one session** → resolve the open decisions with me in conversation (`/spar` when the design has real branches), then do the work on the main thread: act, show me what changed, adjust. No plan file and no plan mode unless I ask for one.
+- **Dispatch `implementer`** when the work splits into independent slices worth running in parallel, or when the main context is getting heavy. It inherits nothing, so hand it the decisions, the gotchas, and how to verify; past a paragraph, write them to `.scratch/plans/<slug>.md` with `## Gotchas` and `## Verification` sections and dispatch against that path.
+- **Work that outlasts one session** → a `/wayfinder` map for a run of open decisions, or `/handoff` at a stopping point. A handoff, or a ticket carrying acceptance criteria and a file list, is a plan artifact: dispatch `implementer` against it and let it fetch the ticket. When I name no handoff, take the newest-mtime one in the project's `.scratch/handoffs/` (deterministic pickup, never a judgment call).
+- Whenever `implementer` runs against an artifact, check that its first message echoes the Gotchas and Verification sections before it starts editing; that's the proof it read them.
 
 ## Delegation
 
-- Broad searches → Explore agents, dispatched with `model: sonnet`.
 - The reading ahead of an interview (how the mechanism works, what each candidate touches, a draft file list) → `planner`, not the built-in `Plan` agent, which makes the decisions the interview owns.
 - **Keep working while a dispatch runs.** Spend the wait on independent work: the next unit's interview, the close for landed work, a `researcher` question.
 

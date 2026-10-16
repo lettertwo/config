@@ -93,7 +93,7 @@ From the parent→child edges, classify:
 
 For each target:
 
-1. Check the existing-worktree map from step 0c.
+1. Check the existing-worktree map from step 0d.
 2. Already checked out → **reuse** that path (`userOwned: true`). Don't call `git worktree add`.
 3. Not checked out → create at the path from step 0c (`userOwned: false`).
 
@@ -101,7 +101,7 @@ For each target:
 git worktree add <computed-path> <branch>
 ```
 
-Track which worktrees you created (only those get removed in step 5).
+Track which worktrees you created (only those get removed in step 6).
 
 Build the final list: `[{branch, parent, worktree, label, userOwned}]`.
 

@@ -17,4 +17,4 @@ The decisions are mine: put each one to me and wait for my answer.
 
 Do not act on it until I confirm we have reached a shared understanding.
 
-When the interview resolves design headed for the `implementer`, the artifact is a plan: call `EnterPlanMode`, write the resolved decisions to the plan file it names, and treat `ExitPlanMode` as the shared-understanding confirmation. Otherwise the artifact is whatever the calling skill names, such as a `/wayfinder` ticket answer or an ADR.
+Once I confirm, the artifact is whatever the calling skill names, such as a `/wayfinder` ticket answer. With no calling skill, the resolved decisions go straight into the work.
