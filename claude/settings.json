@@ -68,7 +68,7 @@
   },
   "model": "opus",
   "plansDirectory": ".scratch/plans",
-  "disableClaudeAiConnectors": true,
+  "disableClaudeAiConnectors": false,
   "syncClaudeAiSkills": false,
   "skillOverrides": {
     "claude-api": "name-only",
