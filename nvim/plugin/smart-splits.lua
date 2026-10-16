@@ -1,7 +1,7 @@
 local map = vim.keymap.set
 
 vim.schedule(function()
-  Config.add("smart-splits-nvim/smart-splits.nvim", { version = "v3" })
+  Config.add("smart-splits-nvim/smart-splits.nvim")
   Config.add("smart-splits-nvim/backend-kitty")
   Config.add("smart-splits-nvim/backend-ghostty")
 
