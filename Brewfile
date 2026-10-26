@@ -52,6 +52,9 @@ brew "withgraphite/tap/graphite" if OS.mac?
 brew "lazygit", args: ["HEAD"] if OS.mac?
 brew "lettertwo/tap/git-workon" if OS.mac?
 
+# hunk
+brew "hunk"
+
 # neovim dependencies
 # See https://github.com/neovim/neovim/wiki/Building-Neovim#macos--homebrew
 brew "ninja"

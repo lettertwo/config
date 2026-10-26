@@ -47,6 +47,7 @@ bat/themes/laserwave.tmTheme
 wezterm/colors/laserwave.toml
 yazi/flavors/laserwave.yazi
 ghostty/themes/laserwave
+hunk/extensions/laserwave.ts
 
 # kitty-scrollback.nvim
 kitty/kitty_scroll_prompt.py
@@ -57,3 +58,7 @@ kitty/loading.py
 kitty/neighboring_window.py
 kitty/relative_resize.py
 kitty/split_window.py
+
+# hunk.dev
+hunk/extensions/installed
+fish/completions/hunk.fish

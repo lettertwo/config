@@ -35,12 +35,13 @@ laserwave: ~/.config/kitty/laserwave.conf \
 	~/.config/bat/themes/laserwave.tmTheme \
 	~/.config/git/laserwave.gitconfig \
 	~/.config/yazi/flavors/laserwave.yazi/flavor.toml \
-	~/.config/ghostty/themes/laserwave
+	~/.config/ghostty/themes/laserwave \
+	~/.config/hunk/extensions/laserwave.ts
 
 .PHONY: update-laserwave
 update-laserwave:
 	$(call log,"Updating laserwave...")
-	@rm -f ~/.config/kitty/laserwave.conf ~/.config/bat/themes/laserwave.tmTheme ~/.config/git/laserwave.gitconfig ~/.config/ghostty/themes/laserwave
+	@rm -f ~/.config/kitty/laserwave.conf ~/.config/bat/themes/laserwave.tmTheme ~/.config/git/laserwave.gitconfig ~/.config/ghostty/themes/laserwave ~/.config/hunk/extensions/laserwave.ts
 	@rm -rf ~/.config/yazi/flavors/laserwave.yazi
 	$(call run,curl -fsSL $(LASERWAVE_URL)/kitty/laserwave.conf -o ~/.config/kitty/laserwave.conf)
 	$(call run,curl -fsSL $(LASERWAVE_URL)/laserwave.tmTheme -o ~/.config/bat/themes/laserwave.tmTheme)
@@ -49,6 +50,7 @@ update-laserwave:
 	$(call run,curl -fsSL $(LASERWAVE_URL)/yazi/laserwave.yazi/flavor.toml -o ~/.config/yazi/flavors/laserwave.yazi/flavor.toml)
 	$(call run,curl -fsSL $(LASERWAVE_URL)/yazi/laserwave.yazi/tmtheme.xml -o ~/.config/yazi/flavors/laserwave.yazi/tmtheme.xml)
 	$(call run,curl -fsSL $(LASERWAVE_URL)/ghostty/laserwave -o ~/.config/ghostty/themes/laserwave)
+	$(call run,curl -fsSL $(LASERWAVE_URL)/hunk/laserwave.ts -o ~/.config/hunk/extensions/laserwave.ts)
 	$(call done)
 
 ~/.config/kitty/laserwave.conf: | ~/.config/kitty
@@ -67,6 +69,9 @@ update-laserwave:
 
 ~/.config/ghostty/themes/laserwave: | ~/.config/ghostty/themes
 	$(call run,curl -fsSL $(LASERWAVE_URL)/ghostty/laserwave -o $@)
+
+~/.config/hunk/extensions/laserwave.ts: | ~/.config/hunk/extensions
+	$(call run,curl -fsSL $(LASERWAVE_URL)/hunk/laserwave.ts -o $@)
 
 ### homebrew
 
@@ -366,6 +371,37 @@ update-claude: claude
 	$(call run,claude update)
 	$(call done)
 
+### hunk
+
+HUNK := $(shell command -v hunk 2> /dev/null)
+
+~/.config/hunk/extensions/installed/hunkydory: | hunk
+	$(call log,"Installing hunkydory...")
+	$(call run,hunk extension install TreeHappy/hunkydory --yes)
+	$(call done)
+
+.PHONY: hunk
+hunk: brew
+ifndef HUNK
+	$(call err,"hunk not found!")
+	$(call log,"Installing hunk...")
+	$(call run,brew install hunk)
+	$(call done)
+endif
+
+.PHONY: hunk-extensions
+hunk-extensions: ~/.config/hunk/extensions/installed/hunkydory
+
+.PHONY: update-hunk
+update-hunk: hunk hunk-extensions
+	$(call log,"Updating hunk...")
+	$(call run,brew upgrade hunk)
+	$(call log,"Updating hunk extensions...")
+	$(call run,hunk extension update)
+	$(call log,"Generating hunk fish completions...")
+	$(call run,python3 ~/.config/hunk/fish-completion.py > ~/.config/fish/completions/hunk.fish.tmp && mv ~/.config/fish/completions/hunk.fish.tmp ~/.config/fish/completions/hunk.fish)
+	$(call done)
+
 ### config
 
 .PHONY: update-config
@@ -400,4 +436,5 @@ update: update-config \
 	update-fish \
 	update-bat \
 	update-nvim \
-	update-kitty
+	update-kitty \
+	update-hunk

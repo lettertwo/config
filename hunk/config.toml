@@ -1,0 +1,27 @@
+theme = "laserwave-nvim"
+mode = "auto"
+line_numbers = true
+wrap_lines = false
+hunk_headers = false
+menu_bar = false
+agent_notes = true
+copy_decorations = false
+cursor_line = "row"
+animations = "false"
+
+[keybindings]
+"hunk.view.toggleFilesPane" = "o"
+"hunk.review.nextFile" = "]"
+"hunk.review.previousFile" = "["
+"hunk.review.nextHunk" = "}"
+"hunk.review.previousHunk" = "{"
+"hunk.review.pageDown" = ["pagedown", "f"]
+"hunk.review.pageUp" = ["pageup", "b"]
+"hunk.review.halfPageDown" = ["d", "ctrl+d", "J"]
+"hunk.review.halfPageUp" = ["u", "ctrl+u", "K"]
+"hunk.review.nextAnnotatedHunk" = "."
+"hunk.review.previousAnnotatedHunk" = ","
+"hunk.review.nextAnnotatedFile" = ">"
+"hunk.review.previousAnnotatedFile" = "<"
+"hunk.review.scrollCodeLeft" = ["h", "left", "H", "shift+left"]
+"hunk.review.scrollCodeRight" = ["l", "right", "L", "shift+right"]
