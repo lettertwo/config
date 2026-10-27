@@ -2,7 +2,7 @@
   "name": "hunk-stack",
   "version": "0.1.0",
   "private": true,
-  "description": "Read marks for Hunk reviews",
+  "description": "Stack navigation and read marks for Hunk reviews",
   "license": "MIT",
   "type": "module",
   "scripts": {

@@ -1,4 +1,4 @@
-import { useMemo, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useMemo, useSyncExternalStore, type ReactNode } from "react";
 import type {
   ExtensionDiffFile,
   ExtensionLineHighlightControls,
@@ -8,6 +8,9 @@ import type {
   ExtensionStatusLineControls,
   HunkExtensionAPI,
 } from "hunkdiff/extension";
+import { Switcher, hunkRunner, reloadArgs, type Run } from "./daemon";
+import { StackState } from "./state";
+import { createSys, type Sys } from "./stack/sys";
 import { dimHighlights, hiddenNotice, isUnderDirectory, nextUnread, progressSpans } from "./vendored/mark-read/core";
 import { defaultSessionDir, SessionLog } from "./vendored/mark-read/sessionLog";
 import { MarkReadStore } from "./vendored/mark-read/store";
@@ -25,10 +28,22 @@ const ALL_READ_HIDDEN = "All files read, read files are hidden";
  * and the sidebar leaves the key out.
  */
 const TOGGLE_HIDDEN = "hunk-stack.toggle-hidden";
+const STACK_USAGE = `Usage: hunk stack [hunk diff options]
+
+Review the current branch's stack one changeset at a time. Opens on the
+uncommitted changes when there are any, else on the focus branch. Options such as
+--mode or --watch pass through to hunk diff.
+`;
 
 export interface StackOptions {
   /** Where session files live; defaults to `defaultSessionDir()`. */
   sessionDir?: string;
+  /** Runs the hosting hunk binary for daemon requests; defaults to `process.execPath`. */
+  run?: Run;
+  /** Builds the process boundary for stack discovery in a directory. */
+  makeSys?: (cwd: string) => Sys;
+  /** The pid the daemon knows this window by; defaults to `process.pid`. */
+  pid?: number;
 }
 
 /**
@@ -49,6 +64,12 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
       : new SessionLog(options.sessionDir ?? defaultSessionDir());
   let reviewTitle = "review";
   let persistFailed = false;
+  const switcher = new Switcher(
+    options.run ?? hunkRunner(),
+    (message) => host.notify?.(message, "warning"),
+    options.pid,
+  );
+  const stack = new StackState(options.makeSys ?? createSys, switcher);
 
   /**
    * Host controls captured from the latest command or lifecycle context.
@@ -150,7 +171,9 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
   /** The built-in files pane, copied from Hunk, with read markers. */
   function StackSidebar(props: ExtensionPaneProps): ReactNode {
     const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
-    const { files } = props;
+    const { files, review } = props;
+
+    useEffect(() => stack.observeReview(review), [review]);
 
     const readState = useMemo<SidebarReadState>(() => {
       const isRead = (file: ExtensionDiffFile) => {
@@ -344,6 +367,55 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
     }
   });
 
+  hunk.registerCommand(
+    // Stepping walks base to head, as in the nvim review app.
+    { id: "next-changeset", title: "Next changeset (toward head)", key: ")" },
+    (ctx) => {
+      host.notify = ctx.notify;
+      ctx.notify(stack.step(1));
+    },
+  );
+
+  hunk.registerCommand(
+    { id: "previous-changeset", title: "Previous changeset (toward base)", key: "(" },
+    (ctx) => {
+      host.notify = ctx.notify;
+      ctx.notify(stack.step(-1));
+    },
+  );
+
+  hunk.registerCommand(
+    { id: "cycle-zoom", title: "Cycle changeset zoom (combined, branch, commit)", key: "I" },
+    (ctx) => {
+      host.notify = ctx.notify;
+      ctx.notify(stack.cycleZoom(ctx.selection.file?.path ?? null));
+    },
+  );
+
+  // The handler runs in the process that then hosts the delegated review, so the stack it
+  // opens is the one the changeset commands step through. Any other hunk command leaves the
+  // stack closed.
+  hunk.registerCliCommand(
+    {
+      name: "stack",
+      summary: "Review the current branch's stack, one changeset at a time",
+      usage: "[hunk diff options]",
+    },
+    async (args, ctx) => {
+      if (args.includes("-h") || args.includes("--help")) {
+        await ctx.stdout.write(STACK_USAGE);
+        return { kind: "exit" };
+      }
+      const opened = stack.open(ctx.cwd);
+      const argv = "error" in opened ? opened : reloadArgs(opened);
+      if ("error" in argv) {
+        await ctx.stderr.write(`hunk stack: ${formatTerminalPath(argv.error)}\n`);
+        return { kind: "exit", code: 1 };
+      }
+      return { kind: "delegate", argv: [...argv, ...args] };
+    },
+  );
+
   hunk.on("startup", (_payload, ctx) => {
     host.notify = ctx.notify;
   });
@@ -353,11 +425,17 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
     host.notify = ctx.notify;
     renderProgress();
   });
-  hunk.on("session_reload", (_payload, ctx) => {
+  hunk.on("session_reload", (payload, ctx) => {
     host.review = ctx.review;
     host.statusLine = ctx.statusLine;
     host.notify = ctx.notify;
     renderProgress();
+    // The daemon answers a reload request after this event, so the request is still the one running.
+    const landing = payload.reason === "daemon" ? switcher.takeLanding() : null;
+    const file = landing?.path ? payload.changeset.files.find((f) => f.path === landing.path) : undefined;
+    if (file) {
+      ctx.navigation.selectFile(file.id);
+    }
   });
 }
 

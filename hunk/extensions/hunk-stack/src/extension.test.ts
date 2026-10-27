@@ -6,6 +6,7 @@ import type {
   ChangesetTransform,
   ExtensionChangeset,
   ExtensionCommandContext,
+  ExtensionCliCommandHandler,
   ExtensionCommandHandler,
   ExtensionDiffFile,
   ExtensionLineHighlighter,
@@ -14,6 +15,8 @@ import type {
   HunkExtensionAPI,
 } from "hunkdiff/extension";
 import { registerStack } from "./extension";
+import { NOT_A_STACK } from "./state";
+import { makeRepo } from "./stack/testRepo";
 
 const tempDirs: string[] = [];
 afterEach(() => {
@@ -52,12 +55,14 @@ function loadExtension({
     { key?: string | readonly string[]; handler: ExtensionCommandHandler }
   >();
   const panes: ExtensionPane[] = [];
+  const cliCommands = new Map<string, ExtensionCliCommandHandler>();
   const highlighters: ExtensionLineHighlighter[] = [];
   const transforms: ChangesetTransform[] = [];
   const status = new Map<string, ExtensionStatusItem>();
   const api = {
     registerCommand: (command, handler) => commands.set(command.id, { key: command.key, handler }),
     registerPane: (pane) => panes.push(pane),
+    registerCliCommand: (command, handler) => cliCommands.set(command.name, handler),
     registerLineHighlighter: (highlighter) => highlighters.push(highlighter),
     transformChangeset: (fn) => transforms.push(fn),
     on: () => {},
@@ -127,6 +132,7 @@ function loadExtension({
   };
 
   return {
+    cliCommands,
     commands,
     panes,
     status,
@@ -139,6 +145,22 @@ function loadExtension({
   };
 }
 
+/** Run the `hunk stack` CLI handler the way hunk does before any review starts. */
+async function runCli(ext: ReturnType<typeof loadExtension>, cwd: string, args: string[]) {
+  let stderr = "";
+  const writer = (sink: (chunk: string) => void) => ({
+    write: async (chunk: string | Uint8Array) => sink(String(chunk)),
+  });
+  const result = await ext.cliCommands.get("stack")!(args, {
+    cwd,
+    signal: new AbortController().signal,
+    stdin: (async function* () {})(),
+    stdout: writer(() => {}),
+    stderr: writer((chunk) => (stderr += chunk)),
+  });
+  return { result, stderr };
+}
+
 describe("stack extension", () => {
   test("registers the agreed keys and replaces the files pane", () => {
     const ext = loadExtension();
@@ -146,6 +168,28 @@ describe("stack extension", () => {
     expect(ext.commands.get("next-unread")?.key).toBe("X");
     expect(ext.commands.get("toggle-hidden")?.key).toBe("H");
     expect(ext.panes[0]?.replaces).toBe("hunk:files");
+  });
+
+  test("hunk stack delegates to the changeset the review opens on", async () => {
+    const repo = makeRepo();
+    repo.git("checkout", "-qb", "a1");
+    repo.commitFile("a1x.txt", "a1: add x");
+    repo.writeGhStack({ schemaVersion: 1, stacks: [{ trunk: { branch: "main" }, branches: [{ branch: "a1" }] }] });
+    const base = repo.git("rev-parse", "main").trim();
+    const head = repo.git("rev-parse", "a1").trim();
+
+    const result = await runCli(loadExtension(), repo.cwd, ["--mode", "split"]);
+    expect(result).toEqual({ result: { kind: "delegate", argv: ["diff", `${base}..${head}`, "--mode", "split"] }, stderr: "" });
+  });
+
+  test("hunk stack exits with the reason outside a git repo", async () => {
+    const result = await runCli(loadExtension(), "/", []);
+    expect(result).toEqual({ result: { kind: "exit", code: 1 }, stderr: "hunk stack: not a git repository\n" });
+  });
+
+  test("other hunk commands get no stack", () => {
+    const ext = loadExtension();
+    expect(ext.run("next-changeset", "src/a.ts").notes).toEqual([NOT_A_STACK]);
   });
 
   test("x marks, dims, and jumps to the next unread file; x again unmarks in place", async () => {
