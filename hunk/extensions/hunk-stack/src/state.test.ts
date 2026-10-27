@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import type { Landing, SwitcherSnapshot } from "./daemon";
 import { NOT_A_STACK, StackState, type ChangesetSwitcher } from "./state";
 import type { Changeset } from "./stack/stack";
+import { spawnGit } from "./listing";
 import { createSys } from "./stack/sys";
 import { makeRepo, type TestRepo } from "./stack/testRepo";
 
@@ -127,6 +128,86 @@ describe("StackState", () => {
     expect(switcher.requests.at(-1)!.changeset.id).toBe("uncommitted");
   });
 
+  it("lists every changeset's files as git answers, uncommitted last with untracked files", async () => {
+    const repo = stackRepo();
+    repo.write("fresh.txt", "x\n");
+    const { state } = setup(repo);
+    await state.settled();
+    const { listings } = state.getSnapshot();
+    expect(listings.get("a1")).toEqual([
+      { status: "A", path: "a1x.txt" },
+      { status: "A", path: "a1y.txt" },
+    ]);
+    expect(listings.get("c1")).toEqual([{ status: "A", path: "c1z.txt" }]);
+    expect(listings.get("uncommitted")).toEqual([
+      { status: "M", path: "base.txt" },
+      { status: "?", path: "fresh.txt" },
+    ]);
+  });
+
+  it("asks again for the uncommitted list on a read, and keeps range lists", async () => {
+    const repo = stackRepo();
+    const calls: string[] = [];
+    const switcher = new FakeSwitcher();
+    const state = new StackState(
+      createSys,
+      switcher,
+      async (cwd, args) => {
+        calls.push(args.join(" "));
+        return spawnGit(cwd, args);
+      },
+    );
+    state.open(repo.cwd);
+    await state.settled();
+    const first = calls.length;
+    repo.write("later.txt", "x\n");
+    state.step(-1);
+    await state.settled();
+    // Only the uncommitted changeset's two probes ran again.
+    expect(calls.slice(first).map((c) => c.split(" ")[0])).toEqual(["diff", "ls-files"]);
+    expect(state.getSnapshot().listings.get("uncommitted")?.map((f) => f.path)).toContain("later.txt");
+  });
+
+  // Twenty commits and their probes take ~5s, past bun's default timeout.
+  it("limits how many git probes run at once", async () => {
+    const repo = makeRepo();
+    repo.git("checkout", "-qb", "work");
+    for (let i = 0; i < 20; i++) {
+      repo.commitFile(`f${i}.txt`, `c${i}`);
+    }
+    let running = 0;
+    let peak = 0;
+    const state = new StackState(
+      createSys,
+      new FakeSwitcher(),
+      async (cwd, args) => {
+        running += 1;
+        peak = Math.max(peak, running);
+        const out = await spawnGit(cwd, args);
+        running -= 1;
+        return out;
+      },
+    );
+    state.open(repo.cwd);
+    await state.settled();
+    expect(state.getSnapshot().changesets.length).toBeGreaterThan(8);
+    expect(peak).toBeLessThanOrEqual(8);
+    expect(state.getSnapshot().listings.size).toBe(state.getSnapshot().changesets.length);
+  }, 30_000);
+
+  it("expands only the loaded changeset until a header is toggled by hand", () => {
+    const { state, switcher } = setup(stackRepo());
+    expect([...["a1", "c1", "uncommitted"]].map((id) => state.isExpanded(id))).toEqual([false, false, true]);
+    state.setExpanded("a1");
+    state.setExpanded("uncommitted");
+    expect(state.getSnapshot().expansion.get("a1")).toBe(true);
+    expect(state.isExpanded("uncommitted")).toBe(false);
+    switcher.setLoaded("c1");
+    expect(state.isExpanded("c1")).toBe(true);
+    state.setExpanded("a1", true);
+    expect(state.isExpanded("a1")).toBe(true);
+  });
+
   it("loads a changeset by id and refuses one that left the stack", () => {
     const { state, switcher } = setup(stackRepo());
     expect(state.select("a1")).toBeNull();
@@ -140,6 +221,17 @@ describe("StackState", () => {
     const { state, switcher } = setup(stackRepo());
     expect(state.select("c1", "c1z.txt")).toBeNull();
     expect(switcher.requests[0]).toMatchObject({ changeset: { id: "c1" }, landing: { path: "c1z.txt" } });
+  });
+
+  it("toggles the outline order and cycles the tree projection", () => {
+    const { state } = setup(stackRepo());
+    expect(state.getSnapshot()).toMatchObject({ order: "head-first", tree: null });
+    expect(state.toggleOrder()).toBe("Stack order: base-first");
+    expect(state.getSnapshot().order).toBe("base-first");
+    expect(state.toggleTree()).toBe("File tree: on");
+    expect(state.toggleTree()).toBe("File tree: off");
+    expect(state.toggleTree()).toBe("File tree: auto");
+    expect(state.getSnapshot().tree).toBeNull();
   });
 
   it("observes the pane's review descriptor", () => {
@@ -157,6 +249,13 @@ describe("StackState", () => {
     expect(state.getSnapshot().enabled).toBe(false);
     expect(state.step(1)).toBe(NOT_A_STACK);
     expect(state.cycleZoom(null)).toBe(NOT_A_STACK);
+    expect(state.toggleOrder()).toBe(NOT_A_STACK);
+  });
+
+  it("cycles the tree projection without a stack", () => {
+    const state = new StackState(createSys, new FakeSwitcher());
+    expect(state.toggleTree()).toBe("File tree: on");
+    expect(state.getSnapshot()).toMatchObject({ enabled: false, tree: true });
   });
 
   it("refuses to open outside a git repo", () => {

@@ -1,6 +1,6 @@
 // Vendored from hunk v0.23.0 (7991d3034af1d2116e9c77db31265e409a73bd9f)
 // upstream: packages/hunk/src/ui/lib/files.ts
-// Local changes are marked with "mark-read:". Compare with `bun run vendor:diff hunk`.
+// Local changes are marked with "mark-read:" or "stack:". Compare with `bun run vendor:diff hunk`.
 
 import { basename, dirname } from "node:path/posix";
 // mark-read: import paths point at local copies; @pierre/diffs is not a host
@@ -21,6 +21,10 @@ export interface FileListEntry {
   deletionsText: string | null;
   changeType: FileDiffMetadata["type"];
   isUntracked: boolean;
+  // stack: the review path, and the changeset a row belongs to when it is not the loaded one
+  // (such a row has no patch, so it carries no stats and no read mark).
+  path: string;
+  changesetId?: string;
 }
 
 /**
@@ -57,10 +61,34 @@ export interface FileDirectoryEntry {
   label: string;
   depth: number;
   descendantFileCount: number;
+  // stack: set on rows of a changeset that is not loaded.
+  changesetId?: string;
+}
+
+// stack: one stack changeset header. The loaded changeset's file rows follow it.
+export interface ChangesetEntry {
+  kind: "changeset";
+  id: string;
+  changesetId: string;
+  /** Position in base to head order, 1-based. */
+  index: number;
+  total: number;
+  title: string;
+  /** Commit-unit headers only: the abbreviated sha and the branch that owns the commit. */
+  sha?: string;
+  branch?: string;
+  prNumber?: number;
+  /** The review is showing this changeset. */
+  loaded: boolean;
+  /** A reload to this changeset is running or queued. */
+  pending: boolean;
+  /** Its file rows are showing. */
+  expanded: boolean;
+  read: { read: number; total: number } | null;
 }
 
 export type FileSidebarMode = "flat" | "tree";
-export type SidebarEntry = FileListEntry | FileGroupEntry | FileDirectoryEntry;
+export type SidebarEntry = FileListEntry | FileGroupEntry | FileDirectoryEntry | ChangesetEntry;
 
 export const TREE_FILE_SIDEBAR_MIN_CONTENT_WIDTH = 32;
 
@@ -139,6 +167,7 @@ function buildSidebarFileEntry(file: SidebarFileSource, depth: number): FileList
     deletionsText: formatSidebarStat("-", file.stats.deletions),
     changeType: file.changeType ?? readMetadataChangeType(file.metadata) ?? "change",
     isUntracked: file.isUntracked ?? false,
+    path: file.path,
   };
 }
 
@@ -289,7 +318,8 @@ export function collapseTreeSidebarEntries(
   let collapsedDepth: number | null = null;
 
   for (const entry of entries) {
-    if (entry.kind === "group") {
+    // stack: a changeset header ends any collapsed run, as a group header does.
+    if (entry.kind === "group" || entry.kind === "changeset") {
       collapsedDepth = null;
       visible.push(entry);
       continue;

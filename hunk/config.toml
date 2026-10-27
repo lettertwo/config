@@ -11,6 +11,9 @@ animations = "false"
 
 [keybindings]
 "hunk.view.toggleFilesPane" = "o"
+# stack binds tab to focus its outline; the built-in focus toggle would take it first.
+"hunk.app.toggleFocusArea" = false
+
 "hunk.review.nextFile" = "]"
 "hunk.review.previousFile" = "["
 "hunk.review.nextHunk" = "}"

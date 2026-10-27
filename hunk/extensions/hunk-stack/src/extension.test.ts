@@ -9,6 +9,7 @@ import type {
   ExtensionCliCommandHandler,
   ExtensionCommandHandler,
   ExtensionDiffFile,
+  ExtensionKeyboardMode,
   ExtensionLineHighlighter,
   ExtensionPane,
   ExtensionStatusItem,
@@ -56,6 +57,7 @@ function loadExtension({
   >();
   const panes: ExtensionPane[] = [];
   const cliCommands = new Map<string, ExtensionCliCommandHandler>();
+  const modes = new Map<string, ExtensionKeyboardMode>();
   const highlighters: ExtensionLineHighlighter[] = [];
   const transforms: ChangesetTransform[] = [];
   const status = new Map<string, ExtensionStatusItem>();
@@ -64,6 +66,7 @@ function loadExtension({
     registerPane: (pane) => panes.push(pane),
     registerCliCommand: (command, handler) => cliCommands.set(command.name, handler),
     registerLineHighlighter: (highlighter) => highlighters.push(highlighter),
+    registerKeyboardMode: (mode) => modes.set(mode.id, mode),
     transformChangeset: (fn) => transforms.push(fn),
     on: () => {},
     config,
@@ -134,6 +137,7 @@ function loadExtension({
   return {
     cliCommands,
     commands,
+    modes,
     panes,
     status,
     files,
@@ -190,6 +194,12 @@ describe("stack extension", () => {
   test("other hunk commands get no stack", () => {
     const ext = loadExtension();
     expect(ext.run("next-changeset", "src/a.ts").notes).toEqual([NOT_A_STACK]);
+  });
+
+  test("focus-outline is bound to tab and enters the outline mode", () => {
+    const ext = loadExtension();
+    expect(ext.commands.get("focus-outline")?.key).toBe("tab");
+    expect(ext.modes.get("outline")?.title).toContain("Outline");
   });
 
   test("x marks, dims, and jumps to the next unread file; x again unmarks in place", async () => {

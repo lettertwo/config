@@ -1,6 +1,6 @@
 // Vendored from hunk v0.23.0 (7991d3034af1d2116e9c77db31265e409a73bd9f)
 // upstream: packages/hunk/src/ui/lib/sidebarRenderWindow.ts
-// Local changes are marked with "mark-read:". Compare with `bun run vendor:diff hunk`.
+// Local changes are marked with "mark-read:" or "stack:". Compare with `bun run vendor:diff hunk`.
 
 import type { SidebarEntry } from "./files";
 
@@ -81,6 +81,7 @@ export function buildSidebarRenderWindow({
   overscanRows = 4,
   scrollTop,
   selectedFileId,
+  pinnedEntryId,
   viewportHeight,
 }: {
   entries: SidebarEntry[];
@@ -88,6 +89,8 @@ export function buildSidebarRenderWindow({
   overscanRows?: number;
   scrollTop: number;
   selectedFileId?: string;
+  // stack: any row kind to keep mounted, for the keyboard cursor.
+  pinnedEntryId?: string;
   viewportHeight: number;
 }): SidebarRenderWindowPlan {
   const mountedIndices = new Set<number>();
@@ -111,6 +114,13 @@ export function buildSidebarRenderWindow({
     );
     if (selectedIndex >= 0) {
       mountedIndices.add(selectedIndex);
+    }
+  }
+
+  if (pinnedEntryId) {
+    const pinnedIndex = entries.findIndex((entry) => entry.id === pinnedEntryId);
+    if (pinnedIndex >= 0) {
+      mountedIndices.add(pinnedIndex);
     }
   }
 

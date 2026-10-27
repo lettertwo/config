@@ -1,6 +1,8 @@
 import type { ExtensionReviewDescriptor } from "hunkdiff/extension";
 import type { Landing, SwitcherSnapshot } from "./daemon";
+import { listChangeset, spawnGit, type GitRunner, type ListedFile } from "./listing";
 import { changedPaths, flipTarget, identifyLoaded, stepChangeset, type Flip } from "./navigate";
+import { isExpanded, type StackOrder } from "./outline";
 import { commonDir } from "./stack/git";
 import { createStackSource, type Changeset, type StackSource, type Zoom } from "./stack/stack";
 import type { Sys } from "./stack/sys";
@@ -23,10 +25,21 @@ export interface StackSnapshot {
   changesets: readonly Changeset[];
   loadedId: string | null;
   pendingId: string | null;
+  /** Display order of the outline's headers; stepping always walks base to head. */
+  order: StackOrder;
+  /** True or false forces the files pane's tree or flat projection; null follows the pane width. Applies with or without a stack. */
+  tree: boolean | null;
+  /** Files of each changeset by id, as they arrive; a changeset git has not answered for is absent. */
+  listings: ReadonlyMap<string, readonly ListedFile[]>;
+  /** Headers the reviewer expanded or collapsed by hand; the rest follow the loaded changeset. */
+  expansion: ReadonlyMap<string, boolean>;
 }
 
 /** What the stack commands say in a review that `hunk stack` did not open. */
 export const NOT_A_STACK = "Not a stack review; open one with `hunk stack`";
+
+/** How many `git diff` probes run at once, so a long stack doesn't fork a process per commit. */
+const LISTING_CONCURRENCY = 8;
 
 const EMPTY: StackSnapshot = {
   enabled: false,
@@ -35,6 +48,10 @@ const EMPTY: StackSnapshot = {
   changesets: [],
   loadedId: null,
   pendingId: null,
+  order: "head-first",
+  tree: null,
+  listings: new Map(),
+  expansion: new Map(),
 };
 
 /**
@@ -47,14 +64,25 @@ const EMPTY: StackSnapshot = {
 export class StackState {
   private source: StackSource | null = null;
   private zoom: Zoom = "branch";
+  private order: StackOrder = "head-first";
+  private tree: boolean | null = null;
   private changesets: readonly Changeset[] = [];
   private paths = new Map<string, readonly string[]>();
+  private listings = new Map<string, { key: string; files: readonly ListedFile[] }>();
+  private listing = {
+    running: 0,
+    queue: [] as (() => void)[],
+    inFlight: new Set<string>(),
+    idle: [] as (() => void)[],
+  };
+  private expansion = new Map<string, boolean>();
   private snapshot: StackSnapshot = EMPTY;
   private listeners = new Set<() => void>();
 
   constructor(
     private readonly makeSys: (cwd: string) => Sys,
     private readonly switcher: ChangesetSwitcher,
+    private readonly git: GitRunner = spawnGit,
   ) {
     switcher.subscribe(() => this.publish());
   }
@@ -85,6 +113,7 @@ export class StackState {
       return { error: `no stack (${error instanceof Error ? error.message : error})` };
     }
     this.zoom = this.source.defaultZoom;
+    this.order = this.source.defaultStackOrder;
     this.read();
     const current = this.changesets.find((cs) => cs.current);
     if (!current) {
@@ -138,6 +167,37 @@ export class StackState {
     return null;
   }
 
+  isExpanded(id: string): boolean {
+    return isExpanded(this.expansion, this.switcher.loaded(), id);
+  }
+
+  /** Expand or collapse a header; `to` omitted flips it. */
+  setExpanded(id: string, to?: boolean) {
+    this.expansion.set(id, to ?? !this.isExpanded(id));
+    this.publish();
+  }
+
+  /** Resolves once every file list asked for so far has arrived or failed. */
+  settled(): Promise<void> {
+    return this.listing.inFlight.size === 0 ? Promise.resolve() : new Promise((done) => this.listing.idle.push(done));
+  }
+
+  toggleOrder(): string {
+    if (!this.source) {
+      return NOT_A_STACK;
+    }
+    this.order = this.order === "head-first" ? "base-first" : "head-first";
+    this.publish();
+    return `Stack order: ${this.order}`;
+  }
+
+  /** Cycles the file projection: width-based, then tree, then flat. */
+  toggleTree(): string {
+    this.tree = this.tree === null ? true : this.tree ? false : null;
+    this.publish();
+    return `File tree: ${this.tree === null ? "auto" : this.tree ? "on" : "off"}`;
+  }
+
   /** Cycle to the next zoom and land on the file the reviewer was on. */
   cycleZoom(selectedPath: string | null): string {
     const source = this.source;
@@ -168,7 +228,65 @@ export class StackState {
     }
     this.changesets = this.source.load(this.zoom);
     this.paths.clear();
+    for (const id of this.listings.keys()) {
+      if (!this.changesets.some((cs) => cs.id === id)) {
+        this.listings.delete(id);
+      }
+    }
+    this.fetchListings();
     this.publish();
+  }
+
+  /**
+   * Ask git for the file list of every changeset whose range changed since it was last
+   * listed. A range of shas never changes, so only the uncommitted changeset is asked again
+   * on each read, and it keeps showing the old list until the new one arrives.
+   */
+  private fetchListings() {
+    const source = this.source!;
+    for (const changeset of this.changesets) {
+      const key = `${changeset.baseSha}..${changeset.headSha}`;
+      const have = this.listings.get(changeset.id);
+      if (have?.key === key && !changeset.uncommitted) {
+        continue;
+      }
+      const flight = `${changeset.id}:${key}`;
+      if (this.listing.inFlight.has(flight)) {
+        continue;
+      }
+      this.listing.inFlight.add(flight);
+      this.whenListingSlot(async () => {
+        const files = await listChangeset(this.git, source.cwd, changeset);
+        // A zoom cycle may have replaced the list while git ran; a stale answer would
+        // show another slicing's files under a reused id.
+        const now = this.changesets.find((cs) => cs.id === changeset.id);
+        const stale = `${now?.baseSha}..${now?.headSha}` !== key;
+        if (files && !stale && this.source === source) {
+          this.listings.set(changeset.id, { key, files });
+          this.publish();
+        }
+        this.listing.inFlight.delete(flight);
+      });
+    }
+  }
+
+  private whenListingSlot(job: () => Promise<void>) {
+    const listing = this.listing;
+    const run = () => {
+      listing.running += 1;
+      void job().finally(() => {
+        listing.running -= 1;
+        listing.queue.shift()?.();
+        if (listing.inFlight.size === 0) {
+          listing.idle.splice(0).forEach((done) => done());
+        }
+      });
+    };
+    if (listing.running < LISTING_CONCURRENCY) {
+      run();
+    } else {
+      listing.queue.push(run);
+    }
   }
 
   /** Memoized per read: stepping probes several changesets and a flip probes them all. */
@@ -191,8 +309,12 @@ export class StackState {
           changesets: this.changesets,
           loadedId: switcher.loadedId,
           pendingId: switcher.pendingId,
+          order: this.order,
+          tree: this.tree,
+          listings: new Map([...this.listings].map(([id, { files }]) => [id, files])),
+          expansion: new Map(this.expansion),
         }
-      : EMPTY;
+      : { ...EMPTY, tree: this.tree };
     for (const listener of [...this.listeners]) {
       listener();
     }

@@ -1,10 +1,10 @@
 // Vendored from hunk v0.23.0 (7991d3034af1d2116e9c77db31265e409a73bd9f)
 // upstream: packages/hunk/src/extensions/default/ui/sidebar/FileSidebars.tsx
-// Local changes are marked with "mark-read:". Compare with `bun run vendor:diff hunk`.
+// Local changes are marked with "mark-read:" or "stack:". Compare with `bun run vendor:diff hunk`.
 
 import type { ScrollBoxRenderable } from "@opentui/core";
 import { useTerminalDimensions } from "@opentui/react";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { ExtensionPaneProps } from "hunkdiff/extension";
 // mark-read: import paths point at local copies.
 import {
@@ -21,6 +21,10 @@ import {
 import { fileRowId } from "./helpers";
 import { buildSidebarRenderWindow } from "./sidebarRenderWindow";
 import { FileDirectoryRow, FileGroupHeader, FileListItem } from "./FileListItem";
+// stack: the outline's changeset headers sit between the file rows.
+import { ChangesetHeader } from "../../ChangesetHeader";
+import type { NavRow } from "../../focus";
+import { navRows, outlineEntries, type OutlineModel, type ProjectListed } from "../../outline";
 
 // mark-read: read state the rows render and toggle. Directory paths are the
 // logical paths `buildTreeSidebarEntries` assigns to directory rows.
@@ -31,17 +35,37 @@ export interface SidebarReadState {
   toggleDirectory(path: string): void;
 }
 
+// stack: the stack outline and its click handlers. Absent when there is no stack, which
+// leaves the plain file list.
+export interface SidebarOutline {
+  model: OutlineModel;
+  onToggleChangeset(changesetId: string): void;
+  /** A file of a changeset that is not loaded: load that changeset and land on the file. */
+  onOpenFile(changesetId: string, path: string): void;
+}
+
+// stack: the keyboard cursor. It works without a stack, over the plain file list.
+export interface SidebarFocus {
+  /** The row to paint the cursor on; null while the outline mode is off. */
+  cursorEntryId: string | null;
+  onRows(rows: readonly NavRow[]): void;
+}
+
 export type BuiltInSidebarProps = Omit<
   ExtensionPaneProps,
   "placement" | "height" | "currentLine" | "review"
 > &
   Partial<Pick<ExtensionPaneProps, "placement" | "height" | "currentLine" | "review">> & {
     readState: SidebarReadState;
+    outline?: SidebarOutline;
+    focus?: SidebarFocus;
+    // stack: true or false forces the tree or flat projection; null keeps the width-based choice.
+    treeOverride?: boolean | null;
   };
 
 type FileSidebarVariantProps = Pick<
   BuiltInSidebarProps,
-  "actions" | "files" | "selectedFileId" | "theme" | "readState"
+  "actions" | "files" | "selectedFileId" | "theme" | "readState" | "outline" | "focus"
 > & {
   estimatedViewportRows: number;
   scrollTop: number;
@@ -54,16 +78,22 @@ function ignoreDirectoryToggle() {}
 
 interface VirtualizedFileSidebarRowsProps extends Omit<FileSidebarVariantProps, "files"> {
   collapsedDirectoryPaths?: ReadonlySet<string>;
+  /** The loaded changeset's file rows; headers and the other changesets' rows are woven in from `outline`. */
   entries: SidebarEntry[];
   onToggleDirectory?: (path: string) => void;
   paddingLeft?: number;
+  /** Builds rows for a changeset that is not loaded in the same projection as `entries`. */
+  project: ProjectListed;
 }
 
 /** Render one windowed sidebar projection with shared file selection and stats lanes. */
 export function VirtualizedFileSidebarRows({
   actions,
   collapsedDirectoryPaths,
-  entries,
+  entries: fileRows,
+  outline,
+  focus,
+  project,
   estimatedViewportRows,
   onToggleDirectory,
   paddingLeft = 1,
@@ -74,6 +104,16 @@ export function VirtualizedFileSidebarRows({
   theme,
   viewportHeight,
 }: VirtualizedFileSidebarRowsProps): ReactNode {
+  // stack: headers interleave with the file rows when a stack is known.
+  const model = outline?.model;
+  const entries = useMemo(
+    () => (model ? outlineEntries(model, fileRows, project) : fileRows),
+    [fileRows, model, project],
+  );
+  const rows = useMemo(() => navRows(entries, model?.loadedId ?? null), [entries, model]);
+  const onRows = focus?.onRows;
+  useEffect(() => onRows?.(rows), [onRows, rows]);
+  const cursorEntryId = focus?.cursorEntryId ?? null;
   const fileEntries = entries.filter((entry) => entry.kind === "file");
   const statsWidth = Math.max(0, ...fileEntries.map((entry) => sidebarEntryStatsWidth(entry)));
   const renderWindow = useMemo(
@@ -84,9 +124,10 @@ export function VirtualizedFileSidebarRows({
         overscanRows: 4,
         scrollTop,
         selectedFileId: selectedFileId ?? undefined,
+        pinnedEntryId: cursorEntryId ?? undefined,
         viewportHeight,
       }),
-    [entries, estimatedViewportRows, scrollTop, selectedFileId, viewportHeight],
+    [entries, estimatedViewportRows, scrollTop, selectedFileId, cursorEntryId, viewportHeight],
   );
 
   return (
@@ -102,6 +143,18 @@ export function VirtualizedFileSidebarRows({
         }
 
         const { entry } = item;
+        if (entry.kind === "changeset") {
+          return (
+            <ChangesetHeader
+              key={entry.id}
+              entry={entry}
+              textWidth={textWidth}
+              theme={theme}
+              cursor={entry.id === cursorEntryId}
+              onToggleChangeset={outline?.onToggleChangeset ?? ignoreDirectoryToggle}
+            />
+          );
+        }
         if (entry.kind === "group") {
           return (
             <FileGroupHeader
@@ -120,9 +173,9 @@ export function VirtualizedFileSidebarRows({
               collapsed={collapsedDirectoryPaths?.has(entry.path) ?? false}
               entry={entry}
               onToggleDirectory={onToggleDirectory ?? ignoreDirectoryToggle}
-              onToggleRead={() => readState.toggleDirectory(entry.path)}
+              onToggleRead={entry.changesetId ? undefined : () => readState.toggleDirectory(entry.path)}
               paddingLeft={paddingLeft}
-              read={readState.isDirectoryRead(entry.path)}
+              read={entry.changesetId ? false : readState.isDirectoryRead(entry.path)}
               statsWidth={statsWidth}
               textWidth={textWidth}
               theme={theme}
@@ -130,18 +183,21 @@ export function VirtualizedFileSidebarRows({
           );
         }
 
+        // stack: a row of another changeset has no patch to mark, and selecting it loads its changeset.
+        const { changesetId } = entry;
         return (
           <FileListItem
             key={entry.id}
             entry={entry}
             paddingLeft={paddingLeft}
-            read={readState.isFileRead(entry.id)}
+            read={changesetId ? false : readState.isFileRead(entry.id)}
             selected={entry.id === selectedFileId}
+            cursor={entry.id === cursorEntryId}
             statsWidth={statsWidth}
             textWidth={textWidth}
             theme={theme}
-            onSelectFile={actions.selectFile}
-            onToggleRead={readState.toggleFile}
+            onSelectFile={changesetId ? () => outline?.onOpenFile(changesetId, entry.path) : actions.selectFile}
+            onToggleRead={changesetId ? undefined : readState.toggleFile}
           />
         );
       })}
@@ -149,10 +205,20 @@ export function VirtualizedFileSidebarRows({
   );
 }
 
+// stack: a stable function, so the woven rows are not rebuilt on every render.
+const projectFlat: ProjectListed = (files) => buildFlatSidebarEntries(files);
+
 /** Render the compact directory-group projection for a narrow file sidebar. */
 export function FlatFileSidebar({ files, ...props }: FileSidebarVariantProps): ReactNode {
   const entries = useMemo(() => buildFlatSidebarEntries(files), [files]);
-  return <VirtualizedFileSidebarRows {...props} entries={entries} />;
+  return (
+    <VirtualizedFileSidebarRows
+      {...props}
+      entries={entries}
+      paddingLeft={props.outline ? 2 : 1}
+      project={projectFlat}
+    />
+  );
 }
 
 /** Render the ordered hierarchy after applying the sidebar's collapsed directory paths. */
@@ -169,13 +235,18 @@ export function TreeFileSidebar({
     () => collapseTreeSidebarEntries(buildTreeSidebarEntries(files), collapsedDirectoryPaths),
     [collapsedDirectoryPaths, files],
   );
+  const project = useCallback<ProjectListed>(
+    (listed) => collapseTreeSidebarEntries(buildTreeSidebarEntries(listed), collapsedDirectoryPaths),
+    [collapsedDirectoryPaths],
+  );
   return (
     <VirtualizedFileSidebarRows
       {...props}
       collapsedDirectoryPaths={collapsedDirectoryPaths}
+      project={project}
       entries={entries}
       onToggleDirectory={onToggleDirectory}
-      paddingLeft={0}
+      paddingLeft={props.outline ? 1 : 0}
     />
   );
 }
@@ -194,6 +265,9 @@ export function FlexFileSidebar({
   width,
   actions,
   readState,
+  outline,
+  focus,
+  treeOverride = null,
 }: BuiltInSidebarProps): ReactNode {
   const scrollRef = useRef<ScrollBoxRenderable | null>(null);
   const previousSelectedFileIdRef = useRef(selectedFileId);
@@ -205,11 +279,14 @@ export function FlexFileSidebar({
   const terminal = useTerminalDimensions();
   // Mirrors the host layout: one column of row highlight plus row padding.
   const textWidth = Math.max(8, width - 2);
-  const mode = resolveFileSidebarMode(textWidth);
+  const mode =
+    treeOverride === null ? resolveFileSidebarMode(textWidth) : treeOverride ? "tree" : "flat";
   const variantProps: FileSidebarVariantProps = {
     actions,
     estimatedViewportRows: terminal.height,
     files,
+    outline,
+    focus,
     readState,
     scrollTop: scrollViewport.top,
     selectedFileId,
@@ -305,6 +382,14 @@ export function FlexFileSidebar({
 
     scrollRef.current?.scrollChildIntoView(fileRowId(selectedFileId));
   }, [collapsedDirectoryPaths, files, mode, selectedFileId]);
+
+  // stack: keep the keyboard cursor in view.
+  const cursorEntryId = focus?.cursorEntryId;
+  useEffect(() => {
+    if (cursorEntryId) {
+      scrollRef.current?.scrollChildIntoView(fileRowId(cursorEntryId));
+    }
+  }, [cursorEntryId]);
 
   return (
     <scrollbox

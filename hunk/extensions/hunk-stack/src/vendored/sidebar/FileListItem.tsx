@@ -1,6 +1,6 @@
 // Vendored from hunk v0.23.0 (7991d3034af1d2116e9c77db31265e409a73bd9f)
 // upstream: packages/hunk/src/ui/components/panes/FileListItem.tsx
-// Local changes are marked with "mark-read:". Compare with `bun run vendor:diff hunk`.
+// Local changes are marked with "mark-read:" or "stack:". Compare with `bun run vendor:diff hunk`.
 
 import { MouseButton, type MouseEvent as TuiMouseEvent } from "@opentui/core";
 import { memo } from "react";
@@ -203,6 +203,7 @@ export const FileListItem = memo(function FileListItem({
   paddingLeft = 1,
   read = false,
   selected,
+  cursor = false,
   statsWidth,
   textWidth,
   theme,
@@ -214,13 +215,15 @@ export const FileListItem = memo(function FileListItem({
   // mark-read: read state and toggle for this file.
   read?: boolean;
   selected: boolean;
+  // stack: the outline's keyboard cursor is on this row.
+  cursor?: boolean;
   statsWidth: number;
   textWidth: number;
   theme: ExtensionSidebarTheme;
   onSelectFile: (fileId: string) => void;
   onToggleRead?: (fileId: string) => void;
 }) {
-  const rowBackground = selected ? theme.panelAlt : theme.panel;
+  const rowBackground = cursor ? theme.accentMuted : selected ? theme.panelAlt : theme.panel;
   const stats = sidebarEntryStats(entry);
   const { icon, color } = getFileStateIcon(entry, theme);
   // mark-read: the read marker takes two columns ahead of the icon.

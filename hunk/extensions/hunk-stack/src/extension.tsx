@@ -9,6 +9,7 @@ import type {
   HunkExtensionAPI,
 } from "hunkdiff/extension";
 import { Switcher, hunkRunner, reloadArgs, type Run } from "./daemon";
+import { OutlineFocus } from "./focus";
 import { StackState } from "./state";
 import { createSys, type Sys } from "./stack/sys";
 import { dimHighlights, hiddenNotice, isUnderDirectory, nextUnread, progressSpans } from "./vendored/mark-read/core";
@@ -16,6 +17,7 @@ import { defaultSessionDir, SessionLog } from "./vendored/mark-read/sessionLog";
 import { MarkReadStore } from "./vendored/mark-read/store";
 import { FlexFileSidebar, type SidebarReadState } from "./vendored/sidebar/FileSidebars";
 import { fitText, formatTerminalPath } from "./vendored/sidebar/helpers";
+import type { OutlineModel } from "./outline";
 
 const HIGHLIGHTER_ID = "dim";
 const STATUS_ID = "progress";
@@ -30,7 +32,7 @@ const ALL_READ_HIDDEN = "All files read, read files are hidden";
 const TOGGLE_HIDDEN = "hunk-stack.toggle-hidden";
 const STACK_USAGE = `Usage: hunk stack [hunk diff options]
 
-Review the current branch's stack one changeset at a time. Opens on the
+Review the current branch's stack with an outline of its changesets. Opens on the
 uncommitted changes when there are any, else on the focus branch. Options such as
 --mode or --watch pass through to hunk diff.
 `;
@@ -70,6 +72,18 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
     options.pid,
   );
   const stack = new StackState(options.makeSys ?? createSys, switcher);
+
+  const focus = new OutlineFocus({
+    toggleRead: (file) => toggleFiles([file]),
+    isExpanded: (id) => stack.isExpanded(id),
+    setExpanded: (id, to) => stack.setExpanded(id, to),
+    openFile: (id, path) => {
+      const message = stack.select(id, path);
+      if (message) {
+        host.notify?.(message, "warning");
+      }
+    },
+  });
 
   /**
    * Host controls captured from the latest command or lifecycle context.
@@ -172,6 +186,8 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
   function StackSidebar(props: ExtensionPaneProps): ReactNode {
     const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
     const { files, review } = props;
+    const stackSnapshot = useSyncExternalStore(stack.subscribe, stack.getSnapshot);
+    const focusSnapshot = useSyncExternalStore(focus.subscribe, focus.getSnapshot);
 
     useEffect(() => stack.observeReview(review), [review]);
 
@@ -200,6 +216,49 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
         toggleDirectory: (path) => toggleFiles(filesUnder(path)),
       };
     }, [files, snapshot]);
+
+    const outline = useMemo(() => {
+      if (!stackSnapshot.enabled || stackSnapshot.changesets.length === 0) {
+        return undefined;
+      }
+      const model: OutlineModel = {
+        changesets: stackSnapshot.changesets,
+        loadedId: stackSnapshot.loadedId,
+        pendingId: stackSnapshot.pendingId,
+        order: stackSnapshot.order,
+        read: { read: store.readCount(), total: store.trackableCount() },
+        listings: stackSnapshot.listings,
+        expansion: stackSnapshot.expansion,
+      };
+      return {
+        model,
+        onToggleChangeset: (id: string) => stack.setExpanded(id),
+        onOpenFile: (id: string, path: string) => {
+          const message = stack.select(id, path);
+          if (message) {
+            props.actions.notify(message, "warning");
+          }
+        },
+      };
+      // `snapshot` is in the deps because the read count changes with the marks.
+    }, [stackSnapshot, snapshot, props.actions]);
+
+    // The rows name the loaded changeset only when the outline is drawn.
+    const loadedId = outline ? stackSnapshot.loadedId : null;
+    useEffect(
+      () =>
+        focus.attach({
+          actions: props.actions,
+          files,
+          selectedFileId: props.selectedFileId ?? null,
+          loadedId,
+        }),
+      [props.actions, files, props.selectedFileId, loadedId],
+    );
+    const paneFocus = useMemo(
+      () => ({ cursorEntryId: focusSnapshot.cursorEntryId, onRows: focus.publishRows }),
+      [focusSnapshot.cursorEntryId],
+    );
 
     const { theme, width } = props;
     const notice = snapshot.hidden
@@ -241,6 +300,9 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
           <FlexFileSidebar
             {...props}
             readState={readState}
+            outline={outline}
+            focus={paneFocus}
+            treeOverride={stackSnapshot.tree}
           />
         </box>
         {notice.length > 0 ? (
@@ -368,7 +430,7 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
   });
 
   hunk.registerCommand(
-    // Stepping walks base to head, as in the nvim review app.
+    // The outline lists head first while stepping walks base to head, as in the nvim review app.
     { id: "next-changeset", title: "Next changeset (toward head)", key: ")" },
     (ctx) => {
       host.notify = ctx.notify;
@@ -392,9 +454,53 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
     },
   );
 
+  hunk.registerKeyboardMode({
+    id: "outline",
+    title: "Outline: j/k move, enter open, h/l fold, space read, esc exit",
+    onEnter: () => focus.enter(),
+    onExit: () => focus.leave(),
+    onKey: (key, ctx) => {
+      host.highlights = ctx.highlights;
+      host.statusLine = ctx.statusLine;
+      host.notify = ctx.notify;
+      return focus.handleKey(key);
+    },
+  });
+
+  hunk.registerCommand(
+    { id: "focus-outline", title: "Focus the outline (keyboard cursor)", key: "tab" },
+    (ctx) => {
+      host.notify = ctx.notify;
+      if (!focus.hasPane()) {
+        // Also reveals the pane when hunk hid it for a narrow window. The cursor lands once
+        // the pane draws its rows.
+        ctx.panes.open("files");
+      }
+      if (!ctx.keyboardModes.enterMode("outline")) {
+        ctx.notify("Cannot focus the outline from here", "warning");
+      }
+    },
+  );
+
+  hunk.registerCommand(
+    { id: "toggle-stack-order", title: "Toggle outline order (head first, base first)", key: "O" },
+    (ctx) => {
+      host.notify = ctx.notify;
+      ctx.notify(stack.toggleOrder());
+    },
+  );
+
+  hunk.registerCommand(
+    { id: "toggle-tree", title: "Cycle file tree (auto, on, off)", key: "T" },
+    (ctx) => {
+      host.notify = ctx.notify;
+      ctx.notify(stack.toggleTree());
+    },
+  );
+
   // The handler runs in the process that then hosts the delegated review, so the stack it
-  // opens is the one the changeset commands step through. Any other hunk command leaves the
-  // stack closed.
+  // opens is the one the pane draws. Any other hunk command leaves the stack closed and gets
+  // the plain files pane with read marks.
   hunk.registerCliCommand(
     {
       name: "stack",
