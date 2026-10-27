@@ -25,3 +25,7 @@ animations = "false"
 "hunk.review.previousAnnotatedFile" = "<"
 "hunk.review.scrollCodeLeft" = ["h", "left", "H", "shift+left"]
 "hunk.review.scrollCodeRight" = ["l", "right", "L", "shift+right"]
+
+"hunk-stack.toggle" = "space"
+"hunk-stack.next-unread" = false
+"hunk-stack.toggle-hidden" = "ctrl+space"

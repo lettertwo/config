@@ -1,0 +1,28 @@
+{
+  "name": "hunk-stack",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Read marks for Hunk reviews",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "bun test ./src",
+    "typecheck": "tsc --noEmit",
+    "vendor:diff": "bun run scripts/vendor-diff.ts"
+  },
+  "devDependencies": {
+    "@opentui/core": "0.5.14",
+    "@opentui/react": "0.5.14",
+    "@types/bun": "latest",
+    "@types/react": "^19.0.0",
+    "hunkdiff": "0.24.1",
+    "react": "^19.0.0",
+    "typescript": "^5.9.0"
+  },
+  "hunk": {
+    "extensions": [
+      "./src/extension.tsx"
+    ],
+    "apiVersion": 32
+  }
+}
