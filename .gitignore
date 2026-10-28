@@ -36,6 +36,8 @@ cursor/chats/
 claude/statusline.local
 claude/skills/synced
 claude/skills/.trash
+claude/skills/hunk-review
+claude/skills/hunk-extensions
 anthropic/active_config
 anthropic/configs
 

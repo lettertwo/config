@@ -392,8 +392,21 @@ endif
 .PHONY: hunk-extensions
 hunk-extensions: ~/.config/hunk/extensions/installed/hunkydory
 
+HUNK_SKILLS := $(HOMEBREW_PREFIX)/opt/hunk/libexec/skills
+
+~/.config/claude/skills/hunk-review: | hunk
+	$(call log,"Linking hunk-review skill...")
+	$(call run,ln -sfn "$(HUNK_SKILLS)/hunk-review" "$@")
+
+~/.config/claude/skills/hunk-extensions: | hunk
+	$(call log,"Linking hunk-extensions skill...")
+	$(call run,ln -sfn "$(HUNK_SKILLS)/hunk-extensions" "$@")
+
+.PHONY: hunk-skills
+hunk-skills: ~/.config/claude/skills/hunk-review ~/.config/claude/skills/hunk-extensions
+
 .PHONY: update-hunk
-update-hunk: hunk hunk-extensions
+update-hunk: hunk hunk-extensions hunk-skills
 	$(call log,"Updating hunk...")
 	$(call run,brew upgrade hunk)
 	$(call log,"Updating hunk extensions...")
