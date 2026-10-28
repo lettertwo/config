@@ -274,7 +274,7 @@ ifdef MACOS
 	$(call done)
 endif
 
-~/.local/share/qmk_firmware: ~/Library/Application\ Support/qmk/qmk.ini
+~/.local/share/qmk_firmware: | ~/Library/Application\ Support/qmk/qmk.ini
 	$(call err,"qmk_firmware not found!")
 	$(call log,"Cloning qmk_firmware...")
 	$(call run,qmk setup lettertwo/qmk_firmware --branch lettertwo)
@@ -298,22 +298,22 @@ RUSTC := $(shell command -v rustc 2> /dev/null)
 	$(call run,curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh)
 	$(call done)
 
-~/.cargo/bin/cargo-binstall: ~/.cargo/bin/rustup
+~/.cargo/bin/cargo-binstall: | ~/.cargo/bin/rustup
 	$(call log,"Installing cargo-binstall...")
 	$(call run,curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | sh)
 	$(call done)
 
-~/.cargo/bin/cargo-dist: ~/.cargo/bin/cargo-binstall
+~/.cargo/bin/cargo-dist: | ~/.cargo/bin/cargo-binstall
 	$(call log,"Installing cargo-dist...")
 	$(call run,cargo binstall cargo-dist --secure --no-confirm)
 	$(call done)
 
-~/.cargo/bin/cargo-nextest: ~/.cargo/bin/cargo-binstall
+~/.cargo/bin/cargo-nextest: | ~/.cargo/bin/cargo-binstall
 	$(call log,"Installing cargo-nextest...")
 	$(call run,cargo binstall cargo-nextest --secure --no-confirm)
 	$(call done)
 
-~/.cargo/bin/cargo-watch: ~/.cargo/bin/cargo-binstall
+~/.cargo/bin/cargo-watch: | ~/.cargo/bin/cargo-binstall
 	$(call log,"Installing cargo-watch...")
 	$(call run,cargo binstall cargo-watch --secure --no-confirm)
 	$(call done)
