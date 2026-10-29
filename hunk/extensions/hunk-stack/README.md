@@ -33,6 +33,12 @@ stack, `branch` is one per stack branch, and `commit` is one per first-parent co
 fallback has no separate branch zoom. The uncommitted changeset shows at the top of the stack when
 the worktree has changes.
 
+## File view
+
+`tree` nests files under directory rows, `grouped` (hunk's narrow-pane list) heads each run of
+files in one directory with that directory, and `flat` lists files alone with each one's directory
+after its name. `auto` picks tree or grouped by pane width, as hunk does.
+
 ## Keys
 
 | Command                         | Default key | Effect                                                       |
@@ -41,13 +47,13 @@ the worktree has changes.
 | `hunk-stack.previous-changeset` | `(`         | Load the previous changeset toward the base                  |
 | `hunk-stack.cycle-zoom`         | `I`         | Cycle the zoom, landing on the file you were on              |
 | `hunk-stack.toggle-stack-order` | `O`         | Flip the outline between head first and base first           |
-| `hunk-stack.toggle-tree`        | `T`         | Cycle the files pane's projection: auto, tree, flat          |
+| `hunk-stack.cycle-file-view`    | `T`         | Cycle the file view: auto, tree, grouped, flat               |
 | `hunk-stack.toggle`             | `x`         | Mark the selected file read and jump to the next unread file |
 | `hunk-stack.next-unread`        | `X`         | Jump to the next unread file                                 |
 | `hunk-stack.toggle-hidden`      | `H`         | Hide or show read files                                      |
 
 The changeset, zoom, and order commands work only in a `hunk stack` review; elsewhere they say so.
-Read marks and the tree toggle work in every review.
+Read marks and the file view work in every review.
 
 Clicking a changeset header folds it, and clicking another changeset's file loads that changeset.
 Hunk operates on one diff at a time, so switching between changesets goes through hunk's session

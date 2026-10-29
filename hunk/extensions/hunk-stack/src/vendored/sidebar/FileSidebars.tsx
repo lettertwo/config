@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import type { ExtensionPaneProps } from "hunkdiff/extension";
 // mark-read: import paths point at local copies.
 import {
+  buildDirnameSidebarEntries,
   buildFlatSidebarEntries,
   buildTreeSidebarEntries,
   collapseTreeSidebarEntries,
@@ -24,7 +25,7 @@ import { FileDirectoryRow, FileGroupHeader, FileListItem } from "./FileListItem"
 // stack: the outline's changeset headers sit between the file rows.
 import { ChangesetHeader } from "../../ChangesetHeader";
 import type { NavRow } from "../../focus";
-import { navRows, outlineEntries, type OutlineModel, type ProjectListed } from "../../outline";
+import { navRows, outlineEntries, type FileView, type OutlineModel, type ProjectListed } from "../../outline";
 
 // mark-read: read state the rows render and toggle. Directory paths are the
 // logical paths `buildTreeSidebarEntries` assigns to directory rows.
@@ -59,8 +60,8 @@ export type BuiltInSidebarProps = Omit<
     readState: SidebarReadState;
     outline?: SidebarOutline;
     focus?: SidebarFocus;
-    // stack: true or false forces the tree or flat projection; null keeps the width-based choice.
-    treeOverride?: boolean | null;
+    // stack: forces a file view; null keeps the width-based choice between tree and grouped.
+    fileView?: FileView | null;
   };
 
 type FileSidebarVariantProps = Pick<
@@ -221,6 +222,21 @@ export function FlatFileSidebar({ files, ...props }: FileSidebarVariantProps): R
   );
 }
 
+// stack: the flat file view, with no group rows to indent under.
+const projectDirname: ProjectListed = (files) => buildDirnameSidebarEntries(files);
+
+function DirnameFileSidebar({ files, ...props }: FileSidebarVariantProps): ReactNode {
+  const entries = useMemo(() => buildDirnameSidebarEntries(files), [files]);
+  return (
+    <VirtualizedFileSidebarRows
+      {...props}
+      entries={entries}
+      paddingLeft={props.outline ? 1 : 0}
+      project={projectDirname}
+    />
+  );
+}
+
 /** Render the ordered hierarchy after applying the sidebar's collapsed directory paths. */
 export function TreeFileSidebar({
   collapsedDirectoryPaths,
@@ -267,7 +283,7 @@ export function FlexFileSidebar({
   readState,
   outline,
   focus,
-  treeOverride = null,
+  fileView = null,
 }: BuiltInSidebarProps): ReactNode {
   const scrollRef = useRef<ScrollBoxRenderable | null>(null);
   const previousSelectedFileIdRef = useRef(selectedFileId);
@@ -279,8 +295,8 @@ export function FlexFileSidebar({
   const terminal = useTerminalDimensions();
   // Mirrors the host layout: one column of row highlight plus row padding.
   const textWidth = Math.max(8, width - 2);
-  const mode =
-    treeOverride === null ? resolveFileSidebarMode(textWidth) : treeOverride ? "tree" : "flat";
+  // stack: modes are file views, where hunk's "flat" mode is the grouped view.
+  const mode: FileView = fileView ?? (resolveFileSidebarMode(textWidth) === "tree" ? "tree" : "grouped");
   const variantProps: FileSidebarVariantProps = {
     actions,
     estimatedViewportRows: terminal.height,
@@ -412,8 +428,10 @@ export function FlexFileSidebar({
           collapsedDirectoryPaths={collapsedDirectoryPaths}
           onToggleDirectory={toggleDirectory}
         />
-      ) : (
+      ) : mode === "grouped" ? (
         <FlatFileSidebar {...variantProps} />
+      ) : (
+        <DirnameFileSidebar {...variantProps} />
       )}
     </scrollbox>
   );

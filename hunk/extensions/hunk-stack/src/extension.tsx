@@ -302,7 +302,7 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
             readState={readState}
             outline={outline}
             focus={paneFocus}
-            treeOverride={stackSnapshot.tree}
+            fileView={stackSnapshot.fileView}
           />
         </box>
         {notice.length > 0 ? (
@@ -491,10 +491,10 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
   );
 
   hunk.registerCommand(
-    { id: "toggle-tree", title: "Cycle file tree (auto, on, off)", key: "T" },
+    { id: "cycle-file-view", title: "Cycle file view (auto, tree, grouped, flat)", key: "T" },
     (ctx) => {
       host.notify = ctx.notify;
-      ctx.notify(stack.toggleTree());
+      ctx.notify(stack.cycleFileView());
     },
   );
 

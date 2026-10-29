@@ -2,7 +2,7 @@ import type { ExtensionReviewDescriptor } from "hunkdiff/extension";
 import type { Landing, SwitcherSnapshot } from "./daemon";
 import { listChangeset, spawnGit, type GitRunner, type ListedFile } from "./listing";
 import { changedPaths, flipTarget, identifyLoaded, stepChangeset, type Flip } from "./navigate";
-import { isExpanded, type StackOrder } from "./outline";
+import { isExpanded, type FileView, type StackOrder } from "./outline";
 import { commonDir } from "./stack/git";
 import { createStackSource, type Changeset, type StackSource, type Zoom } from "./stack/stack";
 import type { Sys } from "./stack/sys";
@@ -27,8 +27,8 @@ export interface StackSnapshot {
   pendingId: string | null;
   /** Display order of the outline's headers; stepping always walks base to head. */
   order: StackOrder;
-  /** True or false forces the files pane's tree or flat projection; null follows the pane width. Applies with or without a stack. */
-  tree: boolean | null;
+  /** Forces the files pane's layout; null picks tree or grouped by pane width. Applies with or without a stack. */
+  fileView: FileView | null;
   /** Files of each changeset by id, as they arrive; a changeset git has not answered for is absent. */
   listings: ReadonlyMap<string, readonly ListedFile[]>;
   /** Headers the reviewer expanded or collapsed by hand; the rest follow the loaded changeset. */
@@ -49,10 +49,12 @@ const EMPTY: StackSnapshot = {
   loadedId: null,
   pendingId: null,
   order: "head-first",
-  tree: null,
+  fileView: null,
   listings: new Map(),
   expansion: new Map(),
 };
+
+const FILE_VIEW_CYCLE: readonly (FileView | null)[] = [null, "tree", "grouped", "flat"];
 
 /**
  * The stack as the review sees it: the changesets for the current zoom, which one is
@@ -65,7 +67,7 @@ export class StackState {
   private source: StackSource | null = null;
   private zoom: Zoom = "branch";
   private order: StackOrder = "head-first";
-  private tree: boolean | null = null;
+  private fileView: FileView | null = null;
   private changesets: readonly Changeset[] = [];
   private paths = new Map<string, readonly string[]>();
   private listings = new Map<string, { key: string; files: readonly ListedFile[] }>();
@@ -191,11 +193,11 @@ export class StackState {
     return `Stack order: ${this.order}`;
   }
 
-  /** Cycles the file projection: width-based, then tree, then flat. */
-  toggleTree(): string {
-    this.tree = this.tree === null ? true : this.tree ? false : null;
+  /** Cycles the files pane's layout: width-based, then tree, grouped, and flat. */
+  cycleFileView(): string {
+    this.fileView = FILE_VIEW_CYCLE[(FILE_VIEW_CYCLE.indexOf(this.fileView) + 1) % FILE_VIEW_CYCLE.length]!;
     this.publish();
-    return `File tree: ${this.tree === null ? "auto" : this.tree ? "on" : "off"}`;
+    return `File view: ${this.fileView ?? "auto"}`;
   }
 
   /** Cycle to the next zoom and land on the file the reviewer was on. */
@@ -310,11 +312,11 @@ export class StackState {
           loadedId: switcher.loadedId,
           pendingId: switcher.pendingId,
           order: this.order,
-          tree: this.tree,
+          fileView: this.fileView,
           listings: new Map([...this.listings].map(([id, { files }]) => [id, files])),
           expansion: new Map(this.expansion),
         }
-      : { ...EMPTY, tree: this.tree };
+      : { ...EMPTY, fileView: this.fileView };
     for (const listener of [...this.listeners]) {
       listener();
     }

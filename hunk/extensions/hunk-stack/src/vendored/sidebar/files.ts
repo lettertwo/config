@@ -25,6 +25,8 @@ export interface FileListEntry {
   // (such a row has no patch, so it carries no stats and no read mark).
   path: string;
   changesetId?: string;
+  // stack: in the flat file view, the directory shown after the name (absent at the root).
+  dirname?: string;
 }
 
 /**
@@ -193,6 +195,16 @@ export function buildFlatSidebarEntries(files: readonly SidebarFileSource[]): Si
   });
 
   return entries;
+}
+
+// stack: the flat file view. No group rows; each file carries its own directory, so a
+// truncated row still shows the name first.
+export function buildDirnameSidebarEntries(files: readonly SidebarFileSource[]): SidebarEntry[] {
+  return files.map((file) => {
+    const group = dirname(formatTerminalPath(normalizeDiffPath(file.path) ?? file.path));
+    const entry = buildSidebarFileEntry(file, 0);
+    return group === "." ? entry : { ...entry, dirname: group };
+  });
 }
 
 /** Split a POSIX review path while retaining its absolute or UNC-style root marker. */

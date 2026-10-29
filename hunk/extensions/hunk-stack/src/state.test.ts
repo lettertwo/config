@@ -223,15 +223,16 @@ describe("StackState", () => {
     expect(switcher.requests[0]).toMatchObject({ changeset: { id: "c1" }, landing: { path: "c1z.txt" } });
   });
 
-  it("toggles the outline order and cycles the tree projection", () => {
+  it("toggles the outline order and cycles the file view", () => {
     const { state } = setup(stackRepo());
-    expect(state.getSnapshot()).toMatchObject({ order: "head-first", tree: null });
+    expect(state.getSnapshot()).toMatchObject({ order: "head-first", fileView: null });
     expect(state.toggleOrder()).toBe("Stack order: base-first");
     expect(state.getSnapshot().order).toBe("base-first");
-    expect(state.toggleTree()).toBe("File tree: on");
-    expect(state.toggleTree()).toBe("File tree: off");
-    expect(state.toggleTree()).toBe("File tree: auto");
-    expect(state.getSnapshot().tree).toBeNull();
+    expect(state.cycleFileView()).toBe("File view: tree");
+    expect(state.cycleFileView()).toBe("File view: grouped");
+    expect(state.cycleFileView()).toBe("File view: flat");
+    expect(state.cycleFileView()).toBe("File view: auto");
+    expect(state.getSnapshot().fileView).toBeNull();
   });
 
   it("observes the pane's review descriptor", () => {
@@ -252,10 +253,10 @@ describe("StackState", () => {
     expect(state.toggleOrder()).toBe(NOT_A_STACK);
   });
 
-  it("cycles the tree projection without a stack", () => {
+  it("cycles the file view without a stack", () => {
     const state = new StackState(createSys, new FakeSwitcher());
-    expect(state.toggleTree()).toBe("File tree: on");
-    expect(state.getSnapshot()).toMatchObject({ enabled: false, tree: true });
+    expect(state.cycleFileView()).toBe("File view: tree");
+    expect(state.getSnapshot()).toMatchObject({ enabled: false, fileView: "tree" });
   });
 
   it("refuses to open outside a git repo", () => {

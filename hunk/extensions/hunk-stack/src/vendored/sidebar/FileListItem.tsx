@@ -197,6 +197,31 @@ export function FileDirectoryRow({
   );
 }
 
+// stack: the name keeps its width, and the directory gets what is left after a two-column gap.
+const DIRNAME_GAP = 2;
+
+function FileNameWithDirname({
+  entry,
+  nameWidth,
+  read,
+  theme,
+}: {
+  entry: FileListEntry;
+  nameWidth: number;
+  read: boolean;
+  theme: ExtensionSidebarTheme;
+}) {
+  const name = fitText(entry.name, nameWidth, "…");
+  const dirWidth = nameWidth - Bun.stringWidth(name) - DIRNAME_GAP;
+  const dir = dirWidth > 0 ? " ".repeat(DIRNAME_GAP) + fitText(entry.dirname!, dirWidth, "…") : "";
+  return (
+    <>
+      <text fg={read ? theme.badgeAdded : theme.text}>{name}</text>
+      <text fg={theme.muted}>{padText(dir, nameWidth - Bun.stringWidth(name))}</text>
+    </>
+  );
+}
+
 /** Render one file row in the navigation sidebar. */
 export const FileListItem = memo(function FileListItem({
   entry,
@@ -266,9 +291,14 @@ export const FileListItem = memo(function FileListItem({
           theme={theme}
         />
         {icon && <text fg={color}>{icon} </text>}
-        <text fg={read ? theme.badgeAdded : theme.text}>
-          {padText(fitText(entry.name, nameWidth, "…"), nameWidth)}
-        </text>
+        {/* stack: the flat file view's directory follows the name in the same width. */}
+        {entry.dirname ? (
+          <FileNameWithDirname entry={entry} nameWidth={nameWidth} read={read} theme={theme} />
+        ) : (
+          <text fg={read ? theme.badgeAdded : theme.text}>
+            {padText(fitText(entry.name, nameWidth, "…"), nameWidth)}
+          </text>
+        )}
         {statsSectionWidth > 0 && (
           <box
             style={{

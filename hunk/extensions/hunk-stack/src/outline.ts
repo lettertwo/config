@@ -6,6 +6,13 @@ import { fitText } from "./vendored/sidebar/helpers";
 
 export type StackOrder = "head-first" | "base-first";
 
+/**
+ * How the files pane lays out file rows: `tree` nests them under directory rows, `grouped`
+ * heads each run of same-directory files with a directory row, and `flat` puts each file's
+ * directory after its name.
+ */
+export type FileView = "tree" | "grouped" | "flat";
+
 export interface OutlineModel {
   changesets: readonly Changeset[];
   loadedId: string | null;
