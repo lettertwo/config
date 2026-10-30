@@ -173,8 +173,8 @@ export class OutlineFocus {
         return "handled";
       case "return":
       case "enter":
-        this.activate();
-        return "handled";
+        // Opening a file hands the keys to its diff; a header only folds.
+        return this.activate() ? "exit" : "handled";
       case "l":
         this.expand(true);
         return "handled";
@@ -241,22 +241,29 @@ export class OutlineFocus {
     });
   }
 
-  private activate() {
+  /** Returns whether a file opened. */
+  private activate(): boolean {
     const row = this.current();
     if (!row) {
-      return;
+      return false;
     }
     if (row.path === null) {
       if (row.changesetId !== null) {
         this.host.setExpanded(row.changesetId, !this.host.isExpanded(row.changesetId));
       }
-    } else if (row.fileId) {
+      return false;
+    }
+    if (row.fileId) {
       this.pane?.actions.selectFile(row.fileId);
-    } else if (row.changesetId !== null) {
+      return true;
+    }
+    if (row.changesetId !== null) {
       this.cancelFollow?.();
       this.cancelFollow = null;
       this.host.openFile(row.changesetId, row.path);
+      return true;
     }
+    return false;
   }
 
   private expand(to: boolean) {

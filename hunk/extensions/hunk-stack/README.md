@@ -52,24 +52,33 @@ within those bounds. Dragging the divider overrides either for the session.
 
 ## Keys
 
-| Command                         | Default key | Effect                                                       |
-| ------------------------------- | ----------- | ------------------------------------------------------------ |
-| `hunk-stack.next-changeset`     | `)`         | Load the next changeset toward the head                      |
-| `hunk-stack.previous-changeset` | `(`         | Load the previous changeset toward the base                  |
-| `hunk-stack.cycle-zoom`         | `I`         | Cycle the zoom, landing on the file you were on              |
-| `hunk-stack.toggle-stack-order` | `O`         | Flip the outline between head first and base first           |
-| `hunk-stack.cycle-file-view`    | `T`         | Cycle the file view: auto, tree, grouped, flat               |
-| `hunk-stack.toggle`             | `x`         | Mark the selected file read and jump to the next unread file |
-| `hunk-stack.next-unread`        | `X`         | Jump to the next unread file                                 |
-| `hunk-stack.toggle-hidden`      | `H`         | Hide or show read files                                      |
+| Command                            | Default key | Effect                                                                   |
+| ---------------------------------- | ----------- | ------------------------------------------------------------------------ |
+| `hunk-stack.next-changeset`        | `)`         | Load the next changeset toward the head                                  |
+| `hunk-stack.previous-changeset`    | `(`         | Load the previous changeset toward the base                              |
+| `hunk-stack.cycle-zoom`            | `I`         | Cycle the zoom, landing on the file you were on                          |
+| `hunk-stack.toggle-stack-order`    | `O`         | Flip the outline between head first and base first                       |
+| `hunk-stack.cycle-file-view`       | `T`         | Cycle the file view: auto, tree, grouped, flat                           |
+| `hunk-stack.toggle`                | `x`         | Mark the selected file read and jump to the next unread file             |
+| `hunk-stack.next-unread`           | `X`         | Jump to the next unread file                                             |
+| `hunk-stack.toggle-hidden`         | `H`         | Hide or show read files                                                  |
+| `hunk-stack.focus-outline-or-left` | `ctrl+h`    | Focus the outline if its pane is open, else the kitty window to the left |
+| `hunk-stack.focus-diff-or-right`   | `ctrl+l`    | Focus the diff from the outline, else the kitty window to the right      |
 
 The changeset, zoom, and order commands work only in a `hunk stack` review; elsewhere they say so.
 Read marks and the file view work in every review.
 
+`ctrl+h` and `ctrl+l` move between the outline and the diff the way smart-splits moves between nvim
+splits, and past either edge to the neighboring kitty window. kitty takes both keys for window
+navigation, so they reach hunk only through a passthrough: the `hunk` fish function sets the
+`IS_HUNK` user var that `kitty/keybind.conf` matches on. Leaving hunk goes through `kitten @ action`
+and needs kitty's remote control socket (`KITTY_LISTEN_ON`).
+
 Clicking a changeset header folds it, and clicking another changeset's file loads that changeset.
 In the outline's keyboard mode the diff follows the cursor: a file of the loaded changeset selects
 at once, and another changeset's file loads that changeset once the cursor rests on it. Headers
-load nothing; expand one with `l` to step into its files. Loads from the outline leave its folds
+load nothing; expand one with `l` to step into its files. `enter` on a file opens it and focuses
+the diff; on a header it folds. Loads from the outline leave its folds
 as they are. Stepping and zoom open the changeset they load and fold the one they leave, unless
 the outline has already set its fold.
 Hunk operates on one diff at a time, so switching between changesets goes through hunk's session

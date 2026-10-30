@@ -50,6 +50,7 @@ function loadExtension({
   sessionDir = tempSessionDir(),
   config = {} as Record<string, unknown>,
   extraFiles = [] as ExtensionDiffFile[],
+  moveWindow = async (_direction: "left" | "right") => null as string | null,
 } = {}) {
   const commands = new Map<
     string,
@@ -71,7 +72,7 @@ function loadExtension({
     on: () => {},
     config,
   } as Partial<HunkExtensionAPI> as HunkExtensionAPI;
-  registerStack(api, { sessionDir });
+  registerStack(api, { sessionDir, moveWindow });
 
   const files = [
     ...["src/a.ts", "src/b.ts", "src/lib/c.ts", "docs/readme.md"].map((path, index) =>
@@ -88,7 +89,7 @@ function loadExtension({
   };
 
   /** Fire one command with the given file selected; returns what the command did. */
-  const run = (commandId: string, selectedPath: string | null) => {
+  const run = (commandId: string, selectedPath: string | null, activeMode: string | null = null) => {
     const effects = {
       selected: null as string | null,
       refreshed: 0,
@@ -105,6 +106,11 @@ function loadExtension({
         files: visible,
       },
       navigation: { selectFile: (id: string) => (effects.selected = id) },
+      keyboardModes: {
+        enterMode: (id: string) => ((activeMode = id), true),
+        exitMode: () => ((activeMode = null), true),
+        isActive: (id?: string) => activeMode !== null && (id === undefined || id === activeMode),
+      },
       highlights: { refresh: () => (effects.refreshed += 1) },
       statusLine: {
         set: (item: ExtensionStatusItem) => status.set(item.id, item),
@@ -120,8 +126,8 @@ function loadExtension({
         },
       },
     } as unknown as ExtensionCommandContext;
-    void commands.get(commandId)!.handler(ctx);
-    return effects;
+    const done = commands.get(commandId)!.handler(ctx);
+    return Object.assign(effects, { done, mode: () => activeMode });
   };
 
   const isDimmed = async (path: string) => {
@@ -216,6 +222,34 @@ describe("stack extension", () => {
     const ext = loadExtension();
     expect(ext.commands.get("focus-outline")?.key).toBe("tab");
     expect(ext.modes.get("outline")?.title).toContain("Outline");
+  });
+
+  test("ctrl+h and ctrl+l leave hunk when there is no outline to move to or from", async () => {
+    const moves: string[] = [];
+    const ext = loadExtension({ moveWindow: async (direction) => (moves.push(direction), null) });
+    expect(ext.commands.get("focus-outline-or-left")?.key).toBe("ctrl+h");
+    expect(ext.commands.get("focus-diff-or-right")?.key).toBe("ctrl+l");
+    const left = ext.run("focus-outline-or-left", "src/a.ts");
+    await left.done;
+    expect(left.mode()).toBeNull();
+    await ext.run("focus-diff-or-right", "src/a.ts").done;
+    expect(moves).toEqual(["left", "right"]);
+  });
+
+  test("ctrl+l from the outline focuses the diff", async () => {
+    const moves: string[] = [];
+    const ext = loadExtension({ moveWindow: async (direction) => (moves.push(direction), null) });
+    const effects = ext.run("focus-diff-or-right", "src/a.ts", "outline");
+    await effects.done;
+    expect(effects.mode()).toBeNull();
+    expect(moves).toEqual([]);
+  });
+
+  test("a failed move says why", async () => {
+    const ext = loadExtension({ moveWindow: async () => "stack: kitten @ action failed: nope" });
+    const effects = ext.run("focus-diff-or-right", "src/a.ts");
+    await effects.done;
+    expect(effects.notes).toEqual(["stack: kitten @ action failed: nope"]);
   });
 
   test("x marks, dims, and jumps to the next unread file; x again unmarks in place", async () => {

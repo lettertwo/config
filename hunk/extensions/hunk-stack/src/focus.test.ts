@@ -190,6 +190,14 @@ describe("OutlineFocus", () => {
     expect(log.opened).toHaveLength(1);
   });
 
+  it("exits to the diff when enter opens a file, and stays on a header", () => {
+    const { press } = setup("f:1");
+    press("g");
+    expect(press("enter")).toBe("handled");
+    press("j");
+    expect(press("enter")).toBe("exit");
+  });
+
   it("toggles a header on enter, expands on l, collapses on h", () => {
     const { press, log } = setup("f:1");
     press("g");

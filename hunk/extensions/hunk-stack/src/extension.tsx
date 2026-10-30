@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useSyncExternalStore, type ReactNode } from "react";
 import type {
+  ExtensionCommandContext,
   ExtensionDiffFile,
   ExtensionPaneSize,
   ExtensionLineHighlightControls,
@@ -11,6 +12,7 @@ import type {
 } from "hunkdiff/extension";
 import { Switcher, hunkRunner, reloadArgs, type Run } from "./daemon";
 import { OutlineFocus } from "./focus";
+import { kittyMoveWindow, type MoveWindow } from "./kitty";
 import { StackState } from "./state";
 import { createSys, type Sys } from "./stack/sys";
 import { dimHighlights, hiddenNotice, isUnderDirectory, nextUnread, progressSpans } from "./vendored/mark-read/core";
@@ -72,6 +74,8 @@ export interface StackOptions {
   makeSys?: (cwd: string) => Sys;
   /** The pid the daemon knows this window by; defaults to `process.pid`. */
   pid?: number;
+  /** Leaves hunk for a neighboring terminal window; defaults to kitty's. */
+  moveWindow?: MoveWindow;
 }
 
 /**
@@ -507,6 +511,38 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
       if (!ctx.keyboardModes.enterMode("outline")) {
         ctx.notify("Cannot focus the outline from here", "warning");
       }
+    },
+  );
+
+  // The outline sits left of the diff, so ctrl+h and ctrl+l move between them as between
+  // nvim splits, and leave hunk from its edges.
+  const moveWindow = options.moveWindow ?? kittyMoveWindow();
+  async function moveOut(ctx: ExtensionCommandContext, direction: "left" | "right") {
+    const error = await moveWindow(direction);
+    if (error) {
+      ctx.notify(error, "warning");
+    }
+  }
+
+  hunk.registerCommand(
+    { id: "focus-outline-or-left", title: "Focus the outline if open, else the window to the left", key: "ctrl+h" },
+    async (ctx) => {
+      host.notify = ctx.notify;
+      if (focus.hasPane() && !ctx.keyboardModes.isActive("outline") && ctx.keyboardModes.enterMode("outline")) {
+        return;
+      }
+      await moveOut(ctx, "left");
+    },
+  );
+
+  hunk.registerCommand(
+    { id: "focus-diff-or-right", title: "Focus the diff from the outline, else the window to the right", key: "ctrl+l" },
+    async (ctx) => {
+      host.notify = ctx.notify;
+      if (ctx.keyboardModes.isActive("outline") && ctx.keyboardModes.exitMode()) {
+        return;
+      }
+      await moveOut(ctx, "right");
     },
   );
 
