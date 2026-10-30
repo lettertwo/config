@@ -245,6 +245,7 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
 
     // The rows name the loaded changeset only when the outline is drawn.
     const loadedId = outline ? stackSnapshot.loadedId : null;
+    const pendingId = outline ? stackSnapshot.pendingId : null;
     useEffect(
       () =>
         focus.attach({
@@ -252,8 +253,9 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
           files,
           selectedFileId: props.selectedFileId ?? null,
           loadedId,
+          pendingId,
         }),
-      [props.actions, files, props.selectedFileId, loadedId],
+      [props.actions, files, props.selectedFileId, loadedId, pendingId],
     );
     const paneFocus = useMemo(
       () => ({ cursorEntryId: focusSnapshot.cursorEntryId, onRows: focus.publishRows }),

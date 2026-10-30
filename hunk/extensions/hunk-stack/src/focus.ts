@@ -35,6 +35,8 @@ export interface PaneLink {
   selectedFileId: string | null;
   /** The loaded changeset's id as the rows carry it. */
   loadedId: string | null;
+  /** The changeset a reload is on its way to, which the review does not show yet. */
+  pendingId: string | null;
 }
 
 /** The effects a key can have beyond moving the cursor. */
@@ -45,6 +47,19 @@ export interface FocusHost {
   /** Load another changeset and land on `path`. */
   openFile(changesetId: string, path: string): void;
 }
+
+/** Runs `run` later; the returned function cancels it if it has not run. */
+export type Defer = (run: () => void) => () => void;
+
+/** Long enough that walking past a changeset does not start a reload for it. */
+const FOLLOW_DELAY_MS = 150;
+
+const deferBy =
+  (ms: number): Defer =>
+  (run) => {
+    const timer = setTimeout(run, ms);
+    return () => clearTimeout(timer);
+  };
 
 const sameRow = (row: NavRow, cursor: Cursor) =>
   row.changesetId === cursor.changesetId && row.path === cursor.path;
@@ -61,8 +76,12 @@ export class OutlineFocus {
   private pane: PaneLink | null = null;
   private snapshot: FocusSnapshot = { active: false, cursorEntryId: null };
   private listeners = new Set<() => void>();
+  private cancelFollow: (() => void) | null = null;
 
-  constructor(private readonly host: FocusHost) {}
+  constructor(
+    private readonly host: FocusHost,
+    private readonly defer: Defer = deferBy(FOLLOW_DELAY_MS),
+  ) {}
 
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);
@@ -190,10 +209,36 @@ export class OutlineFocus {
     }
     this.cursor = { changesetId: row.changesetId, path: row.path };
     this.publish();
-    // A file of another changeset does not follow, since selecting it would reload.
-    if (row.fileId) {
-      this.pane?.actions.selectFile(row.fileId);
+    this.follow(row);
+  }
+
+  /**
+   * Make the diff show the cursor's file. A loaded file selects at once; a file of another
+   * changeset loads it once the cursor rests, so only the file the reviewer stops on costs a
+   * reload. Headers load nothing, since a load expands the changeset it opens.
+   */
+  private follow(row: NavRow) {
+    this.cancelFollow?.();
+    this.cancelFollow = null;
+    const pane = this.pane;
+    const changesetId = row.changesetId;
+    if (!pane || changesetId === null || row.path === null) {
+      return;
     }
+    // While a reload is on its way elsewhere, selecting in the loaded changeset would be
+    // undone when it lands, so coming back has to load it again.
+    const showing = changesetId === pane.loadedId && (pane.pendingId === null || pane.pendingId === changesetId);
+    if (showing) {
+      if (row.fileId) {
+        pane.actions.selectFile(row.fileId);
+      }
+      return;
+    }
+    const path = row.path;
+    this.cancelFollow = this.defer(() => {
+      this.cancelFollow = null;
+      this.host.openFile(changesetId, path);
+    });
   }
 
   private activate() {
@@ -208,6 +253,8 @@ export class OutlineFocus {
     } else if (row.fileId) {
       this.pane?.actions.selectFile(row.fileId);
     } else if (row.changesetId !== null) {
+      this.cancelFollow?.();
+      this.cancelFollow = null;
       this.host.openFile(row.changesetId, row.path);
     }
   }

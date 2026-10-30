@@ -37,7 +37,7 @@ const FILES = [file("f:1", "b1.ts"), file("f:2", "b2.ts")];
 
 const key = (name: string, extra: Partial<ExtensionKeyEvent> = {}): ExtensionKeyEvent => ({ name, ...extra });
 
-function setup(selectedFileId: string | null = "f:2") {
+function setup(selectedFileId: string | null = "f:2", pendingId: string | null = null) {
   const log = {
     selected: [] as string[],
     read: [] as string[],
@@ -53,18 +53,33 @@ function setup(selectedFileId: string | null = "f:2") {
     },
     openFile: (id, path) => log.opened.push([id, path]),
   };
-  const focus = new OutlineFocus(host);
+  // The deferred load waits until the test says the cursor has rested.
+  let deferred: (() => void) | null = null;
+  const focus = new OutlineFocus(host, (run) => {
+    deferred = run;
+    return () => {
+      if (deferred === run) {
+        deferred = null;
+      }
+    };
+  });
+  const rest = () => {
+    const run = deferred;
+    deferred = null;
+    run?.();
+  };
   focus.attach({
     actions: { selectFile: (id) => log.selected.push(id) },
     files: FILES,
     selectedFileId,
     loadedId: "b",
+    pendingId,
   });
   focus.publishRows(ROWS);
   focus.enter();
   const at = () => focus.getSnapshot().cursorEntryId;
   const press = (name: string, extra?: Partial<ExtensionKeyEvent>) => focus.handleKey(key(name, extra));
-  return { focus, log, at, press };
+  return { focus, log, at, press, rest };
 }
 
 describe("OutlineFocus", () => {
@@ -73,7 +88,7 @@ describe("OutlineFocus", () => {
     const focus = new OutlineFocus(host);
     focus.enter();
     expect(focus.getSnapshot()).toEqual({ active: true, cursorEntryId: null });
-    focus.attach({ actions: { selectFile: () => {} }, files: FILES, selectedFileId: "f:2", loadedId: "b" });
+    focus.attach({ actions: { selectFile: () => {} }, files: FILES, selectedFileId: "f:2", loadedId: "b", pendingId: null });
     focus.publishRows(ROWS);
     expect(focus.getSnapshot().cursorEntryId).toBe("f:2");
   });
@@ -102,23 +117,66 @@ describe("OutlineFocus", () => {
     expect(at()).toBe("f:2");
   });
 
-  it("makes the diff follow the cursor onto loaded files only", () => {
-    const { press, log } = setup("f:1");
+  it("selects loaded files at once and leaves the loaded header alone", () => {
+    const { press, log, rest } = setup("f:1");
     press("j");
-    expect(log.selected).toEqual(["f:2"]);
     press("k");
     press("k");
-    press("k");
-    press("k");
-    // Rows of changeset a and the headers never select anything.
+    rest();
     expect(log.selected).toEqual(["f:2", "f:1"]);
+    expect(log.opened).toEqual([]);
+  });
+
+  it("loads another changeset once the cursor rests on one of its files", () => {
+    const { press, log, rest } = setup("f:1");
+    press("k");
+    press("k");
+    expect(log.opened).toEqual([]);
+    rest();
+    expect(log.opened).toEqual([["a", "a2.ts"]]);
+  });
+
+  it("loads nothing from a header of another changeset", () => {
+    const { press, log, rest } = setup("f:2");
+    press("j");
+    rest();
+    press("g");
+    rest();
+    expect(log.opened).toEqual([]);
+  });
+
+  it("loads only the row the cursor stops on when walking past changesets", () => {
+    const { press, log, rest } = setup("f:1");
+    press("k");
+    press("k");
+    press("k");
+    rest();
+    expect(log.opened).toEqual([["a", "a1.ts"]]);
+  });
+
+  it("drops a deferred load when the cursor comes back before it runs", () => {
+    const { press, log, rest } = setup("f:2");
+    press("j");
+    press("k");
+    rest();
+    expect(log.opened).toEqual([]);
+    expect(log.selected).toEqual(["f:2"]);
+  });
+
+  it("reloads the loaded changeset when coming back while another is on its way", () => {
+    const { press, log, rest } = setup("f:2", "c");
+    press("k");
+    expect(log.selected).toEqual([]);
+    rest();
+    expect(log.opened).toEqual([["b", "b1.ts"]]);
   });
 
   it("opens a file of another changeset on enter and selects a loaded one", () => {
-    const { press, log } = setup("f:1");
+    const { press, log, rest } = setup("f:1");
     press("g");
     press("j");
     press("enter");
+    rest();
     expect(log.opened).toEqual([["a", "a1.ts"]]);
     press("g");
     press("return");
@@ -205,7 +263,7 @@ describe("OutlineFocus", () => {
     press("g");
     press("j");
     expect(at()).toBe("a|listed:a1.ts");
-    focus.attach({ actions: { selectFile() {} }, files: [file("f:9", "a1.ts")], selectedFileId: "f:9", loadedId: "a" });
+    focus.attach({ actions: { selectFile() {} }, files: [file("f:9", "a1.ts")], selectedFileId: "f:9", loadedId: "a", pendingId: null });
     focus.publishRows([header("a"), loadedFile("a", "a1.ts", "f:9"), header("b")]);
     expect(at()).toBe("f:9");
   });
@@ -238,7 +296,7 @@ describe("OutlineFocus", () => {
   it("reports whether a pane is attached with rows to walk", () => {
     const focus = new OutlineFocus({} as FocusHost);
     expect(focus.hasPane()).toBe(false);
-    focus.attach({ actions: { selectFile() {} }, files: [], selectedFileId: null, loadedId: null });
+    focus.attach({ actions: { selectFile() {} }, files: [], selectedFileId: null, loadedId: null, pendingId: null });
     expect(focus.hasPane()).toBe(false);
     focus.publishRows(ROWS);
     expect(focus.hasPane()).toBe(true);

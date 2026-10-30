@@ -56,6 +56,11 @@ The changeset, zoom, and order commands work only in a `hunk stack` review; else
 Read marks and the file view work in every review.
 
 Clicking a changeset header folds it, and clicking another changeset's file loads that changeset.
+In the outline's keyboard mode the diff follows the cursor: a file of the loaded changeset selects
+at once, and another changeset's file loads that changeset once the cursor rests on it. Headers
+load nothing; expand one with `l` to step into its files. Loads from the outline leave its folds
+as they are. Stepping and zoom open the changeset they load and fold the one they leave, unless
+the outline has already set its fold.
 Hunk operates on one diff at a time, so switching between changesets goes through hunk's session
 daemon (`hunk session reload`), addressed to this window by pid.
 

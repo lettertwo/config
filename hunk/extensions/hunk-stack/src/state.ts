@@ -165,6 +165,15 @@ export class StackState {
     if (!target) {
       return "That changeset is no longer in the stack";
     }
+    // A load from the outline leaves its folds as the reviewer sees them. Stepping and zoom
+    // don't come through here, so they still fold to follow the loaded changeset.
+    const loaded = this.switcher.loaded();
+    for (const id of loaded === null ? [target.id] : [loaded, target.id]) {
+      if (!this.expansion.has(id)) {
+        this.expansion.set(id, this.isExpanded(id));
+      }
+    }
+    this.publish();
     this.switcher.request(target, path === undefined ? undefined : { path });
     return null;
   }

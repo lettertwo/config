@@ -217,6 +217,18 @@ describe("StackState", () => {
     expect(switcher.requests).toHaveLength(1);
   });
 
+  it("keeps the outline's folds when it loads a changeset, and follows the load when stepping", () => {
+    const { state, switcher } = setup(stackRepo());
+    switcher.setLoaded("c1");
+    state.select("a1", "a1.txt");
+    switcher.setLoaded("a1");
+    expect(state.isExpanded("c1")).toBe(true);
+    expect(state.isExpanded("a1")).toBe(false);
+    expect(state.isExpanded("uncommitted")).toBe(false);
+    switcher.setLoaded("uncommitted");
+    expect(state.isExpanded("uncommitted")).toBe(true);
+  });
+
   it("loads another changeset's file by landing on its path", () => {
     const { state, switcher } = setup(stackRepo());
     expect(state.select("c1", "c1z.txt")).toBeNull();
