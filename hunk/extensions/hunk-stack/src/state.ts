@@ -33,6 +33,8 @@ export interface StackSnapshot {
   listings: ReadonlyMap<string, readonly ListedFile[]>;
   /** Headers the reviewer expanded or collapsed by hand; the rest follow the loaded changeset. */
   expansion: ReadonlyMap<string, boolean>;
+  /** Hunk's file filter query, which the outline applies to every changeset. */
+  filter: string;
 }
 
 /** What the stack commands say in a review that `hunk stack` did not open. */
@@ -52,6 +54,7 @@ const EMPTY: StackSnapshot = {
   fileView: null,
   listings: new Map(),
   expansion: new Map(),
+  filter: "",
 };
 
 const FILE_VIEW_CYCLE: readonly (FileView | null)[] = [null, "tree", "grouped", "flat"];
@@ -68,6 +71,7 @@ export class StackState {
   private zoom: Zoom = "branch";
   private order: StackOrder = "head-first";
   private fileView: FileView | null = null;
+  private filter = "";
   private changesets: readonly Changeset[] = [];
   private paths = new Map<string, readonly string[]>();
   private listings = new Map<string, { key: string; files: readonly ListedFile[] }>();
@@ -186,6 +190,13 @@ export class StackState {
   setExpanded(id: string, to?: boolean) {
     this.expansion.set(id, to ?? !this.isExpanded(id));
     this.publish();
+  }
+
+  setFilter(filter: string) {
+    if (filter !== this.filter) {
+      this.filter = filter;
+      this.publish();
+    }
   }
 
   /** Resolves once every file list asked for so far has arrived or failed. */
@@ -324,6 +335,7 @@ export class StackState {
           fileView: this.fileView,
           listings: new Map([...this.listings].map(([id, { files }]) => [id, files])),
           expansion: new Map(this.expansion),
+          filter: this.filter,
         }
       : { ...EMPTY, fileView: this.fileView };
     for (const listener of [...this.listeners]) {

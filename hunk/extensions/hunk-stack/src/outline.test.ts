@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { headerSegments, isExpanded, navRows, outlineEntries, type OutlineModel, type ProjectListed } from "./outline";
+import { headerSegments, isExpanded, matchesFilter, navRows, outlineEntries, type OutlineModel, type ProjectListed } from "./outline";
 import type { Changeset } from "./stack/stack";
 import {
   buildFlatSidebarEntries,
@@ -37,6 +37,7 @@ function model(extra: Partial<OutlineModel> = {}): OutlineModel {
     read: null,
     listings: new Map(),
     expansion: new Map(),
+    filter: "",
     ...extra,
   };
 }
@@ -160,6 +161,41 @@ describe("listed changesets", () => {
   it("renders a rename as old -> new", () => {
     const entries = outlineEntries(model({ listings, expansion: new Map([["c", true]]) }), [], flat);
     expect(entries.find((e) => e.kind === "file")).toMatchObject({ name: "old.ts -> moved.ts", changeType: "rename-changed" });
+  });
+});
+
+describe("filtering", () => {
+  const listings = new Map([
+    ["a", [{ status: "A", path: "src/new.ts" }, { status: "M", path: "docs/readme.md" }]],
+    ["c", [{ status: "R", previousPath: "src/old.ts", path: "moved.ts" }]],
+  ]);
+
+  it("matches a case-insensitive substring of the path or the path before a rename", () => {
+    expect(matchesFilter({ path: "src/New.ts" }, "new")).toBe(true);
+    expect(matchesFilter({ path: "moved.ts", previousPath: "src/old.ts" }, " OLD ")).toBe(true);
+    expect(matchesFilter({ path: "docs/readme.md" }, "src")).toBe(false);
+    expect(matchesFilter({ path: "docs/readme.md" }, "  ")).toBe(true);
+  });
+
+  it("expands every changeset with a match, folded or not, showing only its matches", () => {
+    const entries = outlineEntries(
+      model({ listings, filter: "src", expansion: new Map([["b", false]]) }),
+      [file("src/f1")],
+      flat,
+    );
+    expect(kinds(entries)).toEqual(["H:a", "a|group:src:0", "a|listed:src/new.ts", "H:b", "src/f1", "H:c", "c|group:.:0", "c|listed:moved.ts"]);
+  });
+
+  it("hides headers with no match, including the loaded one when hunk filtered all its files", () => {
+    expect(kinds(outlineEntries(model({ listings, filter: "readme" }), [], flat))).toEqual([
+      "H:a",
+      "a|group:docs:0",
+      "a|listed:docs/readme.md",
+    ]);
+  });
+
+  it("restores the folds when the filter clears", () => {
+    expect(kinds(outlineEntries(model({ listings, filter: "" }), [file("f1")], flat))).toEqual(["H:a", "H:b", "f1", "H:c"]);
   });
 });
 

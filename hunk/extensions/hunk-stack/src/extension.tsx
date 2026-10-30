@@ -260,6 +260,7 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
         read: { read: store.readCount(), total: store.trackableCount() },
         listings: stackSnapshot.listings,
         expansion: stackSnapshot.expansion,
+        filter: stackSnapshot.filter,
       };
       return {
         model,
@@ -488,13 +489,18 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
 
   hunk.registerKeyboardMode({
     id: "outline",
-    title: "Outline: j/k move, enter open, h/l fold, space read, esc exit",
+    title: "Outline: j/k move, enter open, h/l fold, space read, / filter, esc exit",
     onEnter: () => focus.enter(),
     onExit: () => focus.leave(),
     onKey: (key, ctx) => {
       host.highlights = ctx.highlights;
       host.statusLine = ctx.statusLine;
       host.notify = ctx.notify;
+      // Hunk's filter, and not a key of the mode's own, so `/` keeps its meaning in the diff.
+      if ((key.name === "/" || key.sequence === "/") && !key.ctrl && !key.meta && !key.option) {
+        ctx.commands.execute("hunk.review.focusFilter");
+        return "handled";
+      }
       return focus.handleKey(key);
     },
   });
@@ -598,6 +604,8 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
     host.notify = ctx.notify;
     renderProgress();
   });
+  hunk.on("filter_changed", ({ filter }) => stack.setFilter(filter));
+
   hunk.on("session_reload", (payload, ctx) => {
     host.review = ctx.review;
     host.statusLine = ctx.statusLine;

@@ -24,6 +24,20 @@ export interface OutlineModel {
   listings: ReadonlyMap<string, readonly ListedFile[]>;
   /** Headers toggled by hand; the loaded changeset is otherwise the only one expanded. */
   expansion: ReadonlyMap<string, boolean>;
+  /** Hunk's file filter query; the review applies it to the loaded changeset's files. */
+  filter: string;
+}
+
+/**
+ * Hunk's own file-filter match, minus the agent summary that listed files lack: a
+ * case-insensitive substring of the path and the path before a rename.
+ */
+export function matchesFilter(file: { path: string; previousPath?: string }, filter: string): boolean {
+  const query = filter.trim().toLowerCase();
+  if (!query) {
+    return true;
+  }
+  return [file.path, file.previousPath].filter(Boolean).join(" ").toLowerCase().includes(query);
 }
 
 export function isExpanded(
@@ -84,6 +98,9 @@ function listedEntries(changesetId: string, files: readonly ListedFile[], projec
  *
  * When no listed changeset is loaded (a clean worktree, or a range launched by hand) the
  * files lead the list instead, so they never vanish from the pane.
+ *
+ * While the filter is set, a changeset shows expanded with its matching files, or not at all
+ * when none match. The folds come back when the filter clears.
  */
 export function outlineEntries(
   model: OutlineModel,
@@ -99,20 +116,26 @@ export function outlineEntries(
   if (model.order === "head-first") {
     indices.reverse();
   }
+  const filtering = model.filter.trim() !== "";
   for (const i of indices) {
     const changeset = changesets[i]!;
     const header = headerEntry(changeset, i + 1, total, model);
-    entries.push(header);
-    if (!header.expanded) {
-      continue;
-    }
+    let files: readonly SidebarEntry[] = [];
     if (header.loaded) {
-      entries.push(...fileEntries);
-    } else {
-      const listed = model.listings.get(changeset.id);
-      if (listed) {
-        entries.push(...listedEntries(changeset.id, listed, project));
+      files = fileEntries;
+    } else if (header.expanded || filtering) {
+      const listed = model.listings.get(changeset.id)?.filter((file) => matchesFilter(file, model.filter));
+      files = listed ? listedEntries(changeset.id, listed, project) : [];
+    }
+    if (filtering) {
+      if (!files.some((entry) => entry.kind === "file")) {
+        continue;
       }
+      header.expanded = true;
+    }
+    entries.push(header);
+    if (header.expanded) {
+      entries.push(...files);
     }
   }
   return entries;

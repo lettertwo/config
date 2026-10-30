@@ -78,7 +78,13 @@ Clicking a changeset header folds it, and clicking another changeset's file load
 In the outline's keyboard mode the diff follows the cursor: a file of the loaded changeset selects
 at once, and another changeset's file loads that changeset once the cursor rests on it. Headers
 load nothing; expand one with `l` to step into its files. `enter` on a file opens it and focuses
-the diff; on a header it folds. Loads from the outline leave its folds
+the diff; on a header it folds.
+
+`/` in the outline opens hunk's file filter (`hunk.review.focusFilter`); elsewhere `/` keeps hunk's
+meaning. While the filter is set, every changeset with a matching file shows expanded with only its
+matches, and the rest are hidden. Listed changesets match the way hunk matches the loaded one, by
+path or path before a rename, minus the agent summary they lack. The folds come back when the filter
+clears. Loads from the outline leave its folds
 as they are. Stepping and zoom open the changeset they load and fold the one they leave, unless
 the outline has already set its fold.
 Hunk operates on one diff at a time, so switching between changesets goes through hunk's session

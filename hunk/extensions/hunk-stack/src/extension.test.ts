@@ -252,6 +252,19 @@ describe("stack extension", () => {
     expect(effects.notes).toEqual(["stack: kitten @ action failed: nope"]);
   });
 
+  test("/ in the outline opens hunk's file filter", () => {
+    const ext = loadExtension();
+    const executed: string[] = [];
+    const ctx = {
+      notify: () => {},
+      highlights: { refresh: () => {} },
+      statusLine: { set: () => {}, clear: () => {} },
+      commands: { execute: (id: string) => (executed.push(id), true) },
+    } as unknown as Parameters<ExtensionKeyboardMode["onKey"]>[1];
+    expect(ext.modes.get("outline")!.onKey({ name: "/", sequence: "/" }, ctx)).toBe("handled");
+    expect(executed).toEqual(["hunk.review.focusFilter"]);
+  });
+
   test("x marks, dims, and jumps to the next unread file; x again unmarks in place", async () => {
     const ext = loadExtension();
     await ext.load();
