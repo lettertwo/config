@@ -8,7 +8,7 @@ const header = (changesetId: string): NavRow => ({
   path: null,
   fileId: null,
 });
-const loadedFile = (changesetId: string, path: string, fileId: string): NavRow => ({
+const loadedFile = (changesetId: string | null, path: string, fileId: string): NavRow => ({
   entryId: fileId,
   changesetId,
   path,
@@ -188,6 +188,17 @@ describe("OutlineFocus", () => {
     press("enter");
     expect(log.selected).toEqual(["f:1"]);
     expect(log.opened).toHaveLength(1);
+  });
+
+  it("selects the file under the cursor in a review that is not a stack", () => {
+    const selected: string[] = [];
+    const host: FocusHost = { toggleRead: () => {}, isExpanded: () => true, setExpanded: () => {}, openFile: () => {} };
+    const focus = new OutlineFocus(host);
+    focus.attach({ actions: { selectFile: (id) => selected.push(id) }, files: FILES, selectedFileId: "f:1", loadedId: null, pendingId: null });
+    focus.publishRows([loadedFile(null, "b1.ts", "f:1"), loadedFile(null, "b2.ts", "f:2")]);
+    focus.enter();
+    focus.handleKey(key("j"));
+    expect(selected).toEqual(["f:2"]);
   });
 
   it("exits to the diff when enter opens a file, and stays on a header", () => {

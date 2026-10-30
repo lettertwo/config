@@ -222,16 +222,20 @@ export class OutlineFocus {
     this.cancelFollow = null;
     const pane = this.pane;
     const changesetId = row.changesetId;
-    if (!pane || changesetId === null || row.path === null) {
+    if (!pane || row.path === null) {
       return;
     }
     // While a reload is on its way elsewhere, selecting in the loaded changeset would be
-    // undone when it lands, so coming back has to load it again.
+    // undone when it lands, so coming back has to load it again. Outside a stack there is no
+    // changeset, and both ids are null.
     const showing = changesetId === pane.loadedId && (pane.pendingId === null || pane.pendingId === changesetId);
     if (showing) {
       if (row.fileId) {
         pane.actions.selectFile(row.fileId);
       }
+      return;
+    }
+    if (changesetId === null) {
       return;
     }
     const path = row.path;
