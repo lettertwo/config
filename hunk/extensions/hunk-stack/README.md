@@ -39,6 +39,17 @@ the worktree has changes.
 files in one directory with that directory, and `flat` lists files alone with each one's directory
 after its name. `auto` picks tree or grouped by pane width, as hunk does.
 
+## Pane width
+
+```toml
+[extension.hunk-stack]
+width = 40  # columns, or 0.25 for a quarter of the window
+```
+
+A whole number from 1 up is a column count. A number below 1 is a fraction of the window, kept
+between 22 and 56 columns. Without `width` the pane matches hunk's files pane: 16% of the window
+within those bounds. Dragging the divider overrides either for the session.
+
 ## Keys
 
 | Command                         | Default key | Effect                                                       |

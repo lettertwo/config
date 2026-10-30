@@ -32,3 +32,6 @@ animations = "false"
 "hunk-stack.toggle" = "space"
 "hunk-stack.next-unread" = false
 "hunk-stack.toggle-hidden" = "ctrl+space"
+
+[extension.hunk-stack]
+width = 0.3

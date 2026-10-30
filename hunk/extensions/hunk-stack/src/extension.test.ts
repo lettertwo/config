@@ -15,7 +15,7 @@ import type {
   ExtensionStatusItem,
   HunkExtensionAPI,
 } from "hunkdiff/extension";
-import { registerStack } from "./extension";
+import { paneWidth, registerStack } from "./extension";
 import { NOT_A_STACK } from "./state";
 import { makeRepo } from "./stack/testRepo";
 
@@ -172,6 +172,22 @@ describe("stack extension", () => {
     expect(ext.commands.get("next-unread")?.key).toBe("X");
     expect(ext.commands.get("toggle-hidden")?.key).toBe("H");
     expect(ext.panes[0]?.replaces).toBe("hunk:files");
+  });
+
+  test("sizes the pane from the width setting", () => {
+    expect(loadExtension({ config: { width: 40 } }).panes[0]?.width).toEqual({ preferred: 40, min: 22, max: 56 });
+    expect(loadExtension().panes[0]?.width).toEqual(paneWidth(undefined).size);
+  });
+
+  test("reads width as whole columns from 1 up and a fraction below 1", () => {
+    expect(paneWidth(0.25).size).toEqual({ preferred: 34, min: 22, max: 56, fraction: 0.25 });
+    expect(paneWidth(80).size).toEqual({ preferred: 80, min: 22, max: 80 });
+    expect(paneWidth(12).size).toEqual({ preferred: 12, min: 12, max: 56 });
+    for (const bad of [0, -3, 1.5, "40", null]) {
+      const width = paneWidth(bad);
+      expect(width.size).toEqual(paneWidth(undefined).size);
+      expect(width.error).toContain("using the default");
+    }
   });
 
   test("hunk stack delegates to the changeset the review opens on", async () => {

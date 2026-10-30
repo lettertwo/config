@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useSyncExternalStore, type ReactNode } from "react";
 import type {
   ExtensionDiffFile,
+  ExtensionPaneSize,
   ExtensionLineHighlightControls,
   ExtensionNotifyType,
   ExtensionPaneProps,
@@ -37,6 +38,31 @@ uncommitted changes when there are any, else on the focus branch. Options such a
 --mode or --watch pass through to hunk diff.
 `;
 
+/** Same geometry as Hunk's bundled files pane, which this replaces. */
+const DEFAULT_WIDTH: ExtensionPaneSize = { preferred: 34, min: 22, max: 56, fraction: 0.16 };
+
+/**
+ * The pane width from `[extension.hunk-stack] width`: whole columns from 1 up, or below 1 a
+ * fraction of the window. Columns widen the default bounds to fit the request.
+ */
+export function paneWidth(width: unknown): { size: ExtensionPaneSize; error?: string } {
+  if (width === undefined) {
+    return { size: DEFAULT_WIDTH };
+  }
+  if (typeof width === "number" && width > 0 && width < 1) {
+    return { size: { ...DEFAULT_WIDTH, fraction: width } };
+  }
+  if (typeof width === "number" && Number.isInteger(width) && width >= 1) {
+    return {
+      size: { preferred: width, min: Math.min(DEFAULT_WIDTH.min!, width), max: Math.max(DEFAULT_WIDTH.max!, width) },
+    };
+  }
+  return {
+    size: DEFAULT_WIDTH,
+    error: `stack: width = ${formatTerminalPath(JSON.stringify(width) ?? String(width))} is neither whole columns nor a fraction below 1; using the default`,
+  };
+}
+
 export interface StackOptions {
   /** Where session files live; defaults to `defaultSessionDir()`. */
   sessionDir?: string;
@@ -64,6 +90,7 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
     hunk.config.persist === false
       ? null
       : new SessionLog(options.sessionDir ?? defaultSessionDir());
+  const width = paneWidth(hunk.config.width);
   let reviewTitle = "review";
   let persistFailed = false;
   const switcher = new Switcher(
@@ -339,12 +366,11 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
     highlight: ({ file }) => (store.isRead(file) ? dimHighlights(file.patch) : null),
   });
 
-  // Same geometry as Hunk's bundled files pane, which this replaces.
   hunk.registerPane({
     id: "files",
     title: "Files",
     placement: "left",
-    width: { preferred: 34, min: 22, max: 56, fraction: 0.16 },
+    width: width.size,
     defaultOpen: true,
     replaces: "hunk:files",
     component: StackSidebar,
@@ -526,6 +552,9 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
 
   hunk.on("startup", (_payload, ctx) => {
     host.notify = ctx.notify;
+    if (width.error) {
+      ctx.notify(width.error, "warning");
+    }
   });
   hunk.on("changeset_loaded", (_payload, ctx) => {
     host.review = ctx.review;
