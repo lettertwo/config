@@ -18,7 +18,7 @@ animations = "false"
 "hunk.review.previousFile" = "["
 "hunk.review.nextHunk" = "}"
 "hunk.review.previousHunk" = "{"
-"hunk.review.pageDown" = ["pagedown", "f"]
+"hunk.review.pageDown" = ["pagedown", "f", "space"]
 "hunk.review.pageUp" = ["pageup", "b"]
 "hunk.review.halfPageDown" = ["d", "ctrl+d", "J"]
 "hunk.review.halfPageUp" = ["u", "ctrl+u", "K"]
@@ -29,7 +29,6 @@ animations = "false"
 "hunk.review.scrollCodeLeft" = ["h", "left", "H", "shift+left"]
 "hunk.review.scrollCodeRight" = ["l", "right", "L", "shift+right"]
 
-"hunk-stack.toggle" = "space"
 "hunk-stack.next-unread" = false
 "hunk-stack.toggle-hidden" = "ctrl+space"
 
