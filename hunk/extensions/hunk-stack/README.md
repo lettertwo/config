@@ -45,6 +45,15 @@ the worktree has changes.
 files in one directory with that directory, and `flat` lists files alone with each one's directory
 after its name. `auto` picks tree or grouped by pane width, as hunk does.
 
+## Notes
+
+A file row shows `*N` for the notes on it, as hunk's files pane does: review notes, agent comments,
+and `--agent-context` sidecar annotations. Hunk keeps review notes and agent comments in memory for
+the life of the process and keys them by path rather than by diff range, and it matches sidecar
+annotations by path on every load. So a note shows in every changeset that touches its file, at
+the lines it was written on. Rows of changesets that are not loaded count the notes on their path
+as of the last time the path was loaded.
+
 ## Pane width
 
 ```toml

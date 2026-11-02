@@ -14,6 +14,7 @@ import { carriedArgs } from "./carry";
 import { Switcher, hunkRunner, reloadArgs, type Run } from "./daemon";
 import { OutlineFocus } from "./focus";
 import { kittyMoveWindow, type MoveWindow } from "./kitty";
+import { NoteTally } from "./notes";
 import { StackState } from "./state";
 import { createSys, type Sys } from "./stack/sys";
 import { dimHighlights, hiddenNotice, isUnderDirectory, nextUnread, progressSpans } from "./vendored/mark-read/core";
@@ -106,6 +107,7 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
     options.pid,
   );
   const stack = new StackState(options.makeSys ?? createSys, switcher);
+  const notes = new NoteTally();
 
   const focus = new OutlineFocus({
     toggleRead: (file) => toggleFiles([file]),
@@ -224,6 +226,8 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
     const focusSnapshot = useSyncExternalStore(focus.subscribe, focus.getSnapshot);
 
     useEffect(() => stack.observeReview(review), [review]);
+    useEffect(() => notes.observe(files), [files]);
+    const noteCounts = useSyncExternalStore(notes.subscribe, notes.getSnapshot);
 
     const readState = useMemo<SidebarReadState>(() => {
       const isRead = (file: ExtensionDiffFile) => {
@@ -264,6 +268,7 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
         listings: stackSnapshot.listings,
         expansion: stackSnapshot.expansion,
         filter: stackSnapshot.filter,
+        notes: noteCounts,
       };
       return {
         model,
@@ -276,7 +281,7 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
         },
       };
       // `snapshot` is in the deps because the read count changes with the marks.
-    }, [stackSnapshot, snapshot, props.actions]);
+    }, [stackSnapshot, snapshot, noteCounts, props.actions]);
 
     // The rows name the loaded changeset only when the outline is drawn.
     const loadedId = outline ? stackSnapshot.loadedId : null;
@@ -615,6 +620,13 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
     renderProgress();
   });
   hunk.on("filter_changed", ({ filter }) => stack.setFilter(filter));
+
+  // A note removed through `hunk session comment` may sit on a path that is not loaded.
+  hunk.on("note_changed", ({ kind, note }) => {
+    if (kind === "removed") {
+      notes.forget(note.id);
+    }
+  });
 
   hunk.on("session_reload", (payload, ctx) => {
     host.review = ctx.review;

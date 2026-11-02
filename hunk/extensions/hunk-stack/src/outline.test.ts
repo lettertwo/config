@@ -36,6 +36,7 @@ function model(extra: Partial<OutlineModel> = {}): OutlineModel {
     order: "base-first",
     read: null,
     listings: new Map(),
+    notes: new Map(),
     expansion: new Map(),
     filter: "",
     ...extra,
@@ -205,6 +206,22 @@ describe("isExpanded", () => {
     expect(isExpanded(new Map(), "b", "a")).toBe(false);
     expect(isExpanded(new Map([["b", false], ["a", true]]), "b", "b")).toBe(false);
     expect(isExpanded(new Map([["a", true]]), "b", "a")).toBe(true);
+  });
+});
+
+describe("listed note counts", () => {
+  it("badges a listed file with the notes Hunk keeps for its path", () => {
+    const listings = new Map([["a", [{ status: "M", path: "x.ts" }, { status: "M", path: "y.ts" }]]]);
+    const entries = outlineEntries(
+      model({ listings, expansion: new Map([["a", true]]), notes: new Map([["x.ts", 2]]) }),
+      [],
+      flat,
+    );
+    const badges = entries.flatMap((entry) => (entry.kind === "file" ? [[entry.path, entry.agentCommentsText]] : []));
+    expect(badges).toEqual([
+      ["x.ts", "*2"],
+      ["y.ts", null],
+    ]);
   });
 });
 

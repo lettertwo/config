@@ -46,6 +46,8 @@ export interface SidebarFileSource {
   statsTruncated?: boolean;
   isUntracked?: boolean;
   agent?: { annotations: readonly unknown[] } | null;
+  // stack: notes on a file of a changeset that is not loaded, which has no `agent` of its own.
+  noteCount?: number;
   changeType?: FileDiffMetadata["type"];
   metadata?: unknown;
 }
@@ -157,7 +159,7 @@ export function sidebarEntryStatsWidth(
 
 /** Build the shared file-row metadata used by both sidebar projections. */
 function buildSidebarFileEntry(file: SidebarFileSource, depth: number): FileListEntry {
-  const agentCommentCount = file.agent?.annotations.length ?? 0;
+  const agentCommentCount = file.noteCount ?? file.agent?.annotations.length ?? 0;
 
   return {
     kind: "file",

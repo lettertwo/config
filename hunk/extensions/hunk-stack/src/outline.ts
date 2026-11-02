@@ -26,6 +26,8 @@ export interface OutlineModel {
   expansion: ReadonlyMap<string, boolean>;
   /** Hunk's file filter query; the review applies it to the loaded changeset's files. */
   filter: string;
+  /** Saved notes by path, which Hunk shows in every changeset touching the path. */
+  notes: ReadonlyMap<string, number>;
 }
 
 /**
@@ -78,7 +80,12 @@ function headerEntry(changeset: Changeset, index: number, total: number, model: 
  * Rows for a changeset that is not loaded. Ids are prefixed with the changeset because
  * the projection numbers its rows from zero for every list it builds.
  */
-function listedEntries(changesetId: string, files: readonly ListedFile[], project: ProjectListed): SidebarEntry[] {
+function listedEntries(
+  changesetId: string,
+  files: readonly ListedFile[],
+  notes: ReadonlyMap<string, number>,
+  project: ProjectListed,
+): SidebarEntry[] {
   const sources = files.map<SidebarFileSource>((file) => ({
     id: `listed:${file.path}`,
     path: file.path,
@@ -86,6 +93,7 @@ function listedEntries(changesetId: string, files: readonly ListedFile[], projec
     stats: { additions: 0, deletions: 0 },
     changeType: changeTypeOf(file.status),
     isUntracked: file.status === "?",
+    noteCount: notes.get(file.path),
   }));
   return project(sources).map((entry) => ({ ...entry, id: `${changesetId}|${entry.id}`, changesetId }));
 }
@@ -125,7 +133,7 @@ export function outlineEntries(
       files = fileEntries;
     } else if (header.expanded || filtering) {
       const listed = model.listings.get(changeset.id)?.filter((file) => matchesFilter(file, model.filter));
-      files = listed ? listedEntries(changeset.id, listed, project) : [];
+      files = listed ? listedEntries(changeset.id, listed, model.notes, project) : [];
     }
     if (filtering) {
       if (!files.some((entry) => entry.kind === "file")) {
