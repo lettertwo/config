@@ -10,6 +10,7 @@ import type {
   ExtensionStatusLineControls,
   HunkExtensionAPI,
 } from "hunkdiff/extension";
+import { carriedArgs } from "./carry";
 import { Switcher, hunkRunner, reloadArgs, type Run } from "./daemon";
 import { OutlineFocus } from "./focus";
 import { kittyMoveWindow, type MoveWindow } from "./kitty";
@@ -96,6 +97,8 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
       : new SessionLog(options.sessionDir ?? defaultSessionDir());
   const width = paneWidth(hunk.config.width);
   let reviewTitle = "review";
+  /** Said once the review is up, since the terminal belongs to hunk from then on. */
+  let launchNotice: string | undefined;
   let persistFailed = false;
   const switcher = new Switcher(
     options.run ?? hunkRunner(),
@@ -588,6 +591,10 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
         await ctx.stderr.write(`hunk stack: ${formatTerminalPath(argv.error)}\n`);
         return { kind: "exit", code: 1 };
       }
+      const toplevel = (options.makeSys ?? createSys)(ctx.cwd).git(["rev-parse", "--show-toplevel"]);
+      const carried = carriedArgs(args, ctx.cwd, toplevel.code === 0 ? toplevel.stdout.trim() : null);
+      switcher.carry(carried.args);
+      launchNotice = carried.notice;
       return { kind: "delegate", argv: [...argv, ...args] };
     },
   );
@@ -596,6 +603,9 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
     host.notify = ctx.notify;
     if (width.error) {
       ctx.notify(width.error, "warning");
+    }
+    if (launchNotice) {
+      ctx.notify(launchNotice, "warning");
     }
   });
   hunk.on("changeset_loaded", (_payload, ctx) => {

@@ -92,6 +92,17 @@ describe("Switcher", () => {
     expect(switcher.pendingTarget()).toBeNull();
   });
 
+  it("repeats the carried launch options on every reload", async () => {
+    const fake = fakeRun();
+    const switcher = new Switcher(fake.run, () => {}, PID);
+    switcher.carry(["--watch", "--agent-context", "/repo/tour.json"]);
+    switcher.request(changeset("a"));
+    await settle();
+    expect(fake.reloads()).toEqual([
+      ["session", "reload", "mine", "--json", "--", "diff", "a-base-sha..a-sha", "--watch", "--agent-context", "/repo/tour.json"],
+    ]);
+  });
+
   it("hands the landing of the running reload out once", async () => {
     const fake = fakeRun({ gate: true });
     const switcher = new Switcher(fake.run, () => {}, PID);

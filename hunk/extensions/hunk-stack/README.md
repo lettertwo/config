@@ -17,6 +17,12 @@ hunk stack [hunk diff options]
 Opens on the changeset the nvim review app opens on: the uncommitted changes when the worktree has
 any, else the focus branch. Options such as `--mode` or `--watch` pass through to `hunk diff`.
 
+A changeset switch reloads the review with only the arguments it is given, so `hunk stack` repeats
+`--watch` and `--agent-context` on every switch. Hunk reloads a sidecar only from inside the
+repository and never from stdin; such a sidecar shows on the first changeset only, with a notice
+saying so. View options such as `--mode` are not repeated, since the review keeps its view across a
+switch.
+
 Hunk seals extension registration before any CLI command runs, so the pane cannot be registered for
 `hunk stack` alone. The command instead opens the stack in the process that goes on to host the
 delegated review, and the pane draws the outline only when that stack is open.

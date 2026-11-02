@@ -86,6 +86,8 @@ export class Switcher {
   private inFlight: Request | null = null;
   private queued: Request | null = null;
   private loadedId: string | null = null;
+  /** Launch options every reload repeats (`carriedArgs`). */
+  private carried: readonly string[] = [];
   private snapshot: SwitcherSnapshot = { loadedId: null, pendingId: null };
   private listeners = new Set<() => void>();
 
@@ -107,6 +109,10 @@ export class Switcher {
   /** The changeset stepping should count from: the newest request, else what is showing. */
   pendingTarget(): Changeset | null {
     return (this.queued ?? this.inFlight)?.changeset ?? null;
+  }
+
+  carry(args: readonly string[]) {
+    this.carried = args;
   }
 
   loaded(): string | null {
@@ -191,7 +197,7 @@ export class Switcher {
     if (!id) {
       return "Cannot find this review's session in the hunk daemon";
     }
-    const result = await this.run(["session", "reload", id, "--json", "--", ...args]);
+    const result = await this.run(["session", "reload", id, "--json", "--", ...args, ...this.carried]);
     if (result.code !== 0) {
       // A cached id goes stale if the daemon restarted, so look it up again next time.
       this.sessionIdCache = null;
