@@ -139,6 +139,19 @@ export class OutlineFocus {
     return start ? { changesetId: start.changesetId, path: start.path } : null;
   }
 
+  /** A click on a row: put the cursor there, since the click already did what the row does. */
+  point = (entryId: string) => {
+    const row = this.rows.find((candidate) => candidate.entryId === entryId);
+    if (!this.active || !row) {
+      return;
+    }
+    // A load still waiting on the old cursor would override the clicked row.
+    this.cancelFollow?.();
+    this.cancelFollow = null;
+    this.cursor = { changesetId: row.changesetId, path: row.path };
+    this.publish();
+  };
+
   leave() {
     this.active = false;
     this.cursor = null;

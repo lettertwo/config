@@ -50,6 +50,8 @@ export interface SidebarFocus {
   /** The row to paint the cursor on; null while the outline mode is off. */
   cursorEntryId: string | null;
   onRows(rows: readonly NavRow[]): void;
+  /** A row was clicked. */
+  onPoint(entryId: string): void;
 }
 
 export type BuiltInSidebarProps = Omit<
@@ -76,6 +78,9 @@ type FileSidebarVariantProps = Pick<
 
 /** Ignore directory toggles for projections that cannot contain directory rows. */
 function ignoreDirectoryToggle() {}
+
+// stack: the plain list without a keyboard cursor ignores clicks' cursor moves.
+function ignorePoint() {}
 
 interface VirtualizedFileSidebarRowsProps extends Omit<FileSidebarVariantProps, "files"> {
   collapsedDirectoryPaths?: ReadonlySet<string>;
@@ -115,6 +120,8 @@ export function VirtualizedFileSidebarRows({
   const onRows = focus?.onRows;
   useEffect(() => onRows?.(rows), [onRows, rows]);
   const cursorEntryId = focus?.cursorEntryId ?? null;
+  // stack: a click moves the keyboard cursor to the clicked row as well.
+  const onPoint = focus?.onPoint ?? ignorePoint;
   const fileEntries = entries.filter((entry) => entry.kind === "file");
   const statsWidth = Math.max(0, ...fileEntries.map((entry) => sidebarEntryStatsWidth(entry)));
   const renderWindow = useMemo(
@@ -152,7 +159,10 @@ export function VirtualizedFileSidebarRows({
               textWidth={textWidth}
               theme={theme}
               cursor={entry.id === cursorEntryId}
-              onToggleChangeset={outline?.onToggleChangeset ?? ignoreDirectoryToggle}
+              onToggleChangeset={(changesetId) => {
+                onPoint(entry.id);
+                outline?.onToggleChangeset(changesetId);
+              }}
             />
           );
         }
@@ -173,7 +183,10 @@ export function VirtualizedFileSidebarRows({
               key={entry.id}
               collapsed={collapsedDirectoryPaths?.has(entry.path) ?? false}
               entry={entry}
-              onToggleDirectory={onToggleDirectory ?? ignoreDirectoryToggle}
+              onToggleDirectory={(path) => {
+                onPoint(entry.id);
+                onToggleDirectory?.(path);
+              }}
               onToggleRead={entry.changesetId ? undefined : () => readState.toggleDirectory(entry.path)}
               paddingLeft={paddingLeft}
               read={entry.changesetId ? false : readState.isDirectoryRead(entry.path)}
@@ -197,7 +210,14 @@ export function VirtualizedFileSidebarRows({
             statsWidth={statsWidth}
             textWidth={textWidth}
             theme={theme}
-            onSelectFile={changesetId ? () => outline?.onOpenFile(changesetId, entry.path) : actions.selectFile}
+            onSelectFile={(fileId) => {
+              onPoint(entry.id);
+              if (changesetId) {
+                outline?.onOpenFile(changesetId, entry.path);
+              } else {
+                actions.selectFile(fileId);
+              }
+            }}
             onToggleRead={changesetId ? undefined : readState.toggleFile}
           />
         );

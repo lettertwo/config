@@ -290,7 +290,7 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
       [props.actions, files, props.selectedFileId, loadedId, pendingId],
     );
     const paneFocus = useMemo(
-      () => ({ cursorEntryId: focusSnapshot.cursorEntryId, onRows: focus.publishRows }),
+      () => ({ cursorEntryId: focusSnapshot.cursorEntryId, onRows: focus.publishRows, onPoint: focus.point }),
       [focusSnapshot.cursorEntryId],
     );
 

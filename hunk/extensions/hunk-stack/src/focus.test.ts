@@ -117,6 +117,26 @@ describe("OutlineFocus", () => {
     expect(at()).toBe("f:2");
   });
 
+  it("moves the cursor to a clicked row without loading or selecting anything itself", () => {
+    const { focus, press, log, rest, at } = setup("f:1");
+    press("k");
+    press("k");
+    focus.point("f:2");
+    rest();
+    expect(at()).toBe("f:2");
+    expect(log.opened).toEqual([]);
+    expect(log.selected).toEqual([]);
+    focus.point("changeset:c");
+    expect(at()).toBe("changeset:c");
+  });
+
+  it("ignores clicks while the outline mode is off", () => {
+    const { focus, at } = setup("f:1");
+    focus.leave();
+    focus.point("f:2");
+    expect(at()).toBeNull();
+  });
+
   it("selects loaded files at once and leaves the loaded header alone", () => {
     const { press, log, rest } = setup("f:1");
     press("j");
