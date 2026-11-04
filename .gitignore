@@ -40,6 +40,7 @@ claude/skills/hunk-review
 claude/skills/hunk-extensions
 anthropic/active_config
 anthropic/configs
+fish/completions
 
 # laserwave.nvim
 git/laserwave.gitconfig
@@ -63,4 +64,3 @@ kitty/split_window.py
 
 # hunk.dev
 hunk/extensions/installed
-fish/completions/hunk.fish
