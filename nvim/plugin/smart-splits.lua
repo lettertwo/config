@@ -13,7 +13,7 @@ vim.schedule(function()
     },
     move = {
       at_edge = "stop", -- 'wrap' | 'split' | 'stop'
-      same_row = true,
+      same_row = false,
     },
   })
 
