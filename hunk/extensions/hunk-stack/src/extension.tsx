@@ -35,6 +35,7 @@ const ALL_READ_HIDDEN = "All files read, read files are hidden";
  * and the sidebar leaves the key out.
  */
 const TOGGLE_HIDDEN = "hunk-stack.toggle-hidden";
+const TOGGLE_FILES_PANE = "hunk.view.toggleFilesPane";
 const STACK_USAGE = `Usage: hunk stack [hunk diff options]
 
 Review the current branch's stack with an outline of its changesets. Opens on the
@@ -290,12 +291,13 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
       () =>
         focus.attach({
           actions: props.actions,
+          keybindings: props.keybindings,
           files,
           selectedFileId: props.selectedFileId ?? null,
           loadedId,
           pendingId,
         }),
-      [props.actions, files, props.selectedFileId, loadedId, pendingId],
+      [props.actions, props.keybindings, files, props.selectedFileId, loadedId, pendingId],
     );
     const paneFocus = useMemo(
       () => ({ cursorEntryId: focusSnapshot.cursorEntryId, onRows: focus.publishRows, onPoint: focus.point }),
@@ -508,6 +510,11 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
       if ((key.name === "/" || key.sequence === "/") && !key.ctrl && !key.meta && !key.option) {
         ctx.commands.execute("hunk.review.focusFilter");
         return "handled";
+      }
+      // Hiding the pane would leave the mode holding the keys with no cursor to draw, so the
+      // mode runs hunk's toggle itself and hands the keys back to the diff.
+      if (focus.bindsTo(key, TOGGLE_FILES_PANE) && ctx.commands.execute(TOGGLE_FILES_PANE)) {
+        return "exit";
       }
       return focus.handleKey(key);
     },

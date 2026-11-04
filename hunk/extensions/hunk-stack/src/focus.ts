@@ -3,6 +3,7 @@ import type {
   ExtensionKeyEvent,
   ExtensionKeyboardModeKeyResult,
   ExtensionPaneActions,
+  ExtensionPaneKeybindings,
 } from "hunkdiff/extension";
 
 /** One row the cursor can rest on: a changeset header (`path` null) or a file. */
@@ -31,6 +32,7 @@ export interface FocusSnapshot {
 /** What the pane hands over on each render, since a keyboard mode sees no review controls of its own. */
 export interface PaneLink {
   actions: Pick<ExtensionPaneActions, "selectFile">;
+  keybindings: Pick<ExtensionPaneKeybindings, "matches">;
   files: readonly ExtensionDiffFile[];
   selectedFileId: string | null;
   /** The loaded changeset's id as the rows carry it. */
@@ -100,6 +102,11 @@ export class OutlineFocus {
         this.pane = null;
       }
     };
+  }
+
+  /** Whether `key` runs `commandId` under the user's bindings; false with no pane to ask. */
+  bindsTo(key: ExtensionKeyEvent, commandId: string): boolean {
+    return this.pane?.keybindings.matches(key, commandId) ?? false;
   }
 
   hasPane(): boolean {

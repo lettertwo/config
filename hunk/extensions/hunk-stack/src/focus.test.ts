@@ -37,6 +37,8 @@ const FILES = [file("f:1", "b1.ts"), file("f:2", "b2.ts")];
 
 const key = (name: string, extra: Partial<ExtensionKeyEvent> = {}): ExtensionKeyEvent => ({ name, ...extra });
 
+const NO_KEYS = { matches: () => false };
+
 function setup(selectedFileId: string | null = "f:2", pendingId: string | null = null) {
   const log = {
     selected: [] as string[],
@@ -70,6 +72,7 @@ function setup(selectedFileId: string | null = "f:2", pendingId: string | null =
   };
   focus.attach({
     actions: { selectFile: (id) => log.selected.push(id) },
+    keybindings: { matches: (event, commandId) => commandId === "hunk.view.toggleFilesPane" && event.name === "o" },
     files: FILES,
     selectedFileId,
     loadedId: "b",
@@ -83,12 +86,23 @@ function setup(selectedFileId: string | null = "f:2", pendingId: string | null =
 }
 
 describe("OutlineFocus", () => {
+  it("asks the pane's keybindings which command a key runs", () => {
+    const { focus } = setup();
+    expect(focus.bindsTo(key("o"), "hunk.view.toggleFilesPane")).toBe(true);
+    expect(focus.bindsTo(key("j"), "hunk.view.toggleFilesPane")).toBe(false);
+  });
+
+  it("matches no binding without a pane", () => {
+    const host: FocusHost = { toggleRead: () => {}, isExpanded: () => true, setExpanded: () => {}, openFile: () => {} };
+    expect(new OutlineFocus(host).bindsTo(key("o"), "hunk.view.toggleFilesPane")).toBe(false);
+  });
+
   it("places the cursor once a pane opened by the focus command draws its rows", () => {
     const host: FocusHost = { toggleRead: () => {}, isExpanded: () => true, setExpanded: () => {}, openFile: () => {} };
     const focus = new OutlineFocus(host);
     focus.enter();
     expect(focus.getSnapshot()).toEqual({ active: true, cursorEntryId: null });
-    focus.attach({ actions: { selectFile: () => {} }, files: FILES, selectedFileId: "f:2", loadedId: "b", pendingId: null });
+    focus.attach({ actions: { selectFile: () => {} }, keybindings: NO_KEYS, files: FILES, selectedFileId: "f:2", loadedId: "b", pendingId: null });
     focus.publishRows(ROWS);
     expect(focus.getSnapshot().cursorEntryId).toBe("f:2");
   });
@@ -214,7 +228,7 @@ describe("OutlineFocus", () => {
     const selected: string[] = [];
     const host: FocusHost = { toggleRead: () => {}, isExpanded: () => true, setExpanded: () => {}, openFile: () => {} };
     const focus = new OutlineFocus(host);
-    focus.attach({ actions: { selectFile: (id) => selected.push(id) }, files: FILES, selectedFileId: "f:1", loadedId: null, pendingId: null });
+    focus.attach({ actions: { selectFile: (id) => selected.push(id) }, keybindings: NO_KEYS, files: FILES, selectedFileId: "f:1", loadedId: null, pendingId: null });
     focus.publishRows([loadedFile(null, "b1.ts", "f:1"), loadedFile(null, "b2.ts", "f:2")]);
     focus.enter();
     focus.handleKey(key("j"));
@@ -302,7 +316,7 @@ describe("OutlineFocus", () => {
     press("g");
     press("j");
     expect(at()).toBe("a|listed:a1.ts");
-    focus.attach({ actions: { selectFile() {} }, files: [file("f:9", "a1.ts")], selectedFileId: "f:9", loadedId: "a", pendingId: null });
+    focus.attach({ actions: { selectFile() {} }, keybindings: NO_KEYS, files: [file("f:9", "a1.ts")], selectedFileId: "f:9", loadedId: "a", pendingId: null });
     focus.publishRows([header("a"), loadedFile("a", "a1.ts", "f:9"), header("b")]);
     expect(at()).toBe("f:9");
   });
@@ -335,7 +349,7 @@ describe("OutlineFocus", () => {
   it("reports whether a pane is attached with rows to walk", () => {
     const focus = new OutlineFocus({} as FocusHost);
     expect(focus.hasPane()).toBe(false);
-    focus.attach({ actions: { selectFile() {} }, files: [], selectedFileId: null, loadedId: null, pendingId: null });
+    focus.attach({ actions: { selectFile() {} }, keybindings: NO_KEYS, files: [], selectedFileId: null, loadedId: null, pendingId: null });
     expect(focus.hasPane()).toBe(false);
     focus.publishRows(ROWS);
     expect(focus.hasPane()).toBe(true);
