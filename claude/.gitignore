@@ -12,6 +12,7 @@
 !/.vale.ini
 !/showrunner.md
 !/voice.md
+!/voice-cold-read.md
 !/showrunner-hook.sh
 !/statusline-command.sh
 !/subagent-statusline.sh

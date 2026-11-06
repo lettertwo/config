@@ -10,7 +10,7 @@ You are the implementer: you execute a plan that a higher-tier planner has alrea
 
 ## Before editing anything
 
-1. Read the plan artifact in full. It carries decisions, gotchas, and verification steps that you did not witness being paid for. Echo its Gotchas and Verification sections back in your first message; that is the main thread's proof you read them.
+1. Read the plan artifact in full. It carries decisions, gotchas, and verification steps that you did not witness being paid for. Echo its Gotchas and Verification sections (and Reader vocabulary, when it has one) back in your first message; that is the main thread's proof you read them.
 2. Verify the plan against the current code. Files drift between planning and execution: confirm the named files, functions, and assumptions still hold.
 3. If the plan contradicts what you find, names something that no longer exists, or leaves a design question open, **stop and report the discrepancy instead of improvising.** A wrong-but-plausible edit costs more to debug than a returned question.
 

@@ -1,0 +1,64 @@
+#!/bin/bash
+# PreToolUse gate for tools that publish prose to other people: Notion, Slack,
+# Linear, Gmail. It runs `voice-lint --reader` (Vale, process language, the
+# worktree's working terms, and the cold read) on the text a call would publish.
+#
+# On findings it denies the call once and hands them back to the model. Sending
+# the identical text again goes through, so a false positive (a verbatim title
+# with an em dash, a term the page defines) costs one round trip and never traps
+# the writer. Subagents hit this hook too, which matters because subagent sweeps
+# wrote most of the leaked Notion text this was built for.
+#
+# What counts as published text: every string in the tool input that has a
+# space and is at least 20 characters, minus IDs, URLs, queries, and the
+# old_str side of a find-and-replace (that is the text being removed).
+#
+# VOICE_LINT=0 skips it. A repo's `voice.lint false` opt-out does not, since
+# text bound for Notion or Slack is mine whatever the repo's conventions.
+
+set -u
+[ "${VOICE_LINT:-1}" = "0" ] && exit 0
+command -v jq >/dev/null 2>&1 || exit 0
+
+input=$(cat)
+sid=$(printf '%s' "$input" | jq -r '.session_id // "nosession"')
+
+text=$(printf '%s' "$input" | jq -r '
+  .tool_input as $in
+  | [ $in | paths(type == "string") ] as $ps
+  | [ $ps[]
+      | select((.[-1] | tostring)
+          | test("^(old_str|old_string|selection_with_ellipsis|url|uri|query|cursor|id|.*_id|.*Id)$")
+          | not)
+      | . as $p | $in | getpath($p)
+      | select(length >= 20 and test("\\s") and (test("^https?://") | not)) ]
+  | join("\n\n")' 2>/dev/null)
+
+[ -z "$text" ] && exit 0
+
+CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/claude-voice-gate/$sid"
+mkdir -p "$CACHE"
+find "${CACHE%/*}" -mindepth 1 -maxdepth 1 -type d -mtime +7 -exec rm -rf {} + 2>/dev/null
+hash=$(printf '%s' "$text" | shasum -a 256 | cut -c1-32)
+
+# The second send of text already denied once is the writer's call that every
+# finding was a false positive.
+if [ -f "$CACHE/$hash" ]; then
+  exit 0
+fi
+
+findings=$(printf '%s\n' "$text" \
+  | VOICE_LINT_FORCE=1 "$HOME/.claude/bin/voice-lint" --reader --advisory - 2>/dev/null \
+  | sed -e 's|^stdin\.md: \{0,1\}||' -e '/^[[:space:]]*$/d')
+
+[ -z "$findings" ] && exit 0
+
+touch "$CACHE/$hash"
+reason="Voice publish gate: this text goes to readers who never saw the work behind it, and these phrases may not make sense to them.
+
+$findings
+
+Rewrite each flagged phrase so it states the fact it carried, without our working terms, ticket numbers, or references to how the work was done, then send the call again. If every finding is a false positive (a verbatim name, a term the page itself defines), send the identical call again and it will go through."
+
+jq -n --arg r "$reason" \
+  '{hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: $r}}'

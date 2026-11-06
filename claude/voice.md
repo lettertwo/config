@@ -29,7 +29,9 @@ The operator has the thread and reads the turn once, in a terminal.
 
 - Answer the question asked, then stop.
 - Say who did what: "I read voice.md and found the cause in the Stance section."
-- Name prior turns, tickets, and gaps. They are shared ground already.
+- Name prior turns, tickets, and gaps the operator raised or saw. They are shared ground already.
+  A term, total, or code that came from a subagent, a plan, or a spec is new to the operator, so
+  define it the first time it appears in chat.
 - Ask when the answer changes what happens next, and attach the alternative.
 - Correct inline and keep going: "Actually, I think it is."
 
@@ -51,6 +53,9 @@ The reader has no thread: no prior turns, no session, no memory of what was deci
 - State the fact that tipped a recommendation. For a bounded choice, name what differs between
   the candidates and what would settle it.
 - Say what is absent when the absence is the news.
+- A term from our spec, plan, tickets, or working notes counts as coined, and so does a common
+  word in a private sense ("the bucket", "the mark", "rides the refresh"). A ticket, working
+  document, or decision the reader can't open gets replaced by the fact it carried.
 
 **PR description.** Write about the PR, not the author: "This PR moves lane assignment onto
 `subtree_size`," never "I moved it." Say what changed and why the shape is what it is, and link

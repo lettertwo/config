@@ -4,14 +4,31 @@
 # Usage:
 #   voice-lint FILE...        lint files
 #   voice-lint -              lint stdin
-#   voice-lint --pr FILE      lint as a PR description (adds the first-person rule)
+#   voice-lint --reader FILE  lint text for people who never saw the work: adds
+#                             Voice.ProcessLeak, the working-terms list, and the
+#                             cold read (a model with none of our context quotes
+#                             what it can't interpret)
+#   voice-lint --pr FILE      lint as a PR description: --reader plus the
+#                             first-person rule
 #   voice-lint --advisory ..  report findings but always exit 0
-#   voice-lint --json ..      machine-readable output
+#   voice-lint --json ..      machine-readable output (Vale findings only)
+#   voice-lint --glossary F ..  terms the reader does have, for the cold read
+#
+# Plans, handoffs, and research notes are for us and share our vocabulary, so
+# they get the plain run; the --reader checks would flag every working term.
+#
+# Two per-worktree files extend --reader when they exist at the repo root:
+#   .scratch/voice-terms         one working term per line (# comments). Each
+#                                becomes a Terms.WorkingTerms warning, so a
+#                                term caught once is caught everywhere after.
+#   .scratch/voice-glossary.md   the cold read's default --glossary.
 #
 # Exits 1 when an error-level rule fires.
 #
 # Two ways off. VOICE_LINT=0 skips a single run. `git config voice.lint false`
 # opts a whole repo out, for one whose commit conventions are not mine.
+# VOICE_LINT_FORCE=1 ignores that opt-out (the publish gate sets it, since text
+# bound for Notion or Slack is mine whatever the repo's conventions).
 #
 # Agent-facing docs (skills/, agents/, commands/, output-styles/, showrunner.md,
 # CLAUDE.md, AGENTS.md) are exempt from Voice.EmDash: they are written for a
@@ -24,7 +41,7 @@ CFG="$CFGDIR/.vale.ini"
 [ "${VOICE_LINT:-1}" = "0" ] && exit 0
 
 # A repo whose conventions are not mine opts out: git config voice.lint false
-if git rev-parse --git-dir >/dev/null 2>&1; then
+if [ "${VOICE_LINT_FORCE:-0}" != "1" ] && git rev-parse --git-dir >/dev/null 2>&1; then
   case "$(git config --get voice.lint 2>/dev/null)" in
     false|0|off|no) exit 0 ;;
   esac
@@ -35,18 +52,45 @@ if ! command -v vale >/dev/null 2>&1; then
   exit 0
 fi
 
-ADVISORY=0; FMT=line; ASPR=0
+ADVISORY=0; FMT=line; ASPR=0; READER=0; GLOSSARY=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --advisory) ADVISORY=1; shift ;;
+    --reader) READER=1; shift ;;
+    --glossary) GLOSSARY="${2:-}"; shift 2 ;;
     --json) FMT=JSON; shift ;;
-    --pr) ASPR=1; shift ;;
+    --pr) ASPR=1; READER=1; shift ;;
     *) break ;;
   esac
 done
 
 TMP=$(mktemp -d) || exit 0
 trap 'rm -rf "$TMP"' EXIT
+
+ROOT=$(git rev-parse --show-toplevel 2>/dev/null || true)
+TERMS="${VOICE_TERMS:-${ROOT:+$ROOT/.scratch/voice-terms}}"
+if [ -z "$GLOSSARY" ] && [ -n "$ROOT" ] && [ -f "$ROOT/.scratch/voice-glossary.md" ]; then
+  GLOSSARY="$ROOT/.scratch/voice-glossary.md"
+fi
+
+# Working terms become a generated Vale style next to Voice. Each line is a
+# literal phrase; Vale's existence rule adds the word boundaries.
+if [ "$READER" = "1" ] && [ -n "$TERMS" ] && [ -f "$TERMS" ] && grep -qv '^[[:space:]]*\(#\|$\)' "$TERMS"; then
+  mkdir -p "$TMP/styles/Terms"
+  ln -s "$CFGDIR/styles/Voice" "$TMP/styles/Voice"
+  {
+    echo 'extends: existence'
+    echo "message: \"Working term from .scratch/voice-terms: '%s'. A reader never saw it; say what it means.\""
+    echo 'level: warning'
+    echo 'ignorecase: true'
+    echo 'tokens:'
+    grep -v '^[[:space:]]*\(#\|$\)' "$TERMS" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
+      -e 's/[][\\.*^$+?(){}|]/\\&/g' -e "s/'/''/g" -e "s/^/  - '/" -e "s/$/'/"
+  } > "$TMP/styles/Terms/WorkingTerms.yml"
+  sed -e "s|^StylesPath = .*|StylesPath = $TMP/styles|" \
+      -e 's|^BasedOnStyles = Voice$|BasedOnStyles = Voice, Terms|' "$CFG" > "$TMP/vale.ini"
+  CFG="$TMP/vale.ini"
+fi
 
 # voice.md restates its own banned lists verbatim, so every rule is a false
 # positive against it. (.vale.ini exempts it too, which covers a direct `vale`
@@ -88,9 +132,13 @@ for arg in "$@"; do
   fi
 done
 
-# The "write about the PR, not the author" rule is wrong everywhere else.
+# The "write about the PR, not the author" rule is wrong everywhere else, and
+# process language is only a fault in text for readers who never saw the work.
 BASE=""
 [ "$ASPR" = "0" ] && BASE='.Name!="Voice.PRFirstPerson"'
+if [ "$READER" = "0" ]; then
+  BASE="${BASE:+$BASE && }.Name!=\"Voice.ProcessLeak\""
+fi
 AGENT_F='.Name!="Voice.EmDash"'
 [ -n "$BASE" ] && AGENT_F="$BASE && $AGENT_F"
 
@@ -109,6 +157,39 @@ run() {  # run <filter> <files...>
 }
 run "$BASE" ${PROSE[@]+"${PROSE[@]}"}
 run "$AGENT_F" ${AGENT[@]+"${AGENT[@]}"}
+
+# The cold read: a model that has none of our context reads each prose file
+# as its reader would and quotes what it can't interpret. Sonnet, because
+# Haiku false-flagged a third of already-fixed sentences in testing. Agent-facing
+# docs skip it: their reader shares our vocabulary. A failed or timed-out call
+# reports itself and never fails the run.
+cold_read() {  # cold_read <file> <label>
+  local sys="$CFGDIR/voice-cold-read.md" prompt out rc d
+  prompt=$(cat "$sys")
+  if [ -n "$GLOSSARY" ] && [ -f "$GLOSSARY" ]; then
+    prompt="$prompt
+
+The reader also has this glossary:
+
+$(cat "$GLOSSARY")"
+  fi
+  d=$(mktemp -d)
+  out=$(cd "$d" && CLAUDE_SHOWRUNNER=0 timeout "${VOICE_COLD_TIMEOUT:-60}" claude -p \
+    --model "${VOICE_COLD_MODEL:-sonnet}" --tools "" --no-session-persistence \
+    --setting-sources "" --strict-mcp-config --system-prompt "$prompt" < "$1" 2>/dev/null)
+  rc=$?
+  rm -rf "$d"
+  if [ $rc -ne 0 ] || [ -z "$out" ]; then
+    echo "voice-lint: cold read unavailable for $2 (exit $rc); skipped" >&2
+    return 0
+  fi
+  [ "$out" = "CLEAN" ] && return 0
+  printf '%s\n' "$out" | sed '/^[[:space:]]*$/d' | sed "s|^|$2: cold read: |"
+  status=1
+}
+if [ "$READER" = "1" ]; then
+  for f in ${PROSE[@]+"${PROSE[@]}"}; do cold_read "$f" "${f#$TMP/}"; done
+fi
 
 [ "$ADVISORY" = "1" ] && exit 0
 exit $status

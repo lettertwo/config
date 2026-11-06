@@ -1,0 +1,21 @@
+extends: existence
+message: "Process language: '%s'. The reader never saw the work; state the fact it carried."
+level: warning
+ignorecase: true
+nonword: true
+# References to the making of the text: tickets by number, someone's decision,
+# the working artifacts, and how a fact was checked in place of the fact. Every
+# token here leaked into a published Notion database on 2026-11-05.
+tokens:
+  - '\bticket \(?\d+\)?'
+  - '\b[A-Z][a-z]+''s (?:call|decision)\b'
+  - '\bthe (?:seed|worklist|sweep)\b'
+  - '\b(?:doc|research|first|second|earlier|later) (?:sweep|pass)\b'
+  - '\bour (?:spec|plan|map|ticket|tickets|notes|sweep|research|worklist)\b'
+  - '\bthe research (?:table|marked|did|found|notes?|says)\b'
+  - '\bthe row (?:takes|says|is now)\b'
+  - '\btakes the (?:restrictive|conservative|strict|narrow) reading\b'
+  - '\bnot researched\b'
+  - '\bstopped for time\b'
+  - '\b(?:production|code) fact\b'
+  - '\bsubagents?\b'

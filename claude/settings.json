@@ -116,6 +116,16 @@
             "async": true
           }
         ]
+      },
+      {
+        "matcher": "mcp__.*__(notion-create-pages|notion-update-page|notion-create-comment|notion-update-comment|notion-create-suggested-edit|slack_send_message|slack_send_message_draft|slack_schedule_message|slack_create_canvas|slack_update_canvas|save_issue|save_comment|save_document|save_status_update|save_release_note|send_message|create_draft|update_draft|reply|forward)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/bin/voice-publish-gate",
+            "timeout": 90
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
