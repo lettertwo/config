@@ -33,6 +33,11 @@ control. One long page
 with section headers and a table of contents; no tabs for top-level structure. Basic responsive
 styling so it's readable on a phone.
 
+**Light and dark mode**: follow the OS setting. Declare every color as a CSS custom property on
+`:root` (backgrounds, text, borders, code, callout tints, quiz right/wrong tints, links) and
+override the whole set in `@media (prefers-color-scheme: dark)`; set `color-scheme: light dark`.
+No hex literal outside the two palettes, so nothing stays white-on-dark when the scheme flips.
+
 Write with the clarity of a good technical explainer: engaging, classic style, smooth transitions
 between sections rather than abrupt headers with nothing bridging them.
 
