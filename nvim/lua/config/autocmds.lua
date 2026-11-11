@@ -124,3 +124,41 @@ if os.getenv("KITTY_WINDOW_ID") then
     vim.system({ "kitty", "@set-spacing", "padding=default", "margin=default" })
   end)
 end
+
+-- Terminal progress bar (OSC 9;4), at most one write per interval.
+-- Neovim's built-in `nvim.progress` handler writes one sequence per progress
+-- message. rust-analyzer sends thousands while it loads a workspace, and
+-- kitty stalls for several seconds parsing that many, so this replaces the
+-- built-in handler with one that keeps only the latest state.
+do
+  local INTERVAL_MS = 33
+  local timer = assert(vim.uv.new_timer())
+  local pending ---@type string? latest sequence not yet written
+  local sent ---@type string? last sequence written
+
+  local on_timer
+  local function flush()
+    if pending and pending ~= sent then
+      vim.api.nvim_ui_send(pending)
+      sent = pending
+      -- Hold the next write for a full interval as well.
+      timer:start(INTERVAL_MS, 0, on_timer)
+    end
+    pending = nil
+  end
+  on_timer = vim.schedule_wrap(flush)
+
+  vim.api.nvim_create_augroup("nvim.progress", { clear = true })
+  Config.on("Progress", function(ev)
+    if ev.data.status ~= "running" then
+      pending = "\027]9;4;0;0\027\\"
+    elseif ev.data.percent ~= nil then
+      pending = string.format("\027]9;4;1;%d\027\\", ev.data.percent)
+    else
+      pending = "\027]9;4;3\027\\"
+    end
+    if not timer:is_active() then
+      flush()
+    end
+  end, "Display terminal progress bar, throttled")
+end
