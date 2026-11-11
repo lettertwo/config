@@ -161,4 +161,17 @@ do
       flush()
     end
   end, "Display terminal progress bar, throttled")
+
+  -- The terminal keeps showing the last state after nvim exits, so clear it
+  -- while the UI is still attached. The next Progress event restores it after
+  -- a resume.
+  Config.on({ "VimLeavePre", "VimSuspend" }, "*", function()
+    timer:stop()
+    pending = nil
+    local clear = "\027]9;4;0;0\027\\"
+    if sent and sent ~= clear then
+      vim.api.nvim_ui_send(clear)
+      sent = clear
+    end
+  end, "Clear terminal progress bar")
 end
