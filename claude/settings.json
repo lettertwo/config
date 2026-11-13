@@ -188,9 +188,7 @@
     "rust-analyzer-lsp@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
     "claude-md-management@claude-plugins-official": false,
-    "code-simplifier@claude-plugins-official": false,
     "frontend-design@claude-plugins-official": false,
-    "skill-creator@claude-plugins-official": false,
     "claude-code-setup@claude-plugins-official": false
   },
   "outputStyle": "Concise",
