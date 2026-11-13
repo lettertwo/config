@@ -4,8 +4,7 @@ This recipe checks whether a rule in `styles/Voice/` is *right*: whether it
 catches Claude's drift without catching my own writing. A rule can fire exactly
 as written and still be actively harmful.
 
-Run this after adding or rewriting a rule, or after editing `voice.md`'s Never
-or Vocabulary sections. Not per commit.
+Run this after adding or rewriting a rule. Not per commit.
 
 Measure against my own repos only. The `commit-msg` hook is global, so it
 reaches work repos too, but those opt out with `git config voice.lint false`
