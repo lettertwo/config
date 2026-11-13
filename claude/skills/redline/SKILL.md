@@ -93,9 +93,10 @@ Two requirements on the quote block itself:
   from reading as part of the content. Say that the numbers are current as of this turn — landing
   edits shifts them, so a number quoted at an earlier stop points somewhere else by now.
 
-Then give **initial thoughts. Brief.** At most three, ranked by how much they matter, each a couple of
-sentences. Every one names a concrete defect or a concrete improvement, with the evidence that makes
-it a defect — a grep count, a contradiction with another line, a term used two ways.
+Then give **initial thoughts. Brief.** Only the ones worth the author's time, ranked by how much they
+matter, each a couple of sentences. Every one names a concrete defect or a concrete improvement, with
+the evidence that makes it a defect — a grep count, a contradiction with another line, a term used
+two ways.
 
 **Say so when a section is fine.** Three findings per section is not reading, it's generating. A stop
 that produces "no notes from me — this holds up, here's why" is a good stop.

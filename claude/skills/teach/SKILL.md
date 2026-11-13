@@ -28,7 +28,7 @@ To learn at a deep level, the user needs three things:
 - **Skills**, acquired through highly-relevant interactive lessons devised by you, based on the knowledge
 - **Wisdom**, which comes from interacting with other learners and practitioners
 
-Before the `RESOURCES.md` is well-populated, your focus should be to find high-quality resources which will help the user acquire knowledge. Never trust your parametric knowledge.
+Before the `RESOURCES.md` is well-populated, your focus should be to find high-quality resources which will help the user acquire knowledge. Lesson content comes from those sources rather than from recall, so every claim in a lesson can be checked against a citation.
 
 Some topics may require more skills than knowledge. Learning more about theoretical physics might be more knowledge-based. For yoga, more skills-based.
 
@@ -39,7 +39,7 @@ You should be careful to split between two types of learning:
 - **Fluency strength**: in-the-moment retrieval of knowledge
 - **Storage strength**: long-term retention of knowledge
 
-Fluency can give the user an illusory sense of mastery, but storage strength is the real goal. Try to design lessons which build long-term retention by desirable difficulty:
+Fluency can give the user an illusory sense of mastery, but storage strength is the real goal. Design lessons that build long-term retention through desirable difficulty:
 
 - Using retrieval practice (recall from memory)
 - Spacing (distributing practice over time)
