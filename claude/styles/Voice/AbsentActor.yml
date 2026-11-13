@@ -1,0 +1,30 @@
+extends: existence
+message: "Absent or generic actor: '%s'. Say it isn't done or doesn't exist, or name who does it."
+level: warning
+ignorecase: true
+nonword: true
+# An absence ("nothing", "no page") or a placeholder person ("a reader") in the
+# subject slot of an action verb. "There is no link" and "it isn't enforced"
+# pass; "nothing links to it" and "nothing enforces it" do not.
+tokens:
+  # nothing / nobody / no one + verb
+  - '\b(?:nothing|nobody|no one)(?: else)?(?: (?:in|on|under|from|at|for) [^,.;:!?]{1,40}?)? +(?:(?:can|could|will|would|should|ever|still|currently) +)?(?!unless\b|besides\b|less\b|as\b|plus\b|versus\b|needed\b)(?:[a-z]+(?:s|ed)|came|went|ran|bound|wrote|sent|said|got|took|made|found|saw|knew|told|left|kept|held|built|read|thought|broke|caught|fell|hit|set|put|won|lost|did)\b'
+  - '\b(?:nothing|nobody|no one)(?: else)? +(?:can|could|will|would|should) +[a-z]+\b'
+  # nothing's been / nobody's
+  - '\b(?:nothing|nobody|no one)(?:''s|’s)\b'
+  # none of them + verb
+  - '\bnone of (?:them|it|(?:the|these|those) [a-z0-9-]+(?: (?!in\b|on\b|at\b|for\b|with\b|from\b|to\b|of\b|that\b|which\b)[a-z0-9-]+){0,2}) +(?!and\b|or\b|but\b|so\b|in\b|on\b|at\b|for\b|with\b|from\b|to\b|of\b|under\b|that\b|which\b)[a-z]+\b'
+  # no <plural noun> + verb: "no monitors depend on the route"
+  - '(?<!\b(?:has|have|had|having|with|without|is|are|was|were|be|been|contains?|returns?|takes?|adds?|needs?|shows?|found|finds?|leaves?|makes?|gets?|got|sees?|saw|and|or) )\bno (?!longer\b|more\b)(?:[a-z-]+ )?[a-z-]+s +(?!for\b|in\b|on\b|of\b|to\b|at\b|from\b|with\b|or\b|and\b|than\b|about\b|across\b|under\b|during\b|after\b|before\b|between\b|since\b|until\b|into\b|via\b|per\b|by\b|as\b|but\b|so\b|only\b|yet\b|here\b|there\b|needed\b)[a-z]+ +(?:on|the|a|an|it|them|this|that|these|those|any|either|its|their|during|to|in|at)\b'
+  # no <noun> + modal + verb: "no page can reach"
+  - '(?<!\b(?:has|have|had|having|with|without|is|are|was|were|be|been|contains?|returns?|takes?|adds?|needs?|shows?|found|finds?|leaves?|makes?|gets?|got|sees?|saw|and|or) )\bno (?!longer\b|more\b|matter\b|one\b)[a-z-]+(?: (?!and\b|or\b|but\b)[a-z-]+)? +(?:can|could|will|would|ever) +[a-z]+\b'
+  # no <noun> + verb + object: "no event reports a diff click"
+  - '(?<!\b(?:has|have|had|having|with|without|is|are|was|were|be|been|contains?|returns?|takes?|adds?|needs?|shows?|found|finds?|leaves?|makes?|gets?|got|sees?|saw|and|or) )\bno (?!longer\b|more\b|matter\b|one\b)[a-z-]+(?: (?:in|on|under|from) [^,.;:!?]{1,30}?| (?!and\b|or\b|but\b)[a-z-]+)? +[a-z]+(?:s|ed) +(?:the|a|an|it|them|this|that|these|those|any|either|its|their|our|your)\b'
+  # a placeholder reader or reviewer doing something
+  - '\b(?:a|any|no|the next) (?:(?:cold|new|future|casual|careful) )?(?:reader|reviewer)(?: (?:with|without|who) [a-z ]{1,30}?)? +(?:(?:never|can|could|would|will|cannot|can''t|won''t|might|may) +)?(?:sees?|gets?|finds?|reads?|has|have|knows?|needs?|hits?|learns?|looks?|tells?|opens?|follows?|checks?|loses?|meets?)\b'
+  # a placeholder caller or client that never gets something
+  - '\b(?:a|any|no) (?:caller|client|consumer|customer|user) +(?:never|can never|would never|will never|cannot|can''t|won''t|has to|must|needs to|would have to|will have to)\b'
+  # there is no X to <verb>: the absence plus our own next step
+  - '\bthere(?:''s|’s| is| are| was| were) +(?:nothing|no (?!way\b|need\b|reason\b|point\b|time\b)[a-z-]+(?: [a-z-]+){0,2}) +to +(?!the\b|a\b|an\b|this\b|that\b|it\b|your\b|our\b|my\b|its\b|their\b|any\b)[a-z]+\b'
+  # a tool that can't do something: "a regex can't judge"
+  - '\b(?:a|no) (?:regex|linter|lint rule|rule|check|script|hook|grep|search|query|test) +(?:can''t|can’t|cannot|can never|couldn''t|won''t)\b'
