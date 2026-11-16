@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { reloadArgs, Switcher, type Run, type RunResult } from "./daemon";
+import { hunkRunner, reloadArgs, Switcher, type Run, type RunResult } from "./daemon";
 import type { Changeset } from "./stack/stack";
 
 const PID = 4242;
@@ -149,5 +149,30 @@ describe("Switcher", () => {
     switcher.setLoaded("a");
     switcher.setLoaded(null);
     expect(calls).toBe(2);
+  });
+});
+
+describe("hunkRunner", () => {
+  it("feeds stdin to the child and closes it", async () => {
+    // `process.execPath` is bun under test, so this stands in for the hunk binary.
+    const result = await hunkRunner()(["-e", "process.stdin.pipe(process.stdout)"], '{"comments":[]}');
+    expect(result).toEqual({ code: 0, stdout: '{"comments":[]}', stderr: "" });
+  });
+
+  it("gives a child that reads stdin end of file when there is none", async () => {
+    const result = await hunkRunner()(["-e", "process.stdin.on('end', () => console.log('eof')).resume()"]);
+    expect(result.stdout.trim()).toBe("eof");
+  });
+});
+
+describe("Switcher.sessionId", () => {
+  it("is looked up again after forgetSession", async () => {
+    const fake = fakeRun();
+    const switcher = new Switcher(fake.run, () => {}, PID);
+    expect(await switcher.sessionId()).toBe("mine");
+    expect(await switcher.sessionId()).toBe("mine");
+    switcher.forgetSession();
+    expect(await switcher.sessionId()).toBe("mine");
+    expect(fake.calls.filter((c) => c[1] === "list")).toHaveLength(2);
   });
 });

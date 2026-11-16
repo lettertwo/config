@@ -14,22 +14,26 @@ shows the stack outline when `hunk stack` is active. It also includes the read m
 hunk stack [hunk diff options]
 ```
 
-Opens on the changeset the nvim review app opens on: the uncommitted changes when the worktree has
-any, else the focus branch. Options such as `--mode` or `--watch` pass through to `hunk diff`.
+Builds the stack around the checked-out branch and opens on the uncommitted changes when the
+worktree has any, else on that branch's changeset. Options such as `--mode` or `--watch` pass
+through to `hunk diff`. `hunk stack notes` reads and changes the saved review notes instead (see
+[`hunk stack notes`](#hunk-stack-notes)).
 
 A changeset switch reloads the review with only the arguments it is given, so `hunk stack` repeats
-`--watch` and `--agent-context` on every switch. Hunk reloads a sidecar only from inside the
-repository and never from stdin; such a sidecar shows on the first changeset only, with a notice
-saying so. View options such as `--mode` are not repeated, since the review keeps its view across a
+`--watch` and `--agent-context` on every switch. `--agent-context` names a sidecar: a JSON file
+of agent annotations that Hunk shows beside the diff. Hunk reloads a sidecar only from a file
+inside the repository, so one read from stdin or from outside it shows on the first changeset
+only, with a notice saying so. View options such as `--mode` are not repeated, since the review keeps its view across a
 switch.
 
-Hunk seals extension registration before any CLI command runs, so the pane cannot be registered for
-`hunk stack` alone. The command instead opens the stack in the process that goes on to host the
-delegated review, and the pane draws the outline only when that stack is open.
+An extension can register panes only while Hunk loads it, which is before any CLI command runs,
+so the pane cannot be registered for `hunk stack` alone. The command instead reads the stack and then hands its arguments to
+`hunk diff` in the same process, so the review that follows runs where the stack is already open.
+The pane draws the outline only when a stack is open.
 
 ## Stack sources
 
-Picked per focus branch, in this order: gh-stack (`<git-common-dir>/gh-stack`), Graphite
+Picked for the checked-out branch, in this order: gh-stack (`<git-common-dir>/gh-stack`), Graphite
 (`.graphite_metadata.db` through the `sqlite3` CLI), then first-parent `git log` from trunk.
 
 ## Zoom
@@ -54,6 +58,115 @@ annotations by path on every load. So a note shows in every changeset that touch
 the lines it was written on. Rows of changesets that are not loaded count the notes on their path
 as of the last time the path was loaded.
 
+### Saved notes
+
+Hunk drops its notes when the process exits, so the extension journals each one as it changes
+(user notes, agent comments, and replies) and applies them again when a changeset loads. The
+journal is one append-only JSONL file per worktree root under
+`$XDG_STATE_HOME/hunk-stack/notes/` (`~/.local/state` without it), and files untouched for 30 days
+are deleted. `[extension.hunk-stack] persist = false` turns it off along with the read marks. The
+folder is not configurable from config, since a repository's `.hunk/config.toml` layers into that
+table.
+
+Notes are saved in every review, stack or not. A record from a journal written before notes
+carried an origin is dropped when the journal is read.
+
+Hunk has no way to create a note from an extension, so a restore runs
+`hunk session comment apply --stdin` against the extension's own session. It applies the notes
+that start a thread first, then the replies to those, then replies to replies, one call per
+level, because the parent of a reply has to exist before the reply does. A note you wrote comes back as an agent note whose author reads
+`you (restored)`, since Hunk gives `comment apply` no way to create a user note. A note keeps its
+summary and its longer rationale text. It loses rich markup, which Hunk accepts only in a session
+started with `--experimental`.
+
+#### Origin
+
+Each note stores its origin, the commits of the changeset that was loaded when it was written: one
+commit at the commit zoom, the branch's commits (`git rev-list <base>..<head>`) at the branch zoom,
+every commit of the stack when combined. A note written on uncommitted changes stores the branch
+they sat on instead. Outside `hunk stack` the review itself says what is loaded: a working-tree
+`hunk diff` is the uncommitted changes, `hunk show <sha>` is that commit, and `hunk diff <a>..<b>`
+is the commits in that range. With no stack to say which branch owns a commit, those commits carry
+no branch, so the subject-on-a-branch match below is skipped for them and only the sha and patch
+id apply. Re-homing an uncommitted note then searches the 20 newest commits of its branch. A note shows on a loaded changeset that holds every origin commit and has its
+line, so a note written on one commit also shows on that commit's branch and on the combined
+changeset, and waits on a sibling commit even when the sibling touches the same file.
+
+Each stored commit is `{ sha, patchId, subject, branch }`, with `patchId` from
+`git patch-id --stable`. A stored commit matches a changeset's commit by sha, else by patch id (a
+rebase kept the patch), else by the same subject on the same branch (an amend changed the patch).
+Each step runs only when the one before found nothing, and patch ids are cached by sha. When the
+worktree is clean again and a commit on the branch holds the line of an uncommitted note, with the
+same text and context, the note's origin moves to that commit.
+
+#### Where a note goes
+
+The journal keeps the text of the line each note was written on, and up to two lines above and
+below it. At the saved line with the same text a note stays, whatever surrounds it. Moving to
+another line takes both the text and the surrounding lines, so a `}` does not jump to the nearest
+other `}`. There is no other fallback. Only lines inside a hunk count, since Hunk accepts a note
+nowhere else:
+
+- **Restored**: the changeset holds the origin and the line is in it. The notice reads
+  `stack: restored 2 saved notes (1 pending, 3 outdated)`.
+- **Pending**: the loaded changeset does not hold the origin, or its file is not in it. It is tried
+  again on every load, and is never called outdated.
+- **Outdated**: a changeset that holds the origin is loaded, and no line inside a hunk matches. An
+  open thread is placed on the saved line when a hunk still spans it, else on the start of the
+  file's first hunk, and its author line reads `you (outdated)` (or `<author> (outdated)`). The
+  saved anchor does not change, so the thread finds its line again if a later changeset brings it
+  back.
+
+A note already in the review is never applied twice, and the notes a restore makes are not
+journaled as new ones. Removing a restored note removes its saved record. Restored agent notes
+follow Hunk's agent-notes toggle (`a`), which the extension cannot switch on for you.
+
+#### Thread status
+
+A thread (its first note and the replies) is `open` or `resolved`. A resolved thread can name the
+commit that fixed it, which is stored and matched like an origin commit. Who the thread waits on is
+not stored: when the last note is the user's it waits on the agent, otherwise on the user. Status
+is a journal entry on the first note's key, and replay takes the last one per key.
+
+A restore skips resolved threads. When one is in the review as it resolves, the next restore
+removes it from Hunk (`hunk session comment rm`, replies first, since Hunk will not remove a note
+that has replies) without journaling a removal.
+
+#### `hunk stack notes`
+
+```
+hunk stack notes list [--json]
+hunk stack notes resolve <key> [--commit <sha>]
+hunk stack notes reopen <key>
+```
+
+These read and write the journal of the current worktree and need no Hunk session or stack. With
+no stack source (no trunk branch, say) `list` still gives each thread's origin, status, and who it
+waits on, and its placement is empty. `list` prints
+every thread with its key, path, line, origin, status, fix commit (and the sha it has now, when the
+stack still holds it), who it waits on, its replies, and its placement: each changeset of the stack
+at every zoom that holds the origin, and whether the note is shown, outdated, or waiting for its
+file there. The `hostIds` of a note are the ids Hunk gave it in the processes that restored it (a
+process is named by `pid`, as `hunk session list` shows), for matching a thread to a live note.
+`resolve` and `reopen` take the key of a thread's first note and append a status entry, which the
+running extension reads on its next restore.
+
+#### The saved-notes dialog
+
+`hunk-stack.show-saved-notes` (`S`) lists every saved note under its status, and `enter` acts on
+the chosen row:
+
+- **shown**: jumps the diff to the note's line. A reply jumps to the note it answers.
+- **pending**: loads the narrowest other changeset of the stack that holds the note's origin (a
+  commit before its branch, a branch before the combined changeset) and lands on the note's file,
+  where the note is restored.
+- **outdated**: asks before deleting the saved note and the replies under it, and removes them from
+  Hunk if they are showing.
+- **resolved**: lists each resolved thread once. Choosing one loads it into the diff for this
+  session and leaves it resolved in the journal.
+
+When any note is outdated, the first row deletes all of them, after the same question.
+
 ## Pane width
 
 ```toml
@@ -77,6 +190,7 @@ within those bounds. Dragging the divider overrides either for the session.
 | `hunk-stack.toggle`                | `x`         | Mark the selected file read and jump to the next unread file             |
 | `hunk-stack.next-unread`           | `X`         | Jump to the next unread file                                             |
 | `hunk-stack.toggle-hidden`         | `H`         | Hide or show read files                                                  |
+| `hunk-stack.show-saved-notes`      | `S`         | List saved notes: jump to one, load a pending or resolved one, delete an outdated one |
 | `hunk-stack.focus-outline-or-left` | `ctrl+h`    | Focus the outline if its pane is open, else the kitty window to the left |
 | `hunk-stack.focus-diff-or-right`   | `ctrl+l`    | Focus the diff from the outline, else the kitty window to the right      |
 
@@ -85,8 +199,10 @@ Read marks and the file view work in every review.
 
 `ctrl+h` and `ctrl+l` move between the outline and the diff the way smart-splits moves between nvim
 splits, and past either edge to the neighboring kitty window. kitty takes both keys for window
-navigation, so they reach hunk only through a passthrough: the `hunk` fish function sets the
-`IS_HUNK` user var that `kitty/keybind.conf` matches on. Leaving hunk goes through `kitten @ action`
+navigation, so they reach hunk only when kitty is told to let them through:
+`fish/functions/hunk.fish` in this repository wraps the `hunk` command and sets the kitty user
+variable `IS_HUNK` while it runs, and `kitty/keybind.conf` sends both keys on to a window that has
+that variable instead of acting on them. Leaving hunk goes through `kitten @ action`
 and needs kitty's remote control socket (`KITTY_LISTEN_ON`).
 
 Clicking a changeset header folds it, and clicking another changeset's file loads that changeset.
@@ -97,13 +213,24 @@ the diff; on a header it folds.
 
 `/` in the outline opens hunk's file filter (`hunk.review.focusFilter`); elsewhere `/` keeps hunk's
 meaning. While the filter is set, every changeset with a matching file shows expanded with only its
-matches, and the rest are hidden. Listed changesets match the way hunk matches the loaded one, by
-path or path before a rename, minus the agent summary they lack. The folds come back when the filter
-clears. Loads from the outline leave its folds
-as they are. Stepping and zoom open the changeset they load and fold the one they leave, unless
-the outline has already set its fold.
+matches, and the rest are hidden. Hunk's filter matches a file by its path, its path before a
+rename, and the summary an `--agent-context` sidecar gives it. Changesets that are not loaded match
+by the two paths only, since a sidecar's summaries are read when a changeset loads. The folds come
+back when the filter clears.
+
+Loading a changeset from the outline leaves every fold as it is. Stepping and zoom expand the
+changeset they load and fold the one they leave, except for a header you folded or expanded
+yourself, which stays as you set it.
+
 Hunk operates on one diff at a time, so switching between changesets goes through hunk's session
 daemon (`hunk session reload`), addressed to this window by pid.
+
+A `hunk session reload` run from outside the extension, by an agent say, is followed when it loads
+a changeset of the stack: `show <sha>` for a commit, or `diff <baseSha>..<headSha>` for a range,
+with full SHAs. The extension reads the stack again, so a commit made since the last keypress is
+found, and switches to the zoom that lists the changeset. A reload from outside drops `--watch`
+and `--agent-context`, so when `hunk stack` was launched with either, the extension loads the
+changeset once more with them. A range the stack does not list leaves the outline where it was.
 
 ## Development
 

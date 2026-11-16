@@ -7,20 +7,24 @@ export interface RunResult {
   stderr: string;
 }
 
-/** Runs the hunk binary that hosts this extension with the given arguments. */
-export type Run = (args: readonly string[]) => Promise<RunResult>;
+/** Runs the hunk binary that hosts this extension with the given arguments and, when given, stdin. */
+export type Run = (args: readonly string[], stdin?: string) => Promise<RunResult>;
 
 const RUN_TIMEOUT_MS = 15_000;
 
 /**
  * `process.execPath` is the hunk binary itself, so the extension talks to its own daemon
  * with the same version. The child's stdout is piped and never forwarded: the renderer owns
- * this process's stdout.
+ * this process's stdout. Its stdin carries `stdin` and then closes, so a command that reads
+ * input (`session comment apply --stdin`) gets it and one that does not sees end of file.
  */
 export function hunkRunner(): Run {
-  return (args) =>
+  return (args, stdin) =>
     new Promise((resolve) => {
-      const child = spawn(process.execPath, [...args], { stdio: ["ignore", "pipe", "pipe"] });
+      const child = spawn(process.execPath, [...args], { stdio: ["pipe", "pipe", "pipe"] });
+      // A child that exits before reading closes the pipe; its exit code reports the failure.
+      child.stdin.on("error", () => {});
+      child.stdin.end(stdin);
       let stdout = "";
       let stderr = "";
       child.stdout.on("data", (chunk) => (stdout += chunk));
@@ -115,8 +119,25 @@ export class Switcher {
     this.carried = args;
   }
 
+  carries(): boolean {
+    return this.carried.length > 0;
+  }
+
+  /** Whether a reload this switcher asked for is running. */
+  requesting(): boolean {
+    return this.inFlight !== null;
+  }
+
   loaded(): string | null {
     return this.loadedId;
+  }
+
+  /**
+   * The changeset whose reload is running. `changeset_loaded` fires while the request is still
+   * in flight, before `loaded()` moves to it, so this is what that event is about.
+   */
+  loading(): Changeset | null {
+    return this.inFlight?.changeset ?? null;
   }
 
   /** Record what is showing without a reload: the initial load, or the pane's own reading of it. */
@@ -174,8 +195,13 @@ export class Switcher {
     }
   }
 
+  /** Look the id up again next time, after a request showed the cached one is stale. */
+  forgetSession() {
+    this.sessionIdCache = null;
+  }
+
   /** `process.pid` identifies this window exactly, where `--repo` could match several on one checkout. */
-  private async sessionId(): Promise<string | null> {
+  async sessionId(): Promise<string | null> {
     if (this.sessionIdCache) {
       return this.sessionIdCache;
     }

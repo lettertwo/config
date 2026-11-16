@@ -3,6 +3,7 @@ import type { Landing, SwitcherSnapshot } from "./daemon";
 import { listChangeset, spawnGit, type GitRunner, type ListedFile } from "./listing";
 import { changedPaths, flipTarget, identifyLoaded, stepChangeset, type Flip } from "./navigate";
 import { isExpanded, type FileView, type StackOrder } from "./outline";
+import { CommitIndex, originInScope, type NoteOrigin, type Scope } from "./origin";
 import { commonDir } from "./stack/git";
 import { createStackSource, type Changeset, type StackSource, type Zoom } from "./stack/stack";
 import type { Sys } from "./stack/sys";
@@ -11,7 +12,11 @@ import type { Sys } from "./stack/sys";
 export interface ChangesetSwitcher {
   request(changeset: Changeset, landing?: Landing): void;
   pendingTarget(): Changeset | null;
+  /** Whether reloads repeat launch options, which a reload from outside the extension drops. */
+  carries(): boolean;
   loaded(): string | null;
+  /** The changeset whose reload is running, which events during that reload are about. */
+  loading(): Changeset | null;
   setLoaded(id: string | null): void;
   getSnapshot(): SwitcherSnapshot;
   subscribe(listener: () => void): () => void;
@@ -35,6 +40,20 @@ export interface StackSnapshot {
   expansion: ReadonlyMap<string, boolean>;
   /** Hunk's file filter query, which the outline applies to every changeset. */
   filter: string;
+}
+
+/** A string that is equal for descriptors that show the same revisions. */
+export function reviewKey(review: ExtensionReviewDescriptor | null): string {
+  if (review === null) {
+    return "worktree";
+  }
+  if (review.kind === "commit") {
+    return `commit:${review.revision}`;
+  }
+  if (review.kind === "comparison") {
+    return `range:${review.base}..${review.head}`;
+  }
+  return `other:${review.kind}`;
 }
 
 /** What the stack commands say in a review that `hunk stack` did not open. */
@@ -68,11 +87,16 @@ const FILE_VIEW_CYCLE: readonly (FileView | null)[] = [null, "tree", "grouped", 
  */
 export class StackState {
   private source: StackSource | null = null;
+  private commits: CommitIndex | null = null;
+  /** What the pane last reported; undefined until it has, since null is a working-tree review. */
+  private review: ExtensionReviewDescriptor | null | undefined = undefined;
   private zoom: Zoom = "branch";
   private order: StackOrder = "head-first";
   private fileView: FileView | null = null;
   private filter = "";
   private changesets: readonly Changeset[] = [];
+  /** Set by an outside reload; the next review the pane reports is requested again with the launch options. */
+  private carryNext = false;
   private paths = new Map<string, readonly string[]>();
   private listings = new Map<string, { key: string; files: readonly ListedFile[] }>();
   private listing = {
@@ -118,12 +142,14 @@ export class StackState {
       // createStackSource throws on an unknown gh-stack schema or a repo with no trunk branch.
       return { error: `no stack (${error instanceof Error ? error.message : error})` };
     }
+    this.commits = new CommitIndex(sys, this.source);
     this.zoom = this.source.defaultZoom;
     this.order = this.source.defaultStackOrder;
     this.read();
     const current = this.changesets.find((cs) => cs.current);
     if (!current) {
       this.source = null;
+      this.commits = null;
       this.publish();
       return { error: "no changesets to review" };
     }
@@ -133,12 +159,58 @@ export class StackState {
 
   /** The pane reports the descriptor of the review it is showing, which names the loaded changeset exactly. */
   observeReview(review: ExtensionReviewDescriptor | null) {
-    const found = identifyLoaded(review, this.changesets);
+    // Kept for every review, stack or not, so notes can be tied to what is on screen.
+    if (this.review === undefined || reviewKey(this.review) !== reviewKey(review)) {
+      this.review = review;
+      this.publish();
+    }
+    const found = identifyLoaded(review, this.changesets) ?? this.adopt(review);
+    const carry = this.carryNext;
+    this.carryNext = false;
     if (found) {
       this.switcher.setLoaded(found.id);
+      if (carry) {
+        this.switcher.request(found);
+      }
     } else if (review === null && this.source) {
       this.switcher.setLoaded(null);
     }
+  }
+
+  /**
+   * A `hunk session reload` from outside the extension, such as an agent's, dropped `--watch`
+   * and `--agent-context`. When `hunk stack` was launched with either, the next review the pane
+   * reports is loaded once more with them, if the stack lists it. Hunk emits `session_reload`
+   * from a layout effect, which runs before the pane's effect for the same review.
+   */
+  noteOutsideReload() {
+    if (this.switcher.carries()) {
+      this.carryNext = true;
+    }
+  }
+
+  /**
+   * Find the changeset for a review that the changesets in hand do not list. That review came
+   * from a `hunk session reload` run outside the extension, such as an agent showing a commit
+   * made after the last keypress. The stack is read again and searched at the current zoom
+   * first, then at the others, and the zoom follows the match so the outline lists what is on
+   * screen.
+   */
+  private adopt(review: ExtensionReviewDescriptor | null): Changeset | null {
+    const source = this.source;
+    if (!source || review === null) {
+      return null;
+    }
+    for (const zoom of [this.zoom, ...source.zooms.filter((z) => z !== this.zoom)]) {
+      const loaded = source.load(zoom);
+      const found = identifyLoaded(review, loaded);
+      if (found) {
+        this.zoom = zoom;
+        this.read(loaded);
+        return found;
+      }
+    }
+    return null;
   }
 
   /** Move toward the head (+1) or the base (-1). Returns what to tell the user. */
@@ -160,9 +232,13 @@ export class StackState {
    * Load a changeset by id, landing on `path` when given, as clicking one of its files does.
    * Returns what to tell the user, if anything.
    */
-  select(id: string, path?: string): string | null {
+  select(id: string, path?: string, zoom?: Zoom): string | null {
     if (!this.source) {
       return null;
+    }
+    if (zoom !== undefined && zoom !== this.zoom) {
+      // The target belongs to another slicing of the stack, which the outline then lists.
+      this.zoom = zoom;
     }
     this.read();
     const target = this.changesets.find((cs) => cs.id === id);
@@ -184,6 +260,58 @@ export class StackState {
 
   isExpanded(id: string): boolean {
     return isExpanded(this.expansion, this.switcher.loaded(), id);
+  }
+
+  /**
+   * The changeset the review is showing, or null when the extension cannot say. While a reload
+   * of ours runs, that is the changeset being loaded, since Hunk emits its events before the
+   * switcher records the load as done.
+   */
+  showing(): Changeset | null {
+    if (!this.source) {
+      return null;
+    }
+    const id = this.switcher.loading()?.id ?? this.switcher.loaded();
+    return this.changesets.find((cs) => cs.id === id) ?? null;
+  }
+
+  /** The review the pane last reported: null for a working-tree review, undefined before any report. */
+  reviewDescriptor(): ExtensionReviewDescriptor | null | undefined {
+    return this.review;
+  }
+
+  /** The commits a changeset holds, as notes are matched against them; null outside a stack review. */
+  scopeOf(changeset: Changeset): Scope | null {
+    return this.commits?.scopeOf(changeset) ?? null;
+  }
+
+  /** The commit facts behind `scopeOf`: origins, patch ids, and which branch owns a commit. */
+  get commitIndex(): CommitIndex | null {
+    return this.commits;
+  }
+
+  /**
+   * The narrowest changeset, other than the loaded one, that holds a note's origin and changes
+   * `path`: a commit's own changeset before its branch's, and that before the combined one.
+   * Null when the stack has none.
+   */
+  changesetWith(origin: NoteOrigin, path: string): { changeset: Changeset; zoom: Zoom } | null {
+    const source = this.source;
+    const commits = this.commits;
+    if (!source || !commits) {
+      return null;
+    }
+    this.read();
+    const loaded = this.switcher.loaded();
+    const sys = this.makeSys(source.cwd);
+    for (const zoom of (["commit", "branch", "combined"] as const).filter((candidate) => source.zooms.includes(candidate))) {
+      for (const changeset of zoom === this.zoom ? this.changesets : source.load(zoom)) {
+        if (changeset.id !== loaded && originInScope(origin, commits.scopeOf(changeset), commits.patchId) && changedPaths(sys, changeset).includes(path)) {
+          return { changeset, zoom };
+        }
+      }
+    }
+    return null;
   }
 
   /** Expand or collapse a header; `to` omitted flips it. */
@@ -244,11 +372,13 @@ export class StackState {
     return `Zoom: ${to}`;
   }
 
-  private read() {
+  /** Take the stack at the current zoom from git, or from `loaded` when the caller just read it. */
+  private read(loaded?: readonly Changeset[]) {
     if (!this.source) {
       return;
     }
-    this.changesets = this.source.load(this.zoom);
+    this.changesets = loaded ?? this.source.load(this.zoom);
+    this.commits?.refresh();
     this.paths.clear();
     for (const id of this.listings.keys()) {
       if (!this.changesets.some((cs) => cs.id === id)) {

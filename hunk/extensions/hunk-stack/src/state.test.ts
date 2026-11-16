@@ -16,8 +16,15 @@ class FakeSwitcher implements ChangesetSwitcher {
   pendingTarget() {
     return this.requests.at(-1)?.changeset ?? null;
   }
+  carried = false;
+  carries() {
+    return this.carried;
+  }
   loaded() {
     return this.loadedId;
+  }
+  loading(): Changeset | null {
+    return null;
   }
   setLoaded(id: string | null) {
     this.loadedId = id;
@@ -257,6 +264,80 @@ describe("StackState", () => {
     expect(switcher.loaded()).toBe("uncommitted");
   });
 
+  it("adopts a commit shown from outside, made after the stack was last read", () => {
+    const repo = stackRepo(false);
+    const { state, switcher } = setup(repo);
+    expect(state.getSnapshot().zoom).toBe("branch");
+    repo.commitFile("fix.txt", "fix: review notes");
+    const sha = repo.git("rev-parse", "HEAD");
+    state.observeReview({ kind: "commit", provider: "Git", title: "x", revision: sha });
+    expect(state.getSnapshot().zoom).toBe("commit");
+    expect(state.getSnapshot().changesets.map((c) => c.id)).toContain(sha);
+    expect(switcher.loaded()).toBe(sha);
+    expect(switcher.requests).toEqual([]);
+  });
+
+  it("adopts an outside range at the current zoom before trying another", () => {
+    const repo = stackRepo(false);
+    const { state, switcher } = setup(repo);
+    const base = repo.git("rev-parse", "a1");
+    repo.commitFile("fix.txt", "fix: review notes");
+    state.observeReview({ kind: "comparison", provider: "Git", title: "x", base, head: repo.git("rev-parse", "HEAD") });
+    expect(state.getSnapshot().zoom).toBe("branch");
+    expect(switcher.loaded()).toBe("c1");
+  });
+
+  it("requests an adopted changeset again after an outside reload, when there are launch options to repeat", () => {
+    const repo = stackRepo(false);
+    const { state, switcher } = setup(repo);
+    switcher.carried = true;
+    repo.commitFile("fix.txt", "fix: review notes");
+    const sha = repo.git("rev-parse", "HEAD");
+    state.noteOutsideReload();
+    state.observeReview({ kind: "commit", provider: "Git", title: "x", revision: sha });
+    expect(switcher.requests.map((r) => r.changeset.id)).toEqual([sha]);
+  });
+
+  it("requests a listed changeset again after an outside reload, once", () => {
+    const repo = stackRepo(false);
+    const { state, switcher } = setup(repo);
+    switcher.carried = true;
+    const a1 = state.getSnapshot().changesets.find((c) => c.id === "a1")!;
+    const review = { kind: "comparison", provider: "Git", title: "x", base: a1.baseSha!, head: a1.headSha! } as const;
+    state.noteOutsideReload();
+    state.observeReview(review);
+    expect(switcher.requests.map((r) => r.changeset.id)).toEqual(["a1"]);
+    // The extension's own reload with the options lands on the same changeset.
+    state.observeReview({ ...review });
+    expect(switcher.requests).toHaveLength(1);
+  });
+
+  it("repeats nothing without launch options, or for a review the stack does not list", () => {
+    const repo = stackRepo(false);
+    const { state, switcher } = setup(repo);
+    const a1 = state.getSnapshot().changesets.find((c) => c.id === "a1")!;
+    state.noteOutsideReload();
+    state.observeReview({ kind: "comparison", provider: "Git", title: "x", base: a1.baseSha!, head: a1.headSha! });
+    expect(switcher.requests).toEqual([]);
+
+    switcher.carried = true;
+    const main = repo.git("rev-parse", "main");
+    state.noteOutsideReload();
+    state.observeReview({ kind: "comparison", provider: "Git", title: "x", base: main, head: main });
+    state.observeReview({ kind: "comparison", provider: "Git", title: "x", base: a1.baseSha!, head: a1.headSha! });
+    expect(switcher.requests).toEqual([]);
+  });
+
+  it("leaves the zoom alone for a review the stack does not list", () => {
+    const repo = stackRepo(false);
+    const { state, switcher } = setup(repo);
+    const loaded = switcher.loaded();
+    const main = repo.git("rev-parse", "main");
+    state.observeReview({ kind: "comparison", provider: "Git", title: "x", base: main, head: main });
+    expect(state.getSnapshot().zoom).toBe("branch");
+    expect(switcher.loaded()).toBe(loaded);
+  });
+
   it("stays closed until opened, so other hunk commands get no stack", () => {
     const state = new StackState(createSys, new FakeSwitcher());
     expect(state.getSnapshot().enabled).toBe(false);
@@ -283,5 +364,40 @@ describe("StackState", () => {
     const { state, opened } = setup(repo);
     expect(state.getSnapshot().enabled).toBe(false);
     expect("error" in opened && opened.error).toContain("no trunk branch");
+  });
+
+  describe("notes", () => {
+    it("names the loaded changeset, and the changeset being loaded while a reload runs", () => {
+      const repo = stackRepo();
+      const switcher = new FakeSwitcher();
+      const state = new StackState(createSys, switcher);
+      expect(state.showing()).toBeNull();
+      state.open(repo.cwd);
+      expect(state.showing()?.id).toBe("uncommitted");
+      const loading = state.getSnapshot().changesets.find((cs) => cs.id === "a1")!;
+      switcher.loading = () => loading;
+      expect(state.showing()?.id).toBe("a1");
+    });
+
+    it("finds the narrowest changeset that holds a note's origin and changes its path, then loads it at its zoom", () => {
+      const repo = stackRepo();
+      const { state, switcher } = setup(repo);
+      const index = state.commitIndex!;
+      const log = repo.git("log", "-1", "--format=%H", "a1");
+      const origin = index.originOf({ commits: [index.describe(log)!] });
+      // `a1`'s newest commit added a1y.txt. The branch changeset holds it too, but the commit comes first.
+      const found = state.changesetWith(origin, "a1y.txt");
+      expect(found).toMatchObject({ zoom: "commit", changeset: { id: log } });
+      expect(state.changesetWith(origin, "nothing.txt")).toBeNull();
+      expect(state.select(found!.changeset.id, "a1y.txt", found!.zoom)).toBeNull();
+      expect(state.getSnapshot().zoom).toBe("commit");
+      expect(switcher.requests.at(-1)?.changeset.id).toBe(log);
+    });
+
+    it("holds an uncommitted note to the uncommitted changeset", () => {
+      const { state, switcher } = setup(stackRepo());
+      switcher.setLoaded("a1");
+      expect(state.changesetWith({ uncommitted: true, branch: "c1" }, "base.txt")).toMatchObject({ changeset: { id: "uncommitted" } });
+    });
   });
 });
