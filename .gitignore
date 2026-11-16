@@ -33,6 +33,7 @@ cagent/*.debug.log
 homebrew/trust.json.lock
 cursor/*cache*
 cursor/chats/
+cursor/cli-config.json*
 claude/statusline.local
 claude/skills/synced
 claude/skills/.trash
