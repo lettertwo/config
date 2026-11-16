@@ -22,7 +22,7 @@ git log <base>..HEAD --oneline
 **Stack-aware branch**: if the current branch is in a Graphite or gh-stack stack and the target is
 a stack (the user asks for one explicitly, or the resolved ref spans multiple stacked branches),
 discover the branches and their parent→child edges by following
-[`../stack-review/DISCOVERY.md`](../stack-review/DISCOVERY.md) (read-only; no worktrees or
+[`DISCOVERY.md`](../stack-review/DISCOVERY.md) (read-only; no worktrees or
 checkouts needed). Otherwise this is a single-diff explanation.
 
 ## Page structure

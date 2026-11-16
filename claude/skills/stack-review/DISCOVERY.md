@@ -1,9 +1,9 @@
 # Stack discovery
 
 Read-only procedure for resolving the stack around the current branch: which branches are stacked,
-and each branch's parent (its diff base). Consumed by `/stack-review` (which layers worktrees, fix
-classification, and restack on top) and `/explain-diff` (which needs only the branches and edges).
-Nothing here mutates the repo or checks anything out.
+and each branch's parent (its diff base). `/stack-review` follows it for each branch's range when
+no `hunk stack` session names one, and `/explain-diff` for the branches and edges. Nothing here
+mutates the repo or checks anything out.
 
 Two backends are supported: Graphite (`gt`) and gh-stack (`gh stack`). Both produce the same
 result shape (section 4), so consumers don't care which one answered.
@@ -77,8 +77,7 @@ fail offline with exit 4. The branch list is still what you want; retry once, th
 Drop any branch whose name matches `DEFAULT_BRANCH` (or, for gh-stack, `.trunk`). It should never
 appear, but this guards against a misconfigured stack.
 
-The caller decides whether the current branch itself is a target (e.g. `/stack-review` includes it
-unless `--upstack`).
+The caller decides whether the current branch itself is a target.
 
 ## 4. Result
 
@@ -86,5 +85,5 @@ The target branch list plus the parent→child edges, and the current branch's o
 base). The edges are what downstream consumers order by: bottom-up chapters for an explanation,
 topological fix order for a review.
 
-Consumers that go beyond discovery should check `BACKEND`: `/stack-review`'s restack step runs
-`gt restack` on Graphite and `gh stack rebase` on gh-stack.
+Consumers that go beyond discovery should check `BACKEND`: a restack runs `gt restack` on Graphite
+and `gh stack rebase` on gh-stack.

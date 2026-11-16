@@ -1,252 +1,189 @@
 ---
 name: stack-review
 description:
-  Parallel code review (and optional autofix) of the current branch and every branch stacked upstack
-  of it, each scoped to its own parent diff. Runs /code-review's reviewer-and-judge process once per
-  branch over a Graphite or gh-stack stack. Use when you want to review (and optionally fix) the
-  current branch and its stack. Pass --upstack to skip the current branch and review only
-  descendants.
-argument-hint: "[low|medium|high|max] [--upstack] [--fix]"
-disable-model-invocation: true
+  Review a branch, a stack, or work-in-progress changes in a live Hunk session. A reviewer with no
+  session context reads the diff, each finding is verified against source, and the verified
+  findings land as Hunk notes that the user answers in place, followed by gated fix commits. Use
+  when the user asks for a review, a tour, or annotations on a diff, and whenever they say they
+  left notes in Hunk.
+argument-hint: "[deep] [tour | what the notes are for]"
 ---
 
-Review the current branch and every branch stacked upstack of it. Each branch is reviewed against
-its immediate parent (via `DISCOVERY.md`, Graphite or gh-stack) so already-reviewed downstack
-changes don't reappear as noise.
+`hunk-review` is the command reference for `hunk session *`. Load it first. This skill is the
+procedure around those commands: how findings are produced, how they reach the diff the user is
+reading, and how a thread gets from a note to a fix the user has seen.
 
-**This skill is the stack driver for `/code-review`.** It does not define its own review model — the
-shared review prompt, the effort→reviewer-set table, and the judge's compile-then-verify rules all
-live in [`../code-review/SKILL.md`](../code-review/SKILL.md), which this skill follows once per
-branch. Everything here is the stack-specific layer: discovery, worktrees, and the dependent-stack
-serialization the single-diff caller doesn't need. If you want to understand what a finding means or
-how many reviewers run at a given effort, read `/code-review`.
+- With no argument, review the stack for defects (sections 3 and 4).
+- `deep` replaces the single reviewer with several independent ones. Read [`deep.md`](deep.md)
+  before launching anything. It is for invariant-heavy or gotcha-dense diffs.
+- `tour` narrates for a reader who has not seen the code: numbered notes (`3/12 ...`) in the order
+  that tells the story. Any other argument says what the notes are for (interview questions on a
+  submission, say). Both skip section 3: you read the diff and write the notes yourself.
 
-**Arguments:**
+## 1. Find the session, every turn
 
-- `effort` (optional, default `medium` — cost scales with branch count): `low` | `medium` | `high` |
-  `max`.
-- `--upstack`: review only the branches stacked upstack; exclude the current branch.
-- `--fix`: apply and commit each CONFIRMED finding as one `fix: <specific>` commit. Default is
-  report-only.
+Run `hunk session list` at the start of every turn that touches Hunk. A restart gives the session a
+new id, so an id from an earlier turn is not safe to reuse. Select with `--repo .` when one session
+matches the repo, and by id from that list when several do.
 
----
+`hunk session get` prints the title. A title of the form `<name> <sha>..<sha>` is a `hunk stack`
+session, and section 2 applies.
 
-## Steps
+Findings are delivered in Hunk and nowhere else. When `hunk session list` shows no session for the
+repo, do not wait for one: ask the user to run `hunk stack`, and start section 3 in the same turn.
+Take each branch's range from git: `git merge-base <parent> <branch>` to the branch head, with
+each parent found by following [`DISCOVERY.md`](DISCOVERY.md) (gh-stack, Graphite, or the trunk
+when there is no stack). Before
+posting, compare those ranges with the session title, and review again any changeset whose range
+differs.
 
-### 0. Preflight
+## 2. `hunk stack` sessions
 
-Run in sequence; stop with a clear error message if any check fails.
+The hunk-stack extension owns changeset switching. It loads each changeset as an exact
+`baseSha..headSha` and matches the loaded range against its outline.
 
-**a. Require a stack tool:** either Graphite (`gt`) or gh-stack (`gh stack`), per the same probe
-`DISCOVERY.md` §1 uses.
+- Reload a stack session only to a changeset the stack lists, with full SHAs:
+  `hunk session reload <id> -- show <sha>` for one commit, or
+  `hunk session reload <id> -- diff <baseSha>..<headSha>` for a branch's range. The extension
+  reads the stack again, finds the changeset at any zoom, and moves the outline and the zoom to
+  it. Any other range leaves the outline pointing at a changeset that is no longer on screen.
+- Run `hunk session get` after a reload and check that the title shows the range you asked for.
+- A reload moves the user's screen. Do it when they are waiting on you (posting a review, showing
+  a fix), and not while they are reading.
+- The user steps with `(` (toward the base) and `)` (toward the head), and cycles zoom with `I`
+  (combined, branch, commit). Read the title again after they say they moved.
+- Read a changeset with `git diff <base>..<head>` using the SHAs from the title, so what you read
+  is what the user sees.
 
-```bash
-if command -v gt >/dev/null && gt log short 2>&1 | grep -q '\.'; then
-  BACKEND=graphite
-elif gh extension list 2>/dev/null | grep -q 'github/gh-stack' && gh stack view --json >/dev/null 2>&1; then
-  BACKEND=gh-stack
-else
-  echo "stack-review requires a stack tracked by Graphite (gt) or gh-stack (gh stack)."; exit 1
-fi
-```
+The extension reads the stack from git again on every step, zoom key, and reload, so new commits
+show with no restart. Each branch's base is the exception: it comes from
+`<git-common-dir>/gh-stack`, and that file lags a rebase until `gh stack sync` or a push. When a
+range shows files that do not belong to the branch, compare the file's `base` for the branch with
+`git merge-base` against the parent branch. `gh stack sync` fixes a stale base, and it is the
+user's to run.
 
-**b. Detect default branch and guard against reviewing it:**
+A session that is not a stack session may be reloaded as `hunk-review` describes.
 
-```bash
-DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|refs/remotes/origin/||')
-CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-[ "$CURRENT_BRANCH" = "$DEFAULT_BRANCH" ] && { echo "stack-review: current branch is the default branch ($DEFAULT_BRANCH); nothing to review. Checkout a feature branch first."; exit 1; }
-```
+## 3. Find and verify
 
-**c. Detect repo layout** from `git worktree list --porcelain`:
+Launch one `general-purpose` subagent as the reviewer. It starts with no context from this
+session, which is the reason to use one: the main thread usually wrote the code under review. One
+reviewer covers every changeset in the stack, base first, unless the user named one.
 
-- If the first entry contains `bare` → **bare+worktree layout** → review worktrees go as siblings of
-  the current working tree: `$(dirname $(pwd))/review-<slug>`.
-- Otherwise → **normal clone** → review worktrees go under the git common dir:
-  `$(git rev-parse --git-common-dir)/stack-review/<slug>`.
+Give the reviewer:
 
-**d. Build the existing-worktree map** (branch → path) from the same output — used in step 2.
+- Each changeset's name and exact `<base>..<head>` range, to read with `git diff`. It may read
+  anything else in the repo (a call site, a test file).
+- The paths of the repo's standards docs (`CLAUDE.md`, `CONTRIBUTING.md`, and the like), to read
+  for itself.
+- The spec, when one resolves: an issue referenced in the commit messages, or a file under
+  `docs/`, `specs/`, or `.scratch/` that matches the branch. Without one, spec conformance is not
+  a category.
+- The categories, most important first. A finding higher on the list outweighs one lower down.
+  1. Functional bugs: logic errors, missing guards or awaits, races, stale closures, off-by-ones,
+     broken control flow.
+  2. Violations of the standards docs, needless complexity, duplicated logic.
+  3. Missing tests for new behavior or a bug fix.
+  4. Performance, measured where it can be (run the query plan, do not guess at it).
+  5. Spec conformance, when a spec was given.
+  6. Accessibility, when the diff touches UI markup.
+- What to leave out: formatting, style and type nits that lint owns, and anything that affects
+  neither correctness nor maintainability.
+- The return format, per finding: changeset, file, line on the new side, the text of that line,
+  severity, category, description, and a concrete fix where one exists. When a question raised by
+  one changeset is answered by code in another, the finding says so and names the file.
 
-```bash
-git worktree list --porcelain
-```
+Then verify, in this order:
 
----
+1. List every finding before reading any source yourself, and merge duplicates. Reading first
+   turns you into a second reviewer with a veto.
+2. Read the source around each finding, trace the logic, and run whatever check the reviewer
+   suggested. Mark each one **CONFIRMED** (traced and real), **PLAUSIBLE** (you could neither
+   refute it nor fully trace it, as with a runtime condition you cannot reproduce), or
+   **dismissed**, with a one-line reason.
 
-### 1. Discover the stack
+## 4. Post
 
-Follow [`./DISCOVERY.md`](./DISCOVERY.md) — the shared read-only procedure (Graphite or gh-stack
-backend, default-branch filter) that yields the target branches and their parent→child edges. Its §1
-checks are already covered by preflight steps a–b above; skip them.
+A CONFIRMED finding posts as a statement. A PLAUSIBLE finding posts as a question: its summary
+starts with `Question:`. Dismissed findings stay out of Hunk, and chat gets their count with each
+one-line reason. A review posts nothing else. Orientation and intent notes belong to `tour`.
 
-By default, also prepend the current branch (diff base = its parent, per `DISCOVERY.md` §4). If
-`--upstack`, skip the current branch and include only the descendants.
+Hunk accepts a note only on a line inside a hunk of the loaded changeset. So post one
+`comment apply` batch per changeset: reload to each changeset that has findings, head first, and
+post its batch, so that the session ends on the changeset nearest the base. Tell the user how
+many notes each changeset holds. When a batch fails, fix its cause (usually a line outside a hunk)
+and post it again in the same turn.
 
-From the parent→child edges, classify:
+Order a batch by the order the files appear in the review, then by line. `--focus` lands on the
+first item, and that should be the first note the reader meets.
 
-- **Independent**: no target is an ancestor of another — fixes can parallelize.
-- **Dependent**: a target is the parent of another target — fixes must serialize with restack.
+Writing a note:
 
----
+- One or two sentences in `summary`, with supporting detail in `rationale`.
+- Say what the reader would not spot from the diff. In a tour, skip hunks that explain themselves.
+- Use the plain verb: "the test asserts", not "the test pins".
+- Do not post a guess about the author's intent as a fact. Check it, or ask it as a `Question:`,
+  and answer a question yourself first when the repo can answer it.
 
-### 2. Resolve a worktree per target branch
+Notes are prose for a reader, so the voice rules apply.
 
-For each target:
+## 5. Notes persist, and their ids do not
 
-1. Check the existing-worktree map from step 0d.
-2. Already checked out → **reuse** that path (`userOwned: true`). Don't call `git worktree add`.
-3. Not checked out → create at the path from step 0c (`userOwned: false`).
+The extension journals every note and reply to one JSONL file per worktree under
+`$XDG_STATE_HOME/hunk-stack/notes/` (default `~/.local/state`), and applies them again when a
+changeset loads. The journal also holds the review's bookkeeping: each note records the commits of
+the changeset it was written on, and each thread is `open` or `resolved`.
 
-```bash
-git worktree add <computed-path> <branch>
-```
+- Do not re-apply notes after a restart. The extension already has.
+- Every restored note has a new id, and a restored user note lists as an agent note by
+  `you (restored)`. Run `comment list --type all --json` again before any `replyTo`, and treat that
+  author as the user.
+- Read threads with `hunk stack notes list --json`, which needs no session and covers every
+  changeset, loaded or not. Each thread has `key`, `path`, `line`, `origin`, `status`, `fix` (the
+  commit that closed it), `waitingOn` (`agent` when the user spoke last, `user` when you did,
+  `null` once resolved), `placement`, and `replies`. `hostIds` pairs a note with the id Hunk gave it
+  in a process; the `pid` is the one `hunk session list` shows for the live session.
+- A note shows only on a changeset that holds every commit of its origin and has its line.
+  `placement` lists the changesets of the stack that hold the origin, each `shown`, `outdated`, or
+  `pending` (the file is not in that diff). A changeset that does not hold the origin is pending
+  for the note and is not listed. An open thread whose line is gone from a changeset that holds its
+  origin shows beside its old line with `(outdated)` in the author line.
+- Resolved threads leave the diff. The user lists them with `S`.
 
-Track which worktrees you created (only those get removed in step 6).
+## 6. The user's notes
 
-Build the final list: `[{branch, parent, worktree, label, userOwned}]`.
+Hunk does not notify you when the user writes a note. When they say they left notes, or that they
+are done with a changeset:
 
-For each branch also resolve context the way `/code-review` step 2 does.
+1. Run `hunk stack notes list --json` and take the open threads with `waitingOn` of `agent`. They
+   cover every changeset. For the ids to reply to, run
+   `hunk session comment list ... --type all --json` on the loaded changeset and match each thread
+   by `path`, `line`, and the `pid` in `hostIds`.
+2. Reply in Hunk with one `comment apply` batch of `replyTo` items. A reply is short: agree and say
+   what changes, or answer the question.
+3. In chat, list what you agreed to change, then the items that need a decision from the user.
+   Make no edit until they answer.
 
-- **standardsSources**: absolute paths of the standards docs in that branch's worktree
-  (`<worktree>/CLAUDE.md`, `<worktree>/frontend/CLAUDE.md`, `CODING_STANDARDS.md`, etc. — only those
-  that exist).
-- **specSource**: the originating spec for _that branch_, from its own commit messages. Most stack
-  branches won't map cleanly to a spec — leave it unresolved and spec conformance is simply not a
-  category for that branch's prompt. Don't force one spec across the whole stack.
-- **descendants**: the branch names stacked upstack of this one (for the `mayBeAddressedUpstack`
-  annotation below).
+A reply fails with "no longer available as a reply parent" when the thread's changeset is not
+loaded. Reload to a changeset its `placement` lists as `shown`, list that changeset's notes again
+for the new ids, and reply there.
 
----
+## 7. Fixes
 
-### 3. Parallel review — one shared prompt per branch, one batch of reviewers
+Make no fix without a go-ahead, including for a CONFIRMED finding that carries a concrete fix.
 
-For each target branch, build that branch's `REVIEW_PROMPT` the same way `/code-review` steps 2–3 do
-(referenced, not duplicated here): that branch's diff (`base...branch` in its worktree), its own
-`standardsSources`, and its own `specSource` if one resolved.
+- State the plan before editing: which branch each fix lands on, whether that branch has a
+  worktree, and any rebase of the branches above it. A rebase of a pushed branch needs its own
+  go-ahead.
+- Make one fix commit per branch, with a message that says it addresses review notes. Close each
+  thread it answers with `hunk stack notes resolve <key> --commit <sha>`. The extension matches
+  that commit by sha, then patch id, then subject on the branch, so a later rebase or amend needs
+  no update. A resolved thread leaves the diff on the next load.
+- Show the fix: reload the session to the first fix commit with `show <sha>`, and name the
+  others by SHA and subject. When a fix rebased the branches above it, ask the user for
+  `gh stack sync`, since branch zoom is wrong until the gh-stack file records the new bases.
 
-Launch reviewers for **all branches at once**, as a single parallel batch rather than branch by
-branch:
+## 8. Close
 
-- All branches' Claude reviewers go out together as one batch of `Agent` tool calls (one or more per
-  branch, per the effort→reviewer-set table in `/code-review` — default effort here is `medium`).
-- Run `cursor-agent` once per branch, same invocation `/code-review` step 4 specifies (`--mode plan`
-  mandatory).
-
-### 4. Judge each branch
-
-Judge each branch independently, on the main thread, following the same two-step rule from
-`/code-review` step 5: compile and dedupe that branch's findings before reading any of its source,
-then verify each one (CONFIRMED / PLAUSIBLE / dismissed).
-
-While verifying, apply the stack-only annotation: if a CONFIRMED or PLAUSIBLE finding is in a file
-that a descendant branch (from `descendants` in step 2) also touches, mark it
-`mayBeAddressedUpstack: true` — the fix may already be superseded further up the stack.
-
----
-
-### 5. Report
-
-Call `ReportFindings` **once**, covering every branch, each finding's `summary` prefixed
-`[<branch>]`, ranked most-severe first within the whole set, each with its `verdict` and `level`
-(effort).
-
-Alongside, keep the per-branch prose sections:
-
-```
-### <branch> (N confirmed, M plausible, K dismissed)
-1. **<title>** (<severity>, <verdict>)
-   <description>
-   File: `<file>` lines <lines>
-   [Note: may be addressed upstack in `<branch>`]  ← only when mayBeAddressedUpstack is set
-```
-
-#### `--fix` on independent targets
-
-Apply each branch's CONFIRMED findings with a concrete fix as `fix: <specific>` commits directly in
-that branch's worktree, then gate on tests (`~/.claude/bin/cargo-gate test` for Rust workspaces, the
-project's own test command otherwise). If a branch's test gate fails, do **not** report that
-branch's fixes as clean — surface it under "Needs manual attention" with the gate's summary; the
-commits are already on the branch (nothing auto-reverts) but need a human look before landing.
-
-#### `--fix` on dependent targets
-
-Apply fixes serially, bottom-up, using each branch's CONFIRMED findings only — those with a concrete
-fix (spec gaps usually have none; skip them).
-
-Neither `gt` nor `gh stack` can rebase a branch that is checked out in another worktree, and this
-flow puts every target in one. The worktrees this skill created (`userOwned: false`) are free to
-detach around each restack; user-owned ones are not.
-
-For each branch in topological order (parent before child):
-
-1. If the branch's worktree is user-owned with uncommitted changes → skip it and all descendants;
-   record reason.
-2. If any descendant is checked out in a user-owned worktree → the restack cannot move it. Surface
-   for manual resolution and stop the chain. The branch's own worktree may be user-owned (the
-   current branch always is unless `--upstack`); a clean one is fine, since the restack below moves
-   that branch only when its own parent has moved, and otherwise only the branches above it.
-3. Apply each finding's fix and commit it (`fix: <specific>`). If nothing was committed, skip to
-   step 8: there is nothing to restack.
-4. Detach every created worktree that holds a descendant, which frees its branch without touching
-   its files:
-   ```bash
-   git -C <descendant-worktree> switch --detach
-   ```
-5. Restack the branch and its descendants, from the branch's worktree. `--upstack` leaves
-   ancestors, already processed, alone; `--no-trunk` keeps gh-stack from fetching and rebasing onto
-   a moved trunk.
-   ```bash
-   gt restack --upstack --cwd <worktree>                   # BACKEND=graphite
-   (cd <worktree> && gh stack rebase --upstack --no-trunk)  # BACKEND=gh-stack
-   ```
-6. On a conflict (`gt restack` stops, or `gh stack rebase` exits 3), work through it. The conflict
-   is almost always this branch's fix meeting a descendant's edit of the same code, and the fix,
-   its finding, and the descendant's diff are all already in hand. Resolve each conflicted file,
-   `git add` it, and continue (`gt continue --cwd <worktree>`, or `gh stack rebase --continue` from
-   the worktree) until the cascade finishes. Record every resolution: branch, file, which side won,
-   and why. A resolution that keeps the descendant's version drops the fix on that branch; list it
-   under "Needs manual attention", since the fix did not carry upstack. When a resolution is not
-   clear (both sides change behavior, not just neighboring lines), abort instead (`gt abort --cwd
-   <worktree>` or `gh stack rebase --abort`), which restores every branch; the fix commits stay on
-   this branch. Reattach as in step 7, report the conflict for manual resolution, and stop the chain.
-7. Reattach every worktree detached in step 4, whether the restack finished or was aborted:
-   ```bash
-   git -C <descendant-worktree> switch <descendant-branch>
-   ```
-8. Run the test gate on this branch: `~/.claude/bin/cargo-gate test` for Rust workspaces (via the
-   nearest `Cargo.toml`/workspace root), otherwise the project's own test command. Every branch
-   reaches this step once, after its parent's restack (and any conflict resolution) moved it and
-   its own fixes landed, so each is gated exactly once. A gate failure doesn't block the chain
-   (dependent stacks must keep serializing) but gets flagged under "Needs manual attention" in the
-   final report, with any resolutions on that branch named.
-
-Re-call `ReportFindings` with an `outcome` per finding once `--fix` has run.
-
----
-
-### 6. Clean up
-
-Remove only the worktrees **you created** (`userOwned: false`):
-
-```bash
-git worktree remove <path>
-```
-
-Never touch user-owned worktrees. Commits persist on the branch refs after removal.
-
-Print final summary:
-
-```
-## Stack review summary
-
-Stack: <current-branch> → [<branch1>, <branch2>, ...]
-Layout: bare+worktree | normal clone
-
-### <branch> (N findings, M fixed, K skipped/manual)
-- Fixed: <sha> fix: <message>
-- Skipped: <title> — <reason>
-- Resolved: <file> — <which side won, and why>
-
-### Needs manual attention:
-- <branch>: <reason>
-```
+Report from `hunk stack notes list --json`: the threads still `open` with their `waitingOn`, and
+the fix commits by branch. When none are open, say so in one line.

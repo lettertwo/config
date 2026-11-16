@@ -10,7 +10,7 @@ artifact; a **ledger** tracks the walk so it survives compaction and so decision
 aren't re-litigated at the next.
 
 A redline pass **edits the document in place** as it goes and finishes with the document changed —
-findings handed off for someone else to act on are `/code-review`'s job.
+findings handed off for someone else to act on are `/stack-review`'s job.
 
 ## Invocation
 
