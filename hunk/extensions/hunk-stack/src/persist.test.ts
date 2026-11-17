@@ -24,6 +24,7 @@ import {
   replay,
   savedNoteLabel,
   type JournalEntry,
+  type HostPlacement,
   type LoadedFile,
   type NoteOrigin,
   type NoteRecord,
@@ -379,6 +380,88 @@ describe("planRestore", () => {
       record("y", { parentKey: noteKey(1, "x") }),
     ];
     expect(planRestore(records, view([file("a.ts")]), none).outdated).toHaveLength(2);
+  });
+
+  describe("live notes", () => {
+    // New side of `base`: 1 a, 2 keep, 3 added one, 4 added two, 5 tail.
+    const lineB = { line: 3, lineText: "added one", context: { before: ["a", "keep"], after: ["added two", "tail"] } };
+    const base = file("a.ts", ["@@ -1,3 +1,5 @@", " a", " keep", "+added one", "+added two", " tail"].join("\n"), [{ oldRange: [1, 3], newRange: [1, 5] }]);
+    /** The same lines after a commit put two more above them, so the note's line is now 5. */
+    const shifted = file("a.ts", ["@@ -1,5 +1,7 @@", " p", " q", " a", " keep", "+added one", "+added two", " tail"].join("\n"), [{ oldRange: [1, 5], newRange: [1, 7] }]);
+    const records = [record("a", lineB), record("r", { parentKey: noteKey(1, "a") }), record("deep", { parentKey: noteKey(1, "r") })];
+    const live = new Set(records.map((note) => note.key));
+    const at = (extra: Partial<HostPlacement> = {}): HostPlacement => ({ path: "a.ts", newRange: [3, 3], ...extra });
+    const placed = (...entries: [string, HostPlacement][]) => new Map(entries.map(([id, placement]) => [noteKey(1, id), placement]));
+
+    it("leaves a live note alone where the host already has it on its line", () => {
+      const plan = planRestore(records, view([base], { placed: placed(["a", at()]) }), live);
+      expect(plan.move).toEqual([]);
+      expect(plan.hide).toEqual([]);
+      expect(plan.batches).toEqual([]);
+    });
+
+    it("moves a live note the host has on another line, replies and all, replies removed first", () => {
+      const plan = planRestore(records, view([shifted], { placed: placed(["a", at()]) }), live);
+      expect(plan.move.map((note) => note.id)).toEqual(["deep", "r", "a"]);
+      expect(plan.batches.map((batch) => batch.map((planned) => [planned.record.id, planned.target?.line]))).toEqual([
+        [["a", 5]],
+        [["r", undefined]],
+        [["deep", undefined]],
+      ]);
+      expect(plan.hide).toEqual([]);
+    });
+
+    it("moves only the notes that are new when a live thread's root is in place, putting a reply under it as it is", () => {
+      const fresh = [record("a", lineB), record("r", { parentKey: noteKey(1, "a") })];
+      const plan = planRestore(fresh, view([base], { placed: placed(["a", at()]) }), new Set([noteKey(1, "a")]));
+      expect(plan.move).toEqual([]);
+      expect(plan.batches.map((batch) => batch.map((planned) => planned.record.id))).toEqual([["r"]]);
+    });
+
+    it("applies a reply that is not live after its moved root, one depth later", () => {
+      const fresh = [record("a", lineB), record("r", { parentKey: noteKey(1, "a") })];
+      const plan = planRestore(fresh, view([shifted], { placed: placed(["a", at()]) }), new Set([noteKey(1, "a")]));
+      expect(plan.move.map((note) => note.id)).toEqual(["a"]);
+      expect(plan.batches.map((batch) => batch.map((planned) => planned.record.id))).toEqual([["a"], ["r"]]);
+    });
+
+    it("moves a note whose host copy is on another file, or whose outdated label is wrong", () => {
+      expect(planRestore([record("a", lineB)], view([base], { placed: placed(["a", at({ path: "b.ts" })]) }), live).move).toHaveLength(1);
+      expect(planRestore([record("a", lineB)], view([base], { placed: placed(["a", at({ outdated: true })]) }), live).move).toHaveLength(1);
+      const gone = record("a", { line: 4, lineText: "deleted since", context: { before: [], after: [] } });
+      expect(planRestore([gone], view([base], { placed: placed(["a", at({ newRange: [3, 3] })]) }), live).move).toHaveLength(1);
+      expect(planRestore([gone], view([base], { placed: placed(["a", at({ newRange: [4, 4], outdated: true })]) }), live).move).toEqual([]);
+    });
+
+    it("counts a multi-line host range as in place when it holds the line", () => {
+      expect(planRestore([record("a", lineB)], view([base], { placed: placed(["a", at({ newRange: [1, 3] })]) }), live).move).toEqual([]);
+    });
+
+    it("leaves a note where it is when the host reports no range or the placement is unknown", () => {
+      expect(planRestore([record("a", lineB)], view([shifted], { placed: placed(["a", { path: "a.ts" }]) }), live).move).toEqual([]);
+      expect(planRestore([record("a", lineB)], view([shifted]), live).move).toEqual([]);
+    });
+
+    it("hides a live note the loaded changeset does not hold, replies first, and counts it pending", () => {
+      const elsewhere = { scope: { commits: [C2] } };
+      const plan = planRestore(records, view([base], elsewhere), live);
+      expect(plan.hide.map((note) => note.id)).toEqual(["deep", "r", "a"]);
+      expect(plan.pending.map((note) => note.id).sort()).toEqual(["a", "deep", "r"]);
+      expect(plan.batches).toEqual([]);
+    });
+
+    it("hides a live note whose file is not loaded", () => {
+      const plan = planRestore([record("a", { path: "gone.ts" })], view([base]), new Set([noteKey(1, "a")]));
+      expect(plan.hide.map((note) => note.id)).toEqual(["a"]);
+    });
+
+    it("holds a reply that is not live pending when its live root is hidden", () => {
+      const fresh = [record("a", lineB), record("r", { parentKey: noteKey(1, "a") })];
+      const plan = planRestore(fresh, view([base], { scope: { commits: [C2] } }), new Set([noteKey(1, "a")]));
+      expect(plan.hide.map((note) => note.id)).toEqual(["a"]);
+      expect(plan.batches).toEqual([]);
+      expect(plan.pending.map((note) => note.id).sort()).toEqual(["a", "r"]);
+    });
   });
 
   describe("resolved threads", () => {

@@ -419,8 +419,16 @@ export interface RestorePlan {
   outdated: NoteRecord[];
   /** Notes of resolved threads, which are not applied. */
   resolved: NoteRecord[];
-  /** Resolved notes the host has now, replies before the notes they answer, for removal. */
+  /**
+   * Notes the host has now that belong off the diff, for removal, replies before the notes they
+   * answer: those of resolved threads, and those the loaded changeset does not hold (pending).
+   */
   hide: NoteRecord[];
+  /**
+   * Notes the host has now on a line other than the one the loaded changeset puts them on. They
+   * are removed and applied again, so they also sit in `batches`; their live replies go with them.
+   */
+  move: NoteRecord[];
   /** Uncommitted notes whose line a commit now holds, with the origin to save for each. */
   rehomed: { record: NoteRecord; origin: NoteOrigin }[];
   verdicts: ReadonlyMap<string, Verdict>;
@@ -529,9 +537,22 @@ export function rehomeTarget(
   return null;
 }
 
+/** Where `comment list` reports a note: its file and line ranges, and whether its author line says outdated. */
+export interface HostPlacement {
+  path: string;
+  oldRange?: readonly [number, number];
+  newRange?: readonly [number, number];
+  outdated?: boolean;
+}
+
 /** What `planRestore` judges notes against: the loaded changeset and the journal's thread statuses. */
 export interface RestoreView {
   files: readonly LoadedFile[];
+  /**
+   * Where the host holds each live note now, by journal key. A live note found elsewhere than its
+   * verdict says is moved; with no entry for it, it is left where it is.
+   */
+  placed?: ReadonlyMap<string, HostPlacement>;
   scope: Scope;
   patchIdOf: PatchIdOf;
   statuses?: ReadonlyMap<string, ThreadState>;
@@ -550,9 +571,11 @@ export interface RestoreView {
  * and an open thread then goes beside where the line was. A resolved thread is not applied.
  *
  * `liveKeys` are the journal keys of notes the host already has (restored earlier, or made in
- * this process); they are never planned again. A reply takes its parent's fate: it waits when the
- * parent waits, is outdated when the parent is, and follows it into a later batch when the
- * parent is being restored in this plan.
+ * this process). A live note follows its verdict like any other: where `view.placed` says the
+ * host has it off the line the verdict names it is moved, and when the verdict is pending or
+ * resolved it is hidden. Only a live note already in the right place is left alone. A reply takes
+ * its parent's fate: it waits when the parent waits, is outdated when the parent is, and follows
+ * it into a later batch when the parent is being restored in this plan.
  */
 export function planRestore(
   records: readonly NoteRecord[],
@@ -594,6 +617,49 @@ export function planRestore(
     return beside ? { kind: "shown", depth: 0, target: beside, outdated: true } : { kind: "pending", held: true };
   };
 
+  type Fate = "stay" | "move" | "hide";
+  const fates = new Map<string, Fate>();
+  /** What becomes of a note the host has: it stays, is removed and applied again, or is removed. */
+  const fateOf = (record: NoteRecord, trail: ReadonlySet<string> = new Set()): Fate => {
+    const known = fates.get(record.key);
+    if (known) {
+      return known;
+    }
+    let fate: Fate = "stay";
+    if (record.parentKey !== undefined) {
+      const parent = byKey.get(record.parentKey);
+      if (parent && liveKeys.has(parent.key) && !trail.has(parent.key)) {
+        fate = fateOf(parent, new Set([...trail, record.key]));
+      }
+    } else {
+      const verdict = judge(record, new Set());
+      if (verdict.kind === "pending" || verdict.kind === "resolved") {
+        fate = "hide";
+      } else if (verdict.kind === "shown" && verdict.target && offTarget(record, verdict.target, verdict.outdated === true)) {
+        fate = "move";
+      }
+    }
+    fates.set(record.key, fate);
+    return fate;
+  };
+  const offTarget = (record: NoteRecord, target: Target, outdated: boolean): boolean => {
+    const at = view.placed?.get(record.key);
+    // A host that reports no range says nothing about where the note is.
+    if (!at || (at.oldRange === undefined && at.newRange === undefined)) {
+      return false;
+    }
+    const range = target.side === "old" ? at.oldRange : at.newRange;
+    return (
+      at.path !== record.path ||
+      (at.outdated === true) !== outdated ||
+      range === undefined ||
+      target.line < range[0] ||
+      target.line > range[1]
+    );
+  };
+  /** The host has this note and it is where it belongs, so a reply can go under it as it is. */
+  const stays = (record: NoteRecord) => liveKeys.has(record.key) && fateOf(record) === "stay";
+
   const judge = (record: NoteRecord, trail: ReadonlySet<string>): Verdict => {
     const known = verdicts.get(record.key);
     if (known) {
@@ -607,11 +673,11 @@ export function planRestore(
       } else {
         const parentVerdict = judge(parent, new Set([...trail, record.key]));
         if (parentVerdict.kind !== "shown") {
-          verdict = liveKeys.has(parent.key) && parentVerdict.kind === "pending" ? { kind: "shown", depth: 0 } : parentVerdict;
+          verdict = parentVerdict;
         } else {
           verdict = {
             kind: "shown",
-            depth: liveKeys.has(parent.key) ? 0 : parentVerdict.depth + 1,
+            depth: stays(parent) ? 0 : parentVerdict.depth + 1,
             ...(parentVerdict.outdated ? { outdated: true } : {}),
           };
         }
@@ -623,21 +689,28 @@ export function planRestore(
     return verdict;
   };
 
-  const plan: RestorePlan = { batches: [], pending: [], outdated: [], resolved: [], hide: [], rehomed, verdicts };
+  const plan: RestorePlan = { batches: [], pending: [], outdated: [], resolved: [], hide: [], move: [], rehomed, verdicts };
   for (const record of records) {
     const verdict = judge(record, new Set());
     if (verdict.kind === "resolved") {
       plan.resolved.push(record);
-      if (liveKeys.has(record.key)) {
-        plan.hide.push(record);
-      }
     } else if (verdict.kind === "orphan") {
       plan.outdated.push(record);
     } else if (verdict.kind === "shown" && verdict.outdated) {
       plan.outdated.push(record);
     }
     if (liveKeys.has(record.key)) {
-      continue;
+      const fate = fateOf(record);
+      if (fate === "hide") {
+        plan.hide.push(record);
+        if (verdict.kind === "pending") {
+          plan.pending.push(record);
+        }
+      }
+      if (fate !== "move") {
+        continue;
+      }
+      plan.move.push(record);
     }
     if (verdict.kind === "pending") {
       plan.pending.push(record);
@@ -650,6 +723,7 @@ export function planRestore(
     }
   }
   plan.hide = deepestFirst(plan.hide, byKey);
+  plan.move = deepestFirst(plan.move, byKey);
   return plan;
 }
 

@@ -51,6 +51,7 @@ import {
   rootOf,
   savedNoteRows,
   USER_AUTHOR,
+  type HostPlacement,
   type JournalEntry,
   type JournalState,
   type LoadedFile,
@@ -540,16 +541,26 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
     }
   }
 
-  async function listNotes(): Promise<{ notes: { noteId: string; filePath: string }[] } | SessionReply> {
+  type ListedNote = { noteId: string; filePath: string; oldRange?: readonly [number, number]; newRange?: readonly [number, number]; author?: string };
+
+  async function listNotes(): Promise<{ notes: ListedNote[] } | SessionReply> {
     const reply = await sessionCall((id) => ["session", "comment", "list", id, "--type", "all", "--json"]);
     if (reply.kind !== "ok") {
       return reply;
     }
-    const comments = (reply.value as { comments?: { noteId?: string; filePath?: string }[] }).comments ?? [];
+    const comments = (reply.value as { comments?: (Partial<ListedNote> & Record<string, unknown>)[] }).comments ?? [];
     return {
       notes: comments.flatMap((comment) =>
         typeof comment.noteId === "string" && typeof comment.filePath === "string"
-          ? [{ noteId: comment.noteId, filePath: comment.filePath }]
+          ? [
+              {
+                noteId: comment.noteId,
+                filePath: comment.filePath,
+                oldRange: comment.oldRange,
+                newRange: comment.newRange,
+                author: typeof comment.author === "string" ? comment.author : undefined,
+              },
+            ]
           : [],
       ),
     };
@@ -799,13 +810,24 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
     const liveIds = new Set(listed.notes.map((entry) => entry.noteId));
     const records = [...state.notes.values()];
     const hostIds = liveHostIds(state, remaps, pid, liveIds);
-    const plan = planRestore(records, judged.view, new Set(hostIds.keys()));
+    const placed = new Map<string, HostPlacement>();
+    for (const [key, id] of hostIds) {
+      const entry = listed.notes.find((candidate) => candidate.noteId === id);
+      if (entry) {
+        placed.set(key, { path: entry.filePath, oldRange: entry.oldRange, newRange: entry.newRange, outdated: entry.author?.endsWith(" (outdated)") });
+      }
+    }
+    const plan = planRestore(records, { ...judged.view, placed }, new Set(hostIds.keys()));
     if (plan.rehomed.length > 0) {
       const t = Date.now();
       saveEntries(plan.rehomed.map(({ record, origin }) => ({ op: "put" as const, t, note: { ...record, origin } })));
     }
-    if (plan.hide.length > 0) {
-      await removeFromHost(plan.hide, hostIds, state.notes);
+    // A note that moves is applied again only once its old copy is out, or it would show twice.
+    const gone = plan.hide.length + plan.move.length > 0 ? await removeFromHost([...plan.hide, ...plan.move], hostIds, state.notes) : new Set<string>();
+    const stuck = new Set(plan.move.filter((record) => !gone.has(record.key)).map((record) => record.key));
+    const moving = new Set(plan.move.map((record) => record.key));
+    for (const key of gone) {
+      hostIds.delete(key);
     }
 
     /** The id a saved note has in the host now, for a reply to name. */
@@ -816,6 +838,9 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
     try {
       for (const batch of plan.batches) {
         const sendable = batch.flatMap((planned) => {
+          if (stuck.has(planned.record.key)) {
+            return [];
+          }
           const parentKey = planned.record.parentKey;
           const parent = parentKey === undefined ? undefined : hostId(parentKey, fresh);
           return parentKey !== undefined && parent === undefined ? [] : [{ planned, item: applyItem(planned, parent) }];
@@ -859,13 +884,15 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
     }
     if (fresh.size > 0) {
       restoreFailed = false;
+      const moved = [...fresh.keys()].filter((key) => moving.has(key)).length;
+      const added = fresh.size - moved;
+      const noun = (count: number) => `${count} saved note${count === 1 ? "" : "s"}`;
       const counts = [
+        added > 0 && moved > 0 ? `${moved} moved` : "",
         plan.pending.length > 0 ? `${plan.pending.length} pending` : "",
         plan.outdated.length > 0 ? `${plan.outdated.length} outdated` : "",
       ].filter(Boolean);
-      host.notify?.(
-        `stack: restored ${fresh.size} saved note${fresh.size === 1 ? "" : "s"}${counts.length > 0 ? ` (${counts.join(", ")})` : ""}`,
-      );
+      host.notify?.(`stack: ${added > 0 ? `restored ${noun(added)}` : `moved ${noun(moved)}`}${counts.length > 0 ? ` (${counts.join(", ")})` : ""}`);
     }
   }
 

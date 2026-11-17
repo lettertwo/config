@@ -54,9 +54,10 @@ after its name. `auto` picks tree or grouped by pane width, as hunk does.
 A file row shows `*N` for the notes on it, as hunk's files pane does: review notes, agent comments,
 and `--agent-context` sidecar annotations. Hunk keeps review notes and agent comments in memory for
 the life of the process and keys them by path rather than by diff range, and it matches sidecar
-annotations by path on every load. So a note shows in every changeset that touches its file, at
-the lines it was written on. Rows of changesets that are not loaded count the notes on their path
-as of the last time the path was loaded.
+annotations by path on every load. So left alone, a note would show in every changeset that touches
+its file, at the lines it was written on. The extension corrects this for the notes it saves (see
+Where a note goes below). Rows of changesets that are not loaded count the notes on their path as
+of the last time the path was loaded.
 
 ### Saved notes
 
@@ -136,8 +137,14 @@ nowhere else:
   saved anchor does not change, so the thread finds its line again if a later changeset brings it
   back.
 
-A note already in the review is never applied twice, and the notes a restore makes are not
-journaled as new ones. Removing a restored note removes its saved record. Restored agent notes
+Notes Hunk already holds are judged on every load too, since Hunk keeps a note by path and line
+number and would otherwise show it at its old line on a changeset where the line moved. A note
+Hunk has on a different line than the one it belongs on is removed and applied again on the right
+one, with its replies, and the notice reads `stack: moved 1 saved note` when the restore added no
+new ones. A note whose origin the loaded changeset does not hold, or whose file is not in it, is
+removed from Hunk and stays in the journal as pending. A note already on its line is left alone,
+and none is ever applied twice. The notes a restore makes are not journaled as new ones, and nor
+are the removals. Removing a restored note yourself removes its saved record. Restored agent notes
 follow Hunk's agent-notes toggle (`a`), which the extension cannot switch on for you.
 
 #### Thread status

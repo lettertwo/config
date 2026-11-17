@@ -744,6 +744,97 @@ describe("the note editor", () => {
   });
 });
 
+describe("live notes follow their line", () => {
+  // New side: 1 x, 2 keep, 3 added one, 4 added two, 5 tail. The saved note was written one line higher.
+  const MOVED = ["@@ -1,3 +1,5 @@", " x", " keep", "+added one", "+added two", " tail"].join("\n");
+  const movedFile = { id: "f:a.ts", path: "a.ts", patch: MOVED, hunks: [{ index: 0, header: "", oldRange: [1, 3], newRange: [1, 5] }] };
+  const record = (extra: Partial<NoteRecord> = {}) =>
+    saved("old", { line: 2, lineText: "added one", context: { before: ["x", "keep"], after: ["added two", "tail"] }, ...extra });
+  const remap = { op: "remap" as const, t: 2, pid: PID, key: noteKey(1, "old"), to: "mcp:9" };
+
+  test("removes a live note the host has on another line and applies it on the line it belongs to", async () => {
+    const ext = setup({ live: [{ noteId: "mcp:9", filePath: "a.ts", newRange: [2, 2] }] });
+    ext.journal.append([{ op: "put", t: 1, note: record() }, remap]);
+    ext.load([movedFile]);
+    await settle();
+    expect(ext.calls.filter((call) => call.args[2] === "rm").map((call) => call.args[4])).toEqual(["mcp:9"]);
+    expect(JSON.parse(ext.applies().at(-1)!.stdin!)).toEqual({
+      comments: [{ filePath: "a.ts", newLine: 3, summary: "saved old", author: "Pi" }],
+    });
+    expect(ext.notices).toEqual(["stack: moved 1 saved note"]);
+    // The removal and the new copy are the restore's own doing: the record stays one, under its key.
+    expect(ext.stored().map((note) => [note.key, note.line])).toEqual([[noteKey(1, "old"), 2]]);
+    // The old remap stays in the append-only journal; it names an id the host no longer lists.
+    expect(ext.journal.load().remaps.map((entry) => entry.to)).toEqual(["mcp:9", "mcp:1"]);
+  });
+
+  test("moves replies with their root, replies removed first and applied after it", async () => {
+    const ext = setup({
+      live: [
+        { noteId: "mcp:9", filePath: "a.ts", newRange: [2, 2] },
+        { noteId: "mcp:10", filePath: "a.ts", newRange: [2, 2] },
+      ],
+    });
+    ext.journal.append([
+      { op: "put", t: 1, note: record() },
+      { op: "put", t: 2, note: saved("reply", { parentKey: noteKey(1, "old"), parentId: "old" }) },
+      remap,
+      { op: "remap", t: 3, pid: PID, key: noteKey(1, "reply"), to: "mcp:10" },
+    ]);
+    ext.load([movedFile]);
+    await settle();
+    expect(ext.calls.filter((call) => call.args[2] === "rm").map((call) => call.args[4])).toEqual(["mcp:10", "mcp:9"]);
+    const bodies = ext.applies().map((call) => JSON.parse(call.stdin!).comments);
+    expect(bodies).toEqual([
+      [expect.objectContaining({ filePath: "a.ts", newLine: 3 })],
+      [{ replyTo: "mcp:1", summary: "saved reply", author: "Pi" }],
+    ]);
+  });
+
+  test("leaves a live note alone when the host has it on the right line", async () => {
+    const ext = setup({ live: [{ noteId: "mcp:9", filePath: "a.ts", newRange: [3, 3] }] });
+    ext.journal.append([{ op: "put", t: 1, note: record() }, remap]);
+    ext.load([movedFile]);
+    await settle();
+    expect(ext.calls.filter((call) => call.args[2] === "rm" || call.args[2] === "apply")).toEqual([]);
+  });
+
+  test("takes a live note out of the host when the loaded changeset does not hold its origin, and keeps its record", async () => {
+    const ext = setup({ live: [{ noteId: "mcp:9", filePath: "a.ts", newRange: [3, 3] }] });
+    const elsewhere = { commits: [{ sha: "1".repeat(40), subject: "another commit", branch: "feat" }] };
+    ext.journal.append([{ op: "put", t: 1, note: record({ origin: elsewhere }) }, remap]);
+    ext.load([movedFile]);
+    await settle();
+    expect(ext.calls.filter((call) => call.args[2] === "rm").map((call) => call.args[4])).toEqual(["mcp:9"]);
+    expect(ext.applies()).toHaveLength(0);
+    // Removing it was the extension's doing, not the reviewer deleting it.
+    expect(ext.stored().map((note) => note.key)).toEqual([noteKey(1, "old")]);
+    expect(ext.journal.load().remaps.filter((entry) => entry.to === "mcp:9")).toEqual([expect.objectContaining({ key: noteKey(1, "old") })]);
+  });
+
+  test("applies nothing for a note it could not remove, so it never shows twice", async () => {
+    const ext = setup({ live: [{ noteId: "mcp:9", filePath: "a.ts", newRange: [2, 2] }] });
+    ext.state.failRemove = true;
+    ext.journal.append([{ op: "put", t: 1, note: record() }, remap]);
+    ext.load([movedFile]);
+    await settle();
+    expect(ext.applies()).toHaveLength(0);
+    expect(ext.notices).toEqual(["stack: cannot restore saved notes (Session comment rm refused.)"]);
+  });
+
+  test("puts a note back on its line once the changeset that holds its origin is loaded again", async () => {
+    const ext = setup({ live: [{ noteId: "mcp:9", filePath: "a.ts", newRange: [3, 3] }] });
+    const elsewhere = { commits: [{ sha: "1".repeat(40), subject: "another commit", branch: "feat" }] };
+    ext.journal.append([{ op: "put", t: 1, note: record({ origin: elsewhere }) }, remap]);
+    ext.load([movedFile]);
+    await settle();
+    ext.journal.append([{ op: "put", t: 3, note: record() }]);
+    ext.load([movedFile]);
+    await settle();
+    expect(JSON.parse(ext.applies().at(-1)!.stdin!).comments).toEqual([expect.objectContaining({ newLine: 3 })]);
+  });
+});
+
 describe("notes outside a `hunk stack` review", () => {
   const comparison = (base: string, head: string) => ({ kind: "comparison" as const, provider: "git", title: "range", base, head });
   const commitReview = (revision: string) => ({ kind: "commit" as const, provider: "git", title: "commit", revision });
