@@ -64,7 +64,7 @@ function setup({
   echoEvents = true,
   dir = undefined as string | undefined,
   repo = undefined as TestRepo | undefined,
-  live = [] as { noteId: string; filePath: string }[],
+  live = [] as { noteId: string; filePath: string; newRange?: [number, number]; oldRange?: [number, number]; author?: string }[],
   openStack = true,
 } = {}) {
   if (!dir) {
@@ -92,8 +92,11 @@ function setup({
     live,
     next: 0,
     failApply: false,
+    failRemove: false,
     /** Runs while an apply is in flight, before hunk answers it. */
     duringApply: () => {},
+    /** Runs while a removal is in flight, before hunk answers it. */
+    duringRemove: () => {},
   };
   const dialogs: { title: string; options: readonly string[] }[] = [];
 
@@ -122,6 +125,10 @@ function setup({
       return ok({ comments: state.live });
     }
     if (args[2] === "rm") {
+      if (state.failRemove) {
+        return { code: 1, stdout: "", stderr: "Session comment rm refused." };
+      }
+      state.duringRemove();
       const at = state.live.findIndex((note) => note.noteId === args[4]);
       if (at >= 0) {
         const [gone] = state.live.splice(at, 1);
@@ -191,6 +198,7 @@ function setup({
   return {
     /** The review the files pane reports to the extension; a stack review is known without it. */
     report: registered.reportReview,
+    editor: registered.editor,
     dir,
     repo,
     root,
@@ -299,7 +307,7 @@ describe("journaling notes", () => {
 });
 
 describe("restoring notes", () => {
-  test("applies a saved note on load, as an agent note, and says so", async () => {
+  test("applies a saved note on load, as an agent note by `you`, and says so", async () => {
     const ext = setup();
     ext.journal.append([
       { op: "put", t: 1, note: saved("old", { source: "user", author: "me" }) },
@@ -309,7 +317,7 @@ describe("restoring notes", () => {
     expect(ext.applies()).toHaveLength(1);
     expect(ext.applies()[0]!.args).toEqual(["session", "comment", "apply", "mine", "--stdin", "--json"]);
     expect(JSON.parse(ext.applies()[0]!.stdin!)).toEqual({
-      comments: [{ filePath: "a.ts", newLine: 2, summary: "saved old", author: "you (restored)" }],
+      comments: [{ filePath: "a.ts", newLine: 2, summary: "saved old", author: "you" }],
     });
     expect(ext.notices).toEqual(["stack: restored 1 saved note"]);
   });
@@ -513,6 +521,228 @@ describe("restoring notes", () => {
     expect(rebuilt.stored().map((note) => [note.key, note.summary])).toEqual([[noteKey(1, "old"), "after rebuild"]]);
   });
 })
+
+describe("the note editor", () => {
+  const user = (id: string, extra: Partial<ExtensionReviewSnapshotNote> = {}) =>
+    snapshotNote(id, { source: "agent", author: "you", ...extra });
+
+  /** A command context on `a.ts`, with the given notes as the host's snapshot and a line selected. */
+  function editorCtx(
+    ext: ReturnType<typeof setup>,
+    { line = 2, side = "new", notes = [] as ExtensionReviewSnapshotNote[], choose }: { line?: number; side?: string; notes?: ExtensionReviewSnapshotNote[]; choose?: string } = {},
+  ) {
+    const panes = { opened: [] as string[], closed: [] as string[], open: (id: string) => void panes.opened.push(id), close: (id: string) => void panes.closed.push(id) };
+    return {
+      ...ctxFor(ext, { choose }),
+      selection: { file: sourceFile("a.ts"), currentLine: { side, line } },
+      panes,
+      review: { snapshot: () => ({ files: [{ fileKey: "key-a", path: "a.ts" }], notes }) },
+    };
+  }
+
+  test("adds a note through comment apply as `you`, and journals it as the user's under the id Hunk returned", async () => {
+    const ext = setup();
+    ext.load();
+    const ctx = editorCtx(ext);
+    await ext.commands.get("note-add")!(ctx);
+    expect(ctx.panes.opened).toEqual(["note-editor"]);
+    expect(ext.editor.current()?.request).toEqual({ kind: "add", path: "a.ts", side: "new", line: 2 });
+
+    expect(await ext.editor.save("  first note\nsecond line \n")).toBeNull();
+    await settle();
+    expect(JSON.parse(ext.applies().at(-1)!.stdin!)).toEqual({
+      comments: [{ filePath: "a.ts", newLine: 2, summary: "first note\nsecond line", author: "you" }],
+    });
+    // The created event Hunk echoed is the editor's own and is not journaled a second time.
+    expect(ext.stored()).toEqual([
+      expect.objectContaining({
+        key: `${PID}:mcp:1`,
+        id: "mcp:1",
+        source: "user",
+        author: "you",
+        path: "a.ts",
+        side: "new",
+        line: 2,
+        lineText: "added one",
+        summary: "first note\nsecond line",
+        context: { before: ["keep"], after: ["added two", "tail"] },
+      }),
+    ]);
+    expect(ext.stored()[0]!.origin).toEqual({ commits: [expect.objectContaining({ subject: "feature work", branch: "feat" })] });
+    expect(ext.editor.current()).toBeNull();
+    expect(ctx.panes.closed).toEqual(["note-editor"]);
+  });
+
+  test("a note it made is still removed from the journal when Hunk reports its removal", async () => {
+    const ext = setup();
+    ext.load();
+    await ext.commands.get("note-add")!(editorCtx(ext));
+    await ext.editor.save("text");
+    await settle();
+    ext.fire("note_changed", { kind: "removed", note: user("mcp:1") });
+    await settle();
+    expect(ext.stored()).toEqual([]);
+  });
+
+  test("refuses a line outside every hunk and opens no editor", async () => {
+    const ext = setup();
+    ext.load();
+    const ctx = editorCtx(ext, { line: 9 });
+    await ext.commands.get("note-add")!(ctx);
+    expect(ctx.messages).toEqual(["A note needs a line inside a hunk"]);
+    expect(ext.editor.current()).toBeNull();
+    expect(ctx.panes.opened).toEqual([]);
+  });
+
+  test("refuses to save an empty editor, keeps it open, and sends nothing", async () => {
+    const ext = setup();
+    ext.load();
+    await ext.commands.get("note-add")!(editorCtx(ext));
+    expect(await ext.editor.save("  \n ")).toBe("The note is empty");
+    expect(ext.applies()).toHaveLength(0);
+    expect(ext.editor.current()).toMatchObject({ error: "The note is empty", busy: false });
+  });
+
+  test("keeps the editor open with the host's error when the apply is refused", async () => {
+    const ext = setup();
+    ext.load();
+    await ext.commands.get("note-add")!(editorCtx(ext));
+    ext.state.failApply = true;
+    expect(await ext.editor.save("text")).toBe("Session comment apply rejected the batch.");
+    expect(ext.editor.current()).toMatchObject({ busy: false });
+    expect(ext.stored()).toEqual([]);
+  });
+
+  test("cancelling closes the pane without applying anything", async () => {
+    const ext = setup();
+    ext.load();
+    const ctx = editorCtx(ext);
+    await ext.commands.get("note-add")!(ctx);
+    ext.editor.cancel();
+    expect(ext.editor.current()).toBeNull();
+    expect(ctx.panes.closed).toEqual(["note-editor"]);
+    expect(ext.applies()).toHaveLength(0);
+  });
+
+  test("replies under a thread's root and journals the reply with its parent's key", async () => {
+    const ext = setup({ live: [{ noteId: "mcp:r", filePath: "a.ts" }] });
+    ext.load();
+    const ctx = editorCtx(ext, { notes: [user("mcp:r", { author: "Pi" })] });
+    await ext.commands.get("note-reply")!(ctx);
+    expect(ext.editor.current()?.request).toMatchObject({ kind: "reply", root: { id: "mcp:r" } });
+    await ext.editor.save("agreed");
+    await settle();
+    expect(JSON.parse(ext.applies().at(-1)!.stdin!)).toEqual({ comments: [{ replyTo: "mcp:r", summary: "agreed", author: "you" }] });
+    expect(ext.stored()).toEqual([
+      expect.objectContaining({ key: `${PID}:mcp:1`, source: "user", parentKey: `${PID}:mcp:r`, parentId: "mcp:r", side: "new", line: 2 }),
+    ]);
+  });
+
+  test("asks which thread to reply to when several sit on the line, and says so when none does", async () => {
+    const ext = setup();
+    ext.load();
+    const two = [user("mcp:a", { summary: "alpha" }), user("mcp:b", { summary: "beta" })];
+    const picked = editorCtx(ext, { notes: two, choose: "2. you: beta" });
+    await ext.commands.get("note-reply")!(picked);
+    expect(ext.dialogs.at(-1)!.options).toEqual(["1. you: alpha", "2. you: beta"]);
+    expect(ext.editor.current()?.request).toMatchObject({ kind: "reply", root: { id: "mcp:b" } });
+    ext.editor.cancel();
+
+    const none = editorCtx(ext, { line: 3, notes: two });
+    await ext.commands.get("note-reply")!(none);
+    expect(none.messages).toEqual(["No note on this line to reply to"]);
+    expect(ext.editor.current()).toBeNull();
+  });
+
+  test("edits a note of yours by removing its thread leaf-first and applying it again, replies after", async () => {
+    const ext = setup();
+    ext.journal.append([
+      { op: "put", t: 1, note: saved("root", { source: "user", author: "you", summary: "old text" }) },
+      { op: "put", t: 2, note: saved("reply", { parentKey: noteKey(1, "root"), parentId: "root", author: "Pi" }) },
+    ]);
+    ext.load();
+    await settle();
+    // Restored as mcp:1 and mcp:2.
+    const notes = [user("mcp:1", { summary: "old text" }), snapshotNote("mcp:2", { source: "agent", author: "Pi", parentId: "mcp:1", summary: "saved reply" })];
+    const ctx = editorCtx(ext, { notes });
+    await ext.commands.get("note-edit")!(ctx);
+    expect(ext.editor.current()).toMatchObject({ request: { kind: "edit", note: { id: "mcp:1" } }, initial: "old text" });
+
+    const before = ext.calls.length;
+    expect(await ext.editor.save("new text")).toBeNull();
+    await settle();
+    const calls = ext.calls.slice(before).filter((call) => call.args[2] === "rm" || call.args[2] === "apply");
+    expect(calls.map((call) => [call.args[2], call.args[2] === "rm" ? call.args[4] : JSON.parse(call.stdin!).comments.map((c: any) => c.summary)])).toEqual([
+      ["rm", "mcp:2"],
+      ["rm", "mcp:1"],
+      ["apply", ["new text"]],
+      ["apply", ["saved reply"]],
+    ]);
+    expect(JSON.parse(calls[3]!.stdin!).comments).toEqual([{ replyTo: "mcp:3", summary: "saved reply", author: "Pi" }]);
+
+    // Same keys, new text on the edited one, and remaps to the new host ids.
+    expect(ext.stored().map((note) => [note.key, note.summary])).toEqual([
+      [noteKey(1, "root"), "new text"],
+      [noteKey(1, "reply"), "saved reply"],
+    ]);
+    const remaps = ext.journal.load().remaps.filter((remap) => ["mcp:3", "mcp:4"].includes(remap.to));
+    expect(remaps.map((remap) => [remap.key, remap.to])).toEqual([
+      [noteKey(1, "root"), "mcp:3"],
+      [noteKey(1, "reply"), "mcp:4"],
+    ]);
+  });
+
+  test("holds a load that lands mid-edit until the thread is back, so the thread is applied once", async () => {
+    const ext = setup();
+    ext.journal.append([{ op: "put", t: 1, note: saved("root", { source: "user", author: "you", summary: "old text" }) }]);
+    ext.load();
+    await settle();
+    const ctx = editorCtx(ext, { notes: [user("mcp:1", { summary: "old text" })] });
+    await ext.commands.get("note-edit")!(ctx);
+    ext.state.duringRemove = () => {
+      ext.state.duringRemove = () => {};
+      ext.load();
+    };
+    const before = ext.calls.length;
+    expect(await ext.editor.save("new text")).toBeNull();
+    await settle();
+    const applies = ext.calls.slice(before).filter((call) => call.args[2] === "apply");
+    expect(applies.map((call) => JSON.parse(call.stdin!).comments.map((c: any) => c.summary))).toEqual([["new text"]]);
+    // The held load still ran once the edit was done.
+    expect(ext.calls.slice(before).filter((call) => call.args[2] === "list").length).toBeGreaterThan(0);
+    expect(ext.state.live.map((note) => note.noteId)).toEqual(["mcp:2"]);
+  });
+
+  test("refuses to edit a thread whose root has no line, and removes nothing", async () => {
+    const ext = setup();
+    ext.load();
+    const ctx = editorCtx(ext, { notes: [user("mcp:1", { summary: "old text" })] });
+    await ext.commands.get("note-edit")!(ctx);
+    ext.state.live.push({ noteId: "mcp:1", filePath: "a.ts" });
+    const lineless = user("mcp:1", { summary: "old text", anchor: {} as any });
+    ctx.review.snapshot = () => ({ files: [{ fileKey: "key-a", path: "a.ts" }], notes: [lineless] });
+    const before = ext.calls.length;
+    expect(await ext.editor.save("new text")).toBe("This thread has no line to put it back on");
+    expect(ext.calls.slice(before).filter((call) => call.args[2] === "rm")).toEqual([]);
+  });
+
+  test("does not offer another author's note for editing", async () => {
+    const ext = setup();
+    ext.load();
+    const ctx = editorCtx(ext, { notes: [snapshotNote("mcp:1", { source: "agent", author: "Pi" })] });
+    await ext.commands.get("note-edit")!(ctx);
+    expect(ctx.messages).toEqual(["No note of yours on this line"]);
+    expect(ext.editor.current()).toBeNull();
+  });
+
+  test("offers a legacy Hunk user note for editing", async () => {
+    const ext = setup();
+    ext.load();
+    const ctx = editorCtx(ext, { notes: [snapshotNote("user:1", { source: "user", author: undefined })] });
+    await ext.commands.get("note-edit")!(ctx);
+    expect(ext.editor.current()?.request).toMatchObject({ kind: "edit", note: { id: "user:1" } });
+  });
+});
 
 describe("notes outside a `hunk stack` review", () => {
   const comparison = (base: string, head: string) => ({ kind: "comparison" as const, provider: "git", title: "range", base, head });

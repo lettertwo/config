@@ -71,13 +71,32 @@ table.
 Notes are saved in every review, stack or not. A record from a journal written before notes
 carried an origin is dropped when the journal is read.
 
-Hunk has no way to create a note from an extension, so a restore runs
-`hunk session comment apply --stdin` against the extension's own session. It applies the notes
-that start a thread first, then the replies to those, then replies to replies, one call per
-level, because the parent of a reply has to exist before the reply does. A note you wrote comes back as an agent note whose author reads
-`you (restored)`, since Hunk gives `comment apply` no way to create a user note. A note keeps its
-summary and its longer rationale text. It loses rich markup, which Hunk accepts only in a session
-started with `--experimental`.
+Hunk has no way for an extension to create a note you can edit, so every note is made through
+`hunk session comment apply --stdin` against the extension's own session, the call agents use. That
+goes for a restore and for a note you write in the editor below. A restore applies the notes that
+start a thread first, then the replies to those, then replies to replies, one call per level,
+because the parent of a reply has to exist before the reply does. A note you wrote has the author
+`you`, and the journal still records it as yours. A note keeps its summary and its longer rationale
+text. It loses rich markup, which Hunk accepts only in a session started with `--experimental`.
+
+#### Writing notes
+
+The extension replaces Hunk's note keys with its own editor, a textarea docked at the bottom of the
+review. The config binds three commands to the keys Hunk's built-ins used, and unbinds the
+built-ins (`hunk.review.startNote`, `hunk.review.replyToActiveNote`, and
+`hunk.review.editActiveNote` set to `false`), since a built-in wins a key both claim:
+
+- `c` (`note-add`) writes a note on the current line. A line outside every hunk is refused, since
+  Hunk accepts a note nowhere else.
+- `R` (`note-reply`) replies to the thread on the current line, under the thread's first note, so
+  threads stay flat. A dialog asks which when several threads sit on the line.
+- `E` (`note-edit`) edits a note of yours on the current line, with its text filled in. Hunk cannot
+  edit a note made through `comment apply`, so the thread is removed and applied again with the new
+  text, replies last, and each note keeps its saved record.
+
+The textarea takes every key while it has focus, so `ctrl+s` saves and `escape` cancels, and either
+closes the pane and returns the keys to Hunk. An empty note is not saved, since `comment apply`
+rejects a batch with an empty summary. Hunk's own `D` still deletes a note.
 
 #### Origin
 

@@ -135,9 +135,9 @@ changeset loads. The journal also holds the review's bookkeeping: each note reco
 the changeset it was written on, and each thread is `open` or `resolved`.
 
 - Do not re-apply notes after a restart. The extension already has.
-- Every restored note has a new id, and a restored user note lists as an agent note by
-  `you (restored)`. Run `comment list --type all --json` again before any `replyTo`, and treat that
-  author as the user.
+- Every restored note has a new id, and every note the user writes lists as an agent note by
+  `you`, since the extension's editor makes notes through `comment apply`. Run
+  `comment list --type all --json` again before any `replyTo`, and treat that author as the user.
 - Read threads with `hunk stack notes list --json`, which needs no session and covers every
   changeset, loaded or not. Each thread has `key`, `path`, `line`, `origin`, `status`, `fix` (the
   commit that closed it), `waitingOn` (`agent` when the user spoke last, `user` when you did,

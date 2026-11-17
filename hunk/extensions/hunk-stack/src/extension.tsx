@@ -10,6 +10,8 @@ import type {
   ExtensionReviewReloadControls,
   ExtensionReviewSnapshotNote,
   ExtensionNoteChangeKind,
+  ExtensionPaneControls,
+  ExtensionReviewControls,
   ExtensionStatusLineControls,
   HunkExtensionAPI,
 } from "hunkdiff/extension";
@@ -18,6 +20,17 @@ import { Switcher, hunkRunner, reloadArgs, type Run } from "./daemon";
 import { OutlineFocus } from "./focus";
 import { kittyMoveWindow, type MoveWindow } from "./kitty";
 import { NoteTally } from "./notes";
+import {
+  addTarget,
+  editorHeading,
+  noteChoices,
+  ownNotesOnLine,
+  replantItem,
+  rootNoteOf,
+  threadByDepth,
+  threadsOnLine,
+  type EditorRequest,
+} from "./noteEditor";
 import { runNotes } from "./notesCli";
 import { CommitIndex, type NoteOrigin, type Scope } from "./origin";
 import {
@@ -37,10 +50,12 @@ import {
   rehomeTarget,
   rootOf,
   savedNoteRows,
+  USER_AUTHOR,
   type JournalEntry,
   type JournalState,
   type LoadedFile,
   type NoteRecord,
+  type NoteSide,
   type Remap,
   type RestoreView,
 } from "./persist";
@@ -410,8 +425,10 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
   /** Notes this process restored, by the id Hunk gave them, to the journal key they keep. */
   const restoredKeys = new Map<string, string>();
   let remaps: Remap[] = [];
-  /** True while restored notes are being applied; their `created` events must not be journaled. */
-  let applying = false;
+  /** Above zero while this extension is applying notes; their `created` events are held back, not journaled as the user's. */
+  let applying = 0;
+  /** Host ids of notes the editor made and journaled itself, whose `created` events must not be journaled again. */
+  const authored = new Set<string>();
   /** Resolved threads the reviewer opened from the saved-notes dialog, by root key; shown for this process only. */
   const forced = new Set<string>();
   /** Host ids this extension is removing to hide a resolved thread; their removal events are not the user's. */
@@ -432,6 +449,10 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
   let restoreFailed = false;
   let restoring = false;
   let restoreAgain = false;
+  /** The restore passes running now, which an edit waits out before it touches the host. */
+  let restoreRun: Promise<void> = Promise.resolve();
+  /** True while an edit is replacing its thread in the host; restores wait until it is done. */
+  let editing = false;
 
   function openJournal(cwd: string): NoteJournal | null {
     if (journal !== undefined) {
@@ -708,22 +729,49 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
     };
   }
 
-  /** Take the host's copies of notes out, replies first. Their removal events are not journaled. */
-  async function removeFromHost(records: readonly NoteRecord[], hostIds: ReadonlyMap<string, string>, all: ReadonlyMap<string, NoteRecord>) {
-    for (const record of deepestFirst(records, all)) {
-      const id = hostIds.get(record.key);
-      if (id === undefined) {
-        continue;
-      }
+  /**
+   * Take notes out of the host in the order given, which must put replies before the notes they
+   * answer. Their removal events are not journaled. Returns the ids removed, and the reply that
+   * stopped it when it stopped early.
+   */
+  async function removeHostIds(ids: readonly string[]): Promise<{ removed: string[]; stopped: SessionReply | null }> {
+    const removed: string[] = [];
+    for (const id of ids) {
       hiding.add(id);
       const reply = await sessionCall((session) => ["session", "comment", "rm", session, id, "--json"]);
       if (reply.kind !== "ok") {
         hiding.delete(id);
-        if (reply.kind === "error") {
-          reportRestoreFailure(reply.message);
-        }
-        return;
+        return { removed, stopped: reply };
       }
+      removed.push(id);
+    }
+    return { removed, stopped: null };
+  }
+
+  /**
+   * Take the host's copies of notes out, replies first. Their removal events are not journaled.
+   * Returns the journal keys of the notes that are out.
+   */
+  async function removeFromHost(
+    records: readonly NoteRecord[],
+    hostIds: ReadonlyMap<string, string>,
+    all: ReadonlyMap<string, NoteRecord>,
+  ): Promise<Set<string>> {
+    const ordered = deepestFirst(records, all).filter((record) => hostIds.has(record.key));
+    const { removed, stopped } = await removeHostIds(ordered.map((record) => hostIds.get(record.key)!));
+    if (stopped?.kind === "error") {
+      reportRestoreFailure(stopped.message);
+    }
+    return new Set(ordered.slice(0, removed.length).map((record) => record.key));
+  }
+
+  /** Journal the events held back while notes were applied, except for notes the editor journaled itself. */
+  function drainBuffered() {
+    for (const event of buffered.splice(0)) {
+      if (event.kind === "created" && authored.has(event.note.id)) {
+        continue;
+      }
+      enqueueJournal(() => journalNote(event.kind, event.note, event.files, event.origin));
     }
   }
 
@@ -764,7 +812,7 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
     const hostId = (key: string, fresh: ReadonlyMap<string, string>): string | undefined => fresh.get(key) ?? hostIds.get(key);
 
     const fresh = new Map<string, string>();
-    applying = true;
+    applying += 1;
     try {
       for (const batch of plan.batches) {
         const sendable = batch.flatMap((planned) => {
@@ -803,10 +851,10 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
         }
       }
     } finally {
-      applying = false;
+      applying -= 1;
       // Events held back during the apply are judged now that the restored ids are known.
-      for (const event of buffered.splice(0)) {
-        enqueueJournal(() => journalNote(event.kind, event.note, event.files, event.origin));
+      if (applying === 0) {
+        drainBuffered();
       }
     }
     if (fresh.size > 0) {
@@ -826,17 +874,19 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
     if (!journal) {
       return;
     }
-    if (restoring) {
+    // An edit takes its thread out of the host before putting it back, and a restore in that gap
+    // would put the thread back as well; the edit asks for the pass once it is done.
+    if (restoring || editing) {
       restoreAgain = true;
       return;
     }
     restoring = true;
-    void (async () => {
+    restoreRun = (async () => {
       try {
         do {
           restoreAgain = false;
           await restoreOnce();
-        } while (restoreAgain);
+        } while (restoreAgain && !editing);
       } finally {
         restoring = false;
       }
@@ -997,6 +1047,340 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
       ctx.notify(stack.cycleZoom(ctx.selection.file?.path ?? null));
     },
   );
+
+  // The note editor. Hunk's own editor makes notes only Hunk can move, so notes are written in a
+  // docked textarea instead and created through `comment apply`, like an agent's. The journal
+  // still records them as the user's.
+
+  const EDITOR_PANE = "note-editor";
+  type EditorSession = {
+    id: number;
+    request: EditorRequest;
+    initial: string;
+    panes: ExtensionPaneControls;
+    review: ExtensionReviewControls;
+    error?: string;
+    busy: boolean;
+  };
+  let editor: EditorSession | null = null;
+  let editorCount = 0;
+  const editorListeners = new Set<() => void>();
+  let textarea: { plainText: string; gotoBufferEnd?: () => void } | null = null;
+
+  function setEditor(next: EditorSession | null) {
+    editor = next;
+    editorListeners.forEach((listener) => listener());
+  }
+
+  function subscribeEditor(listener: () => void) {
+    editorListeners.add(listener);
+    return () => void editorListeners.delete(listener);
+  }
+
+  function cancelEditor() {
+    const session = editor;
+    // Unmounting the textarea first hands the keys back to Hunk.
+    setEditor(null);
+    session?.panes.close(EDITOR_PANE);
+  }
+
+  /** The journal key of a note Hunk holds: the one it was restored under, else one made in this process. */
+  function keyOfHost(id: string): string {
+    return restoredKeys.get(id) ?? noteKey(pid, id);
+  }
+
+  async function applyNotes(items: Record<string, unknown>[]): Promise<{ made: { commentId: string; filePath?: string }[] } | { error: string }> {
+    const reply = await sessionCall(
+      (id) => ["session", "comment", "apply", id, "--stdin", "--json"],
+      JSON.stringify({ comments: items }),
+    );
+    if (reply.kind === "none") {
+      return { error: "No Hunk session found for this review" };
+    }
+    if (reply.kind === "error") {
+      return { error: reply.message };
+    }
+    const body = reply.value as { result?: { applied?: unknown }; applied?: unknown };
+    const made = (body.result?.applied ?? body.applied ?? []) as { commentId: string; filePath?: string }[];
+    return made.length === items.length ? { made } : { error: "hunk applied fewer notes than sent" };
+  }
+
+  /** The text of a line and its surroundings in the loaded changeset, which the journal finds the line by later. */
+  function lineFacts(path: string, side: NoteSide, line: number) {
+    const file = loadedFiles?.find((candidate) => candidate.path === path);
+    const lines = file ? parsePatch(file.patch) : null;
+    return {
+      lineText: lines?.[side].get(line),
+      context: lines?.[side].has(line) ? contextAt(lines, side, line) : undefined,
+    };
+  }
+
+  /** Create one note or reply through the host and journal it as the user's. */
+  async function saveNew(request: Extract<EditorRequest, { kind: "add" | "reply" }>, summary: string): Promise<string | null> {
+    const parent = request.kind === "reply" ? request.root : undefined;
+    const target = request.kind === "add" ? request : anchorOf(request.root.anchor);
+    if (!target) {
+      return "That note has no line to reply under";
+    }
+    const item: Record<string, unknown> = parent
+      ? { replyTo: parent.id, summary, author: USER_AUTHOR }
+      : { filePath: request.path, [target.side === "old" ? "oldLine" : "newLine"]: target.line, summary, author: USER_AUTHOR };
+    applying += 1;
+    try {
+      const applied = await applyNotes([item]);
+      if ("error" in applied) {
+        return applied.error;
+      }
+      const id = applied.made[0]!.commentId;
+      authored.add(id);
+      notePaths.set(id, request.path);
+      const origin = currentOrigin();
+      if (journal && origin) {
+        const facts = lineFacts(request.path, target.side, target.line);
+        const record = recordFromNote(
+          {
+            id,
+            parentId: parent?.id,
+            source: "user",
+            author: USER_AUTHOR,
+            anchor: { preferred: { side: target.side, line: target.line } },
+            summary,
+            createdAt: new Date().toISOString(),
+          },
+          { pid, path: request.path, origin, lineText: facts.lineText, lineContext: facts.context, parentKey: parent ? keyOfHost(parent.id) : undefined },
+        );
+        saveEntries([{ op: "put", t: Date.now(), note: record }]);
+      }
+      return null;
+    } finally {
+      applying -= 1;
+      if (applying === 0) {
+        drainBuffered();
+      }
+    }
+  }
+
+  /**
+   * Change a note's text. Hunk cannot edit a note made through `comment apply`, so the whole thread
+   * is removed and put back, replies last, with the new text on the edited note. Each note keeps
+   * its journal key and gains a remap to its new host id.
+   */
+  async function saveEdit(session: EditorSession, request: Extract<EditorRequest, { kind: "edit" }>, summary: string): Promise<string | null> {
+    editing = true;
+    try {
+      // A restore already running may move this thread, so the snapshot is read after it.
+      await restoreRun;
+      return await replaceThread(session, request, summary);
+    } finally {
+      editing = false;
+      if (restoreAgain) {
+        requestRestore();
+      }
+    }
+  }
+
+  async function replaceThread(session: EditorSession, request: Extract<EditorRequest, { kind: "edit" }>, summary: string): Promise<string | null> {
+    const snapshot = session.review.snapshot();
+    const root = snapshot ? rootNoteOf(snapshot.notes, request.note.id) : undefined;
+    if (!snapshot || !root) {
+      return "The review changed under the editor; try again";
+    }
+    if (!anchorOf(root.anchor)) {
+      // Checked before anything is removed, since the thread could not be put back.
+      return "This thread has no line to put it back on";
+    }
+    const depths = threadByDepth(snapshot.notes, root.id);
+    const keys = new Map(depths.flat().map((note) => [note.id, keyOfHost(note.id)]));
+    const record = journal ? readJournal()?.notes.get(keys.get(request.note.id)!) : undefined;
+    if (record) {
+      // Saved before the thread is touched, so a failure partway through restores the new text.
+      saveEntries([{ op: "put", t: Date.now(), note: { ...record, summary, updatedAt: new Date().toISOString() } }]);
+    }
+    applying += 1;
+    try {
+      const { stopped } = await removeHostIds(depths.flat().reverse().map((note) => note.id));
+      if (stopped) {
+        return stopped.kind === "error" ? stopped.message : "No Hunk session found for this review";
+      }
+      const fresh = new Map<string, string>();
+      for (const depth of depths) {
+        const items = depth.map((note) =>
+          replantItem(note, { path: request.path, parentId: note.parentId === undefined ? undefined : fresh.get(note.parentId) }, note.id === request.note.id ? summary : note.summary),
+        );
+        const applied = await applyNotes(items);
+        if ("error" in applied) {
+          return `${applied.error}; the thread comes back on the next load`;
+        }
+        const entries: JournalEntry[] = [];
+        applied.made.forEach((made, index) => {
+          const oldId = depth[index]!.id;
+          const key = keys.get(oldId)!;
+          fresh.set(oldId, made.commentId);
+          restoredKeys.set(made.commentId, key);
+          notePaths.set(made.commentId, made.filePath ?? request.path);
+          remaps.push({ pid, key, to: made.commentId });
+          entries.push({ op: "remap", t: Date.now(), pid, key, to: made.commentId });
+        });
+        if (journal) {
+          saveEntries(entries);
+        }
+      }
+      return null;
+    } finally {
+      applying -= 1;
+      if (applying === 0) {
+        drainBuffered();
+      }
+    }
+  }
+
+  /** Save the editor's text; returns why it could not, else null once the note is made and the editor closed. */
+  async function saveEditor(text: string): Promise<string | null> {
+    const session = editor;
+    if (!session || session.busy) {
+      return null;
+    }
+    const summary = text.trim();
+    const fail = (error: string) => {
+      // The editor may have been cancelled or replaced while the save ran.
+      if (editor?.id === session.id) {
+        setEditor({ ...session, busy: false, error });
+      }
+      return error;
+    };
+    if (summary === "") {
+      // `comment apply` rejects a batch with an empty summary.
+      return fail("The note is empty");
+    }
+    setEditor({ ...session, busy: true, error: undefined });
+    const { request } = session;
+    const error = request.kind === "edit" ? await saveEdit(session, request, summary) : await saveNew(request, summary);
+    if (error) {
+      return fail(error);
+    }
+    cancelEditor();
+    return null;
+  }
+
+  function NoteEditorPane({ width, height }: ExtensionPaneProps): ReactNode {
+    const session = useSyncExternalStore(subscribeEditor, () => editor);
+    if (!session) {
+      return null;
+    }
+    return (
+      <box width={width} height={height} flexDirection="column" border>
+        <text>{editorHeading(session.request)}</text>
+        <text>{session.error ?? (session.busy ? "Saving..." : "ctrl+s saves, escape cancels")}</text>
+        <textarea
+          key={session.id}
+          focused
+          width={Math.max(1, width - 2)}
+          height={Math.max(1, height - 4)}
+          initialValue={session.initial}
+          keyBindings={[{ name: "s", ctrl: true, action: "submit" }]}
+          onSubmit={() => void saveEditor(textarea?.plainText ?? "")}
+          onKeyDown={(key: { name: string }) => {
+            if (key.name === "escape") {
+              cancelEditor();
+            }
+          }}
+          ref={(node: typeof textarea) => {
+            if (node && textarea !== node) {
+              node.gotoBufferEnd?.();
+            }
+            textarea = node;
+          }}
+        />
+      </box>
+    );
+  }
+
+  hunk.registerPane({
+    id: EDITOR_PANE,
+    title: "Note",
+    placement: "bottom",
+    height: { preferred: 12, min: 6 },
+    component: NoteEditorPane,
+  });
+
+  function openEditor(ctx: ExtensionCommandContext, request: EditorRequest, initial = "") {
+    setEditor({ id: ++editorCount, request, initial, panes: ctx.panes, review: ctx.review, busy: false });
+    ctx.panes.open(EDITOR_PANE);
+  }
+
+  /** The selection a note command works from, or why there is none. */
+  function noteSite(ctx: ExtensionCommandContext) {
+    host.notify = ctx.notify;
+    const snapshot = ctx.review.snapshot();
+    const { file, currentLine } = ctx.selection;
+    if (!snapshot || !file || !currentLine) {
+      ctx.notify(!file ? "Select a file before writing a note" : "Move to a line of the diff before writing a note", "warning");
+      return null;
+    }
+    for (const entry of snapshot.files) {
+      fileKeys.set(entry.fileKey, entry.path);
+    }
+    const fileKey = snapshot.files.find((entry) => entry.path === file.path)?.fileKey;
+    return { snapshot, file, currentLine, fileKey };
+  }
+
+  async function chooseNote(ctx: ExtensionCommandContext, title: string, notes: readonly ExtensionReviewSnapshotNote[]) {
+    if (notes.length <= 1) {
+      return notes[0];
+    }
+    const choices = noteChoices(notes);
+    const chosen = await ctx.dialogs.select({ title, options: choices.map((choice) => choice.label) });
+    return choices.find((choice) => choice.label === chosen)?.note;
+  }
+
+  hunk.registerCommand({ id: "note-add", title: "Write a note on the current line", key: "c" }, (ctx) => {
+    host.notify = ctx.notify;
+    const { file, currentLine } = ctx.selection;
+    const target = addTarget(file ? { path: file.path, patch: file.patch, hunks: file.hunks ?? [] } : null, currentLine);
+    if ("error" in target) {
+      ctx.notify(target.error, "warning");
+      return;
+    }
+    openJournal(ctx.cwd);
+    openEditor(ctx, { kind: "add", ...target });
+  });
+
+  hunk.registerCommand({ id: "note-reply", title: "Reply to the note on the current line", key: "R" }, async (ctx) => {
+    const site = noteSite(ctx);
+    if (!site) {
+      return;
+    }
+    const threads = site.fileKey === undefined ? [] : threadsOnLine(site.snapshot.notes, site.fileKey, site.currentLine);
+    if (threads.length === 0) {
+      ctx.notify("No note on this line to reply to", "warning");
+      return;
+    }
+    const root = await chooseNote(ctx, "Reply to which thread?", threads);
+    if (root) {
+      openJournal(ctx.cwd);
+      openEditor(ctx, { kind: "reply", root, path: site.file.path });
+    }
+  });
+
+  hunk.registerCommand({ id: "note-edit", title: "Edit your note on the current line", key: "E" }, async (ctx) => {
+    const site = noteSite(ctx);
+    if (!site) {
+      return;
+    }
+    const state = openJournal(ctx.cwd) ? readJournal() : null;
+    // Without a journal (`persist = false`) the author line is all that says who wrote a note.
+    const mine = (note: ExtensionReviewSnapshotNote) =>
+      note.source === "user" || state?.notes.get(keyOfHost(note.id))?.source === "user" || /^you( \(outdated\))?$/u.test(note.author ?? "");
+    const own = site.fileKey === undefined ? [] : ownNotesOnLine(site.snapshot.notes, site.fileKey, site.currentLine, mine);
+    if (own.length === 0) {
+      ctx.notify("No note of yours on this line", "warning");
+      return;
+    }
+    const note = await chooseNote(ctx, "Edit which note?", own);
+    if (note) {
+      openEditor(ctx, { kind: "edit", note, path: site.file.path }, note.summary);
+    }
+  });
 
   /** Drop saved notes for good, along with every reply under them, and out of the host where it has them. */
   async function forgetSaved(chosen: readonly NoteRecord[], all: ReadonlyMap<string, NoteRecord>, hostIds: ReadonlyMap<string, string>) {
@@ -1290,8 +1674,11 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
     // before the job runs.
     const files = loadedFiles;
     const origin = kind === "created" ? currentOrigin() : null;
-    if (applying) {
+    if (applying > 0) {
       buffered.push({ kind, note, files, origin });
+      return;
+    }
+    if (kind === "created" && authored.has(note.id)) {
       return;
     }
     enqueueJournal(() => journalNote(kind, note, files, origin));
@@ -1317,6 +1704,8 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
   });
 
   return {
+    /** The note editor's state and its save and cancel paths, which the pane calls; exposed so tests can stand in for it. */
+    editor: { current: () => editor, save: saveEditor, cancel: cancelEditor },
     /** What the files pane does when Hunk gives it a review; exposed so tests can stand in for the pane. */
     reportReview: (review: ExtensionReviewDescriptor | null) => stack.observeReview(review),
   };

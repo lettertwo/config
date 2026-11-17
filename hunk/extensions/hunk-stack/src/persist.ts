@@ -426,7 +426,8 @@ export interface RestorePlan {
   verdicts: ReadonlyMap<string, Verdict>;
 }
 
-function covers(file: LoadedFile, side: NoteSide, line: number): boolean {
+/** Whether a hunk of `file` spans `line` on `side`; Hunk accepts a note on no other line. */
+export function covers(file: LoadedFile, side: NoteSide, line: number): boolean {
   return file.hunks.some((hunk) => {
     const range = side === "old" ? hunk.oldRange : hunk.newRange;
     return range !== undefined && line >= range[0] && line <= range[1];
@@ -725,15 +726,16 @@ export function liveHostIds(
   return live;
 }
 
-export const RESTORED_AUTHOR = "you (restored)";
+/** The author line of a note the reviewer wrote through this extension's editor. */
+export const USER_AUTHOR = "you";
 
-/** The author line a restored note carries: who wrote it, and that it was restored or is outdated. */
+/** The author line a restored note carries: who wrote it, and whether it is outdated. */
 function restoredAuthor(planned: PlannedNote): string | undefined {
   const { record } = planned;
   if (planned.outdated) {
-    return `${record.source === "user" ? "you" : (record.author ?? "agent")} (outdated)`;
+    return `${record.source === "user" ? USER_AUTHOR : (record.author ?? "agent")} (outdated)`;
   }
-  return record.source === "user" ? RESTORED_AUTHOR : record.author;
+  return record.source === "user" ? USER_AUTHOR : record.author;
 }
 
 /** One item of a `hunk session comment apply` batch. */

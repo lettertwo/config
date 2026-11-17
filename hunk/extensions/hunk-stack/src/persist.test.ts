@@ -473,13 +473,13 @@ describe("liveHostIds", () => {
 });
 
 describe("applyItem", () => {
-  it("restores a user note as an agent note under a restored author, by its saved line", () => {
+  it("restores a user note as an agent note by `you`, at its saved line", () => {
     const planned = { record: record("u", { source: "user", author: "me", rationale: "because", markup: "<b>" }), target: { side: "old" as const, line: 5 } };
     expect(applyItem(planned)).toEqual({
       filePath: "a.ts",
       oldLine: 5,
       summary: "note u",
-      author: "you (restored)",
+      author: "you",
       rationale: "because",
     });
   });

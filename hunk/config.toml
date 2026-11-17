@@ -29,6 +29,14 @@ animations = "false"
 "hunk.review.scrollCodeLeft" = ["h", "left", "H", "shift+left"]
 "hunk.review.scrollCodeRight" = ["l", "right", "L", "shift+right"]
 
+# stack writes notes in its own editor, which makes notes it can move; Hunk's built-ins would take these first.
+"hunk.review.startNote" = false
+"hunk.review.replyToActiveNote" = false
+"hunk.review.editActiveNote" = false
+"hunk-stack.note-add" = "c"
+"hunk-stack.note-reply" = "R"
+"hunk-stack.note-edit" = "E"
+
 "hunk-stack.next-unread" = false
 "hunk-stack.toggle-hidden" = "ctrl+space"
 
