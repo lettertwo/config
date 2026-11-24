@@ -15,7 +15,6 @@
 !/voice-cold-read.md
 !/showrunner-hook.sh
 !/statusline-command.sh
-!/subagent-statusline.sh
 !/terminal-progress.sh
 !/agents/
 !/attic/
@@ -25,3 +24,5 @@
 !/output-styles/
 !/skills/
 !/styles/
+!/mods/
+/mods/*/.claude-plugin/types/

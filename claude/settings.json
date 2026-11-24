@@ -6,6 +6,9 @@
     "pr": "",
     "sessionUrl": false
   },
+  "env": {
+    "CLAUDE_CODE_PLUGIN_DIRS": "~/.claude/mods/agent-rows"
+  },
   "permissions": {
     "allow": [
       "Bash(awk:*)",
@@ -177,10 +180,6 @@
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"
-  },
-  "subagentStatusLine": {
-    "type": "command",
-    "command": "bash ~/.claude/subagent-statusline.sh"
   },
   "enabledPlugins": {
     "lua-lsp@claude-plugins-official": true,
