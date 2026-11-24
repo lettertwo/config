@@ -32,7 +32,7 @@ function snapshotNote(id: string, extra: Partial<ExtensionReviewSnapshotNote> = 
     id,
     source: "user",
     fileKey: "key-a",
-    anchor: { newRange: [2, 2], preferred: { side: "new", line: 2 } },
+    anchor: { newRange: [2, 2], preferred: { side: "new", line: 2 }, ownerHunkIndex: 0, intersectingHunkIndices: [0] },
     summary: `body ${id}`,
     editable: true,
     resolution: "active",
@@ -532,9 +532,13 @@ describe("the note editor", () => {
     { line = 2, side = "new", notes = [] as ExtensionReviewSnapshotNote[], choose }: { line?: number; side?: string; notes?: ExtensionReviewSnapshotNote[]; choose?: string } = {},
   ) {
     const panes = { opened: [] as string[], closed: [] as string[], open: (id: string) => void panes.opened.push(id), close: (id: string) => void panes.closed.push(id) };
+    const executed: string[] = [];
+    const file = sourceFile("a.ts");
     return {
       ...ctxFor(ext, { choose }),
-      selection: { file: sourceFile("a.ts"), currentLine: { side, line } },
+      selection: { file, currentLine: { side, line } as { side: string; line: number } | null, hunkIndex: 0, layout: "unified", files: [file] },
+      commands: { execute: (id: string) => (executed.push(id), true) },
+      executed,
       panes,
       review: { snapshot: () => ({ files: [{ fileKey: "key-a", path: "a.ts" }], notes }) },
     };
@@ -652,6 +656,96 @@ describe("the note editor", () => {
     await ext.commands.get("note-reply")!(none);
     expect(none.messages).toEqual(["No note on this line to reply to"]);
     expect(ext.editor.current()).toBeNull();
+  });
+
+  test("replies to and edits the card a step moved onto, with no dialog", async () => {
+    const ext = setup();
+    ext.load();
+    const mineOn2 = user("mcp:c", { anchor: { newRange: [2, 2], preferred: { side: "new", line: 2 }, ownerHunkIndex: 0, intersectingHunkIndices: [0] } as any });
+    const otherOn3 = snapshotNote("mcp:d", {
+      source: "agent",
+      author: "Pi",
+      anchor: { newRange: [3, 3], preferred: { side: "new", line: 3 }, ownerHunkIndex: 0, intersectingHunkIndices: [0] } as any,
+    });
+    const ctx = editorCtx(ext, { notes: [mineOn2, otherOn3] });
+    await ext.commands.get("step-down")!(ctx);
+    expect(ctx.executed).toEqual(["hunk.review.stepDown"]);
+
+    // Hunk now has the card active and reports no line.
+    ctx.selection = { ...ctx.selection, currentLine: null };
+    await ext.commands.get("note-reply")!(ctx);
+    expect(ext.dialogs).toEqual([]);
+    expect(ext.editor.current()?.request).toMatchObject({ kind: "reply", root: { id: "mcp:c" } });
+    ext.editor.cancel();
+    await ext.commands.get("note-edit")!(ctx);
+    expect(ext.editor.current()?.request).toMatchObject({ kind: "edit", note: { id: "mcp:c" } });
+    ext.editor.cancel();
+    await ext.commands.get("note-add")!(ctx);
+    expect(ext.editor.current()?.request).toEqual({ kind: "add", path: "a.ts", side: "new", line: 2 });
+    ext.editor.cancel();
+
+    // The next step goes past the last card under line 2, onto line 3.
+    await ext.commands.get("step-down")!(ctx);
+    ctx.selection = { ...ctx.selection, currentLine: { side: "new", line: 3 } };
+    await ext.commands.get("step-down")!(ctx);
+    ctx.selection = { ...ctx.selection, currentLine: null };
+    await ext.commands.get("note-edit")!(ctx);
+    expect(ctx.messages).toEqual(["That note is not yours to edit"]);
+  });
+
+  test("follows next-note from a line to the hunk's first note", async () => {
+    const ext = setup();
+    ext.load();
+    const notes = [
+      user("mcp:late", { anchor: { newRange: [4, 4], preferred: { side: "new", line: 4 }, ownerHunkIndex: 0, intersectingHunkIndices: [0] } as any }),
+      user("mcp:early", { anchor: { newRange: [2, 2], preferred: { side: "new", line: 2 }, ownerHunkIndex: 0, intersectingHunkIndices: [0] } as any }),
+    ];
+    const ctx = editorCtx(ext, { line: 4, notes });
+    await ext.commands.get("next-note")!(ctx);
+    expect(ctx.executed).toEqual(["hunk.review.nextNote"]);
+    ctx.selection = { ...ctx.selection, currentLine: null };
+    await ext.commands.get("note-reply")!(ctx);
+    expect(ext.editor.current()?.request).toMatchObject({ kind: "reply", root: { id: "mcp:early" } });
+  });
+
+  test("drops the card after another review command, and offers only the cards beside the last line", async () => {
+    const ext = setup();
+    ext.load();
+    const anchored = (line: number) => ({ newRange: [line, line], preferred: { side: "new", line }, ownerHunkIndex: 0, intersectingHunkIndices: [0] }) as any;
+    const notes = [user("mcp:a", { anchor: anchored(2), summary: "alpha" }), user("mcp:b", { anchor: anchored(2), summary: "beta" }), user("mcp:far", { anchor: anchored(4) })];
+    const ctx = editorCtx(ext, { notes });
+    await ext.commands.get("step-down")!(ctx);
+    ext.fire("command_executed", { commandId: "hunk.review.nextHunk" });
+    ctx.selection = { ...ctx.selection, currentLine: null };
+    await ext.commands.get("note-reply")!(ctx);
+    expect(ext.dialogs.at(-1)!.options).toEqual(["1. you: alpha", "2. you: beta"]);
+  });
+
+  test("replies to a reply card under its thread's first note", async () => {
+    const ext = setup();
+    ext.load();
+    const ctx = editorCtx(ext, { notes: [user("mcp:root"), user("mcp:reply", { parentId: "mcp:root" })] });
+    await ext.commands.get("step-down")!(ctx);
+    ctx.selection = { ...ctx.selection, currentLine: null };
+    await ext.commands.get("step-down")!(ctx);
+    await ext.commands.get("note-reply")!(ctx);
+    expect(ext.editor.current()?.request).toMatchObject({ kind: "reply", root: { id: "mcp:root" } });
+  });
+
+  test("falls back to the selected hunk when it has seen no line in this file", async () => {
+    const ext = setup();
+    ext.load();
+    const card = user("mcp:c", { anchor: { newRange: [2, 2], ownerHunkIndex: 0, intersectingHunkIndices: [0] } as any });
+    const ctx = editorCtx(ext, { notes: [card] });
+    ctx.selection = { ...ctx.selection, currentLine: null, hunkIndex: 0 } as any;
+    await ext.commands.get("note-reply")!(ctx);
+    expect(ext.editor.current()?.request).toMatchObject({ kind: "reply", root: { id: "mcp:c" } });
+    ext.editor.cancel();
+
+    ctx.selection = { ...ctx.selection, hunkIndex: 1 } as any;
+    await ext.commands.get("note-reply")!(ctx);
+    await ext.commands.get("note-add")!(ctx);
+    expect(ctx.messages).toEqual(["No note on this hunk to reply to", "Move to a line of the diff before writing a note"]);
   });
 
   test("edits a note of yours by removing its thread leaf-first and applying it again, replies after", async () => {

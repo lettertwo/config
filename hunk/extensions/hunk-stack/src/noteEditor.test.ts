@@ -51,6 +51,17 @@ describe("finding notes on a line", () => {
     expect(threadsOnLine(notes, "k", { side: "new", line: 1 })).toEqual([]);
   });
 
+  it("falls back to the threads of the selected hunk when Hunk reports no line", () => {
+    const hunked = [
+      note("owned", { anchor: { newRange: [2, 2], ownerHunkIndex: 1, intersectingHunkIndices: [1] } }),
+      note("spans", { anchor: { newRange: [5, 9], intersectingHunkIndices: [0, 1] } }),
+      note("other-hunk", { anchor: { newRange: [20, 20], ownerHunkIndex: 2, intersectingHunkIndices: [2] } }),
+      note("reply", { parentId: "owned", anchor: { newRange: [2, 2], ownerHunkIndex: 1, intersectingHunkIndices: [1] } }),
+    ];
+    expect(threadsOnLine(hunked, "k", { hunkIndex: 1 }).map((n) => n.id)).toEqual(["owned", "spans"]);
+    expect(ownNotesOnLine(hunked, "k", { hunkIndex: 1 }, () => true).map((n) => n.id)).toEqual(["owned", "spans", "reply"]);
+  });
+
   it("reaches a reply through its root, whatever line Hunk anchors it on", () => {
     const own = ownNotesOnLine(notes, "k", { side: "new", line: 2 }, () => true);
     expect(own.map((n) => n.id)).toEqual(["root", "reply"]);

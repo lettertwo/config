@@ -29,7 +29,18 @@ export function addTarget(
   return { path: file.path, side: current.side, line: current.line };
 }
 
-function onLine(note: ExtensionReviewSnapshotNote, current: EditorLine): boolean {
+/**
+ * Where a reply or an edit looks for notes: the current line, or the selected hunk when Hunk has
+ * no current line to report. Hunk drops the line cursor while a note card is active (after `.` or
+ * `,`), and the extension API does not say which note that is.
+ */
+export type NoteSpot = EditorLine | { hunkIndex: number };
+
+function onLine(note: ExtensionReviewSnapshotNote, current: NoteSpot): boolean {
+  if ("hunkIndex" in current) {
+    const { ownerHunkIndex, intersectingHunkIndices } = note.anchor;
+    return ownerHunkIndex === current.hunkIndex || intersectingHunkIndices.includes(current.hunkIndex);
+  }
   const range = current.side === "old" ? note.anchor.oldRange : note.anchor.newRange;
   if (range !== undefined) {
     return current.line >= range[0] && current.line <= range[1];
@@ -76,7 +87,7 @@ export function threadByDepth(notes: readonly ExtensionReviewSnapshotNote[], roo
 export function threadsOnLine(
   notes: readonly ExtensionReviewSnapshotNote[],
   fileKey: string,
-  current: EditorLine,
+  current: NoteSpot,
 ): ExtensionReviewSnapshotNote[] {
   return notes.filter((note) => note.fileKey === fileKey && note.parentId === undefined && onLine(note, current));
 }
@@ -88,7 +99,7 @@ export function threadsOnLine(
 export function ownNotesOnLine(
   notes: readonly ExtensionReviewSnapshotNote[],
   fileKey: string,
-  current: EditorLine,
+  current: NoteSpot,
   mine: (note: ExtensionReviewSnapshotNote) => boolean,
 ): ExtensionReviewSnapshotNote[] {
   const found = new Set<string>();

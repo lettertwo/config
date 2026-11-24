@@ -29,9 +29,12 @@ import {
   rootNoteOf,
   threadByDepth,
   threadsOnLine,
+  type EditorLine,
   type EditorRequest,
+  type NoteSpot,
 } from "./noteEditor";
 import { runNotes } from "./notesCli";
+import { cardsBeside, fileStops, noteMove, ownerHunk, patchRows, step, type Position } from "./cardStops";
 import { CommitIndex, type NoteOrigin, type Scope } from "./origin";
 import {
   NoteJournal,
@@ -1335,20 +1338,106 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
     ctx.panes.open(EDITOR_PANE);
   }
 
-  /** The selection a note command works from, or why there is none. */
-  function noteSite(ctx: ExtensionCommandContext) {
-    host.notify = ctx.notify;
+  // Which note card Hunk has active. Hunk clears the current line while a card is active and does
+  // not tell extensions which card it is, so hunk-stack runs the motions that reach cards itself
+  // and predicts where each lands from a model of the stops (see `cardStops.ts`). A click on a card
+  // runs no command, so it goes unseen; any other review command drops the prediction.
+  const CARD_MOTIONS = new Set(["hunk.review.stepDown", "hunk.review.stepUp", "hunk.review.nextNote", "hunk.review.previousNote"]);
+  let activeCard: { noteId: string; fileKey: string } | null = null;
+  /** The last current line a command saw, which the cards beside it are guessed from. */
+  let lastLine: { fileKey: string; side: NoteSide; line: number } | null = null;
+
+  hunk.on("command_executed", ({ commandId, canonicalCommandId }) => {
+    const id = canonicalCommandId ?? commandId;
+    if ((id.startsWith("hunk.review.") || id.startsWith("hunk.search.")) && !CARD_MOTIONS.has(id)) {
+      activeCard = null;
+    }
+  });
+
+  /** The selected file's stops, and where the selection sits among them. */
+  function locate(ctx: ExtensionCommandContext) {
     const snapshot = ctx.review.snapshot();
-    const { file, currentLine } = ctx.selection;
-    if (!snapshot || !file || !currentLine) {
-      ctx.notify(!file ? "Select a file before writing a note" : "Move to a line of the diff before writing a note", "warning");
+    const { file, currentLine, hunkIndex } = ctx.selection;
+    const fileKey = file ? snapshot?.files.find((entry) => entry.path === file.path)?.fileKey : undefined;
+    if (!snapshot || !file || fileKey === undefined) {
+      activeCard = null;
       return null;
     }
-    for (const entry of snapshot.files) {
+    const rows = patchRows(file.patch, ctx.selection.layout === "split" ? "split" : "unified");
+    const stops = fileStops(rows, snapshot.notes.filter((note) => note.fileKey === fileKey));
+    let at: Position | null = null;
+    if (currentLine) {
+      lastLine = { fileKey, ...currentLine };
+      activeCard = null;
+      at = { kind: "line", ...currentLine };
+    } else if (activeCard) {
+      const card = snapshot.notes.find((note) => note.id === activeCard!.noteId);
+      // Hunk moves the selection to the active card's hunk, so a card elsewhere is stale.
+      if (card && activeCard.fileKey === fileKey && ownerHunk(card) === hunkIndex) {
+        at = { kind: "card", noteId: card.id };
+      } else {
+        activeCard = null;
+      }
+    }
+    return { snapshot, file, fileKey, rows, stops, at };
+  }
+
+  function registerStep(id: string, title: string, key: readonly string[], builtin: string, delta: 1 | -1) {
+    hunk.registerCommand({ id, title, key }, (ctx) => {
+      const here = locate(ctx);
+      const next = here?.at ? step(here.stops, here.rows, here.at, delta) : null;
+      if (ctx.commands.execute(builtin)) {
+        activeCard = here && next?.kind === "card" ? { noteId: next.noteId, fileKey: here.fileKey } : null;
+      }
+    });
+  }
+  registerStep("step-down", "Move down one line or note", ["j", "down"], "hunk.review.stepDown", 1);
+  registerStep("step-up", "Move up one line or note", ["k", "up"], "hunk.review.stepUp", -1);
+
+  function registerNoteMove(id: string, title: string, builtin: string, delta: 1 | -1) {
+    hunk.registerCommand({ id, title }, (ctx) => {
+      const here = locate(ctx);
+      let next: string | null = null;
+      if (here?.at) {
+        const keys = new Map(here.snapshot.files.map((entry) => [entry.path, entry.fileKey]));
+        const order = new Map(ctx.selection.files.flatMap((file, index) => (keys.has(file.path) ? [[keys.get(file.path)!, index] as const] : [])));
+        const from = here.at.kind === "card" ? { activeNoteId: here.at.noteId } : { fileKey: here.fileKey, hunkIndex: ctx.selection.hunkIndex ?? 0 };
+        // At the last note Hunk stays on the card it has.
+        next = noteMove(here.snapshot.notes, order, from, delta) ?? (here.at.kind === "card" ? here.at.noteId : null);
+      }
+      if (ctx.commands.execute(builtin)) {
+        const note = next === null ? undefined : here?.snapshot.notes.find((candidate) => candidate.id === next);
+        activeCard = note ? { noteId: note.id, fileKey: note.fileKey } : null;
+      }
+    });
+  }
+  registerNoteMove("next-note", "Next note", "hunk.review.nextNote", 1);
+  registerNoteMove("previous-note", "Previous note", "hunk.review.previousNote", -1);
+
+  /**
+   * What a note command acts on: the current line; else the card hunk-stack saw Hunk activate; else
+   * the cards beside the last line it saw; else the selected hunk.
+   */
+  function noteSite(ctx: ExtensionCommandContext) {
+    host.notify = ctx.notify;
+    const here = locate(ctx);
+    const { currentLine, hunkIndex } = ctx.selection;
+    if (!here || (!currentLine && hunkIndex === null)) {
+      ctx.notify(!ctx.selection.file ? "Select a file before writing a note" : "Move to a line of the diff before writing a note", "warning");
+      return null;
+    }
+    for (const entry of here.snapshot.files) {
       fileKeys.set(entry.fileKey, entry.path);
     }
-    const fileKey = snapshot.files.find((entry) => entry.path === file.path)?.fileKey;
-    return { snapshot, file, currentLine, fileKey };
+    const notes = here.snapshot.notes;
+    const card = here.at?.kind === "card" ? notes.find((note) => note.id === (here.at as { noteId: string }).noteId) : undefined;
+    let beside: ExtensionReviewSnapshotNote[] = [];
+    if (!currentLine && !card && lastLine?.fileKey === here.fileKey) {
+      const ids = new Set(cardsBeside(here.stops, here.rows, { kind: "line", side: lastLine.side, line: lastLine.line }));
+      beside = notes.filter((note) => ids.has(note.id) && ownerHunk(note) === hunkIndex);
+    }
+    const spot: NoteSpot = currentLine ?? { hunkIndex: hunkIndex! };
+    return { ...here, currentLine, card, beside, spot, where: currentLine ? "this line" : "this hunk" };
   }
 
   async function chooseNote(ctx: ExtensionCommandContext, title: string, notes: readonly ExtensionReviewSnapshotNote[]) {
@@ -1361,9 +1450,19 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
   }
 
   hunk.registerCommand({ id: "note-add", title: "Write a note on the current line", key: "c" }, (ctx) => {
-    host.notify = ctx.notify;
-    const { file, currentLine } = ctx.selection;
-    const target = addTarget(file ? { path: file.path, patch: file.patch, hunks: file.hunks ?? [] } : null, currentLine);
+    const site = noteSite(ctx);
+    if (!site) {
+      return;
+    }
+    // On a card, Hunk opens the new note on that note's line; the guess has to name a single line.
+    let line: EditorLine | null = site.currentLine;
+    if (!line) {
+      const near = site.card ? [site.card] : site.beside.length > 0 ? site.beside : threadsOnLine(site.snapshot.notes, site.fileKey, site.spot);
+      const lines = new Set(near.map((note) => JSON.stringify(anchorOf(note.anchor))));
+      line = lines.size === 1 ? anchorOf(near[0]!.anchor) : null;
+    }
+    const { file } = site;
+    const target = addTarget({ path: file.path, patch: file.patch, hunks: file.hunks ?? [] }, line);
     if ("error" in target) {
       ctx.notify(target.error, "warning");
       return;
@@ -1377,9 +1476,12 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
     if (!site) {
       return;
     }
-    const threads = site.fileKey === undefined ? [] : threadsOnLine(site.snapshot.notes, site.fileKey, site.currentLine);
+    // A reply goes under its thread's first note, so a reply card stands for its thread.
+    const near = site.card ? [site.card] : site.beside;
+    const roots = [...new Set(near.map((note) => rootNoteOf(site.snapshot.notes, note.id) ?? note))];
+    const threads = roots.length > 0 ? roots : threadsOnLine(site.snapshot.notes, site.fileKey, site.spot);
     if (threads.length === 0) {
-      ctx.notify("No note on this line to reply to", "warning");
+      ctx.notify(`No note on ${site.where} to reply to`, "warning");
       return;
     }
     const root = await chooseNote(ctx, "Reply to which thread?", threads);
@@ -1398,9 +1500,13 @@ export function registerStack(hunk: HunkExtensionAPI, options: StackOptions = {}
     // Without a journal (`persist = false`) the author line is all that says who wrote a note.
     const mine = (note: ExtensionReviewSnapshotNote) =>
       note.source === "user" || state?.notes.get(keyOfHost(note.id))?.source === "user" || /^you( \(outdated\))?$/u.test(note.author ?? "");
-    const own = site.fileKey === undefined ? [] : ownNotesOnLine(site.snapshot.notes, site.fileKey, site.currentLine, mine);
+    const own = site.card
+      ? [site.card].filter(mine)
+      : site.beside.some(mine)
+        ? site.beside.filter(mine)
+        : ownNotesOnLine(site.snapshot.notes, site.fileKey, site.spot, mine);
     if (own.length === 0) {
-      ctx.notify("No note of yours on this line", "warning");
+      ctx.notify(site.card ? "That note is not yours to edit" : `No note of yours on ${site.where}`, "warning");
       return;
     }
     const note = await chooseNote(ctx, "Edit which note?", own);

@@ -22,8 +22,6 @@ animations = "false"
 "hunk.review.pageUp" = ["pageup", "b"]
 "hunk.review.halfPageDown" = ["d", "ctrl+d", "J"]
 "hunk.review.halfPageUp" = ["u", "ctrl+u", "K"]
-"hunk.review.nextNote" = "."
-"hunk.review.previousNote" = ","
 "hunk.review.nextAnnotatedFile" = ">"
 "hunk.review.previousAnnotatedFile" = "<"
 "hunk.review.scrollCodeLeft" = ["h", "left", "H", "shift+left"]
@@ -36,6 +34,16 @@ animations = "false"
 "hunk-stack.note-add" = "c"
 "hunk-stack.note-reply" = "R"
 "hunk-stack.note-edit" = "E"
+
+# stack runs the motions that can land on a note card, so it knows which card a reply or edit is for.
+"hunk.review.stepDown" = false
+"hunk.review.stepUp" = false
+"hunk.review.nextNote" = false
+"hunk.review.previousNote" = false
+"hunk-stack.step-down" = ["j", "down"]
+"hunk-stack.step-up" = ["k", "up"]
+"hunk-stack.next-note" = "."
+"hunk-stack.previous-note" = ","
 
 "hunk-stack.next-unread" = false
 "hunk-stack.toggle-hidden" = "ctrl+space"

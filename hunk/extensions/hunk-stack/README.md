@@ -95,6 +95,16 @@ built-ins (`hunk.review.startNote`, `hunk.review.replyToActiveNote`, and
   edit a note made through `comment apply`, so the thread is removed and applied again with the new
   text, replies last, and each note keeps its saved record.
 
+These keys also work on a note card. While a card is active Hunk reports no current line and does
+not tell an extension which card it is, so the extension runs the motions that reach a card itself:
+the config unbinds `hunk.review.stepDown`, `stepUp`, `nextNote`, and `previousNote` and binds
+`step-down` (`j`, `down`), `step-up` (`k`, `up`), `next-note` (`.`), and `previous-note` (`,`),
+which run the built-in and predict where it lands from a model of Hunk's rows and cards. On a card,
+`R` replies to that card's thread, `E` edits it when it is yours, and `c` writes on its line. Some
+moves go unseen: a click on a card, another review command, or a model that disagrees with what
+Hunk drew. Then the commands offer the cards beside the last line they saw, or every thread in the
+selected hunk. Hunk passes an extension command no count, so these motions take none.
+
 The textarea takes every key while it has focus, so `ctrl+s` saves and `escape` cancels, and either
 closes the pane and returns the keys to Hunk. An empty note is not saved, since `comment apply`
 rejects a batch with an empty summary. Hunk's own `D` still deletes a note.
